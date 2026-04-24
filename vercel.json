@@ -19,6 +19,22 @@
 		{
 			"source": "/api/record-player",
 			"destination": "/api/public?resource=recordPlayer"
+		},
+		{
+			"source": "/admin",
+			"destination": "/index.html"
+		},
+		{
+			"source": "/admin/:path*",
+			"destination": "/index.html"
+		},
+		{
+			"source": "/artists/:path*",
+			"destination": "/index.html"
+		},
+		{
+			"source": "/songs/:path*",
+			"destination": "/index.html"
 		}
 	]
 }

@@ -10,17 +10,20 @@ export default function SongPage() {
   const { slug } = useParams()
   const { data: song, loading, error } = useApi(`/api/songs/${slug}`)
 
-  if (loading) return <div className="page" style={{ minHeight: '100vh' }} />
-  if (error || !song) return <div className="page not-found"><h1>Song not found</h1></div>
+  if (!loading && (error || !song)) return <div className="page not-found"><h1>Song not found</h1></div>
 
   return (
     <div className="page">
-      <SongHeader song={song} />
-      <div className="song-page-body">
-        <LyricsView blocks={song.lyricBlocks} />
-        <AboutSection meta={song.meta} />
-        <SongInfoLinks song={song} />
-      </div>
+      {song && (
+        <>
+          <SongHeader song={song} />
+          <div className="song-page-body">
+            <LyricsView blocks={song.lyricBlocks} />
+            <AboutSection meta={song.meta} />
+            <SongInfoLinks song={song} />
+          </div>
+        </>
+      )}
     </div>
   )
 }

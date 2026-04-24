@@ -1,9 +1,13 @@
 import { Link } from 'react-router-dom'
 import { FaApple, FaSoundcloud, FaSpotify } from 'react-icons/fa'
+import { prefetchArtistPage } from '../../lib/publicPrefetch.js'
 import SoundCloudPlayer from '../shared/SoundCloudPlayer.jsx'
 import '../../styles/SongHeader.css'
 
 export default function SongHeader({ song }) {
+  const artistLinkData = song.album?.artist
+    ? { slug: song.album.artist.slug, images: [], portrait: song.album.coverArt }
+    : null
   const streamLinks = [
     { href: song.soundcloudUrl, label: 'SoundCloud', icon: FaSoundcloud },
     { href: song.spotifyUrl, label: 'Spotify', icon: FaSpotify },
@@ -37,14 +41,27 @@ export default function SongHeader({ song }) {
         )}
       </div>
       <div className="song-header-info">
-        <Link to={`/artists/${song.album.artist.slug}`} className="song-header-artist-link">
+        <Link
+          to={`/artists/${song.album.artist.slug}`}
+          className="song-header-artist-link"
+          onMouseEnter={() => prefetchArtistPage(artistLinkData)}
+          onFocus={() => prefetchArtistPage(artistLinkData)}
+          onTouchStart={() => prefetchArtistPage(artistLinkData)}
+        >
           {song.album.artist.name}
         </Link>
         <h1 className="song-header-title">{song.title}</h1>
         <p className="song-header-meta">
-          <Link to={`/artists/${song.album.artist.slug}`}>{song.album.title}</Link>
-          {song.meta?.releaseDate && ` · ${new Date(song.meta.releaseDate).getFullYear()}`}
-          {song.duration && ` · ${song.duration}`}
+          <Link
+            to={`/artists/${song.album.artist.slug}`}
+            onMouseEnter={() => prefetchArtistPage(artistLinkData)}
+            onFocus={() => prefetchArtistPage(artistLinkData)}
+            onTouchStart={() => prefetchArtistPage(artistLinkData)}
+          >
+            {song.album.title}
+          </Link>
+          {song.meta?.releaseDate && ` Â· ${new Date(song.meta.releaseDate).getFullYear()}`}
+          {song.duration && ` Â· ${song.duration}`}
         </p>
         {song.soundcloudUrl && (
           <div className="song-header-player">

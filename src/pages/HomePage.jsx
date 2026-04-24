@@ -13,25 +13,15 @@ export function getHomePageApiMessage(isDev) {
 export default function HomePage() {
   const {
     data: artists,
-    loading: artistsLoading,
     error: artistsError,
   } = useApi('/api/artists')
   const {
     data: tracks,
-    loading: tracksLoading,
     error: tracksError,
   } = useApi('/api/record-player')
   const apiMessage = getHomePageApiMessage(import.meta.env.DEV)
 
-  if (artistsLoading || tracksLoading) {
-    return (
-      <div className="page home-status" style={{ color: 'var(--text-muted)' }}>
-        Loading...
-      </div>
-    )
-  }
-
-  if (artistsError || tracksError) {
+  if ((artistsError || tracksError) && !artists && !tracks) {
     return (
       <div className="page home-status">
         <div className="home-status__panel">

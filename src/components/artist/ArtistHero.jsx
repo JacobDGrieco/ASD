@@ -5,12 +5,15 @@ const IMAGE_TRANSITION_MS = 360
 const IMAGE_HOVER_DELAY_MS = 250
 const IMAGE_HOLD_MS = 150
 
+function uniqueUrls(urls) {
+  return [...new Set(urls.filter(Boolean))]
+}
+
 function getArtistImages(artist) {
   const listedImages = Array.isArray(artist.images)
     ? artist.images.map((image) => image?.previewUrl || image?.url || '').filter(Boolean)
     : []
-  const defaultImage = listedImages[0] || artist.portrait
-  const images = [defaultImage, ...listedImages.slice(1)].filter(Boolean).slice(0, 4)
+  const images = uniqueUrls([artist.portrait, ...listedImages]).slice(0, 4)
 
   return {
     images,
@@ -44,20 +47,6 @@ export default function ArtistHero({ artist }) {
   }, [currentImage])
 
   useEffect(() => {
-    const preloadedImages = images.map((src) => {
-      const image = new window.Image()
-      image.src = src
-      return image
-    })
-
-    return () => {
-      preloadedImages.forEach((image) => {
-        image.src = ''
-      })
-    }
-  }, [images])
-
-  useEffect(() => {
     clearTimers()
     hoverRunIdRef.current += 1
     setCurrentImage(defaultImage)
@@ -65,6 +54,27 @@ export default function ArtistHero({ artist }) {
     setPreviousImage(null)
     setIsTransitioning(false)
   }, [defaultImage])
+
+  useEffect(() => {
+    const preloadImages = () => {
+      images.forEach((src) => {
+        const image = new window.Image()
+        image.src = src
+      })
+    }
+
+    const handle = window.requestIdleCallback
+      ? window.requestIdleCallback(preloadImages, { timeout: 1200 })
+      : window.setTimeout(preloadImages, 100)
+
+    return () => {
+      if (window.requestIdleCallback && window.cancelIdleCallback) {
+        window.cancelIdleCallback(handle)
+        return
+      }
+      window.clearTimeout(handle)
+    }
+  }, [images])
 
   useEffect(() => {
     clearTimers()

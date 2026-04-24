@@ -22,7 +22,12 @@ function normalizeSlug(value) {
   return typeof value === 'string' && value ? value : null
 }
 
+function setPublicCache(res) {
+  res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400')
+}
+
 async function getArtists(res) {
+  setPublicCache(res)
   const artists = await prisma.artist.findMany({
     orderBy: { order: 'asc' },
     select: {
@@ -55,6 +60,7 @@ async function getArtists(res) {
 }
 
 async function getArtist(res, slug) {
+  setPublicCache(res)
   const artist = await prisma.artist.findUnique({
     where: { slug },
     include: {
@@ -96,6 +102,7 @@ async function getArtist(res, slug) {
 }
 
 async function getSong(res, slug) {
+  setPublicCache(res)
   const song = await prisma.song.findUnique({
     where: { slug },
     include: {
@@ -136,6 +143,7 @@ async function getSong(res, slug) {
 
 async function getRecordPlayer(res) {
   try {
+    setPublicCache(res)
     const tracks = await prisma.recordPlayerTrack.findMany({
       where: { active: true },
       orderBy: { position: 'asc' },

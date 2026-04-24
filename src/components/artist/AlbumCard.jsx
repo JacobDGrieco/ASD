@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { FaApple, FaSoundcloud, FaSpotify } from 'react-icons/fa'
+import { prefetchSongPage } from '../../lib/publicPrefetch.js'
 import '../../styles/AlbumCard.css'
 
 export default function AlbumCard({ album, isOpen, isUnreleased = false, onClick, to }) {
@@ -31,7 +32,13 @@ export default function AlbumCard({ album, isOpen, isUnreleased = false, onClick
   return (
     <div className={className}>
       {to ? (
-        <Link to={to} className="album-card-primary-action">
+        <Link
+          to={to}
+          className="album-card-primary-action"
+          onMouseEnter={() => prefetchSongPage(to.replace('/songs/', ''), album.coverArt)}
+          onFocus={() => prefetchSongPage(to.replace('/songs/', ''), album.coverArt)}
+          onTouchStart={() => prefetchSongPage(to.replace('/songs/', ''), album.coverArt)}
+        >
           {content}
         </Link>
       ) : onClick ? (
