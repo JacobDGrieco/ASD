@@ -1,9 +1,12 @@
-import { prisma } from '../../../src/lib/prisma.js'
-import { requireAdmin } from '../../../src/lib/auth.js'
+import { prisma } from '../../src/lib/prisma.js'
+import { requireAdmin } from '../../src/lib/auth.js'
 
 export default async function handler(req, res) {
   if (!requireAdmin(req, res)) return
   const { songId } = req.query
+
+  if (!songId) return res.status(400).json({ error: 'songId required' })
+
   if (req.method === 'GET') {
     const blocks = await prisma.lyricBlock.findMany({
       where: { songId },
