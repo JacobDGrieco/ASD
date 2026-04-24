@@ -1,19 +1,36 @@
+import { Link } from 'react-router-dom'
 import styles from './AlbumCard.module.css'
 
-export default function AlbumCard({ album, isOpen, onClick }) {
+export default function AlbumCard({ album, isOpen, onClick, to }) {
   const year = new Date(album.releaseDate).getFullYear()
-  return (
-    <button className={`${styles.card} ${isOpen ? styles.open : ''}`} onClick={onClick}>
+  const className = `${styles.card} ${isOpen ? styles.open : ''}`
+  const content = (
+    <>
       <div className={styles.cover_wrap}>
-        {album.coverArt
-          ? <img src={album.coverArt} alt={album.title} className={styles.cover} />
-          : <div className={styles.cover_blank} />
-        }
+        {album.coverArt ? (
+          <img src={album.coverArt} alt={album.title} className={styles.cover} />
+        ) : (
+          <div className={styles.cover_blank} />
+        )}
       </div>
       <div className={styles.info}>
         <span className={styles.title}>{album.title}</span>
         <span className={styles.meta}>{year} · {album.type}</span>
       </div>
+    </>
+  )
+
+  if (to) {
+    return (
+      <Link to={to} className={className}>
+        {content}
+      </Link>
+    )
+  }
+
+  return (
+    <button className={className} onClick={onClick}>
+      {content}
     </button>
   )
 }

@@ -11,6 +11,8 @@
   transition: background var(--transition), border-color var(--transition);
   width: 180px;
   flex-shrink: 0;
+  color: inherit;
+  text-decoration: none;
 }
 
 .card:hover {

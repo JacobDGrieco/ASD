@@ -6,7 +6,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    environmentMatchGlobs: [['api/**', 'node'], ['src/test/api-helpers.js', 'node']],
+    environmentMatchGlobs: [['src/test/api/**', 'node'], ['src/test/api-helpers.js', 'node']],
     setupFiles: ['src/test/setup.js'],
   },
 })

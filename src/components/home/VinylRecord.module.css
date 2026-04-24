@@ -1,24 +1,29 @@
 .record {
-  width: 64px;
-  height: 64px;
+  width: 160px;
+  height: 160px;
   flex-shrink: 0;
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-  transform: perspective(200px) rotateY(-18deg);
-  border-radius: 2px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  transform: perspective(400px) rotateY(-12deg);
+  border-radius: 10px;
   overflow: hidden;
   background: var(--bg-raised);
   outline: none;
+  position: relative;
+  border: 1px solid rgba(255,255,255,0.08);
 }
 
 .record:hover {
-  transform: perspective(200px) rotateY(0deg) translateY(-8px);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+  transform: perspective(400px) rotateY(0deg) translateY(-18px) scale(1.04);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.6);
+  border-color: rgba(255,255,255,0.2);
+  z-index: 2;
 }
 
 .active {
-  transform: perspective(200px) rotateY(0deg) translateY(-16px) !important;
-  box-shadow: 0 0 0 2px var(--accent), 0 16px 40px rgba(0,0,0,0.7) !important;
+  transform: perspective(400px) rotateY(0deg) translateY(-28px) scale(1.06) !important;
+  box-shadow: 0 0 0 2px var(--accent), 0 20px 48px rgba(0,0,0,0.7) !important;
+  border-color: rgba(255,255,255,0.18);
 }
 
 .sleeve {
@@ -30,4 +35,67 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.meta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 52px 14px 14px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.94));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  text-align: left;
+}
+
+.record:hover .meta,
+.record:focus-visible .meta,
+.active .meta {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.title {
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+
+.artist {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 900px) {
+  .record {
+    width: 120px;
+    height: 120px;
+  }
+
+  .record:hover {
+    transform: perspective(400px) rotateY(0deg) translateY(-12px) scale(1.03);
+  }
+
+  .active {
+    transform: perspective(400px) rotateY(0deg) translateY(-18px) scale(1.04) !important;
+  }
+
+  .meta {
+    opacity: 1;
+    transform: none;
+    padding: 42px 10px 10px;
+  }
+
+  .title {
+    font-size: 0.82rem;
+  }
+
+  .artist {
+    font-size: 0.72rem;
+  }
 }

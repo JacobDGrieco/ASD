@@ -16,14 +16,20 @@ export default function Discography({ albums }) {
     <section className={styles.section}>
       <h2 className={styles.heading}>Discography</h2>
       <div className={styles.grid}>
-        {albums.map((album) => (
-          <AlbumCard
-            key={album.id}
-            album={album}
-            isOpen={openId === album.id}
-            onClick={() => toggle(album.id)}
-          />
-        ))}
+        {albums.map((album) => {
+          const singleSong =
+            album.type === 'SINGLE' && album.songs?.length === 1 ? album.songs[0] : null
+
+          return (
+            <AlbumCard
+              key={album.id}
+              album={album}
+              isOpen={!singleSong && openId === album.id}
+              onClick={singleSong ? undefined : () => toggle(album.id)}
+              to={singleSong ? `/songs/${singleSong.slug}` : undefined}
+            />
+          )
+        })}
       </div>
       {openAlbum && (
         <div className={styles.expand}>

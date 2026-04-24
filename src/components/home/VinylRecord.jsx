@@ -10,6 +10,10 @@ export default function VinylRecord({ track, isActive, onClick }) {
       <div className={styles.sleeve}>
         <img src={track.song.album.coverArt} alt={track.song.album.title} className={styles.art} />
       </div>
+      <div className={styles.meta}>
+        <span className={styles.title}>{track.song.title}</span>
+        <span className={styles.artist}>{track.song.album.artist.name}</span>
+      </div>
     </button>
   )
 }

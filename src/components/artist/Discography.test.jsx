@@ -15,6 +15,10 @@ const fakeAlbums = [
     id: 'a2', title: 'Single Drop', slug: 'single', type: 'SINGLE', coverArt: '', releaseDate: '2024-06-01',
     songs: [{ id: 's3', title: 'The Single', slug: 'the-single', trackNumber: 1, discNumber: 1, duration: '2:58' }],
   },
+  {
+    id: 'a3', title: 'One Track Album', slug: 'one-track-album', type: 'ALBUM', coverArt: '', releaseDate: '2024-07-01',
+    songs: [{ id: 's4', title: 'Album Only Track', slug: 'album-only-track', trackNumber: 1, discNumber: 1, duration: '3:05' }],
+  },
 ]
 
 describe('Discography', () => {
@@ -44,8 +48,12 @@ describe('Discography', () => {
     render(<MemoryRouter><Discography albums={fakeAlbums} /></MemoryRouter>)
     fireEvent.click(screen.getByText('Debut Album'))
     expect(screen.getByText('Track One')).toBeInTheDocument()
-    fireEvent.click(screen.getByText('Single Drop'))
-    expect(screen.queryByText('Track One')).not.toBeInTheDocument()
-    expect(screen.getByText('The Single')).toBeInTheDocument()
+    expect(screen.getByText('Single Drop').closest('a')).toHaveAttribute('href', '/songs/the-single')
+  })
+
+  it('keeps one-track albums expandable when they are labeled ALBUM', () => {
+    render(<MemoryRouter><Discography albums={fakeAlbums} /></MemoryRouter>)
+    fireEvent.click(screen.getByText('One Track Album'))
+    expect(screen.getByText('Album Only Track')).toBeInTheDocument()
   })
 })

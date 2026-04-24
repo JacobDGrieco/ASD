@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:vercel": "npx vercel dev",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
