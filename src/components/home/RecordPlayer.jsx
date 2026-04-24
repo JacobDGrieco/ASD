@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Turntable from './Turntable.jsx'
 import VinylRack from './VinylRack.jsx'
-import styles from '../../styles/RecordPlayer.module.css'
+import '../../styles/RecordPlayer.css'
 
 export default function RecordPlayer({ tracks }) {
   const [activeTrack, setActiveTrack] = useState(null)
@@ -11,8 +11,8 @@ export default function RecordPlayer({ tracks }) {
   }
 
   return (
-    <section className={styles.section}>
-      <div className={styles.inner}>
+    <section className="record-player-section">
+      <div className="record-player-inner">
         <Turntable activeTrack={activeTrack} isPlaying={activeTrack !== null} />
         <VinylRack
           tracks={tracks}

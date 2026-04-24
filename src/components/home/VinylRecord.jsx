@@ -1,18 +1,18 @@
-import styles from '../../styles/VinylRecord.module.css'
+import '../../styles/VinylRecord.css'
 
 export default function VinylRecord({ track, isActive, onClick }) {
   return (
     <button
-      className={`${styles.record} ${isActive ? styles.active : ''}`}
+      className={`vinyl-record-record ${isActive ? 'vinyl-record-active' : ''}`}
       onClick={onClick}
       aria-label={track.song.title}
     >
-      <div className={styles.sleeve}>
-        <img src={track.song.album.coverArt} alt={track.song.album.title} className={styles.art} />
+      <div className="vinyl-record-sleeve">
+        <img src={track.song.album.coverArt} alt={track.song.album.title} className="vinyl-record-art" />
       </div>
-      <div className={styles.meta}>
-        <span className={styles.title}>{track.song.title}</span>
-        <span className={styles.artist}>{track.song.album.artist.name}</span>
+      <div className="vinyl-record-meta">
+        <span className="vinyl-record-title">{track.song.title}</span>
+        <span className="vinyl-record-artist">{track.song.album.artist.name}</span>
       </div>
     </button>
   )

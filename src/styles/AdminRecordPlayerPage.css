@@ -1,4 +1,4 @@
-.header {
+.admin-record-player-page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -6,30 +6,30 @@
   margin-bottom: 8px;
 }
 
-.title {
+.admin-record-player-page-title {
   font-size: 1.5rem;
 }
 
-.hint {
+.admin-record-player-page-hint {
   color: var(--text-muted);
   font-size: 0.875rem;
   margin-bottom: 24px;
 }
 
-.saved {
+.admin-record-player-page-saved {
   color: var(--accent);
   font-size: 0.875rem;
   margin-bottom: 12px;
 }
 
-.slots {
+.admin-record-player-page-slots {
   display: flex;
   flex-direction: column;
   gap: 12px;
   max-width: 640px;
 }
 
-.slot {
+.admin-record-player-page-slot {
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr) auto;
   align-items: center;
@@ -39,12 +39,12 @@
   border: 1px solid var(--border);
 }
 
-.slotLabel {
+.admin-record-player-page-slot-label {
   color: var(--text-muted);
   font-size: 0.875rem;
 }
 
-.select {
+.admin-record-player-page-select {
   width: 100%;
   padding: 8px 10px;
   background: var(--bg-raised);
@@ -54,12 +54,12 @@
   font-size: 0.9rem;
 }
 
-.select:focus {
+.admin-record-player-page-select:focus {
   outline: none;
   border-color: var(--accent);
 }
 
-.activeLabel {
+.admin-record-player-page-active-label {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -69,11 +69,11 @@
   cursor: pointer;
 }
 
-.checkbox {
+.admin-record-player-page-checkbox {
   accent-color: var(--accent);
 }
 
-.primaryBtn {
+.admin-record-player-page-primary-btn {
   padding: 8px 16px;
   background: var(--accent);
   color: #000;
@@ -83,17 +83,17 @@
   cursor: pointer;
 }
 
-.primaryBtn:hover {
+.admin-record-player-page-primary-btn:hover {
   opacity: 0.85;
 }
 
 @media (max-width: 640px) {
-  .slot {
+  .admin-record-player-page-slot {
     grid-template-columns: 1fr;
     align-items: stretch;
   }
 
-  .activeLabel {
+  .admin-record-player-page-active-label {
     justify-self: start;
   }
 }

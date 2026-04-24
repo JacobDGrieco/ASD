@@ -8,7 +8,9 @@ async function main() {
   await prisma.songMeta.deleteMany()
   await prisma.recordPlayerTrack.deleteMany()
   await prisma.song.deleteMany()
+  await prisma.albumImage.deleteMany()
   await prisma.album.deleteMany()
+  await prisma.artistImage.deleteMany()
   await prisma.artist.deleteMany()
 
   const artists = [
@@ -20,35 +22,71 @@ async function main() {
   ]
 
   for (let i = 0; i < artists.length; i++) {
-    const artist = await prisma.artist.create({
-      data: { ...artists[i], order: i, portrait: `https://picsum.photos/seed/${artists[i].slug}/800/1000` },
-    })
+    const artistSeed = artists[i]
+    const portraitUrl = `https://picsum.photos/seed/${artistSeed.slug}/800/1000`
 
-    const album = await prisma.album.create({
+    const artist = await prisma.artist.create({
       data: {
-        title: `${artist.name} — Debut`,
-        slug: `${artist.slug}-debut`,
-        type: 'ALBUM',
-        coverArt: `https://picsum.photos/seed/${artist.slug}-album/400/400`,
-        releaseDate: new Date('2024-01-01'),
-        artistId: artist.id,
+        ...artistSeed,
+        order: i,
+        portrait: portraitUrl,
+        images: {
+          create: {
+            url: portraitUrl,
+            usage: 'portrait',
+            altText: artistSeed.name,
+            sortOrder: 0,
+            isPrimary: true,
+          },
+        },
       },
     })
 
+    const debutCoverUrl = `https://picsum.photos/seed/${artist.slug}-album/400/400`
+    const album = await prisma.album.create({
+      data: {
+        title: `${artist.name} - Debut`,
+        slug: `${artist.slug}-debut`,
+        type: 'ALBUM',
+        coverArt: debutCoverUrl,
+        releaseDate: new Date('2024-01-01'),
+        artistId: artist.id,
+        images: {
+          create: {
+            url: debutCoverUrl,
+            usage: 'cover',
+            altText: `${artist.name} - Debut`,
+            sortOrder: 0,
+            isPrimary: true,
+          },
+        },
+      },
+    })
+
+    const singleCoverUrl = `https://picsum.photos/seed/${artist.slug}-single/400/400`
     await prisma.album.create({
       data: {
-        title: `${artist.name} — Single`,
+        title: `${artist.name} - Single`,
         slug: `${artist.slug}-single`,
         type: 'SINGLE',
-        coverArt: `https://picsum.photos/seed/${artist.slug}-single/400/400`,
+        coverArt: singleCoverUrl,
         releaseDate: new Date('2024-06-01'),
         artistId: artist.id,
+        images: {
+          create: {
+            url: singleCoverUrl,
+            usage: 'cover',
+            altText: `${artist.name} - Single`,
+            sortOrder: 0,
+            isPrimary: true,
+          },
+        },
       },
     })
 
     const song = await prisma.song.create({
       data: {
-        title: `Track One`,
+        title: 'Track One',
         slug: `${artist.slug}-track-one`,
         trackNumber: 1,
         discNumber: 1,
@@ -86,7 +124,7 @@ async function main() {
         lyricBlockId: blocks[0].id,
         startChar: 0,
         endChar: 25,
-        explanation: 'The artist describes operating without drawing attention — staying focused while others seek validation.',
+        explanation: 'The artist describes operating without drawing attention - staying focused while others seek validation.',
       },
     })
 

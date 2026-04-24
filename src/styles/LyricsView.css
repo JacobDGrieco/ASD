@@ -1,28 +1,28 @@
-.section {
+.lyrics-view-section {
   padding: 40px 0;
 }
 
-.lyrics {
+.lyrics-view-lyrics {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.line_wrap {
+.lyrics-view-line-wrap {
   position: relative;
 }
 
-.line {
+.lyrics-view-line {
   padding: 4px 0;
   line-height: 1.9;
   font-size: 1.05rem;
 }
 
-.plain {
+.lyrics-view-plain {
   color: var(--text);
 }
 
-.annotated {
+.lyrics-view-annotated {
   background: none;
   border: none;
   padding: 0;
@@ -36,13 +36,13 @@
   position: relative;
 }
 
-.annotated:hover,
-.active {
+.lyrics-view-annotated:hover,
+.lyrics-view-active {
   color: var(--accent);
   background: var(--accent-dim);
 }
 
-.popupOverlay {
+.lyrics-view-popup-overlay {
   position: absolute;
   top: 0;
   left: calc(100% + 24px);
@@ -51,7 +51,7 @@
 }
 
 @media (max-width: 900px) {
-  .popupOverlay {
+  .lyrics-view-popup-overlay {
     position: static;
     width: auto;
     margin-top: 8px;

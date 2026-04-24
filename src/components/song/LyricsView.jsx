@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import AnnotationPopup from './AnnotationPopup.jsx'
-import styles from '../../styles/LyricsView.module.css'
+import '../../styles/LyricsView.css'
 
 function LyricLine({ block, openAnnotationId, setOpenAnnotationId }) {
   const spans = block.annotations.length === 0 ? [] : buildSpans(block.text, block.annotations)
@@ -8,24 +8,24 @@ function LyricLine({ block, openAnnotationId, setOpenAnnotationId }) {
 
   if (block.annotations.length === 0) {
     return (
-      <div className={styles.line}>
-        <span className={styles.plain}>{block.text}</span>
+      <div className="lyrics-view-line">
+        <span className="lyrics-view-plain">{block.text}</span>
       </div>
     )
   }
 
   return (
-    <div className={styles.line_wrap}>
-      <div className={styles.line}>
+    <div className="lyrics-view-line-wrap">
+      <div className="lyrics-view-line">
         {spans.map((span, i) => {
           if (!span.annotation) {
-            return <span key={i} className={styles.plain}>{span.text}</span>
+            return <span key={i} className="lyrics-view-plain">{span.text}</span>
           }
           const isOpen = openAnnotationId === span.annotation.id
           return (
             <button
               key={i}
-              className={`${styles.annotated} ${isOpen ? styles.active : ''}`}
+              className={`lyrics-view-annotated ${isOpen ? 'lyrics-view-active' : ''}`}
               onClick={() => setOpenAnnotationId(isOpen ? null : span.annotation.id)}
             >
               {span.text}
@@ -34,7 +34,7 @@ function LyricLine({ block, openAnnotationId, setOpenAnnotationId }) {
         })}
       </div>
       {openAnnotation && (
-        <AnnotationPopup annotation={openAnnotation} className={styles.popupOverlay} />
+        <AnnotationPopup annotation={openAnnotation} className="lyrics-view-popup-overlay" />
       )}
     </div>
   )
@@ -61,8 +61,8 @@ export default function LyricsView({ blocks }) {
   const [openAnnotationId, setOpenAnnotationId] = useState(null)
 
   return (
-    <section className={styles.section}>
-      <div className={styles.lyrics}>
+    <section className="lyrics-view-section">
+      <div className="lyrics-view-lyrics">
         {blocks.map((block) => (
           <LyricLine
             key={block.id}

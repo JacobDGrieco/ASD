@@ -1,9 +1,9 @@
-import styles from '../../styles/AnnotationPopup.module.css'
+import '../../styles/AnnotationPopup.css'
 
 export default function AnnotationPopup({ annotation, className = '' }) {
   return (
-    <div className={`${styles.popup} ${className}`.trim()}>
-      <p className={styles.text}>{annotation.explanation}</p>
+    <div className={`annotation-popup-popup ${className}`.trim()}>
+      <p className="annotation-popup-text">{annotation.explanation}</p>
     </div>
   )
 }

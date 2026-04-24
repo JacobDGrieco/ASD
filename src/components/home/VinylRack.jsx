@@ -1,10 +1,10 @@
 import VinylRecord from './VinylRecord.jsx'
-import styles from '../../styles/VinylRack.module.css'
+import '../../styles/VinylRack.css'
 
 export default function VinylRack({ tracks, activeTrackId, onSelect }) {
   return (
-    <div className={styles.rack}>
-      <div className={styles.slot_row}>
+    <div className="vinyl-rack-rack">
+      <div className="vinyl-rack-slot-row">
         {tracks.map((track) => (
           <VinylRecord
             key={track.id}
@@ -14,7 +14,7 @@ export default function VinylRack({ tracks, activeTrackId, onSelect }) {
           />
         ))}
       </div>
-      <div className={styles.shelf} />
+      <div className="vinyl-rack-shelf" />
     </div>
   )
 }

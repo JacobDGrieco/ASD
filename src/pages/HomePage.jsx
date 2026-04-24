@@ -4,7 +4,7 @@ import RecordPlayer from '../components/home/RecordPlayer.jsx'
 
 export function getHomePageApiMessage(isDev) {
   if (isDev) {
-    return 'This page needs the Vercel API routes as well as the frontend. Run `npm run dev:vercel` for full-stack local development.'
+    return 'The frontend dev server is up, but the API is not reachable. Start `npm run dev:vercel` in another terminal so `/api` can proxy to the local Vercel functions on port 3000, or use `npm run dev:vercel` by itself.'
   }
 
   return 'The frontend loaded, but the site could not reach its API routes. This usually means the deployment is missing environment variables, database access, or a failing serverless function.'

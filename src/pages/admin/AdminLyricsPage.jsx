@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useLocation, Link } from 'react-router-dom'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
-import styles from '../../styles/AdminLyricsPage.module.css'
+import '../../styles/AdminLyricsPage.css'
 
 function createRow(block = null) {
   return { id: block?.id ?? null, text: block?.text ?? '' }
@@ -305,29 +305,29 @@ export default function AdminLyricsPage() {
 
   return (
     <div>
-      <div className={styles.header}>
+      <div className="admin-lyrics-page-header">
         <div>
-          <Link to="/admin/songs" className={styles.backLink}>← Songs</Link>
-          <h1 className={styles.title}>{songTitle}</h1>
+          <Link to="/admin/songs" className="admin-lyrics-page-back-link">← Songs</Link>
+          <h1 className="admin-lyrics-page-title">{songTitle}</h1>
         </div>
       </div>
 
-      <div className={styles.editPane}>
-        <p className={styles.hint}>Enter creates a new lyric line. Backspace on an empty lyric line removes it. Arrow keys move between lines. Tab inserts spaces. Annotations are edited directly per matching row.</p>
+      <div className="admin-lyrics-page-edit-pane">
+        <p className="admin-lyrics-page-hint">Enter creates a new lyric line. Backspace on an empty lyric line removes it. Arrow keys move between lines. Tab inserts spaces. Annotations are edited directly per matching row.</p>
         {selectedRows.length > 0 && (
-          <div className={styles.bulkActions}>
-            <span className={styles.selectionSummary}>{selectedRows.length} line{selectedRows.length === 1 ? '' : 's'} selected</span>
-            <button onClick={deleteSelectedRows} className={styles.ghostBtn}>Delete Selected</button>
+          <div className="admin-lyrics-page-bulk-actions">
+            <span className="admin-lyrics-page-selection-summary">{selectedRows.length} line{selectedRows.length === 1 ? '' : 's'} selected</span>
+            <button onClick={deleteSelectedRows} className="admin-lyrics-page-ghost-btn">Delete Selected</button>
           </div>
         )}
 
-        <div className={styles.editorGrid}>
-          <section className={styles.editorPanel}>
-            <div className={styles.editorLabel}>Lyrics</div>
-            <div className={styles.editorSurface}>
+        <div className="admin-lyrics-page-editor-grid">
+          <section className="admin-lyrics-page-editor-panel">
+            <div className="admin-lyrics-page-editor-label">Lyrics</div>
+            <div className="admin-lyrics-page-editor-surface">
               {lyricsRows.map((row, index) => (
-                <div key={row.id ?? `row-${index}`} className={`${styles.editorRow} ${selectedRows.includes(index) ? styles.selectedRow : ''}`.trim()}>
-                  <button type="button" className={`${styles.rowNumber} ${selectedRows.includes(index) ? styles.selectedNumber : ''}`.trim()} onClick={(event) => handleRowSelection(index, event)} aria-label={`Select lyric line ${index + 1}`}>{index + 1}</button>
+                <div key={row.id ?? `row-${index}`} className={`admin-lyrics-page-editor-row ${selectedRows.includes(index) ? 'admin-lyrics-page-selected-row' : ''}`.trim()}>
+                  <button type="button" className={`admin-lyrics-page-row-number ${selectedRows.includes(index) ? 'admin-lyrics-page-selected-number' : ''}`.trim()} onClick={(event) => handleRowSelection(index, event)} aria-label={`Select lyric line ${index + 1}`}>{index + 1}</button>
                   <textarea
                     ref={(element) => {
                       lyricRowRefs.current[index] = element
@@ -336,7 +336,7 @@ export default function AdminLyricsPage() {
                     onChange={(event) => updateLyricsRow(index, event.target.value)}
                     onKeyDown={(event) => handleRowKeyDown('lyrics', event, index)}
                     onPaste={(event) => handleRowPaste('lyrics', event, index)}
-                    className={`${styles.lineInput} ${styles.lyricInput}`}
+                    className={`admin-lyrics-page-line-input admin-lyrics-page-lyric-input`}
                     rows={1}
                     spellCheck={false}
                     aria-label={`Lyric line ${index + 1}`}
@@ -346,17 +346,17 @@ export default function AdminLyricsPage() {
             </div>
           </section>
 
-          <section className={styles.editorPanel}>
-            <div className={styles.editorLabel}>Annotations</div>
-            <div className={styles.editorSurface}>
+          <section className="admin-lyrics-page-editor-panel">
+            <div className="admin-lyrics-page-editor-label">Annotations</div>
+            <div className="admin-lyrics-page-editor-surface">
               {lyricsRows.map((row, index) => {
                 return (
-                  <div key={`annotation-${row.id ?? index}`} className={styles.annotationEditorRow}>
-                    <div className={styles.rowNumber}>{index + 1}</div>
-                    <div className={styles.annotationEditorCell}>
+                  <div key={`annotation-${row.id ?? index}`} className="admin-lyrics-page-annotation-editor-row">
+                    <div className="admin-lyrics-page-row-number">{index + 1}</div>
+                    <div className="admin-lyrics-page-annotation-editor-cell">
                       <button
                         type="button"
-                        className={`${styles.lineInput} ${styles.annotationPreview}`}
+                        className={`admin-lyrics-page-line-input admin-lyrics-page-annotation-preview`}
                         onClick={() => {
                           setEditingAnnotationIndex(index)
                           pendingFocus.current = { column: 'annotations', index, cursor: 'end' }
@@ -368,7 +368,7 @@ export default function AdminLyricsPage() {
                         {annotationRows[index]?.text ?? ''}
                       </button>
                       {editingAnnotationIndex === index && (
-                        <div className={styles.annotationOverlay}>
+                        <div className="admin-lyrics-page-annotation-overlay">
                           <textarea
                             ref={(element) => {
                               annotationRowRefs.current[index] = element
@@ -379,7 +379,7 @@ export default function AdminLyricsPage() {
                             onBlur={() => setEditingAnnotationIndex(null)}
                             onPaste={(event) => handleRowPaste('annotations', event, index)}
                             placeholder="Annotation for this line..."
-                            className={`${styles.lineInput} ${styles.annotationTextarea}`}
+                            className={`admin-lyrics-page-line-input admin-lyrics-page-annotation-textarea`}
                             rows={4}
                             spellCheck={false}
                             aria-label={`Annotation line ${index + 1}`}
@@ -394,7 +394,7 @@ export default function AdminLyricsPage() {
           </section>
         </div>
 
-        <button onClick={saveLyrics} className={styles.primaryBtn}>Save Lyrics</button>
+        <button onClick={saveLyrics} className="admin-lyrics-page-primary-btn">Save Lyrics</button>
       </div>
     </div>
   )

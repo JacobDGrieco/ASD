@@ -1,9 +1,9 @@
-.section {
+.about-section-section {
   padding: 40px 0;
   border-top: 1px solid var(--border);
 }
 
-.heading {
+.about-section-heading {
   font-size: 0.7rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -11,7 +11,7 @@
   margin-bottom: 16px;
 }
 
-.text {
+.about-section-text {
   font-size: 0.95rem;
   line-height: 1.9;
   color: var(--text-muted);

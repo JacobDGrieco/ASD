@@ -1,4 +1,4 @@
-.popup {
+.annotation-popup-popup {
   padding: 16px 20px;
   background: var(--bg-raised);
   border-left: 3px solid var(--accent);
@@ -11,7 +11,7 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-.text {
+.annotation-popup-text {
   font-size: 0.9rem;
   color: var(--text-muted);
   line-height: 1.7;

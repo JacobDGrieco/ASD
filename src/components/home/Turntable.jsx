@@ -1,5 +1,5 @@
 import SoundCloudPlayer from '../shared/SoundCloudPlayer.jsx'
-import styles from '../../styles/Turntable.module.css'
+import '../../styles/Turntable.css'
 
 export default function Turntable({ activeTrack, isPlaying }) {
   const coverArt = activeTrack?.song.album.coverArt ?? null
@@ -8,30 +8,30 @@ export default function Turntable({ activeTrack, isPlaying }) {
   const scUrl = activeTrack?.song.soundcloudUrl ?? null
 
   return (
-    <div className={styles.wrap}>
-      <div className={styles.scene}>
-        <div className={styles.body}>
-          <div className={`${styles.platter} ${isPlaying ? styles.spinning : ''}`}>
+    <div className="turntable-wrap">
+      <div className="turntable-scene">
+        <div className="turntable-body">
+          <div className={`turntable-platter ${isPlaying ? 'turntable-spinning' : ''}`}>
             {coverArt && (
-              <img src={coverArt} alt={title ?? ''} className={styles.label} />
+              <img src={coverArt} alt={title ?? ''} className="turntable-label" />
             )}
-            {!coverArt && <div className={styles.label_blank} />}
+            {!coverArt && <div className="turntable-label-blank" />}
           </div>
-          <div className={`${styles.tonearm} ${isPlaying ? styles.playing : ''}`} />
+          <div className={`turntable-tonearm ${isPlaying ? 'turntable-playing' : ''}`} />
         </div>
       </div>
       {title && (
         <div
-          className={styles.now_playing}
+          className="turntable-now-playing"
           aria-label="Now playing"
           aria-live="polite"
         >
-          <span className={styles.track_title}>{title}</span>
-          <span className={styles.track_artist}>{artist}</span>
+          <span className="turntable-track-title">{title}</span>
+          <span className="turntable-track-artist">{artist}</span>
         </div>
       )}
       {scUrl && (
-        <div className={styles.player}>
+        <div className="turntable-player">
           <SoundCloudPlayer url={scUrl} autoPlay={isPlaying} />
         </div>
       )}

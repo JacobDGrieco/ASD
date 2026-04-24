@@ -1,35 +1,35 @@
-.header {
+.admin-artists-page-header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	margin-bottom: 24px;
 }
 
-.title {
+.admin-artists-page-title {
 	font-size: 1.5rem;
 }
 
-.form {
+.admin-artists-page-form {
 	margin-bottom: 32px;
 	padding: 24px;
 	background: var(--bg-surface);
 	border: 1px solid var(--border);
 }
 
-.formTitle {
+.admin-artists-page-form-title {
 	font-size: 1rem;
 	margin-bottom: 16px;
 	color: var(--accent);
 }
 
-.fields {
+.admin-artists-page-fields {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 	gap: 12px;
 	margin-bottom: 16px;
 }
 
-.input {
+.admin-artists-page-input {
 	width: 100%;
 	padding: 8px 10px;
 	background: var(--bg-raised);
@@ -39,29 +39,29 @@
 	font-size: 0.9rem;
 }
 
-.input:focus {
+.admin-artists-page-input:focus {
 	outline: none;
 	border-color: var(--accent);
 }
 
-.formActions {
+.admin-artists-page-form-actions {
 	display: flex;
 	gap: 8px;
 }
 
-.tableWrap {
+.admin-artists-page-table-wrap {
 	overflow-x: auto;
 	position: relative;
 }
 
-.table {
+.admin-artists-page-table {
 	width: 100%;
 	border-collapse: collapse;
 	font-size: 0.9rem;
 	table-layout: fixed;
 }
 
-.table th {
+.admin-artists-page-table th {
 	text-align: left;
 	padding: 8px 12px;
 	color: var(--text-muted);
@@ -73,14 +73,14 @@
 	background: var(--bg);
 }
 
-.dragHeader,
-.dragCell {
-	width: 32px;
-	padding-left: 4px;
-	padding-right: 4px;
+.admin-artists-page-drag-header,
+.admin-artists-page-drag-cell {
+	width: 44px;
+	padding-left: 6px;
+	padding-right: 6px;
 }
 
-.table td {
+.admin-artists-page-table td {
 	padding: 10px 12px;
 	border-bottom: 1px solid var(--border);
 	vertical-align: middle;
@@ -88,18 +88,18 @@
 	background: var(--bg);
 }
 
-.muted {
+.admin-artists-page-muted {
 	color: var(--text-muted);
 }
 
-.cellValue {
+.admin-artists-page-cell-value {
 	display: block;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-.wrapValue {
+.admin-artists-page-wrap-value {
 	display: -webkit-box;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -109,24 +109,24 @@
 	white-space: normal;
 }
 
-.emptyValue {
+.admin-artists-page-empty-value {
 	color: var(--text-muted);
 }
 
-.editingRow {
+.admin-artists-page-editing-row {
 	background: rgba(255, 255, 255, 0.03);
 }
 
-.editingRow td {
+.admin-artists-page-editing-row td {
 	padding-top: 12px;
 	padding-bottom: 12px;
 }
 
-.dropTargetRow {
+.admin-artists-page-drop-target-row {
 	background: rgba(200, 169, 110, 0.08);
 }
 
-.dragHandle {
+.admin-artists-page-drag-handle {
 	width: 100%;
 	height: 100%;
 	min-height: 64px;
@@ -140,91 +140,99 @@
 	letter-spacing: 0.1em;
 }
 
-.dragHandle:hover {
+.admin-artists-page-drag-handle:hover {
 	color: var(--text);
 	border-color: var(--text-muted);
 }
 
-.dragHandle:active {
+.admin-artists-page-drag-handle:active {
 	cursor: grabbing;
 }
 
-.colXs {
+.admin-artists-page-col-xs {
 	width: 72px;
 }
 
-.colSm {
+.admin-artists-page-col-sm {
 	width: 100px;
 }
 
-.colMd {
+.admin-artists-page-col-md {
 	width: 140px;
 }
 
-.colLg {
+.admin-artists-page-col-lg {
 	width: 200px;
 }
 
-.colXl {
+.admin-artists-page-col-xl {
 	width: 280px;
 }
 
-.colXxl {
+.admin-artists-page-col-xxl {
 	width: 360px;
 }
 
-.colAction {
+.admin-artists-page-col-wide {
+	width: 320px;
+}
+
+.admin-artists-page-col-image {
+	width: 156px;
+}
+
+.admin-artists-page-col-action {
 	width: 56px;
 }
 
-.stickyRight0 {
+.admin-artists-page-sticky-right-0 {
 	position: sticky;
 	right: 0;
 	z-index: 3;
 	box-shadow: -1px 0 0 var(--border);
 }
 
-.stickyRight1 {
+.admin-artists-page-sticky-right-1 {
 	position: sticky;
 	right: 56px;
 	z-index: 3;
 	box-shadow: -1px 0 0 var(--border);
 }
 
-.stickyRight2 {
+.admin-artists-page-sticky-right-2 {
 	position: sticky;
 	right: 112px;
 	z-index: 3;
 	box-shadow: -1px 0 0 var(--border);
 }
 
-.stickyRight3 {
+.admin-artists-page-sticky-right-3 {
 	position: sticky;
 	right: 168px;
 	z-index: 3;
 	box-shadow: -1px 0 0 var(--border);
 }
 
-.stickyRight4 {
+.admin-artists-page-sticky-right-4 {
 	position: sticky;
 	right: 224px;
 	z-index: 3;
 	box-shadow: -1px 0 0 var(--border);
 }
 
-.stickyRight5 {
+.admin-artists-page-sticky-right-5 {
 	position: sticky;
 	right: 280px;
 	z-index: 3;
 	box-shadow: -1px 0 0 var(--border);
 }
 
-.textareaCell {
+.admin-artists-page-textarea-cell {
 	min-height: 88px;
 	resize: vertical;
 }
 
-.thumb {
+.admin-artists-page-thumb {
 	display: block;
 	width: 64px;
 	height: 64px;
@@ -233,7 +241,78 @@
 	background: var(--bg-raised);
 }
 
-.linkBtn {
+.admin-artists-page-image-field {
+	display: grid;
+	gap: 12px;
+}
+
+.admin-artists-page-upload-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	width: fit-content;
+}
+
+.admin-artists-page-file-input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.admin-artists-page-empty-image-state {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--text-muted);
+}
+
+.admin-artists-page-image-list {
+	display: grid;
+	gap: 12px;
+}
+
+.admin-artists-page-image-card {
+	display: grid;
+	grid-template-columns: 64px minmax(0, 1fr);
+	gap: 12px;
+	align-items: start;
+}
+
+.admin-artists-page-image-meta {
+	display: grid;
+	gap: 8px;
+	min-width: 0;
+}
+
+.admin-artists-page-image-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.admin-artists-page-upload-error {
+	margin: 0;
+	color: #e06060;
+	font-size: 0.8rem;
+}
+
+.admin-artists-page-image-summary {
+	display: grid;
+	gap: 8px;
+}
+
+.admin-artists-page-image-count {
+	color: var(--text-muted);
+	font-size: 0.8rem;
+}
+
+.admin-artists-page-link-btn {
 	display: inline-flex;
 	width: 34px;
 	height: 34px;
@@ -248,12 +327,12 @@
 	justify-content: center;
 }
 
-.linkBtn:hover {
+.admin-artists-page-link-btn:hover {
 	color: var(--text);
 	border-color: var(--text-muted);
 }
 
-.iconBtn {
+.admin-artists-page-icon-btn {
 	width: 34px;
 	height: 34px;
 	padding: 0;
@@ -263,20 +342,20 @@
 	font-size: 1rem;
 }
 
-.actionCell {
+.admin-artists-page-action-cell {
 	width: 56px;
 	text-align: center;
 }
 
-.centerCell {
+.admin-artists-page-center-cell {
 	text-align: center;
 }
 
-.centerCell .linkBtn {
+.admin-artists-page-center-cell .admin-artists-page-link-btn {
 	margin: 0 auto;
 }
 
-.socialHeader {
+.admin-artists-page-social-header {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -284,7 +363,7 @@
 	font-size: 1rem;
 }
 
-.srOnly {
+.admin-artists-page-sr-only {
 	position: absolute;
 	width: 1px;
 	height: 1px;
@@ -296,7 +375,7 @@
 	border: 0;
 }
 
-.primaryBtn {
+.admin-artists-page-primary-btn {
 	padding: 8px 16px;
 	background: var(--accent);
 	color: #000;
@@ -305,11 +384,11 @@
 	cursor: pointer;
 }
 
-.primaryBtn:hover {
+.admin-artists-page-primary-btn:hover {
 	opacity: 0.85;
 }
 
-.ghostBtn {
+.admin-artists-page-ghost-btn {
 	padding: 6px 12px;
 	border: 1px solid var(--border);
 	color: var(--text-muted);
@@ -318,12 +397,12 @@
 	background: none;
 }
 
-.ghostBtn:hover {
+.admin-artists-page-ghost-btn:hover {
 	color: var(--text);
 	border-color: var(--text-muted);
 }
 
-.dangerBtn {
+.admin-artists-page-danger-btn {
 	padding: 6px 12px;
 	border: 1px solid rgba(224, 96, 96, 0.3);
 	color: #e06060;
@@ -332,6 +411,6 @@
 	background: none;
 }
 
-.dangerBtn:hover {
+.admin-artists-page-danger-btn:hover {
 	background: rgba(224, 96, 96, 0.1);
 }

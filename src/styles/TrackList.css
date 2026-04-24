@@ -1,4 +1,4 @@
-.list {
+.track-list-list {
   display: flex;
   flex-direction: column;
   padding: 16px 20px;
@@ -6,7 +6,7 @@
   border-top: 1px solid var(--border);
 }
 
-.row {
+.track-list-row {
   display: grid;
   grid-template-columns: 32px 1fr auto;
   align-items: center;
@@ -18,21 +18,21 @@
   transition: background var(--transition);
 }
 
-.row:hover {
+.track-list-row:hover {
   background: var(--bg-raised);
 }
 
-.num {
+.track-list-num {
   color: var(--text-muted);
   font-size: 0.8rem;
   text-align: right;
 }
 
-.title {
+.track-list-title {
   font-size: 0.9rem;
 }
 
-.duration {
+.track-list-duration {
   font-size: 0.8rem;
   color: var(--text-muted);
 }

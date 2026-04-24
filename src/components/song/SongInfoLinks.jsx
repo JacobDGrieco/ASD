@@ -1,4 +1,4 @@
-import styles from '../../styles/SongInfoLinks.module.css'
+import '../../styles/SongInfoLinks.css'
 
 export default function SongInfoLinks({ song }) {
   const meta = song.meta
@@ -9,7 +9,7 @@ export default function SongInfoLinks({ song }) {
   }
 
   return (
-    <section className={styles.section}>
+    <section className="song-info-links-section">
       {meta?.producers && <InfoRow label="Produced by" value={meta.producers} />}
       {meta?.writers && <InfoRow label="Written by" value={meta.writers} />}
     </section>
@@ -18,9 +18,9 @@ export default function SongInfoLinks({ song }) {
 
 function InfoRow({ label, value }) {
   return (
-    <div className={styles.row}>
-      <span className={styles.label}>{label}</span>
-      <span className={styles.value}>{value}</span>
+    <div className="song-info-links-row">
+      <span className="song-info-links-label">{label}</span>
+      <span className="song-info-links-value">{value}</span>
     </div>
   )
 }

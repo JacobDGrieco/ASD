@@ -1,17 +1,17 @@
-.wrap {
+.turntable-wrap {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	gap: 28px;
 }
 
-.scene {
+.turntable-scene {
 	perspective: 1400px;
 	width: 620px;
 	height: 520px;
 }
 
-.body {
+.turntable-body {
 	width: 100%;
 	height: 100%;
 	background:
@@ -27,7 +27,7 @@
 		inset 0 -24px 48px rgba(0, 0, 0, 0.35);
 }
 
-.body::before {
+.turntable-body::before {
 	content: '';
 	position: absolute;
 	inset: 28px;
@@ -36,7 +36,7 @@
 	pointer-events: none;
 }
 
-.platter {
+.turntable-platter {
 	position: absolute;
 	width: 340px;
 	height: 340px;
@@ -53,7 +53,7 @@
 	overflow: hidden;
 }
 
-.spinning {
+.turntable-spinning {
 	animation: spin 2.1s linear infinite;
 }
 
@@ -63,7 +63,7 @@
 	}
 }
 
-.label {
+.turntable-label {
 	width: 132px;
 	height: 132px;
 	border-radius: 50%;
@@ -75,7 +75,7 @@
 	box-shadow: 0 0 0 8px rgba(0, 0, 0, 0.18);
 }
 
-.label_blank {
+.turntable-label-blank {
 	width: 132px;
 	height: 132px;
 	border-radius: 50%;
@@ -86,7 +86,7 @@
 	transform: translate(-50%, -50%);
 }
 
-.tonearm {
+.turntable-tonearm {
 	position: absolute;
 	top: 13%;
 	right: 8%;
@@ -100,11 +100,11 @@
 	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
 }
 
-.playing {
+.turntable-playing {
 	transform: translateY(-18px) rotate(-34deg);
 }
 
-.tonearm::before {
+.turntable-tonearm::before {
 	content: '';
 	position: absolute;
 	left: -20px;
@@ -117,7 +117,7 @@
 	box-shadow: 0 0 0 8px rgba(12, 12, 12, 0.85);
 }
 
-.tonearm::after {
+.turntable-tonearm::after {
 	content: '';
 	position: absolute;
 	right: -2px;
@@ -130,7 +130,7 @@
 	box-shadow: 0 0 10px rgba(0, 0, 0, 0.45);
 }
 
-.now_playing {
+.turntable-now-playing {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -138,52 +138,52 @@
 	text-align: center;
 }
 
-.track_title {
+.turntable-track-title {
 	font-size: 1.35rem;
 	letter-spacing: 0.04em;
 	color: var(--text);
 }
 
-.track_artist {
+.turntable-track-artist {
 	font-size: 1rem;
 	color: var(--text-muted);
 }
 
-.player {
+.turntable-player {
 	width: min(620px, 100%);
 }
 
 @media (max-width: 900px) {
-	.scene {
+	.turntable-scene {
 		width: min(100vw - 40px, 460px);
 		height: min(84vw, 390px);
 	}
 
-	.platter {
+	.turntable-platter {
 		width: 250px;
 		height: 250px;
 	}
 
-	.label,
-	.label_blank {
+	.turntable-label,
+	.turntable-label-blank {
 		width: 100px;
 		height: 100px;
 	}
 
-	.tonearm {
+	.turntable-tonearm {
 		width: 176px;
 		height: 8px;
 	}
 
-	.now_playing {
+	.turntable-now-playing {
 		gap: 4px;
 	}
 
-	.track_title {
+	.turntable-track-title {
 		font-size: 1.1rem;
 	}
 
-	.track_artist {
+	.turntable-track-artist {
 		font-size: 0.9rem;
 	}
 }

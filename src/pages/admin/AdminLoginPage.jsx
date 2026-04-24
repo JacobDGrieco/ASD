@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
-import styles from '../../styles/AdminLoginPage.module.css'
+import '../../styles/AdminLoginPage.css'
 
 export default function AdminLoginPage() {
   const { token, login } = useAdminAuth()
@@ -30,19 +30,19 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className={styles.page}>
-      <form className={styles.form} onSubmit={handleSubmit}>
-        <h1 className={styles.title}>ASD Admin</h1>
+    <div className="admin-login-page-page">
+      <form className="admin-login-page-form" onSubmit={handleSubmit}>
+        <h1 className="admin-login-page-title">ASD Admin</h1>
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
-          className={styles.input}
+          className="admin-login-page-input"
           autoFocus
         />
-        {error && <p className={styles.error}>{error}</p>}
-        <button type="submit" disabled={loading} className={styles.button}>
+        {error && <p className="admin-login-page-error">{error}</p>}
+        <button type="submit" disabled={loading} className="admin-login-page-button">
           {loading ? 'Entering…' : 'Enter'}
         </button>
       </form>

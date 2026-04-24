@@ -1,11 +1,11 @@
-.rack {
+.vinyl-rack-rack {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
 	gap: 16px;
 }
 
-.slot_row {
+.vinyl-rack-slot-row {
 	display: flex;
 	gap: 16px;
 	align-items: flex-end;
@@ -13,7 +13,7 @@
 	flex-wrap: wrap;
 }
 
-.shelf {
+.vinyl-rack-shelf {
 	width: 100%;
 	height: 14px;
 	background: linear-gradient(180deg, #575757, #1a1a1a);
@@ -22,13 +22,13 @@
 }
 
 @media (max-width: 900px) {
-	.slot_row {
+	.vinyl-rack-slot-row {
 		gap: 12px;
 		padding: 16px 14px 0;
 		max-width: 100%;
 	}
 
-	.shelf {
+	.vinyl-rack-shelf {
 		height: 10px;
 	}
 }

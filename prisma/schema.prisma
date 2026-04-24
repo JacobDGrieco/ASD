@@ -20,29 +20,63 @@ model Artist {
   soundcloudProfile String?
   spotifyProfile    String?
   appleMusicProfile String?
+  images            ArtistImage[]
   albums            Album[]
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
 
 model Album {
-  id          String    @id @default(cuid())
-  title       String
-  slug        String    @unique
-  type        AlbumType
-  coverArt    String    @default("")
-  aboutText   String    @default("")
+  id            String       @id @default(cuid())
+  title         String
+  slug          String       @unique
+  type          AlbumType
+  coverArt      String       @default("")
+  aboutText     String       @default("")
   soundcloudUrl String?
   spotifyUrl    String?
   appleMusicUrl String?
-  releaseDate DateTime
-  artistId    String
-  artist      Artist    @relation(fields: [artistId], references: [id], onDelete: Cascade)
-  songs       Song[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  releaseDate   DateTime
+  artistId      String
+  artist        Artist       @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  images        AlbumImage[]
+  songs         Song[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   @@index([artistId])
+}
+
+model ArtistImage {
+  id        String   @id @default(cuid())
+  artistId   String
+  artist     Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  url        String
+  pathname   String?
+  usage      String   @default("portrait")
+  altText    String   @default("")
+  sortOrder  Int      @default(0)
+  isPrimary  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([artistId, sortOrder])
+}
+
+model AlbumImage {
+  id        String   @id @default(cuid())
+  albumId    String
+  album      Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  url        String
+  pathname   String?
+  usage      String   @default("cover")
+  altText    String   @default("")
+  sortOrder  Int      @default(0)
+  isPrimary  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([albumId, sortOrder])
 }
 
 enum AlbumType {

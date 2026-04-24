@@ -39,6 +39,38 @@ CREATE TABLE "Album" (
 );
 
 -- CreateTable
+CREATE TABLE "ArtistImage" (
+    "id" TEXT NOT NULL,
+    "artistId" TEXT NOT NULL,
+    "url" TEXT NOT NULL,
+    "pathname" TEXT,
+    "usage" TEXT NOT NULL DEFAULT 'portrait',
+    "altText" TEXT NOT NULL DEFAULT '',
+    "sortOrder" INTEGER NOT NULL DEFAULT 0,
+    "isPrimary" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ArtistImage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AlbumImage" (
+    "id" TEXT NOT NULL,
+    "albumId" TEXT NOT NULL,
+    "url" TEXT NOT NULL,
+    "pathname" TEXT,
+    "usage" TEXT NOT NULL DEFAULT 'cover',
+    "altText" TEXT NOT NULL DEFAULT '',
+    "sortOrder" INTEGER NOT NULL DEFAULT 0,
+    "isPrimary" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "AlbumImage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Song" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -107,6 +139,12 @@ CREATE UNIQUE INDEX "Album_slug_key" ON "Album"("slug");
 CREATE INDEX "Album_artistId_idx" ON "Album"("artistId");
 
 -- CreateIndex
+CREATE INDEX "ArtistImage_artistId_sortOrder_idx" ON "ArtistImage"("artistId", "sortOrder");
+
+-- CreateIndex
+CREATE INDEX "AlbumImage_albumId_sortOrder_idx" ON "AlbumImage"("albumId", "sortOrder");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Song_slug_key" ON "Song"("slug");
 
 -- CreateIndex
@@ -129,6 +167,12 @@ CREATE UNIQUE INDEX "RecordPlayerTrack_position_key" ON "RecordPlayerTrack"("pos
 
 -- AddForeignKey
 ALTER TABLE "Album" ADD CONSTRAINT "Album_artistId_fkey" FOREIGN KEY ("artistId") REFERENCES "Artist"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ArtistImage" ADD CONSTRAINT "ArtistImage_artistId_fkey" FOREIGN KEY ("artistId") REFERENCES "Artist"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AlbumImage" ADD CONSTRAINT "AlbumImage_albumId_fkey" FOREIGN KEY ("albumId") REFERENCES "Album"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Song" ADD CONSTRAINT "Song_albumId_fkey" FOREIGN KEY ("albumId") REFERENCES "Album"("id") ON DELETE CASCADE ON UPDATE CASCADE;

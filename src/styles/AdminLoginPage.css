@@ -1,4 +1,4 @@
-.page {
+.admin-login-page-page {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -6,7 +6,7 @@
   background: var(--bg);
 }
 
-.form {
+.admin-login-page-form {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -16,13 +16,13 @@
   border: 1px solid var(--border);
 }
 
-.title {
+.admin-login-page-title {
   font-size: 1.5rem;
   color: var(--accent);
   letter-spacing: 0.05em;
 }
 
-.input {
+.admin-login-page-input {
   padding: 10px 12px;
   background: var(--bg-raised);
   border: 1px solid var(--border);
@@ -32,16 +32,16 @@
   outline: none;
 }
 
-.input:focus {
+.admin-login-page-input:focus {
   border-color: var(--accent);
 }
 
-.error {
+.admin-login-page-error {
   color: #e06060;
   font-size: 0.875rem;
 }
 
-.button {
+.admin-login-page-button {
   padding: 10px 16px;
   background: var(--accent);
   color: #000;
@@ -50,11 +50,11 @@
   transition: opacity var(--transition);
 }
 
-.button:hover:not(:disabled) {
+.admin-login-page-button:hover:not(:disabled) {
   opacity: 0.85;
 }
 
-.button:disabled {
+.admin-login-page-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

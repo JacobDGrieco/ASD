@@ -1,14 +1,14 @@
 import { Link } from 'react-router-dom'
-import styles from '../../styles/TrackList.module.css'
+import '../../styles/TrackList.css'
 
 export default function TrackList({ songs }) {
   return (
-    <div className={styles.list}>
+    <div className="track-list-list">
       {songs.map((song) => (
-        <Link key={song.id} to={`/songs/${song.slug}`} className={styles.row}>
-          <span className={styles.num}>{song.discNumber > 1 ? `${song.discNumber}-` : ''}{song.trackNumber}</span>
-          <span className={styles.title}>{song.title}</span>
-          <span className={styles.duration}>{song.duration}</span>
+        <Link key={song.id} to={`/songs/${song.slug}`} className="track-list-row">
+          <span className="track-list-num">{song.discNumber > 1 ? `${song.discNumber}-` : ''}{song.trackNumber}</span>
+          <span className="track-list-title">{song.title}</span>
+          <span className="track-list-duration">{song.duration}</span>
         </Link>
       ))}
     </div>

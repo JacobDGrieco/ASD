@@ -1,11 +1,11 @@
-.header {
+.admin-lyrics-page-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 24px;
 }
 
-.backLink {
+.admin-lyrics-page-back-link {
   display: block;
   color: var(--text-muted);
   font-size: 0.875rem;
@@ -13,22 +13,22 @@
   text-decoration: none;
 }
 
-.backLink:hover {
+.admin-lyrics-page-back-link:hover {
   color: var(--text);
   text-decoration: none;
 }
 
-.title {
+.admin-lyrics-page-title {
   font-size: 1.5rem;
 }
 
-.hint {
+.admin-lyrics-page-hint {
   color: var(--text-muted);
   font-size: 0.875rem;
   margin-bottom: 12px;
 }
 
-.bulkActions {
+.admin-lyrics-page-bulk-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -36,23 +36,23 @@
   margin-bottom: 12px;
 }
 
-.selectionSummary {
+.admin-lyrics-page-selection-summary {
   color: var(--text-muted);
   font-size: 0.875rem;
 }
 
-.editorGrid {
+.admin-lyrics-page-editor-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.8fr);
   gap: 16px;
   margin-bottom: 16px;
 }
 
-.editorPanel {
+.admin-lyrics-page-editor-panel {
   min-width: 0;
 }
 
-.editorLabel {
+.admin-lyrics-page-editor-label {
   margin-bottom: 8px;
   color: var(--text-muted);
   font-size: 0.75rem;
@@ -60,25 +60,25 @@
   text-transform: uppercase;
 }
 
-.editorSurface {
+.admin-lyrics-page-editor-surface {
   border: 1px solid var(--border);
   background: var(--bg-raised);
 }
 
-.editorRow,
-.annotationEditorRow {
+.admin-lyrics-page-editor-row,
+.admin-lyrics-page-annotation-editor-row {
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr);
   align-items: stretch;
   border-bottom: 1px solid var(--border);
 }
 
-.editorRow:last-child,
-.annotationEditorRow:last-child {
+.admin-lyrics-page-editor-row:last-child,
+.admin-lyrics-page-annotation-editor-row:last-child {
   border-bottom: none;
 }
 
-.rowNumber {
+.admin-lyrics-page-row-number {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -92,16 +92,16 @@
   cursor: pointer;
 }
 
-.selectedRow {
+.admin-lyrics-page-selected-row {
   background: rgba(200, 169, 110, 0.08);
 }
 
-.selectedNumber {
+.admin-lyrics-page-selected-number {
   color: var(--accent);
   background: rgba(200, 169, 110, 0.12);
 }
 
-.lineInput {
+.admin-lyrics-page-line-input {
   width: 100%;
   min-height: 46px;
   padding: 12px 14px;
@@ -116,26 +116,26 @@
   overflow: hidden;
 }
 
-.lineInput:focus {
+.admin-lyrics-page-line-input:focus {
   outline: none;
   background: rgba(255, 255, 255, 0.02);
 }
 
-.lyricInput {
+.admin-lyrics-page-lyric-input {
   min-height: 56px;
 }
 
-.annotationEditorCell {
+.admin-lyrics-page-annotation-editor-cell {
   min-width: 0;
   position: relative;
 }
 
-.annotationInput,
-.annotationPreview {
+.admin-lyrics-page-annotation-input,
+.admin-lyrics-page-annotation-preview {
   min-height: 56px;
 }
 
-.annotationPreview {
+.admin-lyrics-page-annotation-preview {
   display: block;
   text-align: left;
   white-space: nowrap;
@@ -144,7 +144,7 @@
   cursor: text;
 }
 
-.annotationOverlay {
+.admin-lyrics-page-annotation-overlay {
   position: absolute;
   inset: 0 0 auto 0;
   z-index: 5;
@@ -153,14 +153,14 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
-.annotationTextarea {
+.admin-lyrics-page-annotation-textarea {
   min-height: 112px;
   background: var(--bg-raised);
   resize: vertical;
   overflow: auto;
 }
 
-.primaryBtn {
+.admin-lyrics-page-primary-btn {
   padding: 8px 16px;
   background: var(--accent);
   color: #000;
@@ -170,11 +170,11 @@
   border: none;
 }
 
-.primaryBtn:hover {
+.admin-lyrics-page-primary-btn:hover {
   opacity: 0.85;
 }
 
-.ghostBtn {
+.admin-lyrics-page-ghost-btn {
   padding: 6px 12px;
   border: 1px solid var(--border);
   color: var(--text-muted);
@@ -183,16 +183,16 @@
   background: none;
 }
 
-.ghostBtn:hover {
+.admin-lyrics-page-ghost-btn:hover {
   color: var(--text);
 }
 
-.editPane {
+.admin-lyrics-page-edit-pane {
   max-width: 1400px;
 }
 
 @media (max-width: 900px) {
-  .editorGrid {
+  .admin-lyrics-page-editor-grid {
     grid-template-columns: 1fr;
   }
 }

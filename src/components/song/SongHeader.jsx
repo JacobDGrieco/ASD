@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { FaApple, FaSoundcloud, FaSpotify } from 'react-icons/fa'
 import SoundCloudPlayer from '../shared/SoundCloudPlayer.jsx'
-import styles from '../../styles/SongHeader.module.css'
+import '../../styles/SongHeader.css'
 
 export default function SongHeader({ song }) {
   const streamLinks = [
@@ -11,23 +11,23 @@ export default function SongHeader({ song }) {
   ].filter((link) => link.href)
 
   return (
-    <section className={styles.header}>
-      <div className={styles.mediaColumn}>
-        <div className={styles.art_wrap}>
+    <section className="song-header-header">
+      <div className="song-header-media-column">
+        <div className="song-header-art-wrap">
           {song.album.coverArt
-            ? <img src={song.album.coverArt} alt={song.album.title} className={styles.art} />
-            : <div className={styles.art_blank} />
+            ? <img src={song.album.coverArt} alt={song.album.title} className="song-header-art" />
+            : <div className="song-header-art-blank" />
           }
         </div>
         {streamLinks.length > 0 && (
-          <div className={styles.streamLinks}>
+          <div className="song-header-stream-links">
             {streamLinks.map((link) => (
               <a
                 key={link.label}
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={styles.streamLink}
+                className="song-header-stream-link"
                 aria-label={link.label}
               >
                 <link.icon aria-hidden="true" />
@@ -36,18 +36,18 @@ export default function SongHeader({ song }) {
           </div>
         )}
       </div>
-      <div className={styles.info}>
-        <Link to={`/artists/${song.album.artist.slug}`} className={styles.artist_link}>
+      <div className="song-header-info">
+        <Link to={`/artists/${song.album.artist.slug}`} className="song-header-artist-link">
           {song.album.artist.name}
         </Link>
-        <h1 className={styles.title}>{song.title}</h1>
-        <p className={styles.meta}>
+        <h1 className="song-header-title">{song.title}</h1>
+        <p className="song-header-meta">
           <Link to={`/artists/${song.album.artist.slug}`}>{song.album.title}</Link>
           {song.meta?.releaseDate && ` · ${new Date(song.meta.releaseDate).getFullYear()}`}
           {song.duration && ` · ${song.duration}`}
         </p>
         {song.soundcloudUrl && (
-          <div className={styles.player}>
+          <div className="song-header-player">
             <SoundCloudPlayer url={song.soundcloudUrl} autoPlay={false} />
           </div>
         )}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
-import styles from '../../styles/AdminRecordPlayerPage.module.css'
+import '../../styles/AdminRecordPlayerPage.css'
 
 const MAX_SLOTS = 8
 
@@ -78,28 +78,28 @@ export default function AdminRecordPlayerPage() {
 
   return (
     <div>
-      <div className={styles.header}>
-        <h1 className={styles.title}>Record Player</h1>
-        <button type="button" onClick={handleSave} className={styles.primaryBtn}>
+      <div className="admin-record-player-page-header">
+        <h1 className="admin-record-player-page-title">Record Player</h1>
+        <button type="button" onClick={handleSave} className="admin-record-player-page-primary-btn">
           Save Rack
         </button>
       </div>
 
-      {saved ? <p className={styles.saved}>Saved!</p> : null}
+      {saved ? <p className="admin-record-player-page-saved">Saved!</p> : null}
 
-      <p className={styles.hint}>
+      <p className="admin-record-player-page-hint">
         Assign up to {MAX_SLOTS} songs to the home page vinyl rack.
       </p>
 
-      <div className={styles.slots}>
+      <div className="admin-record-player-page-slots">
         {slots.map((slot) => (
-          <div key={slot.position} className={styles.slot}>
-            <span className={styles.slotLabel}>Slot {slot.position}</span>
+          <div key={slot.position} className="admin-record-player-page-slot">
+            <span className="admin-record-player-page-slot-label">Slot {slot.position}</span>
 
             <select
               value={slot.songId}
               onChange={(event) => updateSlot(slot.position, 'songId', event.target.value)}
-              className={styles.select}
+              className="admin-record-player-page-select"
             >
               <option value="">- Empty -</option>
               {songs.map((song) => (
@@ -110,12 +110,12 @@ export default function AdminRecordPlayerPage() {
               ))}
             </select>
 
-            <label className={styles.activeLabel}>
+            <label className="admin-record-player-page-active-label">
               <input
                 type="checkbox"
                 checked={slot.active}
                 onChange={(event) => updateSlot(slot.position, 'active', event.target.checked)}
-                className={styles.checkbox}
+                className="admin-record-player-page-checkbox"
               />
               Active
             </label>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import AlbumCard from './AlbumCard.jsx'
 import TrackList from './TrackList.jsx'
-import styles from '../../styles/Discography.module.css'
+import '../../styles/Discography.css'
 
 export default function Discography({ albums }) {
   const [openId, setOpenId] = useState(null)
@@ -13,9 +13,9 @@ export default function Discography({ albums }) {
   const openAlbum = albums.find((a) => a.id === openId)
 
   return (
-    <section className={styles.section}>
-      <h2 className={styles.heading}>Discography</h2>
-      <div className={styles.grid}>
+    <section className="discography-section">
+      <h2 className="discography-heading">Discography</h2>
+      <div className="discography-grid">
         {albums.map((album) => {
           const hasSongs = (album.songs?.length ?? 0) > 0
           const isUnreleased = !hasSongs
@@ -35,7 +35,7 @@ export default function Discography({ albums }) {
         })}
       </div>
       {openAlbum && openAlbum.songs?.length > 0 && (
-        <div className={styles.expand}>
+        <div className="discography-expand">
           <TrackList songs={openAlbum.songs} />
         </div>
       )}

@@ -1,4 +1,4 @@
-.section {
+.song-info-links-section {
   padding: 40px 0 60px;
   border-top: 1px solid var(--border);
   display: flex;
@@ -6,17 +6,17 @@
   gap: 12px;
 }
 
-.row {
+.song-info-links-row {
   display: flex;
   gap: 16px;
   font-size: 0.85rem;
 }
 
-.label {
+.song-info-links-label {
   color: var(--text-muted);
   min-width: 100px;
 }
 
-.value {
+.song-info-links-value {
   color: var(--text);
 }
