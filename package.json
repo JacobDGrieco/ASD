@@ -10,6 +10,7 @@
     "dev": "vite",
     "dev:vercel": "npx vercel dev",
     "build": "vite build",
+    "postinstall": "prisma generate",
     "lint": "eslint .",
     "preview": "vite preview",
     "db:generate": "prisma generate",
