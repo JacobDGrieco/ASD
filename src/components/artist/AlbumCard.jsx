@@ -3,7 +3,7 @@ import { FaApple, FaSoundcloud, FaSpotify } from 'react-icons/fa'
 import { prefetchSongPage } from '../../lib/publicPrefetch.js'
 import '../../styles/AlbumCard.css'
 
-export default function AlbumCard({ album, isOpen, isUnreleased = false, onClick, to }) {
+export default function AlbumCard({ album, isOpen, isUnreleased = false, onClick, to, subtitle }) {
   const year = new Date(album.releaseDate).getFullYear()
   const className = `album-card-card ${isOpen ? 'album-card-open' : ''}`
   const streamLinks = [
@@ -24,7 +24,7 @@ export default function AlbumCard({ album, isOpen, isUnreleased = false, onClick
       </div>
       <div className="album-card-info">
         <span className="album-card-title">{album.title}</span>
-        <span className="album-card-meta">{year} · {album.type}</span>
+        <span className="album-card-meta">{year} · {subtitle ?? album.type}</span>
       </div>
     </>
   )

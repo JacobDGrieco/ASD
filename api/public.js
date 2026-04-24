@@ -23,7 +23,8 @@ function normalizeSlug(value) {
 }
 
 function setPublicCache(res) {
-  res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400')
+  // Metadata changes are edited live in admin, so freshness matters more than edge caching.
+  res.setHeader('Cache-Control', 'no-store')
 }
 
 async function getArtists(res) {
@@ -86,6 +87,44 @@ async function getArtist(res, slug) {
 
   const images = formatArtistImages(artist)
 
+  const featuredMetas = await prisma.songMeta.findMany({
+    where: { featuredArtists: { contains: artist.name, mode: 'insensitive' } },
+    select: {
+      featuredArtists: true,
+      song: {
+        select: {
+          id: true, title: true, slug: true, trackNumber: true, discNumber: true, duration: true,
+          album: {
+            select: {
+              id: true, title: true, slug: true, coverArt: true, releaseDate: true, type: true,
+              images: {
+                orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+                select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+              },
+              artist: { select: { name: true, slug: true } },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const albumMap = new Map()
+  for (const { featuredArtists, song } of featuredMetas) {
+    const names = featuredArtists.split(';').map((n) => n.trim().toLowerCase())
+    if (!names.includes(artist.name.toLowerCase())) continue
+    const { album } = song
+    if (!albumMap.has(album.id)) {
+      const albumImages = formatAlbumImages(album)
+      albumMap.set(album.id, { ...album, coverArt: albumImages[0]?.previewUrl ?? album.coverArt, songs: [] })
+    }
+    albumMap.get(album.id).songs.push({ id: song.id, title: song.title, slug: song.slug, trackNumber: song.trackNumber, discNumber: song.discNumber, duration: song.duration })
+  }
+  const featuredIn = Array.from(albumMap.values()).map((album) => ({
+    ...album,
+    songs: album.songs.sort((a, b) => a.discNumber - b.discNumber || a.trackNumber - b.trackNumber),
+  }))
+
   return res.status(200).json({
     ...artist,
     portrait: images[0]?.previewUrl ?? artist.portrait,
@@ -98,6 +137,7 @@ async function getArtist(res, slug) {
         images: albumImages,
       }
     }),
+    featuredIn,
   })
 }
 
@@ -131,6 +171,19 @@ async function getSong(res, slug) {
 
   if (song.meta && !song.meta.releaseDate && song.album?.releaseDate) {
     song.meta = { ...song.meta, releaseDate: song.album.releaseDate }
+  }
+
+  if (song.meta?.featuredArtists) {
+    const names = song.meta.featuredArtists.split(';').map((n) => n.trim()).filter(Boolean)
+    const matched = await prisma.artist.findMany({
+      where: { name: { in: names } },
+      select: { name: true, slug: true },
+    })
+    const slugByName = Object.fromEntries(matched.map((a) => [a.name, a.slug]))
+    song.meta = {
+      ...song.meta,
+      featuredArtistLinks: names.map((name) => ({ name, slug: slugByName[name] ?? null })),
+    }
   }
 
   if (song.album) {

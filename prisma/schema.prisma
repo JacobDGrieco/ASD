@@ -110,6 +110,7 @@ model SongMeta {
   aboutText   String    @default("")
   producers   String    @default("")
   writers     String    @default("")
+  featuredArtists String @default("")
   releaseDate DateTime?
 }
 

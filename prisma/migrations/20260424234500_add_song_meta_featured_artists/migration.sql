@@ -1,0 +1,2 @@
+ALTER TABLE "SongMeta"
+ADD COLUMN "featuredArtists" TEXT NOT NULL DEFAULT '';

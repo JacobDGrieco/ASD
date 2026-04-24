@@ -2,7 +2,7 @@ import '../../styles/SongInfoLinks.css'
 
 export default function SongInfoLinks({ song }) {
   const meta = song.meta
-  const hasInfo = Boolean(meta?.producers || meta?.writers)
+  const hasInfo = Boolean(meta?.producers || meta?.writers || meta?.featuredArtists)
 
   if (!hasInfo) {
     return null
@@ -12,6 +12,7 @@ export default function SongInfoLinks({ song }) {
     <section className="song-info-links-section">
       {meta?.producers && <InfoRow label="Produced by" value={meta.producers} />}
       {meta?.writers && <InfoRow label="Written by" value={meta.writers} />}
+      {meta?.featuredArtists && <InfoRow label="Featuring" value={meta.featuredArtists} />}
     </section>
   )
 }

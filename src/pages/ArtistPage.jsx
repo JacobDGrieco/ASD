@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom'
 import { useApi } from '../hooks/useApi.js'
 import ArtistHero from '../components/artist/ArtistHero.jsx'
 import Discography from '../components/artist/Discography.jsx'
+import FeaturedOn from '../components/artist/FeaturedOn.jsx'
 
 export default function ArtistPage() {
   const { slug } = useParams()
@@ -15,6 +16,7 @@ export default function ArtistPage() {
         <>
           <ArtistHero artist={artist} />
           <Discography albums={artist.albums} />
+          <FeaturedOn featuredIn={artist.featuredIn} />
         </>
       )}
     </div>

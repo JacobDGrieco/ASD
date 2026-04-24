@@ -7,24 +7,8 @@ import { SiSoundcloud, SiSpotify, SiApplemusic } from "react-icons/si";
 const empty = {
 	title: '', slug: '', trackNumber: 1, discNumber: 1, duration: '',
 	soundcloudUrl: '', spotifyUrl: '', appleMusicUrl: '', albumId: '',
-	aboutText: '', producers: '', writers: '', releaseDate: '',
+	aboutText: '', producers: '', writers: '', featuredArtists: '', releaseDate: '',
 };
-
-const columns = [
-	{ key: 'title', label: 'Title', placeholder: 'Title', className: 'admin-artists-page-col-xl' },
-	{ key: 'albumId', label: 'Album', kind: 'album', className: 'admin-artists-page-col-lg' },
-	{ key: 'slug', label: 'Slug', placeholder: 'Slug', className: 'admin-artists-page-col-md' },
-	{ key: 'discNumber', label: 'Disc', type: 'number', kind: 'number', placeholder: 'Disc #', className: 'admin-artists-page-col-xs' },
-	{ key: 'trackNumber', label: 'Track', type: 'number', kind: 'number', placeholder: 'Track #', className: 'admin-artists-page-col-xs' },
-	{ key: 'duration', label: 'Duration', placeholder: 'Duration (e.g. 3:42)', className: 'admin-artists-page-col-sm' },
-	{ key: 'releaseDate', label: 'Release Date', type: 'date', placeholder: 'Release Date', className: 'admin-artists-page-col-sm' },
-	{ key: 'producers', label: 'Producers', placeholder: 'Producers', className: 'admin-artists-page-col-lg', valueClassName: 'admin-artists-page-wrap-value' },
-	{ key: 'writers', label: 'Writers', placeholder: 'Writers', className: 'admin-artists-page-col-lg', valueClassName: 'admin-artists-page-wrap-value' },
-	{ key: 'aboutText', label: 'About', kind: 'textarea', placeholder: 'About this song...', className: 'admin-artists-page-col-xxl', valueClassName: 'admin-artists-page-wrap-value' },
-	{ key: 'soundcloudUrl', label: <SiSoundcloud />, headerLabel: 'SoundCloud', placeholder: 'SoundCloud URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell admin-artists-page-sticky-right-5` },
-	{ key: 'spotifyUrl', label: <SiSpotify />, headerLabel: 'Spotify', placeholder: 'Spotify URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell admin-artists-page-sticky-right-4` },
-	{ key: 'appleMusicUrl', label: <SiApplemusic />, headerLabel: 'Apple Music', placeholder: 'Apple Music URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell admin-artists-page-sticky-right-3` },
-];
 
 export default function AdminSongsPage() {
 	const { token } = useAdminAuth();
@@ -45,11 +29,10 @@ export default function AdminSongsPage() {
 		aboutText: song.meta?.aboutText ?? '',
 		producers: song.meta?.producers ?? '',
 		writers: song.meta?.writers ?? '',
+		featuredArtists: song.meta?.featuredArtists ?? '',
 		releaseDate: song.meta?.releaseDate ? song.meta.releaseDate.slice(0, 10) : '',
 	});
 	const closeForm = () => setForm(null);
-	const isEditing = (songId) => form && form.id === songId;
-	const isCreating = Boolean(form && !form.id);
 
 	const handleSave = async () => {
 		const isEdit = Boolean(form.id);
@@ -64,7 +47,7 @@ export default function AdminSongsPage() {
 		const withRelations = {
 			...saved,
 			album: album ? { title: album.title, artist: album.artist, releaseDate: album.releaseDate } : null,
-			meta: { aboutText: form.aboutText, producers: form.producers, writers: form.writers, releaseDate: form.releaseDate || null },
+			meta: { aboutText: form.aboutText, producers: form.producers, writers: form.writers, featuredArtists: form.featuredArtists, releaseDate: form.releaseDate || null },
 		};
 		setSongs((prev) => isEdit ? prev.map((song) => song.id === saved.id ? withRelations : song) : [...prev, withRelations]);
 		closeForm();
@@ -79,116 +62,20 @@ export default function AdminSongsPage() {
 	const set = (key) => (e) => setForm((current) => ({ ...current, [key]: e.target.value }));
 	const setNum = (key) => (e) => setForm((current) => ({ ...current, [key]: Number(e.target.value) }));
 
-	const renderField = (column) => {
-		if (column.kind === 'album') {
-			return (
-				<select value={form.albumId} onChange={set('albumId')} className="admin-artists-page-input">
-					<option value="">- Album -</option>
-					{albums.map((album) => <option key={album.id} value={album.id}>{album.title}</option>)}
-				</select>
-			);
-		}
+	const cell = (v) => v
+		? <span className="admin-artists-page-cell-value" title={String(v)}>{String(v)}</span>
+		: <span className="admin-artists-page-empty-value">-</span>;
 
-		if (column.kind === 'textarea') {
-			return (
-				<textarea
-					placeholder={column.placeholder}
-					value={form.aboutText ?? ''}
-					onChange={set('aboutText')}
-					className={`admin-artists-page-input admin-artists-page-textarea-cell`}
-					rows={3}
-				/>
-			);
-		}
+	const wrapCell = (v) => v
+		? <span className="admin-artists-page-wrap-value" title={String(v)}>{String(v)}</span>
+		: <span className="admin-artists-page-empty-value">-</span>;
 
-		if (column.kind === 'link') {
-			return (
-				<input
-					type="text"
-					placeholder={column.placeholder}
-					value={form[column.key] ?? ''}
-					onChange={set(column.key)}
-					className="admin-artists-page-input"
-				/>
-			);
-		}
-
-		if (column.kind === 'number') {
-			return (
-				<input
-					type="number"
-					placeholder={column.placeholder}
-					value={form[column.key] ?? 0}
-					onChange={setNum(column.key)}
-					className="admin-artists-page-input"
-				/>
-			);
-		}
-
-		return (
-			<input
-				type={column.type ?? 'text'}
-				placeholder={column.placeholder}
-				value={form[column.key] ?? ''}
-				onChange={set(column.key)}
-				className="admin-artists-page-input"
-			/>
-		);
+	const linkCell = (song, key, label) => {
+		const value = song[key];
+		return value
+			? <a href={String(value)} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" aria-label={`Open ${label} link`} title="Open in new tab">↗</a>
+			: <span className="admin-artists-page-empty-value">-</span>;
 	};
-
-	const renderValue = (song, column) => {
-		if (column.key === 'albumId') {
-			const value = song.album?.title ?? '';
-			return value ? <span className="admin-artists-page-cell-value" title={value}>{value}</span> : <span className="admin-artists-page-empty-value">-</span>;
-		}
-
-		if (column.key === 'aboutText' || column.key === 'producers' || column.key === 'writers') {
-			const value = song.meta?.[column.key] ?? '';
-			return value ? <span className={column.valueClassName ?? 'admin-artists-page-cell-value'} title={value}>{value}</span> : <span className="admin-artists-page-empty-value">-</span>;
-		}
-
-		if (column.key === 'releaseDate') {
-			const value = song.meta?.releaseDate ?? song.album?.releaseDate ?? '';
-			const dateValue = value ? String(value).slice(0, 10) : '';
-			return dateValue ? <span className="admin-artists-page-cell-value" title={dateValue}>{dateValue}</span> : <span className="admin-artists-page-empty-value">-</span>;
-		}
-
-		if (column.kind === 'link') {
-			const value = song[column.key];
-			return value ? <a href={String(value)} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" aria-label={`Open ${column.label} link`} title="Open in new tab">↗</a> : <span className="admin-artists-page-empty-value">-</span>;
-		}
-
-		const value = song[column.key];
-		if (value === null || value === undefined || value === '') return <span className="admin-artists-page-empty-value">-</span>;
-		return <span className={column.valueClassName ?? 'admin-artists-page-cell-value'} title={String(value)}>{String(value)}</span>;
-	};
-
-	const renderHeader = (column) => {
-		if (column.kind !== 'link') return column.label;
-		return (
-			<span className="admin-artists-page-social-header" title={column.headerLabel}>
-				<span aria-hidden="true">{column.label}</span>
-				<span className="admin-artists-page-sr-only">{column.headerLabel}</span>
-			</span>
-		);
-	};
-
-	const renderEditableRow = (key) => (
-		<tr key={key} className="admin-artists-page-editing-row">
-			{columns.map((column) => (
-				<td key={column.key} className={column.className}>
-					{renderField(column)}
-				</td>
-			))}
-			<td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-2`}>
-				<button type="button" onClick={handleSave} className={`admin-artists-page-ghost-btn admin-artists-page-icon-btn`} aria-label="Save song" title="Save">✓</button>
-			</td>
-			<td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-1`}>
-				<button type="button" onClick={closeForm} className={`admin-artists-page-ghost-btn admin-artists-page-icon-btn`} aria-label="Cancel song edit" title="Cancel">✕</button>
-			</td>
-			<td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-0`}></td>
-		</tr>
-	);
 
 	return (
 		<div>
@@ -198,40 +85,146 @@ export default function AdminSongsPage() {
 			</div>
 
 			<div className="admin-artists-page-table-wrap">
-				<table className="admin-artists-page-table">
+				<table className="admin-artists-page-table admin-songs-table">
 					<thead>
 						<tr>
-							{columns.map((column) => <th key={column.key} className={column.className}>{renderHeader(column)}</th>)}
-							<th className={`admin-artists-page-col-action admin-artists-page-sticky-right-2`}></th>
-							<th className={`admin-artists-page-col-action admin-artists-page-sticky-right-1`}></th>
-							<th className={`admin-artists-page-col-action admin-artists-page-sticky-right-0`}></th>
+							<th className="admin-songs-col-title">Title</th>
+							<th className="admin-songs-col-featured">Featured</th>
+							<th className="admin-songs-col-album">Album</th>
+							<th className="admin-songs-col-date">Release Date</th>
+							<th className="admin-songs-col-about">About</th>
+							<th className="admin-artists-page-col-action admin-artists-page-center-cell admin-songs-sticky-sc">
+								<span className="admin-artists-page-social-header" title="SoundCloud">
+									<SiSoundcloud aria-hidden="true" />
+									<span className="admin-artists-page-sr-only">SoundCloud</span>
+								</span>
+							</th>
+							<th className="admin-artists-page-col-action admin-artists-page-center-cell admin-songs-sticky-spotify">
+								<span className="admin-artists-page-social-header" title="Spotify">
+									<SiSpotify aria-hidden="true" />
+									<span className="admin-artists-page-sr-only">Spotify</span>
+								</span>
+							</th>
+							<th className="admin-artists-page-col-action admin-artists-page-center-cell admin-songs-sticky-am">
+								<span className="admin-artists-page-social-header" title="Apple Music">
+									<SiApplemusic aria-hidden="true" />
+									<span className="admin-artists-page-sr-only">Apple Music</span>
+								</span>
+							</th>
+							<th className="admin-songs-col-actions admin-artists-page-sticky-right-0"></th>
 						</tr>
 					</thead>
 					<tbody>
-						{isCreating && renderEditableRow('create')}
-						{songs.map((song) => (
-							isEditing(song.id) ? renderEditableRow(song.id) : (
+						{songs.map((song) => {
+							const releaseDate = song.meta?.releaseDate ?? song.album?.releaseDate ?? '';
+							const dateStr = releaseDate ? String(releaseDate).slice(0, 10) : '';
+							return (
 								<tr key={song.id}>
-									{columns.map((column) => (
-										<td key={column.key} className={`${column.className ?? ''} ${column.key === 'slug' || column.key === 'discNumber' || column.key === 'trackNumber' ? 'admin-artists-page-muted' : ''}`.trim()}>
-											{renderValue(song, column)}
-										</td>
-									))}
-									<td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-2`}>
-										<Link to={`/admin/lyrics/${song.id}`} state={{ songTitle: song.title }} className={`admin-artists-page-ghost-btn admin-artists-page-icon-btn`} style={{ textDecoration: 'none' }} aria-label="Edit lyrics" title="Edit lyrics">📝</Link>
+									<td className="admin-songs-col-title">{cell(song.title)}</td>
+									<td className="admin-songs-col-featured">{cell(song.meta?.featuredArtists)}</td>
+									<td className="admin-songs-col-album">{cell(song.album?.title)}</td>
+									<td className="admin-songs-col-date">{cell(dateStr)}</td>
+									<td className="admin-songs-col-about">{wrapCell(song.meta?.aboutText)}</td>
+									<td className="admin-artists-page-col-action admin-artists-page-center-cell admin-songs-sticky-sc">
+										{linkCell(song, 'soundcloudUrl', 'SoundCloud')}
 									</td>
-									<td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-1`}>
-										<button type="button" onClick={() => openEdit(song)} className={`admin-artists-page-ghost-btn admin-artists-page-icon-btn`} aria-label="Edit song" title="Edit">✎</button>
+									<td className="admin-artists-page-col-action admin-artists-page-center-cell admin-songs-sticky-spotify">
+										{linkCell(song, 'spotifyUrl', 'Spotify')}
 									</td>
-									<td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-0`}>
-										<button type="button" onClick={() => handleDelete(song.id)} className={`admin-artists-page-danger-btn admin-artists-page-icon-btn`} aria-label="Delete song" title="Delete">🗑</button>
+									<td className="admin-artists-page-col-action admin-artists-page-center-cell admin-songs-sticky-am">
+										{linkCell(song, 'appleMusicUrl', 'Apple Music')}
+									</td>
+									<td className="admin-songs-col-actions admin-artists-page-sticky-right-0">
+										<div className="admin-songs-actions">
+											<Link to={`/admin/lyrics/${song.id}`} state={{ songTitle: song.title }} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" style={{ textDecoration: 'none' }} aria-label="Edit lyrics" title="Edit lyrics">📝</Link>
+											<button type="button" onClick={() => openEdit(song)} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit song" title="Edit">✎</button>
+											<button type="button" onClick={() => handleDelete(song.id)} className="admin-artists-page-danger-btn admin-artists-page-icon-btn" aria-label="Delete song" title="Delete">🗑</button>
+										</div>
 									</td>
 								</tr>
-							)
-						))}
+							);
+						})}
 					</tbody>
 				</table>
 			</div>
+
+			{form && (
+				<div className="admin-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) closeForm(); }}>
+					<div className="admin-modal">
+						<div className="admin-modal-header">
+							<h2 className="admin-modal-title">{form.id ? 'Edit Song' : 'New Song'}</h2>
+							<button type="button" onClick={closeForm} className="admin-modal-close" aria-label="Close">✕</button>
+						</div>
+						<div className="admin-modal-body">
+							<div className="admin-modal-grid">
+								<div className="admin-modal-field admin-modal-field-full">
+									<label className="admin-modal-label">Title</label>
+									<input type="text" placeholder="Title" value={form.title} onChange={set('title')} className="admin-artists-page-input" />
+								</div>
+								<div className="admin-modal-field admin-modal-field-full">
+									<label className="admin-modal-label">Slug</label>
+									<input type="text" placeholder="Slug" value={form.slug} onChange={set('slug')} className="admin-artists-page-input" />
+								</div>
+								<div className="admin-modal-field admin-modal-field-full">
+									<label className="admin-modal-label">Album</label>
+									<select value={form.albumId} onChange={set('albumId')} className="admin-artists-page-input">
+										<option value="">- Album -</option>
+										{albums.map((album) => <option key={album.id} value={album.id}>{album.title}</option>)}
+									</select>
+								</div>
+								<div className="admin-modal-field">
+									<label className="admin-modal-label">Track #</label>
+									<input type="number" placeholder="Track #" value={form.trackNumber} onChange={setNum('trackNumber')} className="admin-artists-page-input" />
+								</div>
+								<div className="admin-modal-field">
+									<label className="admin-modal-label">Disc #</label>
+									<input type="number" placeholder="Disc #" value={form.discNumber} onChange={setNum('discNumber')} className="admin-artists-page-input" />
+								</div>
+								<div className="admin-modal-field">
+									<label className="admin-modal-label">Duration</label>
+									<input type="text" placeholder="e.g. 3:42" value={form.duration} onChange={set('duration')} className="admin-artists-page-input" />
+								</div>
+								<div className="admin-modal-field">
+									<label className="admin-modal-label">Release Date</label>
+									<input type="date" value={form.releaseDate} onChange={set('releaseDate')} className="admin-artists-page-input" />
+								</div>
+								<div className="admin-modal-field admin-modal-field-full">
+									<label className="admin-modal-label">Featured Artists</label>
+									<input type="text" placeholder="Featured artists" value={form.featuredArtists} onChange={set('featuredArtists')} className="admin-artists-page-input" />
+								</div>
+								<div className="admin-modal-field admin-modal-field-full">
+									<label className="admin-modal-label">Producers</label>
+									<input type="text" placeholder="Producers" value={form.producers} onChange={set('producers')} className="admin-artists-page-input" />
+								</div>
+								<div className="admin-modal-field admin-modal-field-full">
+									<label className="admin-modal-label">Writers</label>
+									<input type="text" placeholder="Writers" value={form.writers} onChange={set('writers')} className="admin-artists-page-input" />
+								</div>
+								<div className="admin-modal-field admin-modal-field-full">
+									<label className="admin-modal-label">About</label>
+									<textarea placeholder="About this song..." value={form.aboutText} onChange={set('aboutText')} className="admin-artists-page-input admin-modal-textarea" rows={5} />
+								</div>
+								<div className="admin-modal-field admin-modal-field-full">
+									<label className="admin-modal-label">SoundCloud URL</label>
+									<input type="text" placeholder="SoundCloud URL" value={form.soundcloudUrl} onChange={set('soundcloudUrl')} className="admin-artists-page-input" />
+								</div>
+								<div className="admin-modal-field admin-modal-field-full">
+									<label className="admin-modal-label">Spotify URL</label>
+									<input type="text" placeholder="Spotify URL" value={form.spotifyUrl} onChange={set('spotifyUrl')} className="admin-artists-page-input" />
+								</div>
+								<div className="admin-modal-field admin-modal-field-full">
+									<label className="admin-modal-label">Apple Music URL</label>
+									<input type="text" placeholder="Apple Music URL" value={form.appleMusicUrl} onChange={set('appleMusicUrl')} className="admin-artists-page-input" />
+								</div>
+							</div>
+						</div>
+						<div className="admin-modal-footer">
+							<button type="button" onClick={closeForm} className="admin-artists-page-ghost-btn">Cancel</button>
+							<button type="button" onClick={handleSave} className="admin-artists-page-primary-btn">Save</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

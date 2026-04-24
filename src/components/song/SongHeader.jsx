@@ -41,15 +41,31 @@ export default function SongHeader({ song }) {
         )}
       </div>
       <div className="song-header-info">
-        <Link
-          to={`/artists/${song.album.artist.slug}`}
-          className="song-header-artist-link"
-          onMouseEnter={() => prefetchArtistPage(artistLinkData)}
-          onFocus={() => prefetchArtistPage(artistLinkData)}
-          onTouchStart={() => prefetchArtistPage(artistLinkData)}
-        >
-          {song.album.artist.name}
-        </Link>
+        <div className="song-header-artist-links">
+          <Link
+            to={`/artists/${song.album.artist.slug}`}
+            className="song-header-artist-link"
+            onMouseEnter={() => prefetchArtistPage(artistLinkData)}
+            onFocus={() => prefetchArtistPage(artistLinkData)}
+            onTouchStart={() => prefetchArtistPage(artistLinkData)}
+          >
+            {song.album.artist.name}
+          </Link>
+          {song.meta?.featuredArtistLinks?.length > 0 && (
+            <span className="song-header-featured-artists">
+              {'feat. '}
+              {song.meta.featuredArtistLinks.map((artist, i) => (
+                <span key={artist.name}>
+                  {i > 0 && ', '}
+                  {artist.slug
+                    ? <Link to={`/artists/${artist.slug}`} className="song-header-featured-link">{artist.name}</Link>
+                    : artist.name
+                  }
+                </span>
+              ))}
+            </span>
+          )}
+        </div>
         <h1 className="song-header-title">{song.title}</h1>
         <p className="song-header-meta">
           <Link
@@ -60,8 +76,8 @@ export default function SongHeader({ song }) {
           >
             {song.album.title}
           </Link>
-          {song.meta?.releaseDate && ` Â· ${new Date(song.meta.releaseDate).getFullYear()}`}
-          {song.duration && ` Â· ${song.duration}`}
+          {song.meta?.releaseDate && ` · ${new Date(song.meta.releaseDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })}`}
+          {song.duration && ` · ${song.duration}`}
         </p>
         {song.soundcloudUrl && (
           <div className="song-header-player">

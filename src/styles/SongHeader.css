@@ -43,11 +43,36 @@
 	min-width: 0;
 }
 
+.song-header-artist-links {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 6px 10px;
+}
+
 .song-header-artist-link {
 	font-size: 0.8rem;
 	letter-spacing: 0.12em;
 	text-transform: uppercase;
 	color: var(--text-muted);
+}
+
+.song-header-featured-artists {
+	font-size: 0.8rem;
+	letter-spacing: 0.08em;
+	color: var(--text-muted);
+	opacity: 0.75;
+}
+
+.song-header-featured-link {
+	color: inherit;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.song-header-featured-link:hover {
+	opacity: 1;
+	color: var(--text);
 }
 
 .song-header-title {

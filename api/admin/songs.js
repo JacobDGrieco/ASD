@@ -7,12 +7,12 @@ export default async function handler(req, res) {
 
   if (id) {
     if (req.method === 'PUT') {
-      const { title, slug, trackNumber, discNumber, duration, soundcloudUrl, spotifyUrl, appleMusicUrl, albumId, aboutText, producers, writers, releaseDate } = req.body
+      const { title, slug, trackNumber, discNumber, duration, soundcloudUrl, spotifyUrl, appleMusicUrl, albumId, aboutText, producers, writers, featuredArtists, releaseDate } = req.body
       const song = await prisma.song.update({ where: { id }, data: { title, slug, trackNumber: Number(trackNumber), discNumber: Number(discNumber ?? 1), duration, soundcloudUrl, spotifyUrl, appleMusicUrl, albumId } })
       await prisma.songMeta.upsert({
         where: { songId: id },
-        create: { songId: id, aboutText: aboutText ?? '', producers: producers ?? '', writers: writers ?? '', releaseDate: releaseDate ? new Date(releaseDate) : null },
-        update: { aboutText, producers, writers, releaseDate: releaseDate ? new Date(releaseDate) : null },
+        create: { songId: id, aboutText: aboutText ?? '', producers: producers ?? '', writers: writers ?? '', featuredArtists: featuredArtists ?? '', releaseDate: releaseDate ? new Date(releaseDate) : null },
+        update: { aboutText, producers, writers, featuredArtists, releaseDate: releaseDate ? new Date(releaseDate) : null },
       })
       return res.status(200).json(song)
     }
@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     return res.status(200).json(songs)
   }
   if (req.method === 'POST') {
-    const { title, slug, trackNumber, discNumber, duration, soundcloudUrl, spotifyUrl, appleMusicUrl, albumId, aboutText, producers, writers, releaseDate } = req.body
+    const { title, slug, trackNumber, discNumber, duration, soundcloudUrl, spotifyUrl, appleMusicUrl, albumId, aboutText, producers, writers, featuredArtists, releaseDate } = req.body
     const song = await prisma.song.create({
       data: { title, slug, trackNumber: Number(trackNumber), discNumber: Number(discNumber ?? 1), duration: duration ?? '', soundcloudUrl, spotifyUrl, appleMusicUrl, albumId },
     })
@@ -41,6 +41,7 @@ export default async function handler(req, res) {
         aboutText: aboutText ?? '',
         producers: producers ?? '',
         writers: writers ?? '',
+        featuredArtists: featuredArtists ?? '',
         releaseDate: releaseDate ? new Date(releaseDate) : null,
       },
     })

@@ -414,3 +414,169 @@
 .admin-artists-page-danger-btn:hover {
 	background: rgba(224, 96, 96, 0.1);
 }
+
+/* Songs table — auto layout so About column fills remaining space */
+.admin-songs-table {
+	table-layout: auto;
+}
+
+.admin-songs-col-title {
+	min-width: 220px;
+	width: 280px;
+}
+
+.admin-songs-col-featured {
+	min-width: 180px;
+	width: 220px;
+}
+
+.admin-songs-col-album {
+	min-width: 180px;
+	width: 220px;
+}
+
+.admin-songs-col-date {
+	min-width: 100px;
+	width: 110px;
+	white-space: nowrap;
+}
+
+.admin-songs-col-about {
+	width: 100%;
+}
+
+.admin-songs-col-actions {
+	width: 116px;
+	min-width: 116px;
+	position: sticky;
+	right: 0;
+	z-index: 3;
+	box-shadow: -1px 0 0 var(--border);
+	text-align: center;
+}
+
+.admin-songs-sticky-am {
+	position: sticky;
+	right: 116px;
+	z-index: 3;
+	box-shadow: -1px 0 0 var(--border);
+}
+
+.admin-songs-sticky-spotify {
+	position: sticky;
+	right: 172px;
+	z-index: 3;
+	box-shadow: -1px 0 0 var(--border);
+}
+
+.admin-songs-sticky-sc {
+	position: sticky;
+	right: 228px;
+	z-index: 3;
+	box-shadow: -1px 0 0 var(--border);
+}
+
+.admin-songs-actions {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+}
+
+/* Modal */
+.admin-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.6);
+	z-index: 100;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+}
+
+.admin-modal {
+	background: var(--bg-surface);
+	border: 1px solid var(--border);
+	width: 100%;
+	max-width: 640px;
+	max-height: 90vh;
+	display: flex;
+	flex-direction: column;
+}
+
+.admin-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	border-bottom: 1px solid var(--border);
+	flex-shrink: 0;
+}
+
+.admin-modal-title {
+	font-size: 1rem;
+	color: var(--accent);
+}
+
+.admin-modal-close {
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	border: none;
+	background: none;
+	color: var(--text-muted);
+	cursor: pointer;
+	font-size: 1rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.admin-modal-close:hover {
+	color: var(--text);
+}
+
+.admin-modal-body {
+	padding: 20px;
+	overflow-y: auto;
+	flex: 1;
+}
+
+.admin-modal-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+}
+
+.admin-modal-field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.admin-modal-field-full {
+	grid-column: 1 / -1;
+}
+
+.admin-modal-label {
+	font-size: 0.75rem;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.admin-modal-textarea {
+	resize: vertical;
+	min-height: 100px;
+}
+
+.admin-modal-footer {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 8px;
+	padding: 16px 20px;
+	border-top: 1px solid var(--border);
+	flex-shrink: 0;
+}
