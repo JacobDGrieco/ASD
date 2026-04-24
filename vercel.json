@@ -5,8 +5,20 @@
 	"framework": "vite",
 	"rewrites": [
 		{
-			"source": "/api/(.*)",
-			"destination": "/api/$1"
+			"source": "/api/artists",
+			"destination": "/api/public?resource=artists"
+		},
+		{
+			"source": "/api/artists/:slug",
+			"destination": "/api/public?resource=artist&slug=:slug"
+		},
+		{
+			"source": "/api/songs/:slug",
+			"destination": "/api/public?resource=song&slug=:slug"
+		},
+		{
+			"source": "/api/record-player",
+			"destination": "/api/public?resource=recordPlayer"
 		}
 	]
 }
