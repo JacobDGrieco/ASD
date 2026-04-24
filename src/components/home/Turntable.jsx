@@ -1,5 +1,5 @@
 import SoundCloudPlayer from '../shared/SoundCloudPlayer.jsx'
-import styles from './Turntable.module.css'
+import styles from '../../styles/Turntable.module.css'
 
 export default function Turntable({ activeTrack, isPlaying }) {
   const coverArt = activeTrack?.song.album.coverArt ?? null

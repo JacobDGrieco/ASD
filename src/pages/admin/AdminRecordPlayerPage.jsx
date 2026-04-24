@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
-import styles from './AdminRecordPlayerPage.module.css'
+import styles from '../../styles/AdminRecordPlayerPage.module.css'
 
 const MAX_SLOTS = 8
 

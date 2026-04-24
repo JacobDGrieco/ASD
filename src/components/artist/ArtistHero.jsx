@@ -1,4 +1,4 @@
-import styles from './ArtistHero.module.css'
+import styles from '../../styles/ArtistHero.module.css'
 
 export default function ArtistHero({ artist }) {
   return (

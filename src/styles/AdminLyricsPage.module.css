@@ -1,0 +1,198 @@
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.backLink {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-bottom: 8px;
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.title {
+  font-size: 1.5rem;
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-bottom: 12px;
+}
+
+.bulkActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.selectionSummary {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.editorGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.8fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.editorPanel {
+  min-width: 0;
+}
+
+.editorLabel {
+  margin-bottom: 8px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.editorSurface {
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.editorRow,
+.annotationEditorRow {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+}
+
+.editorRow:last-child,
+.annotationEditorRow:last-child {
+  border-bottom: none;
+}
+
+.rowNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: none;
+  border-left: none;
+  border-bottom: none;
+  cursor: pointer;
+}
+
+.selectedRow {
+  background: rgba(200, 169, 110, 0.08);
+}
+
+.selectedNumber {
+  color: var(--accent);
+  background: rgba(200, 169, 110, 0.12);
+}
+
+.lineInput {
+  width: 100%;
+  min-height: 46px;
+  padding: 12px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-family: monospace;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: none;
+  overflow: hidden;
+}
+
+.lineInput:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.lyricInput {
+  min-height: 56px;
+}
+
+.annotationEditorCell {
+  min-width: 0;
+  position: relative;
+}
+
+.annotationInput,
+.annotationPreview {
+  min-height: 56px;
+}
+
+.annotationPreview {
+  display: block;
+  text-align: left;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  cursor: text;
+}
+
+.annotationOverlay {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 5;
+  border: 1px solid var(--accent);
+  background: var(--bg-raised);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.annotationTextarea {
+  min-height: 112px;
+  background: var(--bg-raised);
+  resize: vertical;
+  overflow: auto;
+}
+
+.primaryBtn {
+  padding: 8px 16px;
+  background: var(--accent);
+  color: #000;
+  font-weight: bold;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border: none;
+}
+
+.primaryBtn:hover {
+  opacity: 0.85;
+}
+
+.ghostBtn {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  cursor: pointer;
+  background: none;
+}
+
+.ghostBtn:hover {
+  color: var(--text);
+}
+
+.editPane {
+  max-width: 1400px;
+}
+
+@media (max-width: 900px) {
+  .editorGrid {
+    grid-template-columns: 1fr;
+  }
+}

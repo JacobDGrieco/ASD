@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import styles from './ArtistSplash.module.css'
+import styles from '../../styles/ArtistSplash.module.css'
 
 export default function ArtistSplash({ artists }) {
   const heroVideo = import.meta.env.VITE_HOME_HERO_VIDEO || '/hero-video.mp4'

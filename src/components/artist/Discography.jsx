@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import AlbumCard from './AlbumCard.jsx'
 import TrackList from './TrackList.jsx'
-import styles from './Discography.module.css'
+import styles from '../../styles/Discography.module.css'
 
 export default function Discography({ albums }) {
   const [openId, setOpenId] = useState(null)
@@ -17,6 +17,8 @@ export default function Discography({ albums }) {
       <h2 className={styles.heading}>Discography</h2>
       <div className={styles.grid}>
         {albums.map((album) => {
+          const hasSongs = (album.songs?.length ?? 0) > 0
+          const isUnreleased = !hasSongs
           const singleSong =
             album.type === 'SINGLE' && album.songs?.length === 1 ? album.songs[0] : null
 
@@ -24,14 +26,15 @@ export default function Discography({ albums }) {
             <AlbumCard
               key={album.id}
               album={album}
-              isOpen={!singleSong && openId === album.id}
-              onClick={singleSong ? undefined : () => toggle(album.id)}
+              isOpen={hasSongs && !singleSong && openId === album.id}
+              isUnreleased={isUnreleased}
+              onClick={hasSongs && !singleSong ? () => toggle(album.id) : undefined}
               to={singleSong ? `/songs/${singleSong.slug}` : undefined}
             />
           )
         })}
       </div>
-      {openAlbum && (
+      {openAlbum && openAlbum.songs?.length > 0 && (
         <div className={styles.expand}>
           <TrackList songs={openAlbum.songs} />
         </div>

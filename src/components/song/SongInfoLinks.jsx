@@ -1,16 +1,17 @@
-import styles from './SongInfoLinks.module.css'
+import styles from '../../styles/SongInfoLinks.module.css'
 
 export default function SongInfoLinks({ song }) {
   const meta = song.meta
+  const hasInfo = Boolean(meta?.producers || meta?.writers)
+
+  if (!hasInfo) {
+    return null
+  }
+
   return (
     <section className={styles.section}>
       {meta?.producers && <InfoRow label="Produced by" value={meta.producers} />}
       {meta?.writers && <InfoRow label="Written by" value={meta.writers} />}
-      <div className={styles.links}>
-        {song.soundcloudUrl && <a href={song.soundcloudUrl} target="_blank" rel="noopener noreferrer" className={styles.link}>SoundCloud</a>}
-        {song.spotifyUrl && <a href={song.spotifyUrl} target="_blank" rel="noopener noreferrer" className={styles.link}>Spotify</a>}
-        {song.appleMusicUrl && <a href={song.appleMusicUrl} target="_blank" rel="noopener noreferrer" className={styles.link}>Apple Music</a>}
-      </div>
     </section>
   )
 }

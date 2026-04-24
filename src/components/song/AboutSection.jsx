@@ -1,4 +1,4 @@
-import styles from './AboutSection.module.css'
+import styles from '../../styles/AboutSection.module.css'
 
 export default function AboutSection({ meta }) {
   if (!meta?.aboutText) return null

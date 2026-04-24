@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import styles from './TrackList.module.css'
+import styles from '../../styles/TrackList.module.css'
 
 export default function TrackList({ songs }) {
   return (

@@ -9,8 +9,7 @@
 }
 
 .line_wrap {
-  display: flex;
-  flex-direction: column;
+  position: relative;
 }
 
 .line {
@@ -34,10 +33,27 @@
   cursor: pointer;
   transition: color var(--transition), background var(--transition);
   border-radius: 2px;
+  position: relative;
 }
 
 .annotated:hover,
 .active {
   color: var(--accent);
   background: var(--accent-dim);
+}
+
+.popupOverlay {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 24px);
+  width: min(340px, 32vw);
+  z-index: 5;
+}
+
+@media (max-width: 900px) {
+  .popupOverlay {
+    position: static;
+    width: auto;
+    margin-top: 8px;
+  }
 }

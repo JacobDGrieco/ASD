@@ -4,7 +4,7 @@ import SongHeader from '../components/song/SongHeader.jsx'
 import LyricsView from '../components/song/LyricsView.jsx'
 import AboutSection from '../components/song/AboutSection.jsx'
 import SongInfoLinks from '../components/song/SongInfoLinks.jsx'
-import styles from './SongPage.module.css'
+import styles from '../styles/SongPage.module.css'
 
 export default function SongPage() {
   const { slug } = useParams()

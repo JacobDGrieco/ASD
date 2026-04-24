@@ -1,5 +1,4 @@
 .popup {
-  margin: 8px 0 4px;
   padding: 16px 20px;
   background: var(--bg-raised);
   border-left: 3px solid var(--accent);

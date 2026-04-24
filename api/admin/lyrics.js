@@ -17,14 +17,39 @@ export default async function handler(req, res) {
   }
   if (req.method === 'PUT') {
     const { blocks } = req.body
-    await prisma.lyricBlock.deleteMany({ where: { songId } })
-    await prisma.lyricBlock.createMany({
-      data: blocks.map((b) => ({ songId, text: b.text, blockOrder: b.blockOrder })),
+    const existingBlocks = await prisma.lyricBlock.findMany({
+      where: { songId },
+      orderBy: { blockOrder: 'asc' },
     })
+    const existingIds = new Set(existingBlocks.map((block) => block.id))
+    const incomingIds = new Set(blocks.filter((block) => block.id).map((block) => block.id))
+    const deletedIds = existingBlocks.filter((block) => !incomingIds.has(block.id)).map((block) => block.id)
+
+    if (deletedIds.length) {
+      await prisma.lyricBlock.deleteMany({ where: { id: { in: deletedIds } } })
+    }
+
+    await Promise.all(
+      blocks
+        .filter((block) => block.id && existingIds.has(block.id))
+        .map((block) => prisma.lyricBlock.update({
+          where: { id: block.id },
+          data: { text: block.text, blockOrder: block.blockOrder },
+        }))
+    )
+
+    const createdBlocks = blocks
+      .filter((block) => !block.id)
+      .map((block) => ({ songId, text: block.text, blockOrder: block.blockOrder }))
+
+    if (createdBlocks.length) {
+      await prisma.lyricBlock.createMany({ data: createdBlocks })
+    }
+
     const updated = await prisma.lyricBlock.findMany({
       where: { songId },
       orderBy: { blockOrder: 'asc' },
-      include: { annotations: true },
+      include: { annotations: { orderBy: { startChar: 'asc' } } },
     })
     return res.status(200).json(updated)
   }

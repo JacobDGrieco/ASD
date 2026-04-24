@@ -1,4 +1,4 @@
-import styles from './VinylRecord.module.css'
+import styles from '../../styles/VinylRecord.module.css'
 
 export default function VinylRecord({ track, isActive, onClick }) {
   return (

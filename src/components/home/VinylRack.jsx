@@ -1,5 +1,5 @@
 import VinylRecord from './VinylRecord.jsx'
-import styles from './VinylRack.module.css'
+import styles from '../../styles/VinylRack.module.css'
 
 export default function VinylRack({ tracks, activeTrackId, onSelect }) {
   return (

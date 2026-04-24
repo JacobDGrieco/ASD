@@ -7,8 +7,22 @@ export default async function handler(req, res) {
 
   if (id) {
     if (req.method === 'PUT') {
-      const { title, slug, type, coverArt, releaseDate, artistId } = req.body
-      const album = await prisma.album.update({ where: { id }, data: { title, slug, type, coverArt, releaseDate: new Date(releaseDate), artistId } })
+      const { title, slug, type, coverArt, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, releaseDate, artistId } = req.body
+      const album = await prisma.album.update({
+        where: { id },
+        data: {
+          title,
+          slug,
+          type,
+          coverArt,
+          aboutText: aboutText ?? '',
+          soundcloudUrl: soundcloudUrl || null,
+          spotifyUrl: spotifyUrl || null,
+          appleMusicUrl: appleMusicUrl || null,
+          releaseDate: new Date(releaseDate),
+          artistId,
+        },
+      })
       return res.status(200).json(album)
     }
     if (req.method === 'DELETE') {
@@ -26,8 +40,21 @@ export default async function handler(req, res) {
     return res.status(200).json(albums)
   }
   if (req.method === 'POST') {
-    const { title, slug, type, coverArt, releaseDate, artistId } = req.body
-    const album = await prisma.album.create({ data: { title, slug, type, coverArt: coverArt ?? '', releaseDate: new Date(releaseDate), artistId } })
+    const { title, slug, type, coverArt, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, releaseDate, artistId } = req.body
+    const album = await prisma.album.create({
+      data: {
+        title,
+        slug,
+        type,
+        coverArt: coverArt ?? '',
+        aboutText: aboutText ?? '',
+        soundcloudUrl: soundcloudUrl || null,
+        spotifyUrl: spotifyUrl || null,
+        appleMusicUrl: appleMusicUrl || null,
+        releaseDate: new Date(releaseDate),
+        artistId,
+      },
+    })
     return res.status(201).json(album)
   }
   return res.status(405).json({ error: 'Method not allowed' })

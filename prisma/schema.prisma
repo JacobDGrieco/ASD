@@ -31,6 +31,10 @@ model Album {
   slug        String    @unique
   type        AlbumType
   coverArt    String    @default("")
+  aboutText   String    @default("")
+  soundcloudUrl String?
+  spotifyUrl    String?
+  appleMusicUrl String?
   releaseDate DateTime
   artistId    String
   artist      Artist    @relation(fields: [artistId], references: [id], onDelete: Cascade)

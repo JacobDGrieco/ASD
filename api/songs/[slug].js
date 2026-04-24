@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     include: {
       album: {
         select: {
-          title: true, slug: true, coverArt: true,
+          title: true, slug: true, coverArt: true, releaseDate: true,
           artist: { select: { name: true, slug: true } },
         },
       },
@@ -20,5 +20,8 @@ export default async function handler(req, res) {
     },
   })
   if (!song) return res.status(404).json({ error: 'Song not found' })
+  if (song.meta && !song.meta.releaseDate && song.album?.releaseDate) {
+    song.meta = { ...song.meta, releaseDate: song.album.releaseDate }
+  }
   return res.status(200).json(song)
 }
