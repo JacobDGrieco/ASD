@@ -1,15 +1,110 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+model Artist {
+  id                String   @id @default(cuid())
+  name              String
+  slug              String   @unique
+  bio               String   @default("")
+  aboutMe           String   @default("")
+  portrait          String   @default("")
+  order             Int      @default(0)
+  soundcloudProfile String?
+  spotifyProfile    String?
+  appleMusicProfile String?
+  albums            Album[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Album {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  type        AlbumType
+  coverArt    String    @default("")
+  releaseDate DateTime
+  artistId    String
+  artist      Artist    @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  songs       Song[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([artistId])
+}
+
+enum AlbumType {
+  ALBUM
+  SINGLE
+  EP
+}
+
+model Song {
+  id            String              @id @default(cuid())
+  title         String
+  slug          String              @unique
+  trackNumber   Int
+  discNumber    Int                 @default(1)
+  duration      String              @default("")
+  soundcloudUrl String?
+  spotifyUrl    String?
+  appleMusicUrl String?
+  albumId       String
+  album         Album               @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  meta          SongMeta?
+  lyricBlocks   LyricBlock[]
+  recordSlots   RecordPlayerTrack[]
+
+  @@index([albumId])
+}
+
+model SongMeta {
+  id          String    @id @default(cuid())
+  songId      String    @unique
+  song        Song      @relation(fields: [songId], references: [id], onDelete: Cascade)
+  aboutText   String    @default("")
+  producers   String    @default("")
+  writers     String    @default("")
+  releaseDate DateTime?
+}
+
+model LyricBlock {
+  id          String       @id @default(cuid())
+  songId      String
+  song        Song         @relation(fields: [songId], references: [id], onDelete: Cascade)
+  text        String
+  blockOrder  Int
+  annotations Annotation[]
+
+  @@index([songId])
+}
+
+model Annotation {
+  id           String     @id @default(cuid())
+  lyricBlockId String
+  lyricBlock   LyricBlock @relation(fields: [lyricBlockId], references: [id], onDelete: Cascade)
+  startChar    Int
+  endChar      Int
+  explanation  String
+
+  @@index([lyricBlockId])
+}
+
+model RecordPlayerTrack {
+  id       String  @id @default(cuid())
+  songId   String
+  song     Song    @relation(fields: [songId], references: [id], onDelete: Cascade)
+  position Int
+  active   Boolean @default(true)
+
+  @@unique([position])
+  @@index([songId])
 }

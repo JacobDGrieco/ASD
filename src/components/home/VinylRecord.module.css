@@ -1,0 +1,33 @@
+.record {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transform: perspective(200px) rotateY(-18deg);
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--bg-raised);
+  outline: none;
+}
+
+.record:hover {
+  transform: perspective(200px) rotateY(0deg) translateY(-8px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+}
+
+.active {
+  transform: perspective(200px) rotateY(0deg) translateY(-16px) !important;
+  box-shadow: 0 0 0 2px var(--accent), 0 16px 40px rgba(0,0,0,0.7) !important;
+}
+
+.sleeve {
+  width: 100%;
+  height: 100%;
+}
+
+.art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

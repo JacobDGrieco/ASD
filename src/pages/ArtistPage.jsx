@@ -1,0 +1,19 @@
+import { useParams } from 'react-router-dom'
+import { useApi } from '../hooks/useApi.js'
+import ArtistHero from '../components/artist/ArtistHero.jsx'
+import Discography from '../components/artist/Discography.jsx'
+
+export default function ArtistPage() {
+  const { slug } = useParams()
+  const { data: artist, loading, error } = useApi(`/api/artists/${slug}`)
+
+  if (loading) return <div className="page" style={{ minHeight: '100vh' }} />
+  if (error || !artist) return <div className="page not-found"><h1>Artist not found</h1></div>
+
+  return (
+    <div className="page">
+      <ArtistHero artist={artist} />
+      <Discography albums={artist.albums} />
+    </div>
+  )
+}

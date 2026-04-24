@@ -1,0 +1,38 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px;
+  border-radius: var(--radius);
+  color: var(--text);
+  text-decoration: none;
+  transition: background var(--transition);
+}
+
+.row:hover {
+  background: var(--bg-raised);
+}
+
+.num {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.title {
+  font-size: 0.9rem;
+}
+
+.duration {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}

@@ -1,0 +1,117 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.scene {
+  perspective: 800px;
+  width: 280px;
+  height: 240px;
+}
+
+.body {
+  width: 100%;
+  height: 100%;
+  background: #141414;
+  border-radius: 8px;
+  transform: rotateX(12deg);
+  transform-style: preserve-3d;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(255,255,255,0.04);
+}
+
+.platter {
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50%, #222 30%, #111 70%);
+  top: 50%;
+  left: 38%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 3px #2a2a2a, 0 6px 24px rgba(0,0,0,0.6);
+  overflow: hidden;
+}
+
+.spinning {
+  animation: spin 2.4s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.label {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.label_blank {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #1a1a1a;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.tonearm {
+  position: absolute;
+  top: 12%;
+  right: 8%;
+  width: 100px;
+  height: 6px;
+  background: linear-gradient(90deg, #999, #ccc, #999);
+  border-radius: 3px;
+  transform-origin: right center;
+  transform: rotate(-35deg);
+  transition: transform 0.9s ease;
+}
+
+.playing {
+  transform: rotate(-12deg);
+}
+
+.tonearm::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #888;
+  box-shadow: 0 0 6px rgba(0,0,0,0.5);
+}
+
+.now_playing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.track_title {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.track_artist {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.player {
+  width: 280px;
+}

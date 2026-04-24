@@ -27,3 +27,11 @@ dist-ssr
 *.sw?
 
 /src/generated/prisma
+
+# Worktrees and planning
+.worktrees
+docs/superpowers
+.claude
+
+.vercel
+.env*.local

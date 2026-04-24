@@ -1,0 +1,73 @@
+.hero {
+  display: flex;
+  gap: 60px;
+  align-items: flex-start;
+  padding: 120px 60px 60px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.portrait_wrap {
+  flex-shrink: 0;
+  width: 280px;
+  padding: 20px;
+}
+
+.portrait {
+  width: 100%;
+  aspect-ratio: 4/5;
+  object-fit: cover;
+  object-position: top;
+  transform: rotate(-10deg);
+  box-shadow: 16px 16px 48px rgba(0,0,0,0.6), -4px -4px 24px rgba(0,0,0,0.3);
+}
+
+.info {
+  padding-top: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 520px;
+}
+
+.name {
+  font-size: 3rem;
+  font-weight: normal;
+  letter-spacing: 0.03em;
+  line-height: 1.1;
+}
+
+.bio {
+  font-size: 1rem;
+  color: var(--accent);
+  font-style: italic;
+}
+
+.about {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  line-height: 1.8;
+}
+
+.links {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.links a {
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 2px;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.links a:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  text-decoration: none;
+}
