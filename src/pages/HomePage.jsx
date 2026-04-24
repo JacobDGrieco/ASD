@@ -2,6 +2,14 @@ import { useApi } from '../hooks/useApi.js'
 import ArtistSplash from '../components/home/ArtistSplash.jsx'
 import RecordPlayer from '../components/home/RecordPlayer.jsx'
 
+export function getHomePageApiMessage(isDev) {
+  if (isDev) {
+    return 'This page needs the Vercel API routes as well as the frontend. Run `npm run dev:vercel` for full-stack local development.'
+  }
+
+  return 'The frontend loaded, but the site could not reach its API routes. This usually means the deployment is missing environment variables, database access, or a failing serverless function.'
+}
+
 export default function HomePage() {
   const {
     data: artists,
@@ -13,6 +21,7 @@ export default function HomePage() {
     loading: tracksLoading,
     error: tracksError,
   } = useApi('/api/record-player')
+  const apiMessage = getHomePageApiMessage(import.meta.env.DEV)
 
   if (artistsLoading || tracksLoading) {
     return (
@@ -28,10 +37,7 @@ export default function HomePage() {
         <div className="home-status__panel">
           <p className="home-status__eyebrow">Content unavailable</p>
           <h1>Local API requests failed.</h1>
-          <p>
-            This page needs the Vercel API routes as well as the frontend. Run
-            `npm run dev:vercel` for full-stack local development.
-          </p>
+          <p>{apiMessage}</p>
           <p className="home-status__detail">
             Artists request: {artistsError ?? 'ok'}
             <br />

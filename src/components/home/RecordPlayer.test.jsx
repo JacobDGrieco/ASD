@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import RecordPlayer from './RecordPlayer.jsx'
 
@@ -18,7 +18,8 @@ describe('RecordPlayer', () => {
     render(<RecordPlayer tracks={fakeTracks} />)
     const records = screen.getAllByRole('button')
     fireEvent.click(records[0])
-    expect(screen.getByText('Track One')).toBeInTheDocument()
+    const nowPlaying = screen.getByLabelText('Now playing')
+    expect(within(nowPlaying).getByText('Track One')).toBeInTheDocument()
   })
 
   it('clicking the active record again deselects it', () => {
@@ -26,6 +27,6 @@ describe('RecordPlayer', () => {
     const records = screen.getAllByRole('button')
     fireEvent.click(records[0])
     fireEvent.click(records[0])
-    expect(screen.queryByText('Track One')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Now playing')).not.toBeInTheDocument()
   })
 })

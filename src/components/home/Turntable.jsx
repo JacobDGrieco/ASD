@@ -21,7 +21,11 @@ export default function Turntable({ activeTrack, isPlaying }) {
         </div>
       </div>
       {title && (
-        <div className={styles.now_playing}>
+        <div
+          className={styles.now_playing}
+          aria-label="Now playing"
+          aria-live="polite"
+        >
           <span className={styles.track_title}>{title}</span>
           <span className={styles.track_artist}>{artist}</span>
         </div>
