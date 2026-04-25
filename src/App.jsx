@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react'
 import { Routes, Route, Outlet } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import Nav from './components/shared/Nav.jsx'
 import HomePage from './pages/HomePage.jsx'
 import ArtistPage from './pages/ArtistPage.jsx'
@@ -55,6 +56,7 @@ export default function App() {
           </Route>
         </Routes>
       </Suspense>
+      <Analytics />
     </AdminProvider>
   )
 }
