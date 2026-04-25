@@ -141,6 +141,32 @@ async function getArtist(res, slug) {
   })
 }
 
+async function getAlbum(res, slug) {
+  setPublicCache(res)
+  const album = await prisma.album.findUnique({
+    where: { slug },
+    include: {
+      images: {
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+      },
+      artist: { select: { name: true, slug: true } },
+      songs: {
+        orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }],
+        select: { id: true, title: true, slug: true, trackNumber: true, discNumber: true, duration: true },
+      },
+    },
+  })
+
+  if (!album) return res.status(404).json({ error: 'Album not found' })
+
+  const albumImages = formatAlbumImages(album)
+  return res.status(200).json({
+    ...album,
+    coverArt: albumImages[0]?.previewUrl ?? album.coverArt,
+    images: albumImages,
+  })
+}
+
 async function getSong(res, slug) {
   setPublicCache(res)
   const song = await prisma.song.findUnique({
@@ -252,6 +278,7 @@ export default async function handler(req, res) {
 
   if (resource === 'artists') return getArtists(res)
   if (resource === 'artist' && slug) return getArtist(res, slug)
+  if (resource === 'album' && slug) return getAlbum(res, slug)
   if (resource === 'song' && slug) return getSong(res, slug)
   if (resource === 'recordPlayer') return getRecordPlayer(res)
 

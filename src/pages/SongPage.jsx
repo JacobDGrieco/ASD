@@ -7,8 +7,8 @@ import SongInfoLinks from '../components/song/SongInfoLinks.jsx'
 import '../styles/SongPage.css'
 
 export default function SongPage() {
-  const { slug } = useParams()
-  const { data: song, loading, error } = useApi(`/api/songs/${slug}`)
+  const { songSlug } = useParams()
+  const { data: song, loading, error } = useApi(`/api/songs/${songSlug}`)
 
   if (!loading && (error || !song)) return <div className="page not-found"><h1>Song not found</h1></div>
 

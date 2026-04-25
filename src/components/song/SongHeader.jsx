@@ -68,12 +68,7 @@ export default function SongHeader({ song }) {
         </div>
         <h1 className="song-header-title">{song.title}</h1>
         <p className="song-header-meta">
-          <Link
-            to={`/artists/${song.album.artist.slug}`}
-            onMouseEnter={() => prefetchArtistPage(artistLinkData)}
-            onFocus={() => prefetchArtistPage(artistLinkData)}
-            onTouchStart={() => prefetchArtistPage(artistLinkData)}
-          >
+          <Link to={`/${song.album.artist.slug}/${song.album.slug}`}>
             {song.album.title}
           </Link>
           {song.meta?.releaseDate && ` · ${new Date(song.meta.releaseDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })}`}

@@ -35,9 +35,9 @@ export default function AlbumCard({ album, isOpen, isUnreleased = false, onClick
         <Link
           to={to}
           className="album-card-primary-action"
-          onMouseEnter={() => prefetchSongPage(to.replace('/songs/', ''), album.coverArt)}
-          onFocus={() => prefetchSongPage(to.replace('/songs/', ''), album.coverArt)}
-          onTouchStart={() => prefetchSongPage(to.replace('/songs/', ''), album.coverArt)}
+          onMouseEnter={() => { const s = to.split('/').filter(Boolean)[2]; if (s) prefetchSongPage(s, album.coverArt) }}
+          onFocus={() => { const s = to.split('/').filter(Boolean)[2]; if (s) prefetchSongPage(s, album.coverArt) }}
+          onTouchStart={() => { const s = to.split('/').filter(Boolean)[2]; if (s) prefetchSongPage(s, album.coverArt) }}
         >
           {content}
         </Link>

@@ -15,7 +15,7 @@ export default function ArtistPage() {
       {artist && (
         <>
           <ArtistHero artist={artist} />
-          <Discography albums={artist.albums} />
+          <Discography albums={artist.albums} artistSlug={artist.slug} />
           <FeaturedOn featuredIn={artist.featuredIn} />
         </>
       )}

@@ -4,6 +4,7 @@ import Nav from './components/shared/Nav.jsx'
 import HomePage from './pages/HomePage.jsx'
 import ArtistPage from './pages/ArtistPage.jsx'
 import SongPage from './pages/SongPage.jsx'
+import AlbumPage from './pages/AlbumPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import AdminLayout from './components/admin/AdminLayout.jsx'
 import AdminRoute from './components/admin/AdminRoute.jsx'
@@ -37,7 +38,8 @@ export default function App() {
           <Route element={<PublicLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/artists/:slug" element={<ArtistPage />} />
-            <Route path="/songs/:slug" element={<SongPage />} />
+            <Route path="/:artistSlug/:albumSlug/:songSlug" element={<SongPage />} />
+            <Route path="/:artistSlug/:albumSlug" element={<AlbumPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
           <Route path="/admin/login" element={<AdminLoginPage />} />
