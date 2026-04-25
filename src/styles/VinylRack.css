@@ -2,15 +2,15 @@
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
-	gap: 16px;
+	gap: 12px;
 }
 
 .vinyl-rack-slot-row {
 	display: flex;
-	gap: 16px;
+	gap: 8px;
 	align-items: flex-end;
-	padding: 24px 28px 0;
-	flex-wrap: wrap;
+	padding: 18px 12px 0;
+	flex-wrap: nowrap;
 }
 
 .vinyl-rack-shelf {
@@ -26,6 +26,7 @@
 		gap: 12px;
 		padding: 16px 14px 0;
 		max-width: 100%;
+		flex-wrap: wrap;
 	}
 
 	.vinyl-rack-shelf {

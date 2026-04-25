@@ -1,11 +1,12 @@
 import SoundCloudPlayer from '../shared/SoundCloudPlayer.jsx'
 import '../../styles/Turntable.css'
 
-export default function Turntable({ activeTrack, isPlaying }) {
+export default function Turntable({ activeTrack, isPlaying, onTonearmToggle }) {
   const coverArt = activeTrack?.song.album.coverArt ?? null
   const title = activeTrack?.song.title ?? null
   const artist = activeTrack?.song.album.artist.name ?? null
   const scUrl = activeTrack?.song.soundcloudUrl ?? null
+  const canTogglePlayback = Boolean(scUrl)
 
   return (
     <div className="turntable-wrap">
@@ -17,7 +18,14 @@ export default function Turntable({ activeTrack, isPlaying }) {
             )}
             {!coverArt && <div className="turntable-label-blank" />}
           </div>
-          <div className={`turntable-tonearm ${isPlaying ? 'turntable-playing' : ''}`} />
+          <button
+            type="button"
+            className={`turntable-tonearm ${isPlaying ? 'turntable-playing' : ''}`}
+            onClick={onTonearmToggle}
+            disabled={!canTogglePlayback}
+            aria-label={isPlaying ? 'Pause song' : 'Play song'}
+            title={isPlaying ? 'Pause song' : 'Play song'}
+          />
         </div>
       </div>
       {title && (
@@ -32,7 +40,7 @@ export default function Turntable({ activeTrack, isPlaying }) {
       )}
       {scUrl && (
         <div className="turntable-player">
-          <SoundCloudPlayer url={scUrl} autoPlay={isPlaying} />
+          <SoundCloudPlayer url={scUrl} isPlaying={isPlaying} hidden />
         </div>
       )}
     </div>

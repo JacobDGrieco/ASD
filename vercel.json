@@ -41,11 +41,15 @@
 			"destination": "/index.html"
 		},
 		{
-			"source": "/:artistSlug/:albumSlug/:songSlug",
+			"source": "/@vite/:path*",
+			"destination": "/@vite/:path*"
+		},
+		{
+			"source": "/:artistSlug([^@.][^./]*)/:albumSlug([^@.][^./]*)/:songSlug([^@.][^./]*)",
 			"destination": "/index.html"
 		},
 		{
-			"source": "/:artistSlug/:albumSlug",
+			"source": "/:artistSlug([^@.][^./]*)/:albumSlug([^@.][^./]*)",
 			"destination": "/index.html"
 		}
 	]
