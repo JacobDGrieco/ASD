@@ -8,9 +8,8 @@ import './styles/index.css';
 createRoot(document.getElementById('root')).render(
 	<StrictMode>
 		<BrowserRouter>
-			<Analytics>
-				<App />
-			</Analytics>
+			<App />
+			<Analytics />
 		</BrowserRouter>
 	</StrictMode>
 );
