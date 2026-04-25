@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { FaApple, FaSoundcloud, FaSpotify } from 'react-icons/fa';
 import { prefetchSongPage } from '../../lib/publicPrefetch.js';
+import ArtworkGallery from '../shared/ArtworkGallery.jsx';
 import '../../styles/AlbumCard.css';
 
 export default function AlbumCard({ album, isOpen, isUnreleased = false, onClick, to, subtitle }) {
@@ -16,6 +17,7 @@ export default function AlbumCard({ album, isOpen, isUnreleased = false, onClick
 		<>
 			<div className="album-card-cover-wrap">
 				{isUnreleased && <span className="album-card-ribbon">Unreleased</span>}
+				<ArtworkGallery images={album.images} title={album.title} showLabel className="album-card-gallery-trigger" />
 				{album.coverArt ? (
 					<img src={album.coverArt} alt={album.title} className="album-card-cover" />
 				) : (

@@ -1,6 +1,7 @@
 import { prisma } from '../../src/lib/prisma.js'
 import { requireAdmin } from '../../src/lib/auth.js'
 import { clientImages, mergeLegacyImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js'
+import { slugify } from '../../src/lib/slugify.js'
 
 function withImages(artist) {
   const images = clientImages(mergeLegacyImages(artist.images, artist.portrait, {
@@ -29,7 +30,7 @@ export default async function handler(req, res) {
         where: { id },
         data: {
           name,
-          slug,
+          slug: slug || slugify(name),
           bio,
           aboutMe,
           portrait: primaryImageReference(normalizedImages),
@@ -72,7 +73,7 @@ export default async function handler(req, res) {
     const artist = await prisma.artist.create({
       data: {
         name,
-        slug,
+        slug: slug || slugify(name),
         bio: bio ?? '',
         aboutMe: aboutMe ?? '',
         portrait: primaryImageReference(normalizedImages),

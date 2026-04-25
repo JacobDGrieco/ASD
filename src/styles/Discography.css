@@ -16,11 +16,29 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: flex-start;
 }
 
 .discography-expand {
-  margin-top: 8px;
+  flex: 0 0 100%;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
+  width: 100%;
+  margin-top: 2px;
+  background: color-mix(in srgb, var(--bg-raised) 85%, transparent);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
+  animation: discography-expand-in 220ms ease;
+}
+
+@keyframes discography-expand-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

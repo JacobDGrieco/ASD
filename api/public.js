@@ -17,6 +17,14 @@ function formatAlbumImages(album) {
   }))
 }
 
+function formatSongImages(song) {
+  return clientImages(mergeLegacyImages(song.images, song.artwork, {
+    fallbackUsage: 'artwork',
+    altText: song.title,
+    idPrefix: song.id,
+  }))
+}
+
 function normalizeSlug(value) {
   if (Array.isArray(value)) return value[0] ?? null
   return typeof value === 'string' && value ? value : null
@@ -186,6 +194,9 @@ async function getSong(res, slug) {
         },
       },
       meta: true,
+      images: {
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+      },
       lyricBlocks: {
         orderBy: { blockOrder: 'asc' },
         include: { annotations: { orderBy: { startChar: 'asc' } } },
@@ -216,6 +227,10 @@ async function getSong(res, slug) {
     const albumImages = formatAlbumImages(song.album)
     song.album.coverArt = albumImages[0]?.previewUrl ?? song.album.coverArt
   }
+
+  const songImages = formatSongImages(song)
+  song.artwork = songImages[0]?.previewUrl ?? song.artwork
+  song.images = songImages
 
   return res.status(200).json(song)
 }

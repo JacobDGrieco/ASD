@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { FaApple, FaCheck, FaExternalLinkAlt, FaPencilAlt, FaSoundcloud, FaSpotify, FaTimes, FaTrash } from 'react-icons/fa'
+import { FaApple, FaExternalLinkAlt, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash } from 'react-icons/fa'
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
+import { slugify } from '../../lib/slugify.js'
 import '../../styles/AdminArtistsPage.css'
 
 const empty = {
@@ -19,17 +20,21 @@ const empty = {
 const columns = [
   { key: 'images', label: 'Images', kind: 'images', className: 'admin-artists-page-col-image' },
   { key: 'name', label: 'Name', placeholder: 'Name', className: 'admin-artists-page-col-lg' },
-  { key: 'slug', label: 'Slug', placeholder: 'Slug', className: 'admin-artists-page-col-lg' },
   { key: 'bio', label: 'Bio', placeholder: 'Bio', kind: 'textarea', className: 'admin-artists-page-col-xxl', valueClassName: 'admin-artists-page-wrap-value' },
   { key: 'aboutMe', label: 'About Me', placeholder: 'About Me', kind: 'textarea', className: 'admin-artists-page-col-xxl', valueClassName: 'admin-artists-page-wrap-value' },
-  { key: 'soundcloudProfile', label: <FaSoundcloud />, headerLabel: 'SoundCloud', placeholder: 'SoundCloud URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell admin-artists-page-sticky-right-4` },
-  { key: 'spotifyProfile', label: <FaSpotify />, headerLabel: 'Spotify', placeholder: 'Spotify URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell admin-artists-page-sticky-right-3` },
-  { key: 'appleMusicProfile', label: <FaApple />, headerLabel: 'Apple Music', placeholder: 'Apple Music URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell admin-artists-page-sticky-right-2` },
+  { key: 'soundcloudProfile', label: <FaSoundcloud />, headerLabel: 'SoundCloud', placeholder: 'SoundCloud URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
+  { key: 'spotifyProfile', label: <FaSpotify />, headerLabel: 'Spotify', placeholder: 'Spotify URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
+  { key: 'appleMusicProfile', label: <FaApple />, headerLabel: 'Apple Music', placeholder: 'Apple Music URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
 ]
 
 function primaryImage(images) {
   if (!Array.isArray(images) || images.length === 0) return null
   return images.find((image) => image.isPrimary) ?? images[0]
+}
+
+function validateArtistForm(form) {
+  if (!form.name?.trim()) return 'Artist name is required.'
+  return null
 }
 
 export default function AdminArtistsPage() {
@@ -49,14 +54,22 @@ export default function AdminArtistsPage() {
   const openCreate = () => setForm({ ...empty })
   const openEdit = (artist) => setForm({ ...artist, images: artist.images ?? [] })
   const closeForm = () => setForm(null)
-  const isEditing = (artistId) => form && form.id === artistId
-  const isCreating = Boolean(form && !form.id)
   const nextOrder = artists.reduce((maxOrder, artist) => Math.max(maxOrder, artist.order ?? 0), -1) + 1
 
   const handleSave = async () => {
+    const validationError = validateArtistForm(form)
+    if (validationError) {
+      window.alert(validationError)
+      return
+    }
+
     const isEdit = Boolean(form.id)
     const url = isEdit ? `/api/admin/artists?id=${form.id}` : '/api/admin/artists'
-    const payload = isEdit ? form : { ...form, order: nextOrder }
+    const payload = {
+      ...form,
+      slug: slugify(form.name),
+      ...(isEdit ? {} : { order: nextOrder }),
+    }
     const res = await fetch(url, {
       method: isEdit ? 'PUT' : 'POST',
       headers: { ...auth, 'Content-Type': 'application/json' },
@@ -138,42 +151,6 @@ export default function AdminArtistsPage() {
     setDropTargetId(null)
   }
 
-  const renderField = (column) => {
-    if (column.kind === 'images') {
-      return (
-        <ImageCollectionField
-          value={form.images}
-          onChange={(images) => setForm((current) => ({ ...current, images }))}
-          token={token}
-          folder="artists"
-          entityLabel={form.name || 'Artist image'}
-        />
-      )
-    }
-
-    if (column.kind === 'textarea') {
-      return (
-        <textarea
-          placeholder={column.placeholder}
-          value={form[column.key] ?? ''}
-          onChange={(event) => setForm((current) => ({ ...current, [column.key]: event.target.value }))}
-          className={`admin-artists-page-input admin-artists-page-textarea-cell`}
-          rows={3}
-        />
-      )
-    }
-
-    return (
-      <input
-        type={column.type ?? 'text'}
-        placeholder={column.placeholder}
-        value={form[column.key] ?? ''}
-        onChange={(event) => setForm((current) => ({ ...current, [column.key]: event.target.value }))}
-        className="admin-artists-page-input"
-      />
-    )
-  }
-
   const renderDisplayValue = (artist, column) => {
     const value = artist[column.key]
     if (column.kind === 'images') {
@@ -211,27 +188,6 @@ export default function AdminArtistsPage() {
     )
   }
 
-  const renderEditableRow = () => (
-    <tr className="admin-artists-page-editing-row">
-      <td className="admin-artists-page-drag-cell"></td>
-      {columns.map((column) => (
-        <td key={column.key} className={column.className}>
-          {renderField(column)}
-        </td>
-      ))}
-      <td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-1`}>
-        <button type="button" onClick={handleSave} className={`admin-artists-page-ghost-btn admin-artists-page-icon-btn`} aria-label="Save artist" title="Save">
-          <FaCheck aria-hidden="true" />
-        </button>
-      </td>
-      <td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-0`}>
-        <button type="button" onClick={closeForm} className={`admin-artists-page-ghost-btn admin-artists-page-icon-btn`} aria-label="Cancel artist edit" title="Cancel">
-          <FaTimes aria-hidden="true" />
-        </button>
-      </td>
-    </tr>
-  )
-
   return (
     <div>
       <div className="admin-artists-page-header">
@@ -250,71 +206,120 @@ export default function AdminArtistsPage() {
             </tr>
           </thead>
           <tbody>
-            {isCreating && renderEditableRow()}
             {artists.map((artist) => (
-              isEditing(artist.id) ? (
-                <tr key={artist.id} className="admin-artists-page-editing-row">
-                  <td className="admin-artists-page-drag-cell"></td>
-                  {columns.map((column) => (
-                    <td key={column.key} className={column.className}>
-                      {renderField(column)}
-                    </td>
-                  ))}
-                  <td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-1`}>
-                    <button type="button" onClick={handleSave} className={`admin-artists-page-ghost-btn admin-artists-page-icon-btn`} aria-label="Save artist" title="Save">
-                      <FaCheck aria-hidden="true" />
-                    </button>
+              <tr
+                key={artist.id}
+                className={dropTargetId === artist.id ? 'admin-artists-page-drop-target-row' : ''}
+                onDragOver={(event) => handleDragOver(event, artist.id)}
+                onDrop={(event) => {
+                  event.preventDefault()
+                  handleDrop(artist.id)
+                }}
+              >
+                <td className="admin-artists-page-drag-cell">
+                  <button
+                    type="button"
+                    draggable={!form}
+                    onDragStart={(event) => handleDragStart(event, artist.id)}
+                    onDragEnd={handleDragEnd}
+                    className="admin-artists-page-drag-handle"
+                    aria-label={`Reorder ${artist.name}`}
+                    title="Drag to reorder"
+                  >
+                    ::
+                  </button>
+                </td>
+                {columns.map((column) => (
+                  <td key={column.key} className={column.className ?? ''}>
+                    {renderDisplayValue(artist, column)}
                   </td>
-                  <td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-0`}>
-                    <button type="button" onClick={closeForm} className={`admin-artists-page-ghost-btn admin-artists-page-icon-btn`} aria-label="Cancel artist edit" title="Cancel">
-                      <FaTimes aria-hidden="true" />
-                    </button>
-                  </td>
-                </tr>
-              ) : (
-                <tr
-                  key={artist.id}
-                  className={dropTargetId === artist.id ? 'admin-artists-page-drop-target-row' : ''}
-                  onDragOver={(event) => handleDragOver(event, artist.id)}
-                  onDrop={(event) => {
-                    event.preventDefault()
-                    handleDrop(artist.id)
-                  }}
-                >
-                  <td className="admin-artists-page-drag-cell">
-                    <button
-                      type="button"
-                      draggable={!form}
-                      onDragStart={(event) => handleDragStart(event, artist.id)}
-                      onDragEnd={handleDragEnd}
-                      className="admin-artists-page-drag-handle"
-                      aria-label={`Reorder ${artist.name}`}
-                      title="Drag to reorder"
-                    >
-                      ::
-                    </button>
-                  </td>
-                  {columns.map((column) => (
-                    <td key={column.key} className={`${column.className ?? ''} ${column.key === 'slug' ? 'admin-artists-page-muted' : ''}`.trim()}>
-                      {renderDisplayValue(artist, column)}
-                    </td>
-                  ))}
-                  <td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-1`}>
-                    <button type="button" onClick={() => openEdit(artist)} className={`admin-artists-page-ghost-btn admin-artists-page-icon-btn`} aria-label="Edit artist" title="Edit">
-                      <FaPencilAlt aria-hidden="true" />
-                    </button>
-                  </td>
-                  <td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-0`}>
-                    <button type="button" onClick={() => handleDelete(artist.id)} className={`admin-artists-page-danger-btn admin-artists-page-icon-btn`} aria-label="Delete artist" title="Delete">
-                      <FaTrash aria-hidden="true" />
-                    </button>
-                  </td>
-                </tr>
-              )
+                ))}
+                <td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-1`}>
+                  <button type="button" onClick={() => openEdit(artist)} className={`admin-artists-page-ghost-btn admin-artists-page-icon-btn`} aria-label="Edit artist" title="Edit">
+                    <FaPencilAlt aria-hidden="true" />
+                  </button>
+                </td>
+                <td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-0`}>
+                  <button type="button" onClick={() => handleDelete(artist.id)} className={`admin-artists-page-danger-btn admin-artists-page-icon-btn`} aria-label="Delete artist" title="Delete">
+                    <FaTrash aria-hidden="true" />
+                  </button>
+                </td>
+              </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {form && (
+        <div className="admin-modal-overlay" onClick={(event) => { if (event.target === event.currentTarget) closeForm() }}>
+          <div className="admin-modal">
+            <div className="admin-modal-header">
+              <h2 className="admin-modal-title">{form.id ? 'Edit Artist' : 'New Artist'}</h2>
+              <button type="button" onClick={closeForm} className="admin-modal-close" aria-label="Close">×</button>
+            </div>
+            <div className="admin-modal-body">
+              <div className="admin-modal-grid">
+                <div className="admin-modal-field admin-modal-field-full">
+                  <label className="admin-modal-label">Name</label>
+                  <input
+                    type="text"
+                    placeholder="Name"
+                    value={form.name}
+                    onChange={(event) => setForm((current) => ({ ...current, name: event.target.value, slug: slugify(event.target.value) }))}
+                    className="admin-artists-page-input"
+                  />
+                </div>
+                <div className="admin-modal-field admin-modal-field-full">
+                  <label className="admin-modal-label">Images</label>
+                  <ImageCollectionField
+                    value={form.images}
+                    onChange={(images) => setForm((current) => ({ ...current, images }))}
+                    token={token}
+                    folder="artists"
+                    entityLabel={form.name || 'Artist image'}
+                  />
+                </div>
+                <div className="admin-modal-field admin-modal-field-full">
+                  <label className="admin-modal-label">Bio</label>
+                  <textarea
+                    placeholder="Bio"
+                    value={form.bio}
+                    onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))}
+                    className="admin-artists-page-input admin-modal-textarea"
+                    rows={5}
+                  />
+                </div>
+                <div className="admin-modal-field admin-modal-field-full">
+                  <label className="admin-modal-label">About Me</label>
+                  <textarea
+                    placeholder="About Me"
+                    value={form.aboutMe}
+                    onChange={(event) => setForm((current) => ({ ...current, aboutMe: event.target.value }))}
+                    className="admin-artists-page-input admin-modal-textarea"
+                    rows={5}
+                  />
+                </div>
+                <div className="admin-modal-field admin-modal-field-full">
+                  <label className="admin-modal-label">SoundCloud URL</label>
+                  <input type="url" placeholder="SoundCloud URL" value={form.soundcloudProfile} onChange={(event) => setForm((current) => ({ ...current, soundcloudProfile: event.target.value }))} className="admin-artists-page-input" />
+                </div>
+                <div className="admin-modal-field admin-modal-field-full">
+                  <label className="admin-modal-label">Spotify URL</label>
+                  <input type="url" placeholder="Spotify URL" value={form.spotifyProfile} onChange={(event) => setForm((current) => ({ ...current, spotifyProfile: event.target.value }))} className="admin-artists-page-input" />
+                </div>
+                <div className="admin-modal-field admin-modal-field-full">
+                  <label className="admin-modal-label">Apple Music URL</label>
+                  <input type="url" placeholder="Apple Music URL" value={form.appleMusicProfile} onChange={(event) => setForm((current) => ({ ...current, appleMusicProfile: event.target.value }))} className="admin-artists-page-input" />
+                </div>
+              </div>
+            </div>
+            <div className="admin-modal-footer">
+              <button type="button" onClick={closeForm} className="admin-artists-page-ghost-btn">Cancel</button>
+              <button type="button" onClick={handleSave} className="admin-artists-page-primary-btn">Save</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

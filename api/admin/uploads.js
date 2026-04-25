@@ -4,6 +4,7 @@ import { requireAdmin } from '../../src/lib/auth.js'
 
 const ALLOWED_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024
+const ALLOWED_FOLDERS = new Set(['artists', 'albums', 'songs'])
 
 async function readJsonBody(req) {
   if (req.body && typeof req.body === 'object') return req.body
@@ -30,7 +31,8 @@ export default async function handler(req, res) {
       request: req,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         const payload = clientPayload ? JSON.parse(clientPayload) : {}
-        const folder = payload?.folder === 'albums' ? 'albums' : 'artists'
+        const requestedFolder = typeof payload?.folder === 'string' ? payload.folder : 'artists'
+        const folder = ALLOWED_FOLDERS.has(requestedFolder) ? requestedFolder : 'artists'
 
         if (!String(pathname).startsWith(`${folder}/`)) {
           throw new Error('Invalid upload path')

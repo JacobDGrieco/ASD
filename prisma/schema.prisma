@@ -91,16 +91,34 @@ model Song {
   trackNumber   Int
   discNumber    Int                 @default(1)
   duration      String              @default("")
+  artwork       String              @default("")
   soundcloudUrl String?
   spotifyUrl    String?
   appleMusicUrl String?
   albumId       String
   album         Album               @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  images        SongImage[]
   meta          SongMeta?
   lyricBlocks   LyricBlock[]
   recordSlots   RecordPlayerTrack[]
 
   @@index([albumId])
+}
+
+model SongImage {
+  id        String   @id @default(cuid())
+  songId    String
+  song      Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+  url       String
+  pathname  String?
+  usage     String   @default("artwork")
+  altText   String   @default("")
+  sortOrder Int      @default(0)
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([songId, sortOrder])
 }
 
 model SongMeta {
@@ -111,6 +129,7 @@ model SongMeta {
   producers   String    @default("")
   writers     String    @default("")
   featuredArtists String @default("")
+  tags        String[]  @default([])
   releaseDate DateTime?
 }
 

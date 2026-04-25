@@ -7,6 +7,7 @@ async function main() {
   await prisma.lyricBlock.deleteMany()
   await prisma.songMeta.deleteMany()
   await prisma.recordPlayerTrack.deleteMany()
+  await prisma.songImage.deleteMany()
   await prisma.song.deleteMany()
   await prisma.albumImage.deleteMany()
   await prisma.album.deleteMany()
@@ -92,6 +93,16 @@ async function main() {
         discNumber: 1,
         duration: '3:42',
         albumId: album.id,
+        artwork: debutCoverUrl,
+        images: {
+          create: {
+            url: debutCoverUrl,
+            usage: 'artwork',
+            altText: 'Track One',
+            sortOrder: 0,
+            isPrimary: true,
+          },
+        },
       },
     })
 
@@ -101,6 +112,7 @@ async function main() {
         aboutText: 'The opening track sets the tone for the whole project.',
         producers: 'Placeholder Producer',
         writers: artist.name,
+        tags: ['intro', 'featured'],
       },
     })
 

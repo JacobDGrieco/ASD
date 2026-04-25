@@ -2,9 +2,14 @@ import { Link } from 'react-router-dom'
 import { FaApple, FaSoundcloud, FaSpotify } from 'react-icons/fa'
 import { prefetchArtistPage } from '../../lib/publicPrefetch.js'
 import SoundCloudPlayer from '../shared/SoundCloudPlayer.jsx'
+import ArtworkGallery from '../shared/ArtworkGallery.jsx'
 import '../../styles/SongHeader.css'
 
 export default function SongHeader({ song }) {
+  const hasSongArtwork = Array.isArray(song.images) && song.images.length > 0
+  const artwork = hasSongArtwork
+    ? song.images[0]?.previewUrl || song.images[0]?.url || song.artwork || song.album.coverArt
+    : song.album.coverArt
   const artistLinkData = song.album?.artist
     ? { slug: song.album.artist.slug, images: [], portrait: song.album.coverArt }
     : null
@@ -18,8 +23,9 @@ export default function SongHeader({ song }) {
     <section className="song-header-header">
       <div className="song-header-media-column">
         <div className="song-header-art-wrap">
-          {song.album.coverArt
-            ? <img src={song.album.coverArt} alt={song.album.title} className="song-header-art" />
+          {hasSongArtwork && <ArtworkGallery images={song.images} title={song.title} />}
+          {artwork
+            ? <img src={artwork} alt={song.title} className="song-header-art" />
             : <div className="song-header-art-blank" />
           }
         </div>

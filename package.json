@@ -24,6 +24,8 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "^2.3.3",
     "jsonwebtoken": "^9.0.3",
+    "primeicons": "^7.0.0",
+    "primereact": "^10.9.7",
     "prisma": "^5.22.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
