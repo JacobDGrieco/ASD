@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { upload } from '@vercel/blob/client';
 import { FaImage, FaUpload } from 'react-icons/fa';
-import { buildBlobProxyUrl } from '../../lib/images.js';
+import { buildClientImageUrl } from '../../lib/images.js';
 import '../../styles/AdminArtistsPage.css';
 
 function sanitizeSegment(value) {
@@ -82,19 +82,23 @@ export default function ImageCollectionField({ value, onChange, token, folder, e
 			for (const file of files) {
 				const pathname = `${folder}/${Date.now()}-${sanitizeSegment(file.name)}`;
 				const blob = await upload(pathname, file, {
-					access: 'private',
+					access: 'public',
 					handleUploadUrl: '/api/admin/uploads',
 					clientPayload: JSON.stringify({ folder }),
 					headers: { Authorization: `Bearer ${token}` },
 				});
 
-				uploadedImages.push({
+				const uploadedImage = {
 					url: blob.url,
 					pathname: blob.pathname ?? pathname,
-					previewUrl: buildBlobProxyUrl(blob.pathname ?? pathname),
 					usage: getDefaultUsage(folder),
 					altText: entityLabel,
 					isPrimary: false,
+				};
+
+				uploadedImages.push({
+					...uploadedImage,
+					previewUrl: buildClientImageUrl(uploadedImage),
 				});
 			}
 

@@ -2,10 +2,39 @@ function toTrimmedString(value) {
   return typeof value === 'string' ? value.trim() : ''
 }
 
+function isDirectPublicBlobUrl(url) {
+  return /\.public\.blob\.vercel-storage\.com$/i.test(new URL(url).hostname)
+}
+
+function isDirectPrivateBlobUrl(url) {
+  return /\.private\.blob\.vercel-storage\.com$/i.test(new URL(url).hostname)
+}
+
 export function buildBlobProxyUrl(pathname) {
   const value = toTrimmedString(pathname)
   if (!value) return ''
   return `/api/blob?pathname=${encodeURIComponent(value)}`
+}
+
+export function buildClientImageUrl(image) {
+  const previewUrl = toTrimmedString(image?.previewUrl)
+  const url = toTrimmedString(image?.url)
+  const pathname = toTrimmedString(image?.pathname)
+
+  if (previewUrl) return previewUrl
+
+  if (url) {
+    try {
+      if (isDirectPublicBlobUrl(url) || !isDirectPrivateBlobUrl(url)) {
+        return url
+      }
+    } catch {
+      return url
+    }
+  }
+
+  if (pathname) return buildBlobProxyUrl(pathname)
+  return url
 }
 
 function makeLegacyImage({ id, url, usage, altText }) {
@@ -91,7 +120,7 @@ export function clientImage(image) {
 
   return {
     ...image,
-    previewUrl: image.pathname ? buildBlobProxyUrl(image.pathname) : image.previewUrl || image.url,
+    previewUrl: buildClientImageUrl(image),
   }
 }
 
