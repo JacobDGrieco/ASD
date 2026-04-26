@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { prefetchArtistPage } from '../../lib/publicPrefetch.js';
+import { preloadImage, preloadImages, prefetchArtistPage } from '../../lib/publicPrefetch.js';
 import '../../styles/ArtistSplash.css';
 
-const IMAGE_TRANSITION_MS = 360;
-const IMAGE_HOVER_DELAY_MS = 250;
-const IMAGE_HOLD_MS = 150;
+const IMAGE_TRANSITION_MS = 480;
+const IMAGE_HOVER_DELAY_MS = 320;
+const IMAGE_HOLD_MS = 420;
+const IMAGE_LAST_HOLD_MS = 1100;
+const CARD_WAVE_DELAY_MS = 120;
 
 function uniqueUrls(urls) {
 	return [...new Set(urls.filter(Boolean))];
@@ -24,7 +26,7 @@ function getArtistImages(artist) {
 	};
 }
 
-function ArtistCard({ artist }) {
+function ArtistCard({ artist, imagePriority = 'auto', shouldEagerLoad = false, enterDelayMs = 0 }) {
 	const { images, defaultImage, sequence } = useMemo(() => getArtistImages(artist), [artist]);
 	const [currentImage, setCurrentImage] = useState(defaultImage);
 	const [previousImage, setPreviousImage] = useState(null);
@@ -58,25 +60,11 @@ function ArtistCard({ artist }) {
 	}, [defaultImage]);
 
 	useEffect(() => {
-		const preloadImages = () => {
-			images.forEach((src) => {
-				const image = new window.Image();
-				image.src = src;
-			});
-		};
-
-		const handle = window.requestIdleCallback
-			? window.requestIdleCallback(preloadImages, { timeout: 1200 })
-			: window.setTimeout(preloadImages, 100);
-
-		return () => {
-			if (window.requestIdleCallback && window.cancelIdleCallback) {
-				window.cancelIdleCallback(handle);
-				return;
-			}
-			window.clearTimeout(handle);
-		};
-	}, [images]);
+		if (!defaultImage) return undefined;
+		void preloadImage(defaultImage, { priority: imagePriority });
+		void preloadImages(images.slice(1), { priority: imagePriority });
+		return undefined;
+	}, [defaultImage, imagePriority, images]);
 
 	useEffect(() => {
 		clearTimers();
@@ -92,26 +80,30 @@ function ArtistCard({ artist }) {
 		const runId = hoverRunIdRef.current;
 
 		const runSequence = async () => {
+			void preloadImages(sequence, { priority: 'high' });
 			await wait(IMAGE_HOVER_DELAY_MS);
 			if (hoverRunIdRef.current !== runId) return;
 
-			for (const image of sequence) {
-				if (hoverRunIdRef.current !== runId) return;
-
-				const activeImage = currentImageRef.current;
-				if (activeImage !== image) {
-					setPreviousImage(activeImage);
-					setCurrentImage(image);
-					currentImageRef.current = image;
-					setIsTransitioning(true);
-					await wait(IMAGE_TRANSITION_MS);
+			while (hoverRunIdRef.current === runId) {
+				for (const [index, image] of sequence.entries()) {
 					if (hoverRunIdRef.current !== runId) return;
-					setPreviousImage(null);
-					setIsTransitioning(false);
-				}
 
-				await wait(IMAGE_HOLD_MS);
-				if (hoverRunIdRef.current !== runId) return;
+					const activeImage = currentImageRef.current;
+					if (activeImage !== image) {
+						setPreviousImage(activeImage);
+						setCurrentImage(image);
+						currentImageRef.current = image;
+						setIsTransitioning(true);
+						await wait(IMAGE_TRANSITION_MS);
+						if (hoverRunIdRef.current !== runId) return;
+						setPreviousImage(null);
+						setIsTransitioning(false);
+					}
+
+					const holdDuration = index === sequence.length - 1 ? IMAGE_LAST_HOLD_MS : IMAGE_HOLD_MS;
+					await wait(holdDuration);
+					if (hoverRunIdRef.current !== runId) return;
+				}
 			}
 		};
 
@@ -129,6 +121,7 @@ function ArtistCard({ artist }) {
 		<Link
 			to={`/artists/${artist.slug}`}
 			className="artist-splash-card"
+			style={{ '--artist-splash-enter-delay': `${enterDelayMs}ms` }}
 			onMouseEnter={handlePointerEnter}
 			onMouseLeave={() => setIsHovered(false)}
 			onFocus={handlePointerEnter}
@@ -141,17 +134,23 @@ function ArtistCard({ artist }) {
 			<div className="artist-splash-card-frame">
 				{previousImage && (
 					<img
+						key={`previous-${previousImage}`}
 						src={previousImage}
 						alt=""
 						aria-hidden="true"
 						className={`artist-splash-portrait artist-splash-portrait-prev ${isTransitioning ? 'artist-splash-exit-left' : ''}`.trim()}
+						decoding="async"
 					/>
 				)}
 				{currentImage && (
 					<img
+						key={`current-${currentImage}`}
 						src={currentImage}
 						alt={artist.name}
 						className={`artist-splash-portrait artist-splash-portrait-current ${isTransitioning ? 'artist-splash-enter-right' : ''}`.trim()}
+						loading="eager"
+						fetchPriority={imagePriority}
+						decoding="async"
 					/>
 				)}
 			</div>
@@ -162,6 +161,7 @@ function ArtistCard({ artist }) {
 export default function ArtistSplash({ artists }) {
 	const heroVideo = import.meta.env.VITE_HOME_HERO_VIDEO || '/hero-video.mp4';
 	const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
+	const priorityCount = 3;
 
 	useEffect(() => {
 		const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -201,8 +201,14 @@ export default function ArtistSplash({ artists }) {
 			)}
 			<div className="artist-splash-overlay" />
 			<div className="artist-splash-grid">
-				{artists.map((artist) => (
-					<ArtistCard key={artist.id} artist={artist} />
+				{artists.map((artist, index) => (
+					<ArtistCard
+						key={artist.id}
+						artist={artist}
+						imagePriority={index < priorityCount ? 'high' : 'auto'}
+						shouldEagerLoad={index < priorityCount}
+						enterDelayMs={index * CARD_WAVE_DELAY_MS}
+					/>
 				))}
 			</div>
 		</section>

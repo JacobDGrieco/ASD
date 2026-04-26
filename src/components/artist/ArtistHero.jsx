@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FaApple, FaSoundcloud, FaSpotify } from 'react-icons/fa';
+import { preloadImage, preloadImages } from '../../lib/publicPrefetch.js';
 import '../../styles/ArtistHero.css';
 
-const IMAGE_TRANSITION_MS = 360;
-const IMAGE_HOVER_DELAY_MS = 250;
-const IMAGE_HOLD_MS = 150;
+const IMAGE_TRANSITION_MS = 480;
+const IMAGE_HOVER_DELAY_MS = 320;
+const IMAGE_HOLD_MS = 420;
+const IMAGE_LAST_HOLD_MS = 1100;
 
 function uniqueUrls(urls) {
 	return [...new Set(urls.filter(Boolean))];
@@ -57,25 +59,11 @@ export default function ArtistHero({ artist }) {
 	}, [defaultImage]);
 
 	useEffect(() => {
-		const preloadImages = () => {
-			images.forEach((src) => {
-				const image = new window.Image();
-				image.src = src;
-			});
-		};
-
-		const handle = window.requestIdleCallback
-			? window.requestIdleCallback(preloadImages, { timeout: 1200 })
-			: window.setTimeout(preloadImages, 100);
-
-		return () => {
-			if (window.requestIdleCallback && window.cancelIdleCallback) {
-				window.cancelIdleCallback(handle);
-				return;
-			}
-			window.clearTimeout(handle);
-		};
-	}, [images]);
+		if (!defaultImage) return undefined;
+		void preloadImage(defaultImage, { priority: 'high' });
+		void preloadImages(images.slice(1), { priority: 'high' });
+		return undefined;
+	}, [defaultImage, images]);
 
 	useEffect(() => {
 		clearTimers();
@@ -91,26 +79,30 @@ export default function ArtistHero({ artist }) {
 		const runId = hoverRunIdRef.current;
 
 		const runSequence = async () => {
+			void preloadImages(sequence, { priority: 'high' });
 			await wait(IMAGE_HOVER_DELAY_MS);
 			if (hoverRunIdRef.current !== runId) return;
 
-			for (const image of sequence) {
-				if (hoverRunIdRef.current !== runId) return;
-
-				const activeImage = currentImageRef.current;
-				if (activeImage !== image) {
-					setPreviousImage(activeImage);
-					setCurrentImage(image);
-					currentImageRef.current = image;
-					setIsTransitioning(true);
-					await wait(IMAGE_TRANSITION_MS);
+			while (hoverRunIdRef.current === runId) {
+				for (const [index, image] of sequence.entries()) {
 					if (hoverRunIdRef.current !== runId) return;
-					setPreviousImage(null);
-					setIsTransitioning(false);
-				}
 
-				await wait(IMAGE_HOLD_MS);
-				if (hoverRunIdRef.current !== runId) return;
+					const activeImage = currentImageRef.current;
+					if (activeImage !== image) {
+						setPreviousImage(activeImage);
+						setCurrentImage(image);
+						currentImageRef.current = image;
+						setIsTransitioning(true);
+						await wait(IMAGE_TRANSITION_MS);
+						if (hoverRunIdRef.current !== runId) return;
+						setPreviousImage(null);
+						setIsTransitioning(false);
+					}
+
+					const holdDuration = index === sequence.length - 1 ? IMAGE_LAST_HOLD_MS : IMAGE_HOLD_MS;
+					await wait(holdDuration);
+					if (hoverRunIdRef.current !== runId) return;
+				}
 			}
 		};
 
@@ -131,17 +123,23 @@ export default function ArtistHero({ artist }) {
 				<div className="artist-hero-portrait-frame" tabIndex={0}>
 					{previousImage && (
 						<img
+							key={`previous-${previousImage}`}
 							src={previousImage}
 							alt=""
 							aria-hidden="true"
 							className={`artist-hero-portrait artist-hero-portrait-prev ${isTransitioning ? 'artist-hero-exit-left' : ''}`.trim()}
+							decoding="async"
 						/>
 					)}
 					{currentImage && (
 						<img
+							key={`current-${currentImage}`}
 							src={currentImage}
 							alt={artist.name}
 							className={`artist-hero-portrait artist-hero-portrait-current ${isTransitioning ? 'artist-hero-enter-right' : ''}`.trim()}
+							loading="eager"
+							fetchPriority="high"
+							decoding="async"
 						/>
 					)}
 				</div>

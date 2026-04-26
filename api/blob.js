@@ -20,13 +20,13 @@ export default async function handler(request, response) {
 
   if (result.statusCode === 304) {
     response.setHeader('ETag', result.blob.etag)
-    response.setHeader('Cache-Control', 'public, max-age=0, must-revalidate')
+    response.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
     return response.status(304).end()
   }
 
   response.setHeader('Content-Type', result.blob.contentType ?? 'application/octet-stream')
   response.setHeader('X-Content-Type-Options', 'nosniff')
   response.setHeader('ETag', result.blob.etag)
-  response.setHeader('Cache-Control', 'public, max-age=0, must-revalidate')
+  response.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
   return Readable.fromWeb(result.stream).pipe(response)
 }

@@ -1,9 +1,32 @@
 import { prefetchApi } from '../hooks/useApi.js'
 
-function preloadImage(url) {
-  if (!url || typeof window === 'undefined') return
-  const image = new window.Image()
-  image.src = url
+const imageWarmups = new Map()
+
+export function preloadImage(url, { priority = 'auto' } = {}) {
+  if (!url || typeof window === 'undefined') return Promise.resolve(null)
+  if (imageWarmups.has(url)) return imageWarmups.get(url)
+
+  const request = new Promise((resolve) => {
+    const image = new window.Image()
+
+    if (priority !== 'auto' && 'fetchPriority' in image) {
+      image.fetchPriority = priority
+    }
+
+    image.decoding = 'async'
+    image.loading = 'eager'
+    image.onload = () => resolve(url)
+    image.onerror = () => resolve(null)
+    image.src = url
+  })
+
+  imageWarmups.set(url, request)
+  return request
+}
+
+export function preloadImages(urls, options) {
+  const uniqueUrls = [...new Set((Array.isArray(urls) ? urls : []).filter(Boolean))]
+  return Promise.all(uniqueUrls.map((url) => preloadImage(url, options)))
 }
 
 export function prefetchArtistPage(artist) {
@@ -15,13 +38,12 @@ export function prefetchArtistPage(artist) {
     ? artist.images.map((image) => image?.previewUrl || image?.url).filter(Boolean)
     : []
 
-  images.slice(0, 2).forEach(preloadImage)
-  preloadImage(artist.portrait)
+  void preloadImages([artist.portrait, ...images].slice(0, 4), { priority: 'high' })
 }
 
 export function prefetchSongPage(slug, coverArt) {
   if (!slug) return
 
   prefetchApi(`/api/songs/${slug}`).catch(() => {})
-  preloadImage(coverArt)
+  void preloadImage(coverArt, { priority: 'high' })
 }

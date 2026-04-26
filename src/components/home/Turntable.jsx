@@ -14,7 +14,14 @@ export default function Turntable({ activeTrack, isPlaying, onTonearmToggle }) {
         <div className="turntable-body">
           <div className={`turntable-platter ${isPlaying ? 'turntable-spinning' : ''}`}>
             {coverArt && (
-              <img src={coverArt} alt={title ?? ''} className="turntable-label" />
+              <img
+                src={coverArt}
+                alt={title ?? ''}
+                className="turntable-label"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+              />
             )}
             {!coverArt && <div className="turntable-label-blank" />}
           </div>

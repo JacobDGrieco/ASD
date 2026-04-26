@@ -52,6 +52,10 @@
 		filter 0.35s ease;
 	transform-origin: center bottom;
 	filter: saturate(0.9);
+	opacity: 0;
+	animation: artist-card-rise 0.9s cubic-bezier(0.16, 0.84, 0.26, 1) both;
+	animation-delay: var(--artist-splash-enter-delay, 0ms);
+	will-change: transform, opacity;
 }
 
 .artist-splash-card-frame {
@@ -200,6 +204,13 @@
 	}
 }
 
+@media (prefers-reduced-motion: reduce) {
+	.artist-splash-card {
+		opacity: 1;
+		animation: none;
+	}
+}
+
 @media (max-width: 640px) {
 	.artist-splash-card {
 		width: 58vw;
@@ -232,5 +243,19 @@
 	to {
 		opacity: 0;
 		transform: translateX(-18%) scale(1.05);
+	}
+}
+
+@keyframes artist-card-rise {
+	from {
+		opacity: 0;
+		transform: translate3d(0, 18vh, 0) scale(0.94);
+		filter: saturate(0.75) blur(3px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translate3d(0, 0, 0) scale(1);
+		filter: saturate(0.9) blur(0);
 	}
 }

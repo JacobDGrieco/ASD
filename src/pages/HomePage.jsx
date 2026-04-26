@@ -1,6 +1,9 @@
-import { useApi } from '../hooks/useApi.js'
+import { prefetchApi, useApi } from '../hooks/useApi.js'
 import ArtistSplash from '../components/home/ArtistSplash.jsx'
 import RecordPlayer from '../components/home/RecordPlayer.jsx'
+
+void prefetchApi('/api/artists')
+void prefetchApi('/api/record-player')
 
 export function getHomePageApiMessage(isDev) {
   if (isDev) {
