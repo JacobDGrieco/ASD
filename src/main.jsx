@@ -11,7 +11,7 @@ createRoot(document.getElementById('root')).render(
 	<StrictMode>
 		<BrowserRouter>
 			<App />
-			<Analytics />
+			<Analytics debug={false} />
 		</BrowserRouter>
 	</StrictMode>
 );
