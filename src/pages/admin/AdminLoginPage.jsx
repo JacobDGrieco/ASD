@@ -4,14 +4,14 @@ import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import '../../styles/AdminLoginPage.css'
 
 export default function AdminLoginPage() {
-  const { token, login } = useAdminAuth()
+  const { token, session, login } = useAdminAuth()
   const navigate = useNavigate()
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
   if (token) {
-    navigate('/admin/artists', { replace: true })
+    navigate(session?.role === 'ARTIST' ? '/admin/albums' : '/admin/artists', { replace: true })
     return null
   }
 
@@ -21,7 +21,6 @@ export default function AdminLoginPage() {
     setError(null)
     try {
       await login(password)
-      navigate('/admin/artists', { replace: true })
     } catch {
       setError('Invalid password')
     } finally {

@@ -51,7 +51,9 @@ function validateAlbumForm(form) {
 }
 
 export default function AdminAlbumsPage() {
-  const { token } = useAdminAuth()
+  const { token, session } = useAdminAuth()
+  const isArtistScoped = session?.role === 'ARTIST'
+  const scopedArtistId = session?.artistId ?? ''
   const auth = { Authorization: `Bearer ${token}` }
   const [albums, setAlbums] = useState([])
   const [artists, setArtists] = useState([])
@@ -89,7 +91,7 @@ export default function AdminAlbumsPage() {
   const totalPages = Math.max(1, Math.ceil(filteredAlbums.length / PAGE_SIZE))
   const pagedAlbums = form ? filteredAlbums : filteredAlbums.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-  const openCreate = () => setForm({ ...empty })
+  const openCreate = () => setForm({ ...empty, artistId: scopedArtistId })
   const openEdit = (album) => setForm({
     ...album,
     images: album.images ?? [],
@@ -114,12 +116,18 @@ export default function AdminAlbumsPage() {
     const payload = {
       ...form,
       slug: slugify(form.title),
+      ...(isArtistScoped ? { artistId: scopedArtistId } : {}),
     }
     const res = await fetch(url, {
       method: isEdit ? 'PUT' : 'POST',
       headers: { ...auth, 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Failed to save album.' }))
+      window.alert(error.error ?? 'Failed to save album.')
+      return
+    }
     const saved = await res.json()
     const withArtist = { ...saved, artist: artists.find((artist) => artist.id === saved.artistId) ?? null }
     setAlbums((prev) => (isEdit ? prev.map((album) => (album.id === saved.id ? withArtist : album)) : [...prev, withArtist]))
@@ -198,14 +206,16 @@ export default function AdminAlbumsPage() {
       </div>
 
       <div className="admin-filter-bar">
-        <select
-          value={filterArtist}
-          onChange={(e) => setFilterArtist(e.target.value)}
-          className="admin-filter-select"
-        >
-          <option value="">All Artists</option>
-          {artistOptions.map((artist) => <option key={artist.id} value={artist.id}>{artist.name}</option>)}
-        </select>
+        {!isArtistScoped && (
+          <select
+            value={filterArtist}
+            onChange={(e) => setFilterArtist(e.target.value)}
+            className="admin-filter-select"
+          >
+            <option value="">All Artists</option>
+            {artistOptions.map((artist) => <option key={artist.id} value={artist.id}>{artist.name}</option>)}
+          </select>
+        )}
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
@@ -298,10 +308,19 @@ export default function AdminAlbumsPage() {
                 </div>
                 <div className="admin-modal-field admin-modal-field-full">
                   <label className="admin-modal-label">Artist</label>
-                  <select value={form.artistId} onChange={set('artistId')} className="admin-artists-page-input">
-                    <option value="">- Artist -</option>
-                    {artistOptions.map((artist) => <option key={artist.id} value={artist.id}>{artist.name}</option>)}
-                  </select>
+                  {isArtistScoped ? (
+                    <input
+                      type="text"
+                      value={artistOptions.find((artist) => artist.id === scopedArtistId)?.name ?? ''}
+                      className="admin-artists-page-input"
+                      readOnly
+                    />
+                  ) : (
+                    <select value={form.artistId} onChange={set('artistId')} className="admin-artists-page-input">
+                      <option value="">- Artist -</option>
+                      {artistOptions.map((artist) => <option key={artist.id} value={artist.id}>{artist.name}</option>)}
+                    </select>
+                  )}
                 </div>
                 <div className="admin-modal-field">
                   <label className="admin-modal-label">Type</label>

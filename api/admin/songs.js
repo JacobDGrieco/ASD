@@ -1,5 +1,5 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { requireAdmin } from '../../src/lib/auth.js'
+import { artistScopedSongWhere, isSuperAdmin, requireAdmin } from '../../src/lib/auth.js'
 import { slugify } from '../../src/lib/slugify.js'
 import {
   clientImages,
@@ -75,38 +75,66 @@ function formatSong(song) {
   })
 }
 
-async function loadSong(id) {
-  const song = await prisma.song.findUnique({
-    where: { id },
-    include: {
-      placements: {
-        orderBy: [{ placementOrder: 'asc' }],
-        include: {
-          album: {
-            select: {
-              id: true,
-              title: true,
-              slug: true,
-              releaseDate: true,
-              artistId: true,
-              artist: { select: { name: true, slug: true, order: true } },
-            },
+function songInclude() {
+  return {
+    placements: {
+      orderBy: [{ placementOrder: 'asc' }],
+      include: {
+        album: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            releaseDate: true,
+            artistId: true,
+            artist: { select: { id: true, name: true, slug: true, order: true } },
           },
         },
       },
-      meta: true,
-      images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
     },
+    meta: true,
+    images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
+  }
+}
+
+async function loadSong(session, id) {
+  const song = await prisma.song.findFirst({
+    where: {
+      id,
+      ...artistScopedSongWhere(session),
+    },
+    include: songInclude(),
   })
 
   return song ? formatSong(song) : null
 }
 
+async function validatePlacementOwnership(session, placements) {
+  if (isSuperAdmin(session)) return true
+
+  const albums = await prisma.album.findMany({
+    where: {
+      id: {
+        in: placements.map((placement) => placement.albumId),
+      },
+      artistId: session.artistId,
+    },
+    select: { id: true },
+  })
+
+  return albums.length === placements.length
+}
+
 export default async function handler(req, res) {
-  if (!requireAdmin(req, res)) return
+  const session = requireAdmin(req, res)
+  if (!session) return
+
   const { id } = req.query
 
   if (id) {
+    const existingSong = await loadSong(session, id)
+    if (!existingSong) return res.status(404).json({ error: 'Song not found' })
+
     if (req.method === 'PUT') {
       const {
         title,
@@ -127,6 +155,9 @@ export default async function handler(req, res) {
       const placements = normalizePlacements(req.body)
       const validationError = validatePlacements(placements)
       if (validationError) return res.status(400).json({ error: validationError })
+      if (!(await validatePlacementOwnership(session, placements))) {
+        return res.status(403).json({ error: 'You can only assign songs to your own albums.' })
+      }
 
       const normalizedImages = normalizeImageInput(images, 'artwork')
 
@@ -177,7 +208,7 @@ export default async function handler(req, res) {
         },
       })
 
-      return res.status(200).json(await loadSong(id))
+      return res.status(200).json(await loadSong(session, id))
     }
 
     if (req.method === 'DELETE') {
@@ -190,25 +221,8 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const songs = await prisma.song.findMany({
-      include: {
-        placements: {
-          orderBy: [{ placementOrder: 'asc' }],
-          include: {
-            album: {
-              select: {
-                id: true,
-                title: true,
-                slug: true,
-                releaseDate: true,
-                artistId: true,
-                artist: { select: { name: true, slug: true, order: true } },
-              },
-            },
-          },
-        },
-        meta: true,
-        images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
-      },
+      where: artistScopedSongWhere(session),
+      include: songInclude(),
     })
 
     const sortedSongs = songs
@@ -251,6 +265,9 @@ export default async function handler(req, res) {
     const placements = normalizePlacements(req.body)
     const validationError = validatePlacements(placements)
     if (validationError) return res.status(400).json({ error: validationError })
+    if (!(await validatePlacementOwnership(session, placements))) {
+      return res.status(403).json({ error: 'You can only assign songs to your own albums.' })
+    }
 
     const normalizedImages = normalizeImageInput(images, 'artwork')
     const song = await prisma.song.create({
@@ -290,7 +307,7 @@ export default async function handler(req, res) {
       },
     })
 
-    return res.status(201).json(await loadSong(song.id))
+    return res.status(201).json(await loadSong(session, song.id))
   }
 
   return res.status(405).json({ error: 'Method not allowed' })

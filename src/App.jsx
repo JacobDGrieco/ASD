@@ -8,9 +8,10 @@ import AlbumPage from './pages/AlbumPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import AdminLayout from './components/admin/AdminLayout.jsx'
 import AdminRoute from './components/admin/AdminRoute.jsx'
-import { AdminProvider } from './lib/adminAuth.jsx'
+import { AdminProvider, useAdminAuth } from './lib/adminAuth.jsx'
 
 const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage.jsx'))
+const AdminAccountsPage = lazy(() => import('./pages/admin/AdminAccountsPage.jsx'))
 const AdminArtistsPage = lazy(() => import('./pages/admin/AdminArtistsPage.jsx'))
 const AdminAlbumsPage = lazy(() => import('./pages/admin/AdminAlbumsPage.jsx'))
 const AdminSongsPage = lazy(() => import('./pages/admin/AdminSongsPage.jsx'))
@@ -30,6 +31,12 @@ function PublicLayout() {
   )
 }
 
+function AdminHomeRedirect() {
+  const { session } = useAdminAuth()
+  if (session?.role === 'ARTIST') return <AdminAlbumsPage />
+  return <AdminArtistsPage />
+}
+
 export default function App() {
   return (
     <AdminProvider>
@@ -45,7 +52,8 @@ export default function App() {
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route element={<AdminRoute />}>
             <Route element={<AdminLayout />}>
-              <Route path="/admin" element={<AdminArtistsPage />} />
+              <Route path="/admin" element={<AdminHomeRedirect />} />
+              <Route path="/admin/accounts" element={<AdminAccountsPage />} />
               <Route path="/admin/artists" element={<AdminArtistsPage />} />
               <Route path="/admin/albums" element={<AdminAlbumsPage />} />
               <Route path="/admin/songs" element={<AdminSongsPage />} />

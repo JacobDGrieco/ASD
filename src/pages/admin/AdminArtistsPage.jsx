@@ -40,7 +40,8 @@ function validateArtistForm(form) {
 }
 
 export default function AdminArtistsPage() {
-  const { token } = useAdminAuth()
+  const { token, session } = useAdminAuth()
+  const isSuperAdmin = session?.role !== 'ARTIST'
   const auth = { Authorization: `Bearer ${token}` }
   const [artists, setArtists] = useState([])
   const [form, setForm] = useState(null)
@@ -54,7 +55,7 @@ export default function AdminArtistsPage() {
   }, [token])
 
   const openCreate = () => setForm({ ...empty })
-  const openEdit = (artist) => setForm({ ...artist, images: artist.images ?? [] })
+  const openEdit = (artist) => setForm({ ...empty, ...artist, images: artist.images ?? [] })
   const closeForm = () => setForm(null)
   const nextOrder = artists.reduce((maxOrder, artist) => Math.max(maxOrder, artist.order ?? 0), -1) + 1
 
@@ -77,6 +78,11 @@ export default function AdminArtistsPage() {
       headers: { ...auth, 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Failed to save artist.' }))
+      window.alert(error.error ?? 'Failed to save artist.')
+      return
+    }
     const saved = await res.json()
     setArtists((prev) => (isEdit ? prev.map((artist) => (artist.id === saved.id ? saved : artist)) : [...prev, saved]))
     closeForm()
@@ -194,17 +200,17 @@ export default function AdminArtistsPage() {
     <div>
       <div className="admin-artists-page-header">
         <h1 className="admin-artists-page-title">Artists</h1>
-        <button onClick={openCreate} className="admin-artists-page-primary-btn">New Artist</button>
+        {isSuperAdmin && <button onClick={openCreate} className="admin-artists-page-primary-btn">New Artist</button>}
       </div>
 
       <div className="admin-artists-page-table-wrap">
         <table className="admin-artists-page-table">
           <thead>
             <tr>
-              <th className="admin-artists-page-drag-header"></th>
+              {isSuperAdmin && <th className="admin-artists-page-drag-header"></th>}
               {columns.map((column) => <th key={column.key} className={column.className}>{renderHeader(column)}</th>)}
               <th className={`admin-artists-page-col-action admin-artists-page-sticky-right-1`}></th>
-              <th className={`admin-artists-page-col-action admin-artists-page-sticky-right-0`}></th>
+              {isSuperAdmin && <th className={`admin-artists-page-col-action admin-artists-page-sticky-right-0`}></th>}
             </tr>
           </thead>
           <tbody>
@@ -218,19 +224,21 @@ export default function AdminArtistsPage() {
                   handleDrop(artist.id)
                 }}
               >
-                <td className="admin-artists-page-drag-cell">
-                  <button
-                    type="button"
-                    draggable={!form}
-                    onDragStart={(event) => handleDragStart(event, artist.id)}
-                    onDragEnd={handleDragEnd}
-                    className="admin-artists-page-drag-handle"
-                    aria-label={`Reorder ${artist.name}`}
-                    title="Drag to reorder"
-                  >
-                    ::
-                  </button>
-                </td>
+                {isSuperAdmin && (
+                  <td className="admin-artists-page-drag-cell">
+                    <button
+                      type="button"
+                      draggable={!form}
+                      onDragStart={(event) => handleDragStart(event, artist.id)}
+                      onDragEnd={handleDragEnd}
+                      className="admin-artists-page-drag-handle"
+                      aria-label={`Reorder ${artist.name}`}
+                      title="Drag to reorder"
+                    >
+                      ::
+                    </button>
+                  </td>
+                )}
                 {columns.map((column) => (
                   <td key={column.key} className={column.className ?? ''}>
                     {renderDisplayValue(artist, column)}
@@ -241,11 +249,13 @@ export default function AdminArtistsPage() {
                     <FaPencilAlt aria-hidden="true" />
                   </button>
                 </td>
-                <td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-0`}>
-                  <button type="button" onClick={() => handleDelete(artist.id)} className={`admin-artists-page-danger-btn admin-artists-page-icon-btn`} aria-label="Delete artist" title="Delete">
-                    <FaTrash aria-hidden="true" />
-                  </button>
-                </td>
+                {isSuperAdmin && (
+                  <td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-0`}>
+                    <button type="button" onClick={() => handleDelete(artist.id)} className={`admin-artists-page-danger-btn admin-artists-page-icon-btn`} aria-label="Delete artist" title="Delete">
+                      <FaTrash aria-hidden="true" />
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

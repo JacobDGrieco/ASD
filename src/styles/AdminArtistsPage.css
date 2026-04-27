@@ -658,6 +658,18 @@
 	letter-spacing: 0.05em;
 }
 
+.admin-admin-account-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	color: var(--text);
+}
+
+.admin-admin-account-toggle input {
+	width: 16px;
+	height: 16px;
+}
+
 .admin-modal-textarea {
 	resize: vertical;
 	min-height: 100px;

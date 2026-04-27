@@ -1,9 +1,10 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { requireAdmin } from '../../src/lib/auth.js'
+import { requireSuperAdmin } from '../../src/lib/auth.js'
 import { clientImages, mergeLegacyImages } from '../../src/lib/images.js'
 
 export default async function handler(req, res) {
-  if (!requireAdmin(req, res)) return
+  const session = requireSuperAdmin(req, res)
+  if (!session) return
 
   if (req.method === 'GET') {
     const tracks = await prisma.recordPlayerTrack.findMany({

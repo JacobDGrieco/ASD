@@ -99,7 +99,8 @@ function validateSongForm(form) {
 }
 
 export default function AdminSongsPage() {
-  const { token } = useAdminAuth()
+  const { token, session } = useAdminAuth()
+  const isArtistScoped = session?.role === 'ARTIST'
   const auth = { Authorization: `Bearer ${token}` }
   const [songs, setSongs] = useState([])
   const [albums, setAlbums] = useState([])
@@ -137,7 +138,7 @@ export default function AdminSongsPage() {
     : albums
   const sortedArtists = [...artists].sort((left, right) => compareLexicographically(left.name, right.name))
   const sortedAlbumOptions = [...albumOptions].sort((left, right) => compareLexicographically(left.title, right.title))
-  const sortedAlbums = [...albums].sort((left, right) => compareLexicographically(left.title, right.title))
+  const sortedAlbums = [...albumOptions].sort((left, right) => compareLexicographically(left.title, right.title))
 
   const filteredSongs = songs.filter((song) => {
     const albumIds = placementAlbumIds(song)
@@ -319,14 +320,16 @@ export default function AdminSongsPage() {
       </div>
 
       <div className="admin-filter-bar">
-        <select value={filterArtist} onChange={(event) => setFilterArtist(event.target.value)} className="admin-filter-select">
-          <option value="">All Artists</option>
-          {sortedArtists.map((artist) => (
-            <option key={artist.id} value={artist.id}>
-              {artist.name}
-            </option>
-          ))}
-        </select>
+        {!isArtistScoped && (
+          <select value={filterArtist} onChange={(event) => setFilterArtist(event.target.value)} className="admin-filter-select">
+            <option value="">All Artists</option>
+            {sortedArtists.map((artist) => (
+              <option key={artist.id} value={artist.id}>
+                {artist.name}
+              </option>
+            ))}
+          </select>
+        )}
         <select value={filterAlbum} onChange={(event) => setFilterAlbum(event.target.value)} className="admin-filter-select">
           <option value="">All Albums</option>
           {sortedAlbumOptions.map((album) => (
@@ -548,7 +551,7 @@ export default function AdminSongsPage() {
                     ))}
                   </div>
                   <button type="button" onClick={addAlbumPlacement} className="admin-artists-page-ghost-btn admin-song-add-album-btn">
-                    Add Album
+                    {isArtistScoped ? 'Add Album Placement' : 'Add Album'}
                   </button>
                 </TabPanel>
               </TabView>

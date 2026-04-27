@@ -1,11 +1,26 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { requireAdmin } from '../../src/lib/auth.js'
+import { artistScopedSongWhere, requireAdmin } from '../../src/lib/auth.js'
+
+async function loadSongForLyrics(session, songId) {
+  return prisma.song.findFirst({
+    where: {
+      id: songId,
+      ...artistScopedSongWhere(session),
+    },
+    select: { id: true },
+  })
+}
 
 export default async function handler(req, res) {
-  if (!requireAdmin(req, res)) return
+  const session = requireAdmin(req, res)
+  if (!session) return
+
   const { songId } = req.query
 
   if (!songId) return res.status(400).json({ error: 'songId required' })
+
+  const song = await loadSongForLyrics(session, songId)
+  if (!song) return res.status(404).json({ error: 'Song not found' })
 
   if (req.method === 'GET') {
     const blocks = await prisma.lyricBlock.findMany({

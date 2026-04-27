@@ -22,8 +22,19 @@ model Artist {
   youtubeProfile    String?
   images            ArtistImage[]
   albums            Album[]
+  adminAccess       ArtistAdminAccess?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+model ArtistAdminAccess {
+  id           String   @id @default(cuid())
+  artistId      String   @unique
+  artist        Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  passwordHash String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Album {
