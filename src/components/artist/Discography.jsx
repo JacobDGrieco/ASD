@@ -60,7 +60,13 @@ export default function Discography({ albums, artistSlug }) {
               />
               {openAlbum && albumIndex === openRowEndIndex && (
                 <div className="discography-expand" key={`${openAlbum.id}-expand`}>
-                  <TrackList songs={openAlbum.songs} artistSlug={artistSlug} albumSlug={openAlbum.slug} />
+                  <TrackList
+                    songs={openAlbum.songs}
+                    artistSlug={artistSlug}
+                    albumSlug={openAlbum.slug}
+                    albumHref={`/${artistSlug}/${openAlbum.slug}`}
+                    albumTitle={openAlbum.title}
+                  />
                 </div>
               )}
             </Fragment>

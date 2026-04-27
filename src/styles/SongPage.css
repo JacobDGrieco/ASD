@@ -1,5 +1,119 @@
 .song-page-body {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0 60px;
+	max-width: 900px;
+	margin: 0 auto;
+	padding: 0 60px;
+}
+
+.page-tabview.p-tabview {
+	padding: 22px 0 56px;
+}
+
+.page-tabview .p-tabview-nav {
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 0;
+	border: none;
+	border-bottom: 1px solid var(--border);
+	background: transparent;
+	margin: 0 0 22px;
+	padding: 0;
+	list-style: none;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.page-tabview .p-tabview-nav::-webkit-scrollbar {
+	display: none;
+}
+
+.page-tabview .p-tabview-nav li {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-right: 2px;
+	list-style: none;
+}
+
+.page-tabview .p-tabview-ink-bar {
+	display: none !important;
+}
+
+.page-tabview .p-tabview-nav li .p-tabview-nav-link {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	border-bottom: 2px solid transparent;
+	border-radius: 0;
+	background: transparent;
+	color: var(--text-muted);
+	padding: 0.95rem 1.15rem 0.85rem;
+	white-space: nowrap;
+	transition: border-color var(--transition), color var(--transition), background var(--transition);
+}
+
+.page-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link:hover {
+	color: var(--text);
+	background: color-mix(in srgb, var(--bg-raised) 55%, transparent);
+	cursor: pointer;
+}
+
+.page-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+	color: var(--text);
+	border-bottom-color: var(--accent);
+	background: transparent;
+}
+
+.page-tabview .p-tabview-panels {
+	padding: 0;
+	background: transparent;
+}
+
+.page-tabview .p-tabview-panel {
+	border: 1px solid var(--border);
+	border-radius: calc(var(--radius) + 4px);
+	overflow: hidden;
+	background: color-mix(in srgb, var(--bg-raised) 88%, transparent);
+	box-shadow: 0 16px 32px rgba(0, 0, 0, 0.14);
+}
+
+.page-tab-panel-stack {
+	padding: 32px 28px 36px;
+}
+
+.page-tab-panel-stack>.about-section-section:first-child,
+.page-tab-panel-stack>.song-info-links-section:first-child {
+	border-top: none;
+	padding-top: 0;
+}
+
+.page-tab-empty-state {
+	margin: 0;
+	color: var(--text-muted);
+	line-height: 1.8;
+}
+
+@media (max-width: 640px) {
+	.song-page-body {
+		padding: 0 16px;
+	}
+
+	.page-tabview.p-tabview {
+		padding: 18px 0 40px;
+	}
+
+	.page-tabview .p-tabview-nav {
+		margin-bottom: 14px;
+	}
+
+	.page-tabview .p-tabview-nav li .p-tabview-nav-link {
+		padding-left: 0.95rem;
+		padding-right: 0.95rem;
+	}
+
+	.page-tab-panel-stack {
+		padding: 24px 16px 28px;
+	}
 }

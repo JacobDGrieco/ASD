@@ -143,7 +143,6 @@ export default function ArtistHero({ artist }) {
 						/>
 					)}
 				</div>
-				<div className="artist-hero-portrait-shard" aria-hidden="true" />
 			</div>
 			<div className="artist-hero-info">
 				<h1 className="artist-hero-name">{artist.name}</h1>
