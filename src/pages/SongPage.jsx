@@ -10,8 +10,8 @@ import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 import '../styles/SongPage.css'
 
 export default function SongPage() {
-  const { songSlug } = useParams()
-  const { data: song, loading, error } = useApi(`/api/songs/${songSlug}`)
+  const { albumSlug, songSlug } = useParams()
+  const { data: song, loading, error } = useApi(`/api/songs/${songSlug}?albumSlug=${encodeURIComponent(albumSlug)}`)
   const lyricLineCount = song?.lyricBlocks?.filter((block) => block.text?.trim()).length ?? 0
   const defaultTabIndex = lyricLineCount < 2 ? 1 : 0
   const [activeTabIndex, setActiveTabIndex] = useState(0)

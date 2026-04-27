@@ -23,7 +23,7 @@ export default async function handler(req, res) {
 
   if (id) {
     if (req.method === 'PUT') {
-      const { title, slug, type, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, releaseDate, artistId, images } = req.body
+      const { title, slug, type, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, releaseDate, artistId, images } = req.body
       const normalizedImages = normalizeImageInput(images, 'cover')
       const album = await prisma.album.update({
         where: { id },
@@ -36,6 +36,7 @@ export default async function handler(req, res) {
           soundcloudUrl: soundcloudUrl || null,
           spotifyUrl: spotifyUrl || null,
           appleMusicUrl: appleMusicUrl || null,
+          youtubeUrl: youtubeUrl || null,
           releaseDate: new Date(releaseDate),
           artistId,
           images: {
@@ -70,7 +71,7 @@ export default async function handler(req, res) {
     return res.status(200).json(albums.map(withImages))
   }
   if (req.method === 'POST') {
-    const { title, slug, type, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, releaseDate, artistId, images } = req.body
+    const { title, slug, type, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, releaseDate, artistId, images } = req.body
     const normalizedImages = normalizeImageInput(images, 'cover')
     const album = await prisma.album.create({
       data: {
@@ -82,6 +83,7 @@ export default async function handler(req, res) {
         soundcloudUrl: soundcloudUrl || null,
         spotifyUrl: spotifyUrl || null,
         appleMusicUrl: appleMusicUrl || null,
+        youtubeUrl: youtubeUrl || null,
         releaseDate: new Date(releaseDate),
         artistId,
         images: normalizedImages.length

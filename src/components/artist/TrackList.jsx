@@ -17,9 +17,9 @@ export default function TrackList({ songs, artistSlug, albumSlug, albumHref, alb
 					key={song.id}
 					to={`/${artistSlug}/${albumSlug}/${song.slug}`}
 					className="track-list-row"
-					onMouseEnter={() => prefetchSongPage(song.slug)}
-					onFocus={() => prefetchSongPage(song.slug)}
-					onTouchStart={() => prefetchSongPage(song.slug)}
+					onMouseEnter={() => prefetchSongPage(song.slug, null, albumSlug)}
+					onFocus={() => prefetchSongPage(song.slug, null, albumSlug)}
+					onTouchStart={() => prefetchSongPage(song.slug, null, albumSlug)}
 				>
 					<span className="track-list-num">{song.discNumber > 1 ? `${song.discNumber}-` : ''}{song.trackNumber}</span>
 					<span className="track-list-title">{song.title}</span>

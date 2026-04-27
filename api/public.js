@@ -2,27 +2,33 @@ import { prisma } from '../src/lib/prisma.js'
 import { clientImages, mergeLegacyImages } from '../src/lib/images.js'
 
 function formatArtistImages(artist) {
-  return clientImages(mergeLegacyImages(artist.images, artist.portrait, {
-    fallbackUsage: 'portrait',
-    altText: artist.name,
-    idPrefix: artist.id,
-  }))
+  return clientImages(
+    mergeLegacyImages(artist.images, artist.portrait, {
+      fallbackUsage: 'portrait',
+      altText: artist.name,
+      idPrefix: artist.id,
+    })
+  )
 }
 
 function formatAlbumImages(album) {
-  return clientImages(mergeLegacyImages(album.images, album.coverArt, {
-    fallbackUsage: 'cover',
-    altText: album.title,
-    idPrefix: album.id ?? album.slug ?? album.title,
-  }))
+  return clientImages(
+    mergeLegacyImages(album.images, album.coverArt, {
+      fallbackUsage: 'cover',
+      altText: album.title,
+      idPrefix: album.id ?? album.slug ?? album.title,
+    })
+  )
 }
 
 function formatSongImages(song) {
-  return clientImages(mergeLegacyImages(song.images, song.artwork, {
-    fallbackUsage: 'artwork',
-    altText: song.title,
-    idPrefix: song.id,
-  }))
+  return clientImages(
+    mergeLegacyImages(song.images, song.artwork, {
+      fallbackUsage: 'artwork',
+      altText: song.title,
+      idPrefix: song.id,
+    })
+  )
 }
 
 function normalizeSlug(value) {
@@ -31,8 +37,40 @@ function normalizeSlug(value) {
 }
 
 function setPublicCache(res) {
-  // Metadata changes are edited live in admin, so freshness matters more than edge caching.
   res.setHeader('Cache-Control', 'no-store')
+}
+
+function formatAlbumSummary(album) {
+  const albumImages = formatAlbumImages(album)
+  return {
+    ...album,
+    coverArt: albumImages[0]?.previewUrl ?? album.coverArt,
+    images: albumImages,
+  }
+}
+
+function formatPlacementSongs(placements) {
+  return placements
+    .slice()
+    .sort((left, right) => {
+      if (left.discNumber !== right.discNumber) return left.discNumber - right.discNumber
+      if (left.trackNumber !== right.trackNumber) return left.trackNumber - right.trackNumber
+      return left.placementOrder - right.placementOrder
+    })
+    .map((placement) => ({
+      id: placement.song.id,
+      title: placement.song.title,
+      slug: placement.song.slug,
+      duration: placement.song.duration,
+      trackNumber: placement.trackNumber,
+      discNumber: placement.discNumber,
+      placementOrder: placement.placementOrder,
+    }))
+}
+
+function resolvePrimaryPlacement(placements, albumSlug = null) {
+  if (!placements?.length) return null
+  return placements.find((placement) => placement.album.slug === albumSlug) ?? placements[0]
 }
 
 async function getArtists(res) {
@@ -53,6 +91,7 @@ async function getArtists(res) {
       soundcloudProfile: true,
       spotifyProfile: true,
       appleMusicProfile: true,
+      youtubeProfile: true,
     },
   })
 
@@ -82,9 +121,13 @@ async function getArtist(res, slug) {
           images: {
             orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
           },
-          songs: {
-            orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }],
-            select: { id: true, title: true, slug: true, trackNumber: true, discNumber: true, duration: true },
+          songPlacements: {
+            include: {
+              song: {
+                select: { id: true, title: true, slug: true, duration: true },
+              },
+            },
+            orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }, { placementOrder: 'asc' }],
           },
         },
       },
@@ -101,15 +144,31 @@ async function getArtist(res, slug) {
       featuredArtists: true,
       song: {
         select: {
-          id: true, title: true, slug: true, trackNumber: true, discNumber: true, duration: true,
-          album: {
+          id: true,
+          title: true,
+          slug: true,
+          duration: true,
+          placements: {
+            orderBy: [{ placementOrder: 'asc' }],
             select: {
-              id: true, title: true, slug: true, coverArt: true, releaseDate: true, type: true,
-              images: {
-                orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
-                select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+              trackNumber: true,
+              discNumber: true,
+              placementOrder: true,
+              album: {
+                select: {
+                  id: true,
+                  title: true,
+                  slug: true,
+                  coverArt: true,
+                  releaseDate: true,
+                  type: true,
+                  images: {
+                    orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+                    select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+                  },
+                  artist: { select: { name: true, slug: true } },
+                },
               },
-              artist: { select: { name: true, slug: true } },
             },
           },
         },
@@ -119,32 +178,44 @@ async function getArtist(res, slug) {
 
   const albumMap = new Map()
   for (const { featuredArtists, song } of featuredMetas) {
-    const names = featuredArtists.split(';').map((n) => n.trim().toLowerCase())
+    const names = featuredArtists.split(';').map((name) => name.trim().toLowerCase())
     if (!names.includes(artist.name.toLowerCase())) continue
-    const { album } = song
-    if (!albumMap.has(album.id)) {
-      const albumImages = formatAlbumImages(album)
-      albumMap.set(album.id, { ...album, coverArt: albumImages[0]?.previewUrl ?? album.coverArt, songs: [] })
+
+    for (const placement of song.placements) {
+      const album = placement.album
+      if (!albumMap.has(album.id)) {
+        albumMap.set(album.id, { ...formatAlbumSummary(album), songs: [] })
+      }
+
+      albumMap.get(album.id).songs.push({
+        id: song.id,
+        title: song.title,
+        slug: song.slug,
+        duration: song.duration,
+        trackNumber: placement.trackNumber,
+        discNumber: placement.discNumber,
+        placementOrder: placement.placementOrder,
+      })
     }
-    albumMap.get(album.id).songs.push({ id: song.id, title: song.title, slug: song.slug, trackNumber: song.trackNumber, discNumber: song.discNumber, duration: song.duration })
   }
+
   const featuredIn = Array.from(albumMap.values()).map((album) => ({
     ...album,
-    songs: album.songs.sort((a, b) => a.discNumber - b.discNumber || a.trackNumber - b.trackNumber),
+    songs: album.songs.sort((left, right) => {
+      if (left.discNumber !== right.discNumber) return left.discNumber - right.discNumber
+      if (left.trackNumber !== right.trackNumber) return left.trackNumber - right.trackNumber
+      return left.placementOrder - right.placementOrder
+    }),
   }))
 
   return res.status(200).json({
     ...artist,
     portrait: images[0]?.previewUrl ?? artist.portrait,
     images,
-    albums: artist.albums.map((album) => {
-      const albumImages = formatAlbumImages(album)
-      return {
-        ...album,
-        coverArt: albumImages[0]?.previewUrl ?? album.coverArt,
-        images: albumImages,
-      }
-    }),
+    albums: artist.albums.map((album) => ({
+      ...formatAlbumSummary(album),
+      songs: formatPlacementSongs(album.songPlacements),
+    })),
     featuredIn,
   })
 }
@@ -158,9 +229,13 @@ async function getAlbum(res, slug) {
         orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
       },
       artist: { select: { name: true, slug: true } },
-      songs: {
-        orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }],
-        select: { id: true, title: true, slug: true, trackNumber: true, discNumber: true, duration: true },
+      songPlacements: {
+        include: {
+          song: {
+            select: { id: true, title: true, slug: true, duration: true },
+          },
+        },
+        orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }, { placementOrder: 'asc' }],
       },
     },
   })
@@ -172,25 +247,32 @@ async function getAlbum(res, slug) {
     ...album,
     coverArt: albumImages[0]?.previewUrl ?? album.coverArt,
     images: albumImages,
+    songs: formatPlacementSongs(album.songPlacements),
   })
 }
 
-async function getSong(res, slug) {
+async function getSong(res, slug, albumSlug = null) {
   setPublicCache(res)
   const song = await prisma.song.findUnique({
     where: { slug },
     include: {
-      album: {
-        select: {
-          title: true,
-          slug: true,
-          coverArt: true,
-          releaseDate: true,
-          images: {
-            orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
-            select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+      placements: {
+        orderBy: [{ placementOrder: 'asc' }],
+        include: {
+          album: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              coverArt: true,
+              releaseDate: true,
+              images: {
+                orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+                select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+              },
+              artist: { select: { name: true, slug: true } },
+            },
           },
-          artist: { select: { name: true, slug: true } },
         },
       },
       meta: true,
@@ -206,33 +288,52 @@ async function getSong(res, slug) {
 
   if (!song) return res.status(404).json({ error: 'Song not found' })
 
-  if (song.meta && !song.meta.releaseDate && song.album?.releaseDate) {
-    song.meta = { ...song.meta, releaseDate: song.album.releaseDate }
+  const primaryPlacement = resolvePrimaryPlacement(song.placements, albumSlug)
+  const primaryAlbum = primaryPlacement?.album ?? null
+
+  if (song.meta && !song.meta.releaseDate && primaryAlbum?.releaseDate) {
+    song.meta = { ...song.meta, releaseDate: primaryAlbum.releaseDate }
   }
 
   if (song.meta?.featuredArtists) {
-    const names = song.meta.featuredArtists.split(';').map((n) => n.trim()).filter(Boolean)
+    const names = song.meta.featuredArtists.split(';').map((name) => name.trim()).filter(Boolean)
     const matched = await prisma.artist.findMany({
       where: { name: { in: names } },
       select: { name: true, slug: true },
     })
-    const slugByName = Object.fromEntries(matched.map((a) => [a.name, a.slug]))
+    const slugByName = Object.fromEntries(matched.map((artist) => [artist.name, artist.slug]))
     song.meta = {
       ...song.meta,
       featuredArtistLinks: names.map((name) => ({ name, slug: slugByName[name] ?? null })),
     }
   }
 
-  if (song.album) {
-    const albumImages = formatAlbumImages(song.album)
-    song.album.coverArt = albumImages[0]?.previewUrl ?? song.album.coverArt
-  }
+  const placements = song.placements.map((placement) => {
+    const album = formatAlbumSummary(placement.album)
+    return {
+      albumId: album.id,
+      trackNumber: placement.trackNumber,
+      discNumber: placement.discNumber,
+      placementOrder: placement.placementOrder,
+      album,
+    }
+  })
 
   const songImages = formatSongImages(song)
-  song.artwork = songImages[0]?.previewUrl ?? song.artwork
-  song.images = songImages
 
-  return res.status(200).json(song)
+  return res.status(200).json({
+    ...song,
+    album: placements.find((placement) => placement.album.slug === primaryAlbum?.slug)?.album ?? placements[0]?.album ?? null,
+    albumId: primaryPlacement?.albumId ?? '',
+    trackNumber: primaryPlacement?.trackNumber ?? null,
+    discNumber: primaryPlacement?.discNumber ?? null,
+    placements,
+    albumIds: placements.map((placement) => placement.albumId),
+    trackNumbers: placements.map((placement) => placement.trackNumber),
+    discNumbers: placements.map((placement) => placement.discNumber),
+    artwork: songImages[0]?.previewUrl ?? song.artwork,
+    images: songImages,
+  })
 }
 
 async function getRecordPlayer(res) {
@@ -248,15 +349,22 @@ async function getRecordPlayer(res) {
             title: true,
             slug: true,
             soundcloudUrl: true,
-            album: {
-              select: {
-                coverArt: true,
-                title: true,
-                images: {
-                  orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
-                  select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+            youtubeUrl: true,
+            placements: {
+              orderBy: [{ placementOrder: 'asc' }],
+              take: 1,
+              include: {
+                album: {
+                  select: {
+                    coverArt: true,
+                    title: true,
+                    images: {
+                      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+                      select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+                    },
+                    artist: { select: { name: true } },
+                  },
                 },
-                artist: { select: { name: true } },
               },
             },
           },
@@ -265,19 +373,21 @@ async function getRecordPlayer(res) {
     })
 
     return res.status(200).json(
-      tracks.map((track) => {
-        const albumImages = formatAlbumImages(track.song.album)
-        return {
-          ...track,
-          song: {
-            ...track.song,
-            album: {
-              ...track.song.album,
-              coverArt: albumImages[0]?.previewUrl ?? track.song.album.coverArt,
+      tracks
+        .map((track) => {
+          const placement = track.song.placements[0]
+          if (!placement) return null
+
+          const album = formatAlbumSummary(placement.album)
+          return {
+            ...track,
+            song: {
+              ...track.song,
+              album,
             },
-          },
-        }
-      })
+          }
+        })
+        .filter(Boolean)
     )
   } catch (error) {
     console.error('Record player route failed', error)
@@ -290,11 +400,12 @@ export default async function handler(req, res) {
 
   const resource = typeof req.query.resource === 'string' ? req.query.resource : ''
   const slug = normalizeSlug(req.query.slug)
+  const albumSlug = typeof req.query.albumSlug === 'string' ? req.query.albumSlug : null
 
   if (resource === 'artists') return getArtists(res)
   if (resource === 'artist' && slug) return getArtist(res, slug)
   if (resource === 'album' && slug) return getAlbum(res, slug)
-  if (resource === 'song' && slug) return getSong(res, slug)
+  if (resource === 'song' && slug) return getSong(res, slug, albumSlug)
   if (resource === 'recordPlayer') return getRecordPlayer(res)
 
   return res.status(404).json({ error: 'Not found' })

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FaApple, FaSoundcloud, FaSpotify } from 'react-icons/fa';
+import { FaApple, FaSoundcloud, FaSpotify, FaYoutube } from 'react-icons/fa';
 import { prefetchSongPage } from '../../lib/publicPrefetch.js';
 import ArtworkGallery from '../shared/ArtworkGallery.jsx';
 import '../../styles/AlbumCard.css';
@@ -11,6 +11,7 @@ export default function AlbumCard({ album, isOpen, isUnreleased = false, onClick
 		{ href: album.soundcloudUrl, label: 'SoundCloud', icon: FaSoundcloud },
 		{ href: album.spotifyUrl, label: 'Spotify', icon: FaSpotify },
 		{ href: album.appleMusicUrl, label: 'Apple Music', icon: FaApple },
+		{ href: album.youtubeUrl, label: 'YouTube', icon: FaYoutube },
 	].filter((link) => link.href);
 
 	const content = (

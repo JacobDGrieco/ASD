@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
   if (id) {
     if (req.method === 'PUT') {
-      const { name, slug, bio, aboutMe, order, soundcloudProfile, spotifyProfile, appleMusicProfile, images } = req.body
+      const { name, slug, bio, aboutMe, order, soundcloudProfile, spotifyProfile, appleMusicProfile, youtubeProfile, images } = req.body
       const normalizedImages = normalizeImageInput(images, 'portrait')
       const artist = await prisma.artist.update({
         where: { id },
@@ -38,6 +38,7 @@ export default async function handler(req, res) {
           soundcloudProfile,
           spotifyProfile,
           appleMusicProfile,
+          youtubeProfile,
           images: {
             deleteMany: {},
             createMany: {
@@ -68,7 +69,7 @@ export default async function handler(req, res) {
     return res.status(200).json(artists.map(withImages))
   }
   if (req.method === 'POST') {
-    const { name, slug, bio, aboutMe, order, soundcloudProfile, spotifyProfile, appleMusicProfile, images } = req.body
+    const { name, slug, bio, aboutMe, order, soundcloudProfile, spotifyProfile, appleMusicProfile, youtubeProfile, images } = req.body
     const normalizedImages = normalizeImageInput(images, 'portrait')
     const artist = await prisma.artist.create({
       data: {
@@ -81,6 +82,7 @@ export default async function handler(req, res) {
         soundcloudProfile,
         spotifyProfile,
         appleMusicProfile,
+        youtubeProfile,
         images: normalizedImages.length
           ? {
               createMany: {

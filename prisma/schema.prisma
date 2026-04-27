@@ -19,6 +19,7 @@ model Artist {
   soundcloudProfile String?
   spotifyProfile    String?
   appleMusicProfile String?
+  youtubeProfile    String?
   images            ArtistImage[]
   albums            Album[]
   createdAt         DateTime @default(now())
@@ -35,11 +36,12 @@ model Album {
   soundcloudUrl String?
   spotifyUrl    String?
   appleMusicUrl String?
+  youtubeUrl    String?
   releaseDate   DateTime
   artistId      String
   artist        Artist       @relation(fields: [artistId], references: [id], onDelete: Cascade)
   images        AlbumImage[]
-  songs         Song[]
+  songPlacements SongAlbum[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
@@ -88,21 +90,32 @@ model Song {
   id            String              @id @default(cuid())
   title         String
   slug          String              @unique
-  trackNumber   Int
-  discNumber    Int                 @default(1)
   duration      String              @default("")
   artwork       String              @default("")
   soundcloudUrl String?
   spotifyUrl    String?
   appleMusicUrl String?
-  albumId       String
-  album         Album               @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  youtubeUrl    String?
+  placements    SongAlbum[]
   images        SongImage[]
   meta          SongMeta?
   lyricBlocks   LyricBlock[]
   recordSlots   RecordPlayerTrack[]
+}
 
-  @@index([albumId])
+model SongAlbum {
+  id             String   @id @default(cuid())
+  songId         String
+  albumId        String
+  trackNumber    Int
+  discNumber     Int      @default(1)
+  placementOrder Int
+  song           Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+  album          Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@unique([songId, albumId])
+  @@index([songId, placementOrder])
+  @@index([albumId, discNumber, trackNumber])
 }
 
 model SongImage {

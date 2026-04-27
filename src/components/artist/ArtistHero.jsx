@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FaApple, FaSoundcloud, FaSpotify } from 'react-icons/fa';
+import { FaApple, FaSoundcloud, FaSpotify, FaYoutube } from 'react-icons/fa';
 import { preloadImage, preloadImages } from '../../lib/publicPrefetch.js';
 import '../../styles/ArtistHero.css';
 
@@ -152,6 +152,7 @@ export default function ArtistHero({ artist }) {
 					{artist.soundcloudProfile && <a href={artist.soundcloudProfile} target="_blank" rel="noopener noreferrer"><FaSoundcloud /></a>}
 					{artist.spotifyProfile && <a href={artist.spotifyProfile} target="_blank" rel="noopener noreferrer"><FaSpotify /></a>}
 					{artist.appleMusicProfile && <a href={artist.appleMusicProfile} target="_blank" rel="noopener noreferrer"><FaApple /></a>}
+					{artist.youtubeProfile && <a href={artist.youtubeProfile} target="_blank" rel="noopener noreferrer"><FaYoutube /></a>}
 				</div>
 			</div>
 		</section>

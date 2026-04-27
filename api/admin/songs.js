@@ -1,14 +1,22 @@
 import { prisma } from '../../src/lib/prisma.js'
 import { requireAdmin } from '../../src/lib/auth.js'
 import { slugify } from '../../src/lib/slugify.js'
-import { clientImages, mergeLegacyImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js'
+import {
+  clientImages,
+  mergeLegacyImages,
+  normalizeImageInput,
+  primaryImageReference,
+  toImageCreateManyData,
+} from '../../src/lib/images.js'
 
 function withImages(song) {
-  const images = clientImages(mergeLegacyImages(song.images, song.artwork, {
-    fallbackUsage: 'artwork',
-    altText: song.title,
-    idPrefix: song.id,
-  }))
+  const images = clientImages(
+    mergeLegacyImages(song.images, song.artwork, {
+      fallbackUsage: 'artwork',
+      altText: song.title,
+      idPrefix: song.id,
+    })
+  )
 
   return {
     ...song,
@@ -17,38 +25,137 @@ function withImages(song) {
   }
 }
 
+function normalizePlacements(input) {
+  const albumIds = Array.isArray(input?.albumIds) ? input.albumIds : []
+  const discNumbers = Array.isArray(input?.discNumbers) ? input.discNumbers : []
+  const trackNumbers = Array.isArray(input?.trackNumbers) ? input.trackNumbers : []
+
+  return albumIds.map((albumId, index) => ({
+    albumId,
+    discNumber: Number(discNumbers[index] ?? 1),
+    trackNumber: Number(trackNumbers[index] ?? 0),
+    placementOrder: index,
+  }))
+}
+
+function validatePlacements(placements) {
+  if (!placements.length) return 'At least one album is required.'
+
+  const albumIds = new Set()
+  for (const placement of placements) {
+    if (!placement.albumId) return 'Each album card must have an album selected.'
+    if (albumIds.has(placement.albumId)) return 'Each album can only be selected once per song.'
+    if (!placement.trackNumber || placement.trackNumber < 1) return 'Track number must be at least 1 for each album card.'
+    if (!placement.discNumber || placement.discNumber < 1) return 'Disc number must be at least 1 for each album card.'
+    albumIds.add(placement.albumId)
+  }
+
+  return null
+}
+
+function formatSong(song) {
+  const placements = [...(song.placements ?? [])].sort((left, right) => left.placementOrder - right.placementOrder)
+  const primaryPlacement = placements[0] ?? null
+
+  return withImages({
+    ...song,
+    placements,
+    albumPlacements: placements.map((placement) => ({
+      albumId: placement.albumId,
+      trackNumber: placement.trackNumber,
+      discNumber: placement.discNumber,
+    })),
+    albumIds: placements.map((placement) => placement.albumId),
+    discNumbers: placements.map((placement) => placement.discNumber),
+    trackNumbers: placements.map((placement) => placement.trackNumber),
+    albumId: primaryPlacement?.albumId ?? '',
+    trackNumber: primaryPlacement?.trackNumber ?? null,
+    discNumber: primaryPlacement?.discNumber ?? null,
+    album: primaryPlacement?.album ?? null,
+  })
+}
+
+async function loadSong(id) {
+  const song = await prisma.song.findUnique({
+    where: { id },
+    include: {
+      placements: {
+        orderBy: [{ placementOrder: 'asc' }],
+        include: {
+          album: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              releaseDate: true,
+              artistId: true,
+              artist: { select: { name: true, slug: true, order: true } },
+            },
+          },
+        },
+      },
+      meta: true,
+      images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
+    },
+  })
+
+  return song ? formatSong(song) : null
+}
+
 export default async function handler(req, res) {
   if (!requireAdmin(req, res)) return
   const { id } = req.query
 
   if (id) {
     if (req.method === 'PUT') {
-      const { title, slug, trackNumber, discNumber, duration, soundcloudUrl, spotifyUrl, appleMusicUrl, albumId, aboutText, producers, writers, featuredArtists, releaseDate, images, tags } = req.body
+      const {
+        title,
+        slug,
+        duration,
+        soundcloudUrl,
+        spotifyUrl,
+        appleMusicUrl,
+        youtubeUrl,
+        aboutText,
+        producers,
+        writers,
+        featuredArtists,
+        releaseDate,
+        images,
+        tags,
+      } = req.body
+      const placements = normalizePlacements(req.body)
+      const validationError = validatePlacements(placements)
+      if (validationError) return res.status(400).json({ error: validationError })
+
       const normalizedImages = normalizeImageInput(images, 'artwork')
-      const song = await prisma.song.update({
+
+      await prisma.song.update({
         where: { id },
         data: {
           title,
           slug: slug || slugify(title),
-          trackNumber: Number(trackNumber),
-          discNumber: Number(discNumber ?? 1),
           duration,
           artwork: primaryImageReference(normalizedImages),
           soundcloudUrl,
           spotifyUrl,
           appleMusicUrl,
-          albumId,
+          youtubeUrl,
           images: {
             deleteMany: {},
             createMany: {
               data: toImageCreateManyData(normalizedImages),
             },
           },
-        },
-        include: {
-          images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
+          placements: {
+            deleteMany: {},
+            createMany: {
+              data: placements,
+            },
+          },
         },
       })
+
       await prisma.songMeta.upsert({
         where: { songId: id },
         create: {
@@ -69,41 +176,93 @@ export default async function handler(req, res) {
           releaseDate: releaseDate ? new Date(releaseDate) : null,
         },
       })
-      return res.status(200).json(withImages(song))
+
+      return res.status(200).json(await loadSong(id))
     }
+
     if (req.method === 'DELETE') {
       await prisma.song.delete({ where: { id } })
       return res.status(204).end()
     }
+
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   if (req.method === 'GET') {
     const songs = await prisma.song.findMany({
-      orderBy: [{ album: { artist: { order: 'asc' } } }, { album: { releaseDate: 'desc' } }, { discNumber: 'asc' }, { trackNumber: 'asc' }],
       include: {
-        album: { select: { title: true, releaseDate: true, artistId: true, artist: { select: { name: true } } } },
+        placements: {
+          orderBy: [{ placementOrder: 'asc' }],
+          include: {
+            album: {
+              select: {
+                id: true,
+                title: true,
+                slug: true,
+                releaseDate: true,
+                artistId: true,
+                artist: { select: { name: true, slug: true, order: true } },
+              },
+            },
+          },
+        },
         meta: true,
         images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
       },
     })
-    return res.status(200).json(songs.map(withImages))
+
+    const sortedSongs = songs
+      .map(formatSong)
+      .sort((left, right) => {
+        const leftArtistOrder = left.album?.artist?.order ?? Number.MAX_SAFE_INTEGER
+        const rightArtistOrder = right.album?.artist?.order ?? Number.MAX_SAFE_INTEGER
+        if (leftArtistOrder !== rightArtistOrder) return leftArtistOrder - rightArtistOrder
+
+        const leftRelease = left.album?.releaseDate ? new Date(left.album.releaseDate).getTime() : 0
+        const rightRelease = right.album?.releaseDate ? new Date(right.album.releaseDate).getTime() : 0
+        if (leftRelease !== rightRelease) return rightRelease - leftRelease
+
+        if ((left.discNumber ?? 0) !== (right.discNumber ?? 0)) return (left.discNumber ?? 0) - (right.discNumber ?? 0)
+        if ((left.trackNumber ?? 0) !== (right.trackNumber ?? 0)) return (left.trackNumber ?? 0) - (right.trackNumber ?? 0)
+
+        return left.title.localeCompare(right.title, undefined, { sensitivity: 'base' })
+      })
+
+    return res.status(200).json(sortedSongs)
   }
+
   if (req.method === 'POST') {
-    const { title, slug, trackNumber, discNumber, duration, soundcloudUrl, spotifyUrl, appleMusicUrl, albumId, aboutText, producers, writers, featuredArtists, releaseDate, images, tags } = req.body
+    const {
+      title,
+      slug,
+      duration,
+      soundcloudUrl,
+      spotifyUrl,
+      appleMusicUrl,
+      youtubeUrl,
+      aboutText,
+      producers,
+      writers,
+      featuredArtists,
+      releaseDate,
+      images,
+      tags,
+    } = req.body
+    const placements = normalizePlacements(req.body)
+    const validationError = validatePlacements(placements)
+    if (validationError) return res.status(400).json({ error: validationError })
+
     const normalizedImages = normalizeImageInput(images, 'artwork')
     const song = await prisma.song.create({
       data: {
         title,
         slug: slug || slugify(title),
-        trackNumber: Number(trackNumber),
-        discNumber: Number(discNumber ?? 1),
         duration: duration ?? '',
         artwork: primaryImageReference(normalizedImages),
         soundcloudUrl,
         spotifyUrl,
         appleMusicUrl,
-        albumId,
+        youtubeUrl,
         images: normalizedImages.length
           ? {
               createMany: {
@@ -111,11 +270,14 @@ export default async function handler(req, res) {
               },
             }
           : undefined,
-      },
-      include: {
-        images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
+        placements: {
+          createMany: {
+            data: placements,
+          },
+        },
       },
     })
+
     await prisma.songMeta.create({
       data: {
         songId: song.id,
@@ -127,7 +289,9 @@ export default async function handler(req, res) {
         releaseDate: releaseDate ? new Date(releaseDate) : null,
       },
     })
-    return res.status(201).json(withImages(song))
+
+    return res.status(201).json(await loadSong(song.id))
   }
+
   return res.status(405).json({ error: 'Method not allowed' })
 }

@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { FaApple, FaSoundcloud, FaSpotify } from 'react-icons/fa';
+import { FaApple, FaSoundcloud, FaSpotify, FaYoutube } from 'react-icons/fa';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { useApi } from '../hooks/useApi.js';
 import AlbumDetails from '../components/album/AlbumDetails.jsx';
@@ -43,6 +43,7 @@ function AlbumHeader({ album }) {
 		{ href: album.soundcloudUrl, label: 'SoundCloud', icon: FaSoundcloud },
 		{ href: album.spotifyUrl, label: 'Spotify', icon: FaSpotify },
 		{ href: album.appleMusicUrl, label: 'Apple Music', icon: FaApple },
+		{ href: album.youtubeUrl, label: 'YouTube', icon: FaYoutube },
 	].filter((link) => link.href);
 
 	return (

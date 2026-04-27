@@ -1,1 +1,45 @@
 /* Songs page reuses AdminArtistsPage.css styles via shared import */
+
+.admin-song-editor-tabs .p-tabview-panels {
+	padding-left: 0;
+	padding-right: 0;
+	padding-bottom: 0;
+}
+
+.admin-song-editor-tabs .p-tabview-panel {
+	padding: 15px;
+}
+
+.admin-song-album-cards {
+	display: grid;
+	gap: 1rem;
+}
+
+.admin-song-album-card {
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	border-radius: 18px;
+	padding: 1rem;
+	background: rgba(255, 255, 255, 0.03);
+}
+
+.admin-song-album-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	margin-bottom: 1rem;
+}
+
+.admin-song-album-card-title {
+	margin: 0;
+	font-size: 1rem;
+	font-weight: 700;
+}
+
+.admin-song-album-grid {
+	margin-bottom: 0;
+}
+
+.admin-song-add-album-btn {
+	margin-top: 1rem;
+}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FaApple, FaExternalLinkAlt, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash } from 'react-icons/fa'
+import { FaApple, FaExternalLinkAlt, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash, FaYoutube } from 'react-icons/fa'
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import { slugify } from '../../lib/slugify.js'
@@ -15,6 +15,7 @@ const empty = {
   soundcloudProfile: '',
   spotifyProfile: '',
   appleMusicProfile: '',
+  youtubeProfile: '',
 }
 
 const columns = [
@@ -25,6 +26,7 @@ const columns = [
   { key: 'soundcloudProfile', label: <FaSoundcloud />, headerLabel: 'SoundCloud', placeholder: 'SoundCloud URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
   { key: 'spotifyProfile', label: <FaSpotify />, headerLabel: 'Spotify', placeholder: 'Spotify URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
   { key: 'appleMusicProfile', label: <FaApple />, headerLabel: 'Apple Music', placeholder: 'Apple Music URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
+  { key: 'youtubeProfile', label: <FaYoutube />, headerLabel: 'YouTube', placeholder: 'YouTube URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
 ]
 
 function primaryImage(images) {
@@ -310,6 +312,10 @@ export default function AdminArtistsPage() {
                 <div className="admin-modal-field admin-modal-field-full">
                   <label className="admin-modal-label">Apple Music URL</label>
                   <input type="url" placeholder="Apple Music URL" value={form.appleMusicProfile} onChange={(event) => setForm((current) => ({ ...current, appleMusicProfile: event.target.value }))} className="admin-artists-page-input" />
+                </div>
+                <div className="admin-modal-field admin-modal-field-full">
+                  <label className="admin-modal-label">YouTube URL</label>
+                  <input type="url" placeholder="YouTube URL" value={form.youtubeProfile} onChange={(event) => setForm((current) => ({ ...current, youtubeProfile: event.target.value }))} className="admin-artists-page-input" />
                 </div>
               </div>
             </div>

@@ -15,11 +15,20 @@ export default async function handler(req, res) {
             title: true,
             slug: true,
             soundcloudUrl: true,
-            album: {
+            placements: {
+              orderBy: [{ placementOrder: 'asc' }],
+              take: 1,
               select: {
-                coverArt: true,
-                title: true,
-                images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }], select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true } },
+                album: {
+                  select: {
+                    coverArt: true,
+                    title: true,
+                    images: {
+                      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+                      select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+                    },
+                  },
+                },
               },
             },
           },
@@ -31,16 +40,16 @@ export default async function handler(req, res) {
         ...track,
         song: {
           ...track.song,
-          album: track.song.album
+          album: track.song.placements[0]?.album
             ? {
-                ...track.song.album,
-                coverArt: (clientImages(mergeLegacyImages(track.song.album.images, track.song.album.coverArt, {
+                ...track.song.placements[0].album,
+                coverArt: (clientImages(mergeLegacyImages(track.song.placements[0].album.images, track.song.placements[0].album.coverArt, {
                   fallbackUsage: 'cover',
-                  altText: track.song.album.title,
-                  idPrefix: track.song.album.title,
-                }))[0]?.previewUrl) ?? track.song.album.coverArt,
+                  altText: track.song.placements[0].album.title,
+                  idPrefix: track.song.placements[0].album.title,
+                }))[0]?.previewUrl) ?? track.song.placements[0].album.coverArt,
               }
-            : track.song.album,
+            : null,
         },
       }))
     )

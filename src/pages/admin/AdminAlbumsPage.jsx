@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FaApple, FaExternalLinkAlt, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash } from 'react-icons/fa'
+import { FaApple, FaExternalLinkAlt, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash, FaYoutube } from 'react-icons/fa'
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import { slugify } from '../../lib/slugify.js'
@@ -16,6 +16,7 @@ const empty = {
   soundcloudUrl: '',
   spotifyUrl: '',
   appleMusicUrl: '',
+  youtubeUrl: '',
   releaseDate: '',
   artistId: '',
 }
@@ -30,6 +31,7 @@ const columns = [
   { key: 'soundcloudUrl', label: 'SoundCloud', placeholder: 'SoundCloud URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
   { key: 'spotifyUrl', label: 'Spotify', placeholder: 'Spotify URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
   { key: 'appleMusicUrl', label: 'Apple Music', placeholder: 'Apple Music URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
+  { key: 'youtubeUrl', label: 'YouTube', placeholder: 'YouTube URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
 ]
 
 function primaryImage(images) {
@@ -95,6 +97,7 @@ export default function AdminAlbumsPage() {
     soundcloudUrl: album.soundcloudUrl ?? '',
     spotifyUrl: album.spotifyUrl ?? '',
     appleMusicUrl: album.appleMusicUrl ?? '',
+    youtubeUrl: album.youtubeUrl ?? '',
     releaseDate: album.releaseDate ? album.releaseDate.slice(0, 10) : '',
   })
   const closeForm = () => setForm(null)
@@ -183,6 +186,7 @@ export default function AdminAlbumsPage() {
     if (column.key === 'soundcloudUrl') return <span className="admin-artists-page-social-header" aria-label="SoundCloud"><FaSoundcloud aria-hidden="true" /></span>
     if (column.key === 'spotifyUrl') return <span className="admin-artists-page-social-header" aria-label="Spotify"><FaSpotify aria-hidden="true" /></span>
     if (column.key === 'appleMusicUrl') return <span className="admin-artists-page-social-header" aria-label="Apple Music"><FaApple aria-hidden="true" /></span>
+    if (column.key === 'youtubeUrl') return <span className="admin-artists-page-social-header" aria-label="YouTube"><FaYoutube aria-hidden="true" /></span>
     return column.label
   }
 
@@ -326,6 +330,10 @@ export default function AdminAlbumsPage() {
                 <div className="admin-modal-field admin-modal-field-full">
                   <label className="admin-modal-label">Apple Music URL</label>
                   <input type="url" placeholder="Apple Music URL" value={form.appleMusicUrl} onChange={set('appleMusicUrl')} className="admin-artists-page-input" />
+                </div>
+                <div className="admin-modal-field admin-modal-field-full">
+                  <label className="admin-modal-label">YouTube URL</label>
+                  <input type="url" placeholder="YouTube URL" value={form.youtubeUrl} onChange={set('youtubeUrl')} className="admin-artists-page-input" />
                 </div>
               </div>
             </div>

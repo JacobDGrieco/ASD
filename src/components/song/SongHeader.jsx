@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { FaApple, FaSoundcloud, FaSpotify } from 'react-icons/fa'
+import { FaApple, FaSoundcloud, FaSpotify, FaYoutube } from 'react-icons/fa'
 import { prefetchArtistPage } from '../../lib/publicPrefetch.js'
 import SoundCloudPlayer from '../shared/SoundCloudPlayer.jsx'
 import ArtworkGallery from '../shared/ArtworkGallery.jsx'
@@ -17,6 +17,7 @@ export default function SongHeader({ song }) {
     { href: song.soundcloudUrl, label: 'SoundCloud', icon: FaSoundcloud },
     { href: song.spotifyUrl, label: 'Spotify', icon: FaSpotify },
     { href: song.appleMusicUrl, label: 'Apple Music', icon: FaApple },
+    { href: song.youtubeUrl, label: 'YouTube', icon: FaYoutube },
   ].filter((link) => link.href)
 
   return (

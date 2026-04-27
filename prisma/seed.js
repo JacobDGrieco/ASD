@@ -8,6 +8,7 @@ async function main() {
   await prisma.songMeta.deleteMany()
   await prisma.recordPlayerTrack.deleteMany()
   await prisma.songImage.deleteMany()
+  await prisma.songAlbum.deleteMany()
   await prisma.song.deleteMany()
   await prisma.albumImage.deleteMany()
   await prisma.album.deleteMany()
@@ -89,10 +90,7 @@ async function main() {
       data: {
         title: 'Track One',
         slug: `${artist.slug}-track-one`,
-        trackNumber: 1,
-        discNumber: 1,
         duration: '3:42',
-        albumId: album.id,
         artwork: debutCoverUrl,
         images: {
           create: {
@@ -101,6 +99,14 @@ async function main() {
             altText: 'Track One',
             sortOrder: 0,
             isPrimary: true,
+          },
+        },
+        placements: {
+          create: {
+            albumId: album.id,
+            trackNumber: 1,
+            discNumber: 1,
+            placementOrder: 0,
           },
         },
       },
