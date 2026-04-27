@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { TabPanel, TabView } from 'primereact/tabview'
 import { SiApplemusic, SiSoundcloud, SiSpotify, SiYoutube } from 'react-icons/si'
@@ -10,6 +10,7 @@ import '../../styles/AdminArtistsPage.css'
 import '../../styles/AdminSongsPage.css'
 
 const PAGE_SIZE = 30
+const SONGS_FILTER_STATE_KEY = 'admin-songs-page-state'
 
 function createAlbumPlacement() {
   return {
@@ -102,13 +103,31 @@ export default function AdminSongsPage() {
   const { token, session } = useAdminAuth()
   const isArtistScoped = session?.role === 'ARTIST'
   const auth = { Authorization: `Bearer ${token}` }
+  const initialFilterState = (() => {
+    if (typeof window === 'undefined') {
+      return { filterArtist: '', filterAlbum: '', page: 1 }
+    }
+
+    try {
+      const saved = JSON.parse(window.sessionStorage.getItem(SONGS_FILTER_STATE_KEY) ?? '{}')
+      return {
+        filterArtist: typeof saved.filterArtist === 'string' ? saved.filterArtist : '',
+        filterAlbum: typeof saved.filterAlbum === 'string' ? saved.filterAlbum : '',
+        page: Number.isInteger(saved.page) && saved.page > 0 ? saved.page : 1,
+      }
+    } catch {
+      return { filterArtist: '', filterAlbum: '', page: 1 }
+    }
+  })()
   const [songs, setSongs] = useState([])
   const [albums, setAlbums] = useState([])
   const [artists, setArtists] = useState([])
   const [form, setForm] = useState(null)
-  const [filterArtist, setFilterArtist] = useState('')
-  const [filterAlbum, setFilterAlbum] = useState('')
-  const [page, setPage] = useState(1)
+  const [filterArtist, setFilterArtist] = useState(initialFilterState.filterArtist)
+  const [filterAlbum, setFilterAlbum] = useState(initialFilterState.filterAlbum)
+  const [page, setPage] = useState(initialFilterState.page)
+  const hasHydratedArtistFilter = useRef(false)
+  const hasHydratedAlbumFilter = useRef(false)
 
   useEffect(() => {
     Promise.all([
@@ -123,13 +142,30 @@ export default function AdminSongsPage() {
   }, [token])
 
   useEffect(() => {
+    if (!hasHydratedArtistFilter.current) {
+      hasHydratedArtistFilter.current = true
+      return
+    }
     setPage(1)
     setFilterAlbum('')
   }, [filterArtist])
 
   useEffect(() => {
+    if (!hasHydratedAlbumFilter.current) {
+      hasHydratedAlbumFilter.current = true
+      return
+    }
     setPage(1)
   }, [filterAlbum])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.sessionStorage.setItem(SONGS_FILTER_STATE_KEY, JSON.stringify({
+      filterArtist,
+      filterAlbum,
+      page,
+    }))
+  }, [filterArtist, filterAlbum, page])
 
   const albumById = Object.fromEntries(albums.map((album) => [album.id, album]))
 
@@ -153,7 +189,12 @@ export default function AdminSongsPage() {
   })
 
   const totalPages = Math.max(1, Math.ceil(filteredSongs.length / PAGE_SIZE))
-  const pagedSongs = filteredSongs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const currentPage = Math.min(page, totalPages)
+  const pagedSongs = filteredSongs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+  useEffect(() => {
+    if (page !== currentPage) setPage(currentPage)
+  }, [page, currentPage])
 
   const openCreate = () => setForm({ ...empty, albumPlacements: [createAlbumPlacement()] })
   const openEdit = (song) =>
@@ -425,13 +466,13 @@ export default function AdminSongsPage() {
 
       {totalPages > 1 && (
         <div className="admin-pagination">
-          <button type="button" className="admin-pagination-btn" onClick={() => setPage((current) => current - 1)} disabled={page === 1}>
+          <button type="button" className="admin-pagination-btn" onClick={() => setPage((current) => current - 1)} disabled={currentPage === 1}>
             ← Prev
           </button>
           <span className="admin-pagination-info">
-            Page {page} of {totalPages}
+            Page {currentPage} of {totalPages}
           </span>
-          <button type="button" className="admin-pagination-btn" onClick={() => setPage((current) => current + 1)} disabled={page === totalPages}>
+          <button type="button" className="admin-pagination-btn" onClick={() => setPage((current) => current + 1)} disabled={currentPage === totalPages}>
             Next →
           </button>
         </div>

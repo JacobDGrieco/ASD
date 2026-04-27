@@ -3,6 +3,10 @@ import AnnotationPopup from './AnnotationPopup.jsx'
 import '../../styles/LyricsView.css'
 
 function LyricLine({ block, openAnnotationId, setOpenAnnotationId }) {
+  if (block.text.trim() === '') {
+    return <div className="lyrics-view-line lyrics-view-line-blank" aria-hidden="true" />
+  }
+
   const spans = block.annotations.length === 0 ? [] : buildSpans(block.text, block.annotations)
   const openAnnotation = block.annotations.find((a) => a.id === openAnnotationId) ?? null
 
