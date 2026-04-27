@@ -40,6 +40,39 @@ function setPublicCache(res) {
   res.setHeader('Cache-Control', 'no-store')
 }
 
+function parseCreditNames(value) {
+  if (typeof value !== 'string') return []
+  return value
+    .split(';')
+    .map((name) => name.trim())
+    .filter(Boolean)
+}
+
+async function resolveArtistLinksByName(names) {
+  const uniqueNames = [...new Set((Array.isArray(names) ? names : []).map((name) => name.trim()).filter(Boolean))]
+  if (!uniqueNames.length) return {}
+
+  const matched = await prisma.artist.findMany({
+    where: {
+      OR: uniqueNames.map((name) => ({
+        name: { equals: name, mode: 'insensitive' },
+      })),
+    },
+    select: { name: true, slug: true },
+  })
+
+  return Object.fromEntries(
+    matched.map((artist) => [artist.name.trim().toLowerCase(), artist.slug])
+  )
+}
+
+function mapArtistLinks(names, slugByName) {
+  return names.map((name) => ({
+    name,
+    slug: slugByName[name.trim().toLowerCase()] ?? null,
+  }))
+}
+
 function formatAlbumSummary(album) {
   const albumImages = formatAlbumImages(album)
   return {
@@ -295,16 +328,21 @@ async function getSong(res, slug, albumSlug = null) {
     song.meta = { ...song.meta, releaseDate: primaryAlbum.releaseDate }
   }
 
-  if (song.meta?.featuredArtists) {
-    const names = song.meta.featuredArtists.split(';').map((name) => name.trim()).filter(Boolean)
-    const matched = await prisma.artist.findMany({
-      where: { name: { in: names } },
-      select: { name: true, slug: true },
-    })
-    const slugByName = Object.fromEntries(matched.map((artist) => [artist.name, artist.slug]))
+  if (song.meta) {
+    const featuredArtistNames = parseCreditNames(song.meta.featuredArtists)
+    const producerNames = parseCreditNames(song.meta.producers)
+    const writerNames = parseCreditNames(song.meta.writers)
+    const slugByName = await resolveArtistLinksByName([
+      ...featuredArtistNames,
+      ...producerNames,
+      ...writerNames,
+    ])
+
     song.meta = {
       ...song.meta,
-      featuredArtistLinks: names.map((name) => ({ name, slug: slugByName[name] ?? null })),
+      featuredArtistLinks: mapArtistLinks(featuredArtistNames, slugByName),
+      producerLinks: mapArtistLinks(producerNames, slugByName),
+      writerLinks: mapArtistLinks(writerNames, slugByName),
     }
   }
 
