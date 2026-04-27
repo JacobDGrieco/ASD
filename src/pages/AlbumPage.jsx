@@ -5,6 +5,7 @@ import { TabPanel, TabView } from 'primereact/tabview';
 import { useApi } from '../hooks/useApi.js';
 import AlbumDetails from '../components/album/AlbumDetails.jsx';
 import TrackList from '../components/artist/TrackList.jsx';
+import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import '../styles/SongHeader.css';
 import '../styles/SongPage.css';
 
@@ -15,9 +16,10 @@ export default function AlbumPage() {
 	if (!loading && (error || !album)) return <div className="page not-found"><h1>Album not found</h1></div>;
 
 	return (
-		<div className="page">
+		<div className="page aurora-page">
+			<AuroraBackground />
 			{album && (
-				<>
+				<div className="aurora-page-content">
 					<AlbumHeader album={album} />
 					<div className="song-page-body">
 						<TabView className="page-tabview">
@@ -29,7 +31,7 @@ export default function AlbumPage() {
 							</TabPanel>
 						</TabView>
 					</div>
-				</>
+				</div>
 			)}
 		</div>
 	);
