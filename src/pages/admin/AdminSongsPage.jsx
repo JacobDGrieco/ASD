@@ -1,8 +1,10 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { TabPanel, TabView } from 'primereact/tabview'
+import { FaArrowLeft, FaArrowRight, FaExternalLinkAlt, FaPencilAlt, FaStickyNote, FaTimes, FaTrash } from 'react-icons/fa'
 import { SiApplemusic, SiSoundcloud, SiSpotify, SiYoutube } from 'react-icons/si'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
+import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js'
 import { isOtherArtist, OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID } from '../../lib/publicVisibility.js'
 import { slugify } from '../../lib/slugify.js'
@@ -306,7 +308,6 @@ export default function AdminSongsPage() {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this song and all its lyrics/annotations?')) return
     await fetch(`/api/admin/songs?id=${id}`, { method: 'DELETE', headers: auth })
     const nextSongs = songs.filter((song) => song.id !== id)
     setSongs(nextSongs)
@@ -374,7 +375,7 @@ export default function AdminSongsPage() {
         aria-label={`Open ${label} link`}
         title="Open in new tab"
       >
-        ↗
+        <FaExternalLinkAlt aria-hidden="true" />
       </a>
     ) : (
       <span className="admin-artists-page-empty-value">-</span>
@@ -469,7 +470,7 @@ export default function AdminSongsPage() {
           <thead>
             <tr>
               <th className="admin-artists-page-col-image">Images</th>
-              <th className="admin-artists-page-center-cell">#</th>
+              <th className="admin-songs-col-track admin-artists-page-center-cell">#</th>
               <th className="admin-songs-col-title">Title</th>
               <th className="admin-songs-col-artist">Artist</th>
               <th className="admin-songs-col-featured">Featured</th>
@@ -510,7 +511,7 @@ export default function AdminSongsPage() {
               return (
                 <tr key={song.id}>
                   <td className="admin-artists-page-col-image">{imageCell(song)}</td>
-                  <td className="admin-artists-page-center-cell">{cell(primaryTrackNumber(song))}</td>
+                  <td className="admin-songs-col-track admin-artists-page-center-cell">{cell(primaryTrackNumber(song))}</td>
                   <td className="admin-songs-col-title">{cell(song.title)}</td>
                   <td className="admin-songs-col-artist">{cell(displayArtistName(song))}</td>
                   <td className="admin-songs-col-featured">{cell(song.meta?.featuredArtists)}</td>
@@ -530,14 +531,20 @@ export default function AdminSongsPage() {
                         aria-label="Edit lyrics"
                         title="Edit lyrics"
                       >
-                        📝
+                        <FaStickyNote aria-hidden="true" />
                       </Link>
                       <button type="button" onClick={() => void openEdit(song)} disabled={loadingEditId === song.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit song" title="Edit">
-                        ✎
+                        <FaPencilAlt aria-hidden="true" />
                       </button>
-                      <button type="button" onClick={() => handleDelete(song.id)} className="admin-artists-page-danger-btn admin-artists-page-icon-btn" aria-label="Delete song" title="Delete">
-                        🗑
-                      </button>
+                      <ConfirmActionButton
+                        message="Delete this song and all its lyrics/annotations?"
+                        onConfirm={() => handleDelete(song.id)}
+                        buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+                        buttonAriaLabel="Delete song"
+                        buttonTitle="Delete"
+                      >
+                        <FaTrash aria-hidden="true" />
+                      </ConfirmActionButton>
                     </div>
                   </td>
                 </tr>
@@ -551,13 +558,13 @@ export default function AdminSongsPage() {
       {!form && totalPages > 1 && (
         <div className="admin-pagination">
           <button type="button" className="admin-pagination-btn" onClick={() => setPage((current) => current - 1)} disabled={currentPage === 1}>
-            ← Prev
+            <><FaArrowLeft aria-hidden="true" /> Prev</>
           </button>
           <span className="admin-pagination-info">
             Page {currentPage} of {totalPages}
           </span>
           <button type="button" className="admin-pagination-btn" onClick={() => setPage((current) => current + 1)} disabled={currentPage === totalPages}>
-            Next →
+            <>Next <FaArrowRight aria-hidden="true" /></>
           </button>
         </div>
       )}
@@ -568,7 +575,7 @@ export default function AdminSongsPage() {
             <div className="admin-modal-header">
               <h2 className="admin-modal-title">{form.id ? 'Edit Song' : 'New Song'}</h2>
               <button type="button" onClick={closeForm} className="admin-modal-close" aria-label="Close">
-                ✕
+                <FaTimes aria-hidden="true" />
               </button>
             </div>
             <div className="admin-modal-body">

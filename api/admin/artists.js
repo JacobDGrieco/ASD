@@ -117,27 +117,29 @@ export default async function handler(req, res) {
       const { name, slug, bio, aboutMe, order, soundcloudProfile, spotifyProfile, appleMusicProfile, youtubeProfile, images, adminPassword } = req.body
       const passwordError = isSuperAdmin(session) ? await validateUniqueArtistPassword(adminPassword, id) : null
       if (passwordError) return res.status(400).json({ error: passwordError })
-      const normalizedImages = normalizeImageInput(images, 'portrait')
+      const normalizedImages = images === undefined ? null : normalizeImageInput(images, 'portrait')
       const artist = await prisma.artist.update({
         where: { id },
         data: {
           name,
-          slug: slug || slugify(name),
+          slug: slug !== undefined ? (slug || slugify(name)) : undefined,
           bio,
           aboutMe,
-          portrait: primaryImageReference(normalizedImages),
+          portrait: normalizedImages === null ? undefined : primaryImageReference(normalizedImages),
           order: isSuperAdmin(session) ? order : undefined,
           soundcloudProfile,
           spotifyProfile,
           appleMusicProfile,
           youtubeProfile,
           adminAccess: isSuperAdmin(session) ? buildAdminAccessUpdate(adminPassword) : undefined,
-          images: {
-            deleteMany: {},
-            createMany: {
-              data: toImageCreateManyData(normalizedImages),
-            },
-          },
+          images: normalizedImages === null
+            ? undefined
+            : {
+                deleteMany: {},
+                createMany: {
+                  data: toImageCreateManyData(normalizedImages),
+                },
+              },
         },
         include: includeArtist(),
       })

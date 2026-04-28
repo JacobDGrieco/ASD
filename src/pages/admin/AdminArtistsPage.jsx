@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { FaApple, FaExternalLinkAlt, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash, FaYoutube } from 'react-icons/fa'
+import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js'
@@ -106,7 +107,6 @@ export default function AdminArtistsPage() {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this artist and all their albums/songs?')) return
     await fetch(`/api/admin/artists?id=${id}`, { method: 'DELETE', headers: auth })
     const nextArtists = artists.filter((artist) => artist.id !== id)
     setArtists(nextArtists)
@@ -123,7 +123,7 @@ export default function AdminArtistsPage() {
         return fetch(`/api/admin/artists?id=${artist.id}`, {
           method: 'PUT',
           headers: { ...auth, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...artist, order: nextOrderValue }),
+          body: JSON.stringify({ order: nextOrderValue }),
         }).then((res) => res.json())
       })
     )
@@ -230,8 +230,7 @@ export default function AdminArtistsPage() {
             <tr>
               {isSuperAdmin && <th className="admin-artists-page-drag-header"></th>}
               {columns.map((column) => <th key={column.key} className={column.className}>{renderHeader(column)}</th>)}
-              <th className={`admin-artists-page-col-action admin-artists-page-sticky-right-1`}></th>
-              {isSuperAdmin && <th className={`admin-artists-page-col-action admin-artists-page-sticky-right-0`}></th>}
+              <th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
             </tr>
           </thead>
           <tbody>
@@ -265,18 +264,24 @@ export default function AdminArtistsPage() {
                     {renderDisplayValue(artist, column)}
                   </td>
                 ))}
-                <td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-1`}>
-                  <button type="button" onClick={() => void openEdit(artist)} disabled={loadingEditId === artist.id} className={`admin-artists-page-ghost-btn admin-artists-page-icon-btn`} aria-label="Edit artist" title="Edit">
-                    <FaPencilAlt aria-hidden="true" />
-                  </button>
-                </td>
-                {isSuperAdmin && (
-                  <td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-0`}>
-                    <button type="button" onClick={() => handleDelete(artist.id)} className={`admin-artists-page-danger-btn admin-artists-page-icon-btn`} aria-label="Delete artist" title="Delete">
-                      <FaTrash aria-hidden="true" />
+                <td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
+                  <div className="admin-artists-page-actions">
+                    <button type="button" onClick={() => void openEdit(artist)} disabled={loadingEditId === artist.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit artist" title="Edit">
+                      <FaPencilAlt aria-hidden="true" />
                     </button>
-                  </td>
-                )}
+                    {isSuperAdmin && (
+                      <ConfirmActionButton
+                        message="Delete this artist and all their albums/songs?"
+                        onConfirm={() => handleDelete(artist.id)}
+                        buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+                        buttonAriaLabel="Delete artist"
+                        buttonTitle="Delete"
+                      >
+                        <FaTrash aria-hidden="true" />
+                      </ConfirmActionButton>
+                    )}
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>

@@ -40,6 +40,12 @@
 	margin-bottom: 0;
 }
 
+.admin-songs-col-track {
+	width: 3.5rem;
+	min-width: 3.5rem;
+	max-width: 3.5rem;
+}
+
 .admin-song-add-album-btn {
 	margin-top: 1rem;
 }

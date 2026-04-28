@@ -395,6 +395,49 @@
 	text-align: center;
 }
 
+.admin-artists-page-actions-col {
+	width: 116px;
+	min-width: 116px;
+}
+
+.admin-artists-page-actions {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+}
+
+.admin-inline-confirm {
+	position: relative;
+	display: inline-flex;
+}
+
+.admin-inline-confirm-popover {
+	position: absolute;
+	top: calc(100% + 8px);
+	right: 0;
+	width: 220px;
+	padding: 12px;
+	border: 1px solid var(--border);
+	background: var(--bg-surface);
+	box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+	z-index: 20;
+	text-align: left;
+}
+
+.admin-inline-confirm-message {
+	margin: 0 0 10px;
+	color: var(--text);
+	font-size: 0.8rem;
+	line-height: 1.35;
+}
+
+.admin-inline-confirm-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+}
+
 .admin-artists-page-center-cell {
 	text-align: center;
 }

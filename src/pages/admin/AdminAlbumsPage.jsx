@@ -1,5 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { FaApple, FaExternalLinkAlt, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash, FaYoutube } from 'react-icons/fa'
+import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js'
@@ -172,7 +173,6 @@ export default function AdminAlbumsPage() {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this album and all its songs?')) return
     await fetch(`/api/admin/albums?id=${id}`, { method: 'DELETE', headers: auth })
     const nextAlbums = albums.filter((album) => album.id !== id)
     setAlbums(nextAlbums)
@@ -283,8 +283,7 @@ export default function AdminAlbumsPage() {
             <thead>
               <tr>
                 {columns.map((column) => <th key={column.key} className={column.className}>{renderHeader(column)}</th>)}
-                <th className="admin-artists-page-col-action admin-artists-page-sticky-right-1"></th>
-                <th className="admin-artists-page-col-action admin-artists-page-sticky-right-0"></th>
+                <th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
               </tr>
             </thead>
             <tbody>
@@ -295,15 +294,21 @@ export default function AdminAlbumsPage() {
                       {renderValue(album, column)}
                     </td>
                   ))}
-                  <td className="admin-artists-page-action-cell admin-artists-page-sticky-right-1">
-                    <button type="button" onClick={() => void openEdit(album)} disabled={loadingEditId === album.id} className={`admin-artists-page-ghost-btn admin-artists-page-icon-btn`} aria-label="Edit album" title="Edit">
-                      <FaPencilAlt aria-hidden="true" />
-                    </button>
-                  </td>
-                  <td className="admin-artists-page-action-cell admin-artists-page-sticky-right-0">
-                    <button type="button" onClick={() => handleDelete(album.id)} className={`admin-artists-page-danger-btn admin-artists-page-icon-btn`} aria-label="Delete album" title="Delete">
-                      <FaTrash aria-hidden="true" />
-                    </button>
+                  <td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
+                    <div className="admin-artists-page-actions">
+                      <button type="button" onClick={() => void openEdit(album)} disabled={loadingEditId === album.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit album" title="Edit">
+                        <FaPencilAlt aria-hidden="true" />
+                      </button>
+                      <ConfirmActionButton
+                        message="Delete this album and all its songs?"
+                        onConfirm={() => handleDelete(album.id)}
+                        buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+                        buttonAriaLabel="Delete album"
+                        buttonTitle="Delete"
+                      >
+                        <FaTrash aria-hidden="true" />
+                      </ConfirmActionButton>
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { FaPencilAlt, FaTrash } from 'react-icons/fa'
+import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import '../../styles/AdminArtistsPage.css'
 
@@ -84,7 +85,6 @@ export default function AdminAccountsPage() {
 
   const handleDelete = async (row) => {
     if (!row.account?.id) return
-    if (!window.confirm(`Remove login access for ${row.artist.name}?`)) return
 
     await fetch(`/api/admin/accounts?id=${row.account.id}`, {
       method: 'DELETE',
@@ -113,8 +113,7 @@ export default function AdminAccountsPage() {
               <th className="admin-artists-page-col-sm">Has Account</th>
               <th className="admin-artists-page-col-sm">Active</th>
               <th className="admin-artists-page-col-lg">Updated</th>
-              <th className="admin-artists-page-col-action admin-artists-page-sticky-right-1"></th>
-              <th className="admin-artists-page-col-action admin-artists-page-sticky-right-0"></th>
+              <th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
             </tr>
           </thead>
           <tbody>
@@ -132,31 +131,30 @@ export default function AdminAccountsPage() {
                 <td className="admin-artists-page-col-lg">
                   <span className="admin-artists-page-cell-value">{row.account ? formatDate(row.account.updatedAt) : '-'}</span>
                 </td>
-                <td className="admin-artists-page-action-cell admin-artists-page-sticky-right-1">
-                  <button
-                    type="button"
-                    onClick={() => openEdit(row)}
-                    className="admin-artists-page-ghost-btn admin-artists-page-icon-btn"
-                    aria-label={row.hasAccount ? 'Edit account' : 'Create account'}
-                    title={row.hasAccount ? 'Edit account' : 'Create account'}
-                  >
-                    <FaPencilAlt aria-hidden="true" />
-                  </button>
-                </td>
-                <td className="admin-artists-page-action-cell admin-artists-page-sticky-right-0">
-                  {row.hasAccount ? (
+                <td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
+                  <div className="admin-artists-page-actions">
                     <button
                       type="button"
-                      onClick={() => handleDelete(row)}
-                      className="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-                      aria-label="Delete account"
-                      title="Delete account"
+                      onClick={() => openEdit(row)}
+                      className="admin-artists-page-ghost-btn admin-artists-page-icon-btn"
+                      aria-label={row.hasAccount ? 'Edit account' : 'Create account'}
+                      title={row.hasAccount ? 'Edit account' : 'Create account'}
                     >
-                      <FaTrash aria-hidden="true" />
+                      <FaPencilAlt aria-hidden="true" />
                     </button>
-                  ) : (
-                    <span className="admin-artists-page-empty-value">-</span>
-                  )}
+                    {row.hasAccount ? (
+                      <ConfirmActionButton
+                        message={`Remove login access for ${row.artist.name}?`}
+                        confirmLabel="Remove"
+                        onConfirm={() => handleDelete(row)}
+                        buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+                        buttonAriaLabel="Delete account"
+                        buttonTitle="Delete account"
+                      >
+                        <FaTrash aria-hidden="true" />
+                      </ConfirmActionButton>
+                    ) : null}
+                  </div>
                 </td>
               </tr>
             ))}
