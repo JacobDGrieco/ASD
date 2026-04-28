@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { TabPanel, TabView } from 'primereact/tabview'
 import { SiApplemusic, SiSoundcloud, SiSpotify, SiYoutube } from 'react-icons/si'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
+import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js'
+import { isOtherArtist, OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID } from '../../lib/publicVisibility.js'
 import { slugify } from '../../lib/slugify.js'
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx'
 import ChipInputField from '../../components/admin/ChipInputField.jsx'
@@ -45,6 +47,10 @@ function primaryImage(images) {
 
 function compareLexicographically(left, right) {
   return left.localeCompare(right, undefined, { sensitivity: 'base', numeric: true })
+}
+
+function withOtherArtistOption(artists) {
+  return [...artists, { id: OTHER_ARTIST_OPTION_ID, name: OTHER_ARTIST_NAME }]
 }
 
 function placementAlbumIds(song) {
@@ -113,10 +119,11 @@ export default function AdminSongsPage() {
       return {
         filterArtist: typeof saved.filterArtist === 'string' ? saved.filterArtist : '',
         filterAlbum: typeof saved.filterAlbum === 'string' ? saved.filterAlbum : '',
+        filterTitle: typeof saved.filterTitle === 'string' ? saved.filterTitle : '',
         page: Number.isInteger(saved.page) && saved.page > 0 ? saved.page : 1,
       }
     } catch {
-      return { filterArtist: '', filterAlbum: '', page: 1 }
+      return { filterArtist: '', filterAlbum: '', filterTitle: '', page: 1 }
     }
   })()
   const [songs, setSongs] = useState([])
@@ -125,20 +132,29 @@ export default function AdminSongsPage() {
   const [form, setForm] = useState(null)
   const [filterArtist, setFilterArtist] = useState(initialFilterState.filterArtist)
   const [filterAlbum, setFilterAlbum] = useState(initialFilterState.filterAlbum)
+  const [filterTitle, setFilterTitle] = useState(initialFilterState.filterTitle)
   const [page, setPage] = useState(initialFilterState.page)
+  const [loadingEditId, setLoadingEditId] = useState(null)
+  const deferredFilterTitle = useDeferredValue(filterTitle)
   const hasHydratedArtistFilter = useRef(false)
   const hasHydratedAlbumFilter = useRef(false)
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/admin/songs', { headers: auth }).then((response) => response.json()),
-      fetch('/api/admin/albums', { headers: auth }).then((response) => response.json()),
-      fetch('/api/admin/artists', { headers: auth }).then((response) => response.json()),
-    ]).then(([songList, albumList, artistList]) => {
-      setSongs(songList)
-      setAlbums(albumList)
-      setArtists(artistList)
+    let ignore = false
+
+    loadAdminResource({ cacheKey: 'songs-list', url: '/api/admin/songs', token }).then((songList) => {
+      if (!ignore) setSongs(songList)
     })
+    loadAdminResource({ cacheKey: 'albums-list', url: '/api/admin/albums', token }).then((albumList) => {
+      if (!ignore) setAlbums(albumList)
+    })
+    loadAdminResource({ cacheKey: 'artists-list', url: '/api/admin/artists', token }).then((artistList) => {
+      if (!ignore) setArtists(artistList)
+    })
+
+    return () => {
+      ignore = true
+    }
   }, [token])
 
   useEffect(() => {
@@ -159,57 +175,98 @@ export default function AdminSongsPage() {
   }, [filterAlbum])
 
   useEffect(() => {
+    setPage(1)
+  }, [filterTitle])
+
+  useEffect(() => {
     if (typeof window === 'undefined') return
     window.sessionStorage.setItem(SONGS_FILTER_STATE_KEY, JSON.stringify({
       filterArtist,
       filterAlbum,
+      filterTitle,
       page,
     }))
-  }, [filterArtist, filterAlbum, page])
+  }, [filterArtist, filterAlbum, filterTitle, page])
 
-  const albumById = Object.fromEntries(albums.map((album) => [album.id, album]))
+  const albumById = useMemo(
+    () => Object.fromEntries(albums.map((album) => [album.id, album])),
+    [albums]
+  )
 
-  const albumOptions = filterArtist
-    ? albums.filter((album) => album.artistId === filterArtist)
-    : albums
-  const sortedArtists = [...artists].sort((left, right) => compareLexicographically(left.name, right.name))
-  const sortedAlbumOptions = [...albumOptions].sort((left, right) => compareLexicographically(left.title, right.title))
-  const sortedAlbums = [...albumOptions].sort((left, right) => compareLexicographically(left.title, right.title))
+  const albumOptions = useMemo(() => (
+    filterArtist
+      ? albums.filter((album) => (
+          filterArtist === OTHER_ARTIST_OPTION_ID
+            ? isOtherArtist(album.artist)
+            : album.artistId === filterArtist
+        ))
+      : albums
+  ), [albums, filterArtist])
+  const sortedArtists = useMemo(() => (
+    withOtherArtistOption(artists).sort((left, right) =>
+      compareLexicographically(left.name, right.name)
+    )
+  ), [artists])
+  const sortedAlbumOptions = useMemo(
+    () => [...albumOptions].sort((left, right) => compareLexicographically(left.title, right.title)),
+    [albumOptions]
+  )
+  const sortedAlbums = useMemo(
+    () => [...albumOptions].sort((left, right) => compareLexicographically(left.title, right.title)),
+    [albumOptions]
+  )
 
-  const filteredSongs = songs.filter((song) => {
-    const albumIds = placementAlbumIds(song)
-    if (filterAlbum && !albumIds.includes(filterAlbum)) return false
+  const filteredSongs = useMemo(() => (
+    songs.filter((song) => {
+      const albumIds = placementAlbumIds(song)
+      if (filterAlbum && !albumIds.includes(filterAlbum)) return false
+      if (deferredFilterTitle && !song.title.toLowerCase().includes(deferredFilterTitle.trim().toLowerCase())) return false
 
-    if (filterArtist) {
-      const hasMatchingArtist = albumIds.some((albumId) => albumById[albumId]?.artistId === filterArtist)
-      if (!hasMatchingArtist) return false
-    }
+      if (filterArtist) {
+        const hasMatchingArtist = albumIds.some((albumId) => (
+          filterArtist === OTHER_ARTIST_OPTION_ID
+            ? isOtherArtist(albumById[albumId]?.artist)
+            : albumById[albumId]?.artistId === filterArtist
+        ))
+        if (!hasMatchingArtist) return false
+      }
 
-    return true
-  })
+      return true
+    })
+  ), [albumById, deferredFilterTitle, filterAlbum, filterArtist, songs])
 
-  const totalPages = Math.max(1, Math.ceil(filteredSongs.length / PAGE_SIZE))
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredSongs.length / PAGE_SIZE)), [filteredSongs.length])
   const currentPage = Math.min(page, totalPages)
-  const pagedSongs = filteredSongs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  const pagedSongs = useMemo(
+    () => filteredSongs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [currentPage, filteredSongs]
+  )
 
   useEffect(() => {
     if (page !== currentPage) setPage(currentPage)
   }, [page, currentPage])
 
   const openCreate = () => setForm({ ...empty, albumPlacements: [createAlbumPlacement()] })
-  const openEdit = (song) =>
-    setForm({
-      ...empty,
-      ...song,
-      images: song.images ?? [],
-      aboutText: song.meta?.aboutText ?? '',
-      producers: song.meta?.producers ?? '',
-      writers: song.meta?.writers ?? '',
-      featuredArtists: song.meta?.featuredArtists ?? '',
-      tags: song.meta?.tags ?? [],
-      releaseDate: song.meta?.releaseDate ? song.meta.releaseDate.slice(0, 10) : '',
-      albumPlacements: buildPlacementForm(song),
-    })
+  const openEdit = async (song) => {
+    setLoadingEditId(song.id)
+    try {
+      const detail = await fetch(`/api/admin/songs?id=${song.id}`, { headers: auth }).then((response) => response.json())
+      setForm({
+        ...empty,
+        ...detail,
+        images: detail.images ?? [],
+        aboutText: detail.meta?.aboutText ?? '',
+        producers: detail.meta?.producers ?? '',
+        writers: detail.meta?.writers ?? '',
+        featuredArtists: detail.meta?.featuredArtists ?? '',
+        tags: detail.meta?.tags ?? [],
+        releaseDate: detail.meta?.releaseDate ? detail.meta.releaseDate.slice(0, 10) : '',
+        albumPlacements: buildPlacementForm(detail),
+      })
+    } finally {
+      setLoadingEditId(null)
+    }
+  }
   const closeForm = () => setForm(null)
 
   const handleSave = async () => {
@@ -242,16 +299,18 @@ export default function AdminSongsPage() {
     }
 
     const saved = await response.json()
-    setSongs((current) =>
-      isEdit ? current.map((song) => (song.id === saved.id ? saved : song)) : [...current, saved]
-    )
+    const nextSongs = isEdit ? songs.map((song) => (song.id === saved.id ? saved : song)) : [...songs, saved]
+    setSongs(nextSongs)
+    primeAdminResource('songs-list', token, nextSongs)
     closeForm()
   }
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this song and all its lyrics/annotations?')) return
     await fetch(`/api/admin/songs?id=${id}`, { method: 'DELETE', headers: auth })
-    setSongs((current) => current.filter((song) => song.id !== id))
+    const nextSongs = songs.filter((song) => song.id !== id)
+    setSongs(nextSongs)
+    primeAdminResource('songs-list', token, nextSongs)
   }
 
   const set = (key) => (event) =>
@@ -328,7 +387,12 @@ export default function AdminSongsPage() {
     return albumIds.length ? albumById[albumIds[0]] ?? null : null
   }
 
-  const artistName = (song) => primaryAlbum(song)?.artist?.name ?? null
+  const displayArtistName = (song) => {
+    const album = primaryAlbum(song)
+    if (!album) return null
+    if (isOtherArtist(album.artist)) return album.otherArtistName || OTHER_ARTIST_NAME
+    return album.artist?.name ?? null
+  }
 
   const primaryTrackNumber = (song) => {
     if (song.trackNumber) return song.trackNumber
@@ -356,7 +420,7 @@ export default function AdminSongsPage() {
       <div className="admin-artists-page-image-summary">
         <img src={image.previewUrl || image.url} alt={song.title} className="admin-artists-page-thumb" />
         <span className="admin-artists-page-image-count">
-          {song.images?.length ?? 1} image{(song.images?.length ?? 1) === 1 ? '' : 's'}
+          {song.imageCount ?? song.images?.length ?? 1} image{(song.imageCount ?? song.images?.length ?? 1) === 1 ? '' : 's'}
         </span>
       </div>
     )
@@ -372,6 +436,13 @@ export default function AdminSongsPage() {
       </div>
 
       <div className="admin-filter-bar">
+        <input
+          type="search"
+          value={filterTitle}
+          onChange={(event) => setFilterTitle(event.target.value)}
+          className="admin-filter-select"
+          placeholder="Search title..."
+        />
         {!isArtistScoped && (
           <select value={filterArtist} onChange={(event) => setFilterArtist(event.target.value)} className="admin-filter-select">
             <option value="">All Artists</option>
@@ -392,6 +463,7 @@ export default function AdminSongsPage() {
         </select>
       </div>
 
+      {!form && (
       <div className="admin-artists-page-table-wrap">
         <table className="admin-artists-page-table admin-songs-table">
           <thead>
@@ -403,7 +475,6 @@ export default function AdminSongsPage() {
               <th className="admin-songs-col-featured">Featured</th>
               <th className="admin-songs-col-album">Album</th>
               <th className="admin-songs-col-date">Release Date</th>
-              <th className="admin-songs-col-about">About</th>
               <th className="admin-artists-page-col-action admin-artists-page-center-cell">
                 <span className="admin-artists-page-social-header" title="SoundCloud">
                   <SiSoundcloud aria-hidden="true" />
@@ -441,11 +512,10 @@ export default function AdminSongsPage() {
                   <td className="admin-artists-page-col-image">{imageCell(song)}</td>
                   <td className="admin-artists-page-center-cell">{cell(primaryTrackNumber(song))}</td>
                   <td className="admin-songs-col-title">{cell(song.title)}</td>
-                  <td className="admin-songs-col-artist">{cell(artistName(song))}</td>
+                  <td className="admin-songs-col-artist">{cell(displayArtistName(song))}</td>
                   <td className="admin-songs-col-featured">{cell(song.meta?.featuredArtists)}</td>
                   <td className="admin-songs-col-album">{wrapCell(albumTitles(song))}</td>
                   <td className="admin-songs-col-date">{cell(dateStr)}</td>
-                  <td className="admin-songs-col-about">{wrapCell(song.meta?.aboutText)}</td>
                   <td className="admin-artists-page-col-action admin-artists-page-center-cell">{linkCell(song, 'soundcloudUrl', 'SoundCloud')}</td>
                   <td className="admin-artists-page-col-action admin-artists-page-center-cell">{linkCell(song, 'spotifyUrl', 'Spotify')}</td>
                   <td className="admin-artists-page-col-action admin-artists-page-center-cell">{linkCell(song, 'appleMusicUrl', 'Apple Music')}</td>
@@ -462,7 +532,7 @@ export default function AdminSongsPage() {
                       >
                         📝
                       </Link>
-                      <button type="button" onClick={() => openEdit(song)} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit song" title="Edit">
+                      <button type="button" onClick={() => void openEdit(song)} disabled={loadingEditId === song.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit song" title="Edit">
                         ✎
                       </button>
                       <button type="button" onClick={() => handleDelete(song.id)} className="admin-artists-page-danger-btn admin-artists-page-icon-btn" aria-label="Delete song" title="Delete">
@@ -476,8 +546,9 @@ export default function AdminSongsPage() {
           </tbody>
         </table>
       </div>
+      )}
 
-      {totalPages > 1 && (
+      {!form && totalPages > 1 && (
         <div className="admin-pagination">
           <button type="button" className="admin-pagination-btn" onClick={() => setPage((current) => current - 1)} disabled={currentPage === 1}>
             ← Prev

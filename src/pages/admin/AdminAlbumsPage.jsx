@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { FaApple, FaExternalLinkAlt, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash, FaYoutube } from 'react-icons/fa'
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
+import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js'
+import { isOtherArtist, OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID } from '../../lib/publicVisibility.js'
 import { slugify } from '../../lib/slugify.js'
 import '../../styles/AdminArtistsPage.css'
 
@@ -12,6 +14,7 @@ const empty = {
   slug: '',
   type: 'ALBUM',
   images: [],
+  otherArtistName: '',
   aboutText: '',
   soundcloudUrl: '',
   spotifyUrl: '',
@@ -27,7 +30,6 @@ const columns = [
   { key: 'artistId', label: 'Artist', kind: 'artist', className: 'admin-artists-page-col-sm' },
   { key: 'type', label: 'Type', kind: 'select', className: 'admin-artists-page-col-sm' },
   { key: 'releaseDate', label: 'Release Date', type: 'date', placeholder: 'Release Date', className: 'admin-artists-page-col-sm' },
-  { key: 'aboutText', label: 'About', placeholder: 'About this album...', kind: 'textarea', className: 'admin-artists-page-col-xxl', valueClassName: 'admin-artists-page-wrap-value' },
   { key: 'soundcloudUrl', label: 'SoundCloud', placeholder: 'SoundCloud URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
   { key: 'spotifyUrl', label: 'Spotify', placeholder: 'Spotify URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
   { key: 'appleMusicUrl', label: 'Apple Music', placeholder: 'Apple Music URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
@@ -43,9 +45,14 @@ function compareLexicographically(left, right) {
   return left.localeCompare(right, undefined, { sensitivity: 'base', numeric: true })
 }
 
+function withOtherArtistOption(artists) {
+  return [...artists, { id: OTHER_ARTIST_OPTION_ID, name: OTHER_ARTIST_NAME }]
+}
+
 function validateAlbumForm(form) {
   if (!form.title?.trim()) return 'Album title is required.'
   if (!form.artistId) return 'Artist is required.'
+  if (form.artistId === OTHER_ARTIST_OPTION_ID && !form.otherArtistName?.trim()) return 'Other artist name is required.'
   if (!form.releaseDate) return 'Release date is required.'
   return null
 }
@@ -60,48 +67,76 @@ export default function AdminAlbumsPage() {
   const [form, setForm] = useState(null)
   const [filterArtist, setFilterArtist] = useState('')
   const [filterType, setFilterType] = useState('')
+  const [filterTitle, setFilterTitle] = useState('')
   const [page, setPage] = useState(1)
+  const [loadingEditId, setLoadingEditId] = useState(null)
+  const deferredFilterTitle = useDeferredValue(filterTitle)
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/admin/albums', { headers: auth }).then((r) => r.json()),
-      fetch('/api/admin/artists', { headers: auth }).then((r) => r.json()),
-    ]).then(([albumList, artistList]) => {
-      const artistOrder = new Map(artistList.map((artist) => [artist.id, artist.order ?? 0]))
-      const sortedAlbums = [...albumList].sort((left, right) => {
-        const artistDiff = (artistOrder.get(left.artistId) ?? 0) - (artistOrder.get(right.artistId) ?? 0)
-        if (artistDiff !== 0) return artistDiff
-        return new Date(right.releaseDate).getTime() - new Date(left.releaseDate).getTime()
-      })
-      setArtists(artistList)
-      setAlbums(sortedAlbums)
+    let ignore = false
+
+    loadAdminResource({ cacheKey: 'albums-list', url: '/api/admin/albums', token }).then((albumList) => {
+      if (!ignore) setAlbums(albumList)
     })
+
+    loadAdminResource({ cacheKey: 'artists-list', url: '/api/admin/artists', token }).then((artistList) => {
+      if (!ignore) setArtists(artistList)
+    })
+
+    return () => {
+      ignore = true
+    }
   }, [token])
 
-  useEffect(() => { setPage(1) }, [filterArtist, filterType])
+  useEffect(() => { setPage(1) }, [filterArtist, filterType, filterTitle])
 
-  const filteredAlbums = albums.filter((album) => {
-    if (filterArtist && album.artistId !== filterArtist) return false
-    if (filterType && album.type !== filterType) return false
-    return true
-  })
+  const filteredAlbums = useMemo(() => (
+    albums.filter((album) => {
+      if (filterArtist) {
+        const matchesArtist = filterArtist === OTHER_ARTIST_OPTION_ID
+          ? isOtherArtist(album.artist)
+          : album.artistId === filterArtist
+        if (!matchesArtist) return false
+      }
+      if (filterType && album.type !== filterType) return false
+      if (deferredFilterTitle && !album.title.toLowerCase().includes(deferredFilterTitle.trim().toLowerCase())) return false
+      return true
+    })
+  ), [albums, deferredFilterTitle, filterArtist, filterType])
 
-  const artistOptions = [...artists].sort((left, right) => compareLexicographically(left.name, right.name))
+  const artistOptions = useMemo(() => (
+    withOtherArtistOption(artists).sort((left, right) =>
+      compareLexicographically(left.name, right.name)
+    )
+  ), [artists])
 
-  const totalPages = Math.max(1, Math.ceil(filteredAlbums.length / PAGE_SIZE))
-  const pagedAlbums = form ? filteredAlbums : filteredAlbums.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredAlbums.length / PAGE_SIZE)), [filteredAlbums.length])
+  const pagedAlbums = useMemo(
+    () => filteredAlbums.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredAlbums, page]
+  )
 
   const openCreate = () => setForm({ ...empty, artistId: scopedArtistId })
-  const openEdit = (album) => setForm({
-    ...album,
-    images: album.images ?? [],
-    aboutText: album.aboutText ?? '',
-    soundcloudUrl: album.soundcloudUrl ?? '',
-    spotifyUrl: album.spotifyUrl ?? '',
-    appleMusicUrl: album.appleMusicUrl ?? '',
-    youtubeUrl: album.youtubeUrl ?? '',
-    releaseDate: album.releaseDate ? album.releaseDate.slice(0, 10) : '',
-  })
+  const openEdit = async (album) => {
+    setLoadingEditId(album.id)
+    try {
+      const detail = await fetch(`/api/admin/albums?id=${album.id}`, { headers: auth }).then((r) => r.json())
+      setForm({
+        ...detail,
+        artistId: isOtherArtist(detail.artist) ? OTHER_ARTIST_OPTION_ID : detail.artistId,
+        otherArtistName: detail.otherArtistName ?? '',
+        images: detail.images ?? [],
+        aboutText: detail.aboutText ?? '',
+        soundcloudUrl: detail.soundcloudUrl ?? '',
+        spotifyUrl: detail.spotifyUrl ?? '',
+        appleMusicUrl: detail.appleMusicUrl ?? '',
+        youtubeUrl: detail.youtubeUrl ?? '',
+        releaseDate: detail.releaseDate ? detail.releaseDate.slice(0, 10) : '',
+      })
+    } finally {
+      setLoadingEditId(null)
+    }
+  }
   const closeForm = () => setForm(null)
 
   const handleSave = async () => {
@@ -129,15 +164,19 @@ export default function AdminAlbumsPage() {
       return
     }
     const saved = await res.json()
-    const withArtist = { ...saved, artist: artists.find((artist) => artist.id === saved.artistId) ?? null }
-    setAlbums((prev) => (isEdit ? prev.map((album) => (album.id === saved.id ? withArtist : album)) : [...prev, withArtist]))
+    const withArtist = { ...saved, artist: saved.artist ?? artists.find((artist) => artist.id === saved.artistId) ?? null }
+    const nextAlbums = isEdit ? albums.map((album) => (album.id === saved.id ? withArtist : album)) : [...albums, withArtist]
+    setAlbums(nextAlbums)
+    primeAdminResource('albums-list', token, nextAlbums)
     closeForm()
   }
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this album and all its songs?')) return
     await fetch(`/api/admin/albums?id=${id}`, { method: 'DELETE', headers: auth })
-    setAlbums((prev) => prev.filter((album) => album.id !== id))
+    const nextAlbums = albums.filter((album) => album.id !== id)
+    setAlbums(nextAlbums)
+    primeAdminResource('albums-list', token, nextAlbums)
   }
 
   const set = (key) => (event) => setForm((current) => ({
@@ -148,7 +187,10 @@ export default function AdminAlbumsPage() {
 
   const renderValue = (album, column) => {
     if (column.key === 'artistId') {
-      return album.artist?.name ? <span className="admin-artists-page-cell-value" title={album.artist.name}>{album.artist.name}</span> : <span className="admin-artists-page-empty-value">-</span>
+      const artistLabel = isOtherArtist(album.artist)
+        ? album.otherArtistName || OTHER_ARTIST_NAME
+        : album.artist?.name
+      return artistLabel ? <span className="admin-artists-page-cell-value" title={artistLabel}>{artistLabel}</span> : <span className="admin-artists-page-empty-value">-</span>
     }
 
     if (column.key === 'releaseDate') {
@@ -180,7 +222,7 @@ export default function AdminAlbumsPage() {
       return (
         <div className="admin-artists-page-image-summary">
           <img src={image.previewUrl || image.url} alt={album.title} className="admin-artists-page-thumb" />
-          <span className="admin-artists-page-image-count">{album.images?.length ?? 1} image{(album.images?.length ?? 1) === 1 ? '' : 's'}</span>
+          <span className="admin-artists-page-image-count">{album.imageCount ?? album.images?.length ?? 1} image{(album.imageCount ?? album.images?.length ?? 1) === 1 ? '' : 's'}</span>
         </div>
       )
     }
@@ -206,6 +248,13 @@ export default function AdminAlbumsPage() {
       </div>
 
       <div className="admin-filter-bar">
+        <input
+          type="search"
+          value={filterTitle}
+          onChange={(e) => setFilterTitle(e.target.value)}
+          className="admin-filter-select"
+          placeholder="Search title..."
+        />
         {!isArtistScoped && (
           <select
             value={filterArtist}
@@ -228,38 +277,40 @@ export default function AdminAlbumsPage() {
         </select>
       </div>
 
-      <div className="admin-artists-page-table-wrap">
-        <table className="admin-artists-page-table">
-          <thead>
-            <tr>
-              {columns.map((column) => <th key={column.key} className={column.className}>{renderHeader(column)}</th>)}
-              <th className="admin-artists-page-col-action admin-artists-page-sticky-right-1"></th>
-              <th className="admin-artists-page-col-action admin-artists-page-sticky-right-0"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {pagedAlbums.map((album) => (
-              <tr key={album.id}>
-                {columns.map((column) => (
-                  <td key={column.key} className={`${column.className ?? ''} ${column.key === 'type' ? 'admin-artists-page-muted' : ''}`.trim()}>
-                    {renderValue(album, column)}
-                  </td>
-                ))}
-                <td className="admin-artists-page-action-cell admin-artists-page-sticky-right-1">
-                  <button type="button" onClick={() => openEdit(album)} className={`admin-artists-page-ghost-btn admin-artists-page-icon-btn`} aria-label="Edit album" title="Edit">
-                    <FaPencilAlt aria-hidden="true" />
-                  </button>
-                </td>
-                <td className="admin-artists-page-action-cell admin-artists-page-sticky-right-0">
-                  <button type="button" onClick={() => handleDelete(album.id)} className={`admin-artists-page-danger-btn admin-artists-page-icon-btn`} aria-label="Delete album" title="Delete">
-                    <FaTrash aria-hidden="true" />
-                  </button>
-                </td>
+      {!form && (
+        <div className="admin-artists-page-table-wrap">
+          <table className="admin-artists-page-table">
+            <thead>
+              <tr>
+                {columns.map((column) => <th key={column.key} className={column.className}>{renderHeader(column)}</th>)}
+                <th className="admin-artists-page-col-action admin-artists-page-sticky-right-1"></th>
+                <th className="admin-artists-page-col-action admin-artists-page-sticky-right-0"></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {pagedAlbums.map((album) => (
+                <tr key={album.id}>
+                  {columns.map((column) => (
+                    <td key={column.key} className={`${column.className ?? ''} ${column.key === 'type' ? 'admin-artists-page-muted' : ''}`.trim()}>
+                      {renderValue(album, column)}
+                    </td>
+                  ))}
+                  <td className="admin-artists-page-action-cell admin-artists-page-sticky-right-1">
+                    <button type="button" onClick={() => void openEdit(album)} disabled={loadingEditId === album.id} className={`admin-artists-page-ghost-btn admin-artists-page-icon-btn`} aria-label="Edit album" title="Edit">
+                      <FaPencilAlt aria-hidden="true" />
+                    </button>
+                  </td>
+                  <td className="admin-artists-page-action-cell admin-artists-page-sticky-right-0">
+                    <button type="button" onClick={() => handleDelete(album.id)} className={`admin-artists-page-danger-btn admin-artists-page-icon-btn`} aria-label="Delete album" title="Delete">
+                      <FaTrash aria-hidden="true" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {!form && totalPages > 1 && (
         <div className="admin-pagination">
@@ -322,6 +373,12 @@ export default function AdminAlbumsPage() {
                     </select>
                   )}
                 </div>
+                {form.artistId === OTHER_ARTIST_OPTION_ID && (
+                  <div className="admin-modal-field admin-modal-field-full">
+                    <label className="admin-modal-label">Other Artist Name</label>
+                    <input type="text" placeholder="Artist name" value={form.otherArtistName} onChange={set('otherArtistName')} className="admin-artists-page-input" />
+                  </div>
+                )}
                 <div className="admin-modal-field">
                   <label className="admin-modal-label">Type</label>
                   <select value={form.type} onChange={set('type')} className="admin-artists-page-input">

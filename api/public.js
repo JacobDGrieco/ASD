@@ -1,5 +1,6 @@
 import { prisma } from '../src/lib/prisma.js'
 import { clientImages, mergeLegacyImages } from '../src/lib/images.js'
+import { isOtherArtist } from '../src/lib/publicVisibility.js'
 import { isReleasedOnUtcDay } from '../src/lib/releaseSchedule.js'
 
 function formatArtistImages(artist) {
@@ -74,11 +75,24 @@ function mapArtistLinks(names, slugByName) {
   }))
 }
 
-function formatAlbumSummary(album) {
-  const albumImages = formatAlbumImages(album)
+function applyPublicArtistName(album) {
+  if (!album?.artist || !isOtherArtist(album.artist) || !album.otherArtistName?.trim()) return album
+
   return {
     ...album,
-    coverArt: albumImages[0]?.previewUrl ?? album.coverArt,
+    artist: {
+      ...album.artist,
+      name: album.otherArtistName.trim(),
+    },
+  }
+}
+
+function formatAlbumSummary(album) {
+  const displayAlbum = applyPublicArtistName(album)
+  const albumImages = formatAlbumImages(displayAlbum)
+  return {
+    ...displayAlbum,
+    coverArt: albumImages[0]?.previewUrl ?? displayAlbum.coverArt,
     images: albumImages,
   }
 }
@@ -109,6 +123,10 @@ function isPublicAlbumReleased(album, now) {
 
 function isPublicSongReleased(song, fallbackReleaseDate, now) {
   return isReleasedOnUtcDay(song?.releaseDate ?? fallbackReleaseDate, now)
+}
+
+function isPublicArtistVisible(artist) {
+  return !isOtherArtist(artist)
 }
 
 function resolvePrimaryPlacement(placements, albumSlug = null) {
@@ -146,7 +164,7 @@ async function getArtists(res) {
         portrait: images[0]?.previewUrl ?? artist.portrait,
         images,
       }
-    })
+    }).filter(isPublicArtistVisible)
   )
 }
 
@@ -187,6 +205,7 @@ async function getArtist(res, slug) {
   })
 
   if (!artist) return res.status(404).json({ error: 'Artist not found' })
+  if (!isPublicArtistVisible(artist)) return res.status(404).json({ error: 'Artist not found' })
 
   const images = formatArtistImages(artist)
 
@@ -213,6 +232,7 @@ async function getArtist(res, slug) {
                   title: true,
                   slug: true,
                   coverArt: true,
+                  otherArtistName: true,
                   releaseDate: true,
                   type: true,
                   images: {
@@ -310,6 +330,7 @@ async function getAlbum(res, slug) {
   })
 
   if (!album) return res.status(404).json({ error: 'Album not found' })
+  if (!isPublicArtistVisible(album.artist)) return res.status(404).json({ error: 'Album not found' })
   if (!isPublicAlbumReleased(album, now)) return res.status(404).json({ error: 'Album not found' })
 
   const albumImages = formatAlbumImages(album)
@@ -338,6 +359,7 @@ async function getSong(res, slug, albumSlug = null) {
               title: true,
               slug: true,
               coverArt: true,
+              otherArtistName: true,
               releaseDate: true,
               images: {
                 orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
@@ -454,6 +476,7 @@ async function getRecordPlayer(res) {
                   select: {
                     coverArt: true,
                     title: true,
+                    otherArtistName: true,
                     releaseDate: true,
                     images: {
                       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],

@@ -45,6 +45,7 @@ export default function App() {
           <Route element={<PublicLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/artists/:slug" element={<ArtistPage />} />
+            <Route path="/songs/:songSlug" element={<SongPage />} />
             <Route path="/:artistSlug/:albumSlug/:songSlug" element={<SongPage />} />
             <Route path="/:artistSlug/:albumSlug" element={<AlbumPage />} />
             <Route path="*" element={<NotFoundPage />} />

@@ -25,6 +25,26 @@ function withImages(song) {
   }
 }
 
+function withListImages(song) {
+  const previewImage = song.images?.[0] ?? null
+  const images = previewImage
+    ? clientImages(
+        mergeLegacyImages([previewImage], song.artwork, {
+          fallbackUsage: 'artwork',
+          altText: song.title,
+          idPrefix: song.id,
+        })
+      )
+    : []
+
+  return {
+    ...song,
+    artwork: images[0]?.previewUrl ?? song.artwork,
+    images,
+    imageCount: song._count?.images ?? images.length,
+  }
+}
+
 function normalizePlacements(input) {
   const albumIds = Array.isArray(input?.albumIds) ? input.albumIds : []
   const discNumbers = Array.isArray(input?.discNumbers) ? input.discNumbers : []
@@ -85,6 +105,7 @@ function songInclude() {
             id: true,
             title: true,
             slug: true,
+            otherArtistName: true,
             releaseDate: true,
             artistId: true,
             artist: { select: { id: true, name: true, slug: true, order: true } },
@@ -94,6 +115,41 @@ function songInclude() {
     },
     meta: true,
     images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
+  }
+}
+
+function songListInclude() {
+  return {
+    placements: {
+      orderBy: [{ placementOrder: 'asc' }],
+      include: {
+        album: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            otherArtistName: true,
+            releaseDate: true,
+            artistId: true,
+            artist: { select: { id: true, name: true, slug: true, order: true } },
+          },
+        },
+      },
+    },
+    meta: {
+      select: {
+        featuredArtists: true,
+        releaseDate: true,
+      },
+    },
+    images: {
+      take: 1,
+      orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+      select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+    },
+    _count: {
+      select: { images: true },
+    },
   }
 }
 
@@ -134,6 +190,10 @@ export default async function handler(req, res) {
   if (id) {
     const existingSong = await loadSong(session, id)
     if (!existingSong) return res.status(404).json({ error: 'Song not found' })
+
+    if (req.method === 'GET') {
+      return res.status(200).json(existingSong)
+    }
 
     if (req.method === 'PUT') {
       const {
@@ -222,11 +282,12 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     const songs = await prisma.song.findMany({
       where: artistScopedSongWhere(session),
-      include: songInclude(),
+      include: songListInclude(),
     })
 
     const sortedSongs = songs
       .map(formatSong)
+      .map(withListImages)
       .sort((left, right) => {
         const leftArtistOrder = left.album?.artist?.order ?? Number.MAX_SAFE_INTEGER
         const rightArtistOrder = right.album?.artist?.order ?? Number.MAX_SAFE_INTEGER

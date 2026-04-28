@@ -4,6 +4,15 @@ import { prefetchSongPage } from '../../lib/publicPrefetch.js';
 import ArtworkGallery from '../shared/ArtworkGallery.jsx';
 import '../../styles/AlbumCard.css';
 
+function getSongSlugFromPath(to) {
+	if (!to) return null;
+	const [pathname] = String(to).split('?');
+	const parts = pathname.split('/').filter(Boolean);
+	if (parts.length === 0) return null;
+	if (parts[0] === 'songs') return parts[1] ?? null;
+	return parts[2] ?? null;
+}
+
 export default function AlbumCard({ album, isOpen, isUnreleased = false, onClick, to, subtitle }) {
 	const year = new Date(album.releaseDate).getFullYear();
 	const className = `album-card-card ${isOpen ? 'album-card-open' : ''}`;
@@ -38,9 +47,9 @@ export default function AlbumCard({ album, isOpen, isUnreleased = false, onClick
 				<Link
 					to={to}
 					className="album-card-primary-action"
-					onMouseEnter={() => { const s = to.split('/').filter(Boolean)[2]; if (s) prefetchSongPage(s, album.coverArt); }}
-					onFocus={() => { const s = to.split('/').filter(Boolean)[2]; if (s) prefetchSongPage(s, album.coverArt); }}
-					onTouchStart={() => { const s = to.split('/').filter(Boolean)[2]; if (s) prefetchSongPage(s, album.coverArt); }}
+					onMouseEnter={() => { const s = getSongSlugFromPath(to); if (s) prefetchSongPage(s, album.coverArt, album.slug); }}
+					onFocus={() => { const s = getSongSlugFromPath(to); if (s) prefetchSongPage(s, album.coverArt, album.slug); }}
+					onTouchStart={() => { const s = getSongSlugFromPath(to); if (s) prefetchSongPage(s, album.coverArt, album.slug); }}
 				>
 					{content}
 				</Link>

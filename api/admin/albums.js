@@ -1,6 +1,7 @@
 import { prisma } from '../../src/lib/prisma.js'
 import { artistScopedAlbumWhere, isSuperAdmin, requireAdmin } from '../../src/lib/auth.js'
 import { clientImages, mergeLegacyImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js'
+import { OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID, OTHER_ARTIST_SLUG } from '../../src/lib/publicVisibility.js'
 import { slugify } from '../../src/lib/slugify.js'
 
 function withImages(album) {
@@ -17,10 +18,54 @@ function withImages(album) {
   }
 }
 
+function withListImages(album) {
+  const previewImage = album.images?.[0] ?? null
+  const images = previewImage
+    ? clientImages(mergeLegacyImages([previewImage], album.coverArt, {
+        fallbackUsage: 'cover',
+        altText: album.title,
+        idPrefix: album.id,
+      }))
+    : []
+
+  return {
+    ...album,
+    coverArt: images[0]?.previewUrl ?? album.coverArt,
+    images,
+    imageCount: album._count?.images ?? images.length,
+  }
+}
+
 function includeAlbum() {
   return {
     artist: { select: { id: true, name: true, slug: true } },
     images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
+  }
+}
+
+function includeAlbumList() {
+  return {
+    id: true,
+    title: true,
+    slug: true,
+    type: true,
+    otherArtistName: true,
+    coverArt: true,
+    soundcloudUrl: true,
+    spotifyUrl: true,
+    appleMusicUrl: true,
+    youtubeUrl: true,
+    releaseDate: true,
+    artistId: true,
+    artist: { select: { id: true, name: true, slug: true } },
+    images: {
+      take: 1,
+      orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+      select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+    },
+    _count: {
+      select: { images: true },
+    },
   }
 }
 
@@ -34,6 +79,25 @@ async function loadAlbumForSession(session, id) {
   })
 }
 
+async function resolveAlbumArtistId(session, artistId) {
+  if (!isSuperAdmin(session)) return session.artistId
+  if (!artistId) return null
+  if (artistId !== OTHER_ARTIST_OPTION_ID) return artistId
+
+  const otherArtist = await prisma.artist.upsert({
+    where: { slug: OTHER_ARTIST_SLUG },
+    update: { name: OTHER_ARTIST_NAME },
+    create: {
+      name: OTHER_ARTIST_NAME,
+      slug: OTHER_ARTIST_SLUG,
+      order: 999999,
+    },
+    select: { id: true },
+  })
+
+  return otherArtist.id
+}
+
 export default async function handler(req, res) {
   const session = requireAdmin(req, res)
   if (!session) return
@@ -44,8 +108,14 @@ export default async function handler(req, res) {
     const existingAlbum = await loadAlbumForSession(session, id)
     if (!existingAlbum) return res.status(404).json({ error: 'Album not found' })
 
+    if (req.method === 'GET') {
+      return res.status(200).json(withImages(existingAlbum))
+    }
+
     if (req.method === 'PUT') {
-      const { title, slug, type, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, releaseDate, artistId, images } = req.body
+      const { title, slug, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, releaseDate, artistId, images } = req.body
+      const resolvedArtistId = await resolveAlbumArtistId(session, artistId)
+      if (!resolvedArtistId) return res.status(400).json({ error: 'Artist is required.' })
       const normalizedImages = normalizeImageInput(images, 'cover')
       const album = await prisma.album.update({
         where: { id },
@@ -53,6 +123,7 @@ export default async function handler(req, res) {
           title,
           slug: slug || slugify(title),
           type,
+          otherArtistName: artistId === OTHER_ARTIST_OPTION_ID ? otherArtistName?.trim() || null : null,
           coverArt: primaryImageReference(normalizedImages),
           aboutText: aboutText ?? '',
           soundcloudUrl: soundcloudUrl || null,
@@ -60,7 +131,7 @@ export default async function handler(req, res) {
           appleMusicUrl: appleMusicUrl || null,
           youtubeUrl: youtubeUrl || null,
           releaseDate: new Date(releaseDate),
-          artistId: isSuperAdmin(session) ? artistId : session.artistId,
+          artistId: resolvedArtistId,
           images: {
             deleteMany: {},
             createMany: {
@@ -85,19 +156,22 @@ export default async function handler(req, res) {
     const albums = await prisma.album.findMany({
       where: artistScopedAlbumWhere(session),
       orderBy: { releaseDate: 'desc' },
-      include: includeAlbum(),
+      select: includeAlbumList(),
     })
-    return res.status(200).json(albums.map(withImages))
+    return res.status(200).json(albums.map(withListImages))
   }
 
   if (req.method === 'POST') {
-    const { title, slug, type, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, releaseDate, artistId, images } = req.body
+    const { title, slug, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, releaseDate, artistId, images } = req.body
+    const resolvedArtistId = await resolveAlbumArtistId(session, artistId)
+    if (!resolvedArtistId) return res.status(400).json({ error: 'Artist is required.' })
     const normalizedImages = normalizeImageInput(images, 'cover')
     const album = await prisma.album.create({
       data: {
         title,
         slug: slug || slugify(title),
         type,
+        otherArtistName: artistId === OTHER_ARTIST_OPTION_ID ? otherArtistName?.trim() || null : null,
         coverArt: primaryImageReference(normalizedImages),
         aboutText: aboutText ?? '',
         soundcloudUrl: soundcloudUrl || null,
@@ -105,7 +179,7 @@ export default async function handler(req, res) {
         appleMusicUrl: appleMusicUrl || null,
         youtubeUrl: youtubeUrl || null,
         releaseDate: new Date(releaseDate),
-        artistId: isSuperAdmin(session) ? artistId : session.artistId,
+        artistId: resolvedArtistId,
         images: normalizedImages.length
           ? {
               createMany: {

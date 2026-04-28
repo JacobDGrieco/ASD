@@ -43,6 +43,7 @@ model Album {
   slug          String       @unique
   type          AlbumType
   coverArt      String       @default("")
+  otherArtistName String?
   aboutText     String       @default("")
   soundcloudUrl String?
   spotifyUrl    String?

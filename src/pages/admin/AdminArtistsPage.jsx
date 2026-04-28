@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { FaApple, FaExternalLinkAlt, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash, FaYoutube } from 'react-icons/fa'
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
+import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js'
 import { slugify } from '../../lib/slugify.js'
 import '../../styles/AdminArtistsPage.css'
 
@@ -21,8 +22,6 @@ const empty = {
 const columns = [
   { key: 'images', label: 'Images', kind: 'images', className: 'admin-artists-page-col-image' },
   { key: 'name', label: 'Name', placeholder: 'Name', className: 'admin-artists-page-col-lg' },
-  { key: 'bio', label: 'Bio', placeholder: 'Bio', kind: 'textarea', className: 'admin-artists-page-col-xxl', valueClassName: 'admin-artists-page-wrap-value' },
-  { key: 'aboutMe', label: 'About Me', placeholder: 'About Me', kind: 'textarea', className: 'admin-artists-page-col-xxl', valueClassName: 'admin-artists-page-wrap-value' },
   { key: 'soundcloudProfile', label: <FaSoundcloud />, headerLabel: 'SoundCloud', placeholder: 'SoundCloud URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
   { key: 'spotifyProfile', label: <FaSpotify />, headerLabel: 'Spotify', placeholder: 'Spotify URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
   { key: 'appleMusicProfile', label: <FaApple />, headerLabel: 'Apple Music', placeholder: 'Apple Music URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
@@ -47,15 +46,31 @@ export default function AdminArtistsPage() {
   const [form, setForm] = useState(null)
   const [draggedArtistId, setDraggedArtistId] = useState(null)
   const [dropTargetId, setDropTargetId] = useState(null)
+  const [loadingEditId, setLoadingEditId] = useState(null)
 
   useEffect(() => {
-    fetch('/api/admin/artists', { headers: auth })
-      .then((r) => r.json())
-      .then(setArtists)
+    let ignore = false
+
+    loadAdminResource({ cacheKey: 'artists-list', url: '/api/admin/artists', token })
+      .then((artistList) => {
+        if (!ignore) setArtists(artistList)
+      })
+
+    return () => {
+      ignore = true
+    }
   }, [token])
 
   const openCreate = () => setForm({ ...empty })
-  const openEdit = (artist) => setForm({ ...empty, ...artist, images: artist.images ?? [] })
+  const openEdit = async (artist) => {
+    setLoadingEditId(artist.id)
+    try {
+      const detail = await fetch(`/api/admin/artists?id=${artist.id}`, { headers: auth }).then((r) => r.json())
+      setForm({ ...empty, ...detail, images: detail.images ?? [] })
+    } finally {
+      setLoadingEditId(null)
+    }
+  }
   const closeForm = () => setForm(null)
   const nextOrder = artists.reduce((maxOrder, artist) => Math.max(maxOrder, artist.order ?? 0), -1) + 1
 
@@ -84,14 +99,18 @@ export default function AdminArtistsPage() {
       return
     }
     const saved = await res.json()
-    setArtists((prev) => (isEdit ? prev.map((artist) => (artist.id === saved.id ? saved : artist)) : [...prev, saved]))
+    const nextArtists = isEdit ? artists.map((artist) => (artist.id === saved.id ? saved : artist)) : [...artists, saved]
+    setArtists(nextArtists)
+    primeAdminResource('artists-list', token, nextArtists)
     closeForm()
   }
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this artist and all their albums/songs?')) return
     await fetch(`/api/admin/artists?id=${id}`, { method: 'DELETE', headers: auth })
-    setArtists((prev) => prev.filter((artist) => artist.id !== id))
+    const nextArtists = artists.filter((artist) => artist.id !== id)
+    setArtists(nextArtists)
+    primeAdminResource('artists-list', token, nextArtists)
   }
 
   const persistArtistOrder = async (nextArtists) => {
@@ -147,11 +166,13 @@ export default function AdminArtistsPage() {
 
     const normalized = reordered.map((artist, index) => ({ ...artist, order: index }))
     setArtists(normalized)
+    primeAdminResource('artists-list', token, normalized)
     setDraggedArtistId(null)
     setDropTargetId(null)
 
     const persisted = await persistArtistOrder(reordered)
     setArtists(persisted)
+    primeAdminResource('artists-list', token, persisted)
   }
 
   const handleDragEnd = () => {
@@ -167,7 +188,7 @@ export default function AdminArtistsPage() {
       return (
         <div className="admin-artists-page-image-summary">
           <img src={image.previewUrl || image.url} alt={artist.name} className="admin-artists-page-thumb" />
-          <span className="admin-artists-page-image-count">{artist.images?.length ?? 1} image{(artist.images?.length ?? 1) === 1 ? '' : 's'}</span>
+          <span className="admin-artists-page-image-count">{artist.imageCount ?? artist.images?.length ?? 1} image{(artist.imageCount ?? artist.images?.length ?? 1) === 1 ? '' : 's'}</span>
         </div>
       )
     }
@@ -245,7 +266,7 @@ export default function AdminArtistsPage() {
                   </td>
                 ))}
                 <td className={`admin-artists-page-action-cell admin-artists-page-sticky-right-1`}>
-                  <button type="button" onClick={() => openEdit(artist)} className={`admin-artists-page-ghost-btn admin-artists-page-icon-btn`} aria-label="Edit artist" title="Edit">
+                  <button type="button" onClick={() => void openEdit(artist)} disabled={loadingEditId === artist.id} className={`admin-artists-page-ghost-btn admin-artists-page-icon-btn`} aria-label="Edit artist" title="Edit">
                     <FaPencilAlt aria-hidden="true" />
                   </button>
                 </td>

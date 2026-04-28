@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { FaApple, FaSoundcloud, FaSpotify, FaYoutube } from 'react-icons/fa'
 import { prefetchArtistPage } from '../../lib/publicPrefetch.js'
+import { buildAlbumPath, isOtherArtist } from '../../lib/publicVisibility.js'
 import SoundCloudPlayer from '../shared/SoundCloudPlayer.jsx'
 import ArtworkGallery from '../shared/ArtworkGallery.jsx'
 import '../../styles/SongHeader.css'
@@ -13,6 +14,12 @@ export default function SongHeader({ song }) {
   const artistLinkData = song.album?.artist
     ? { slug: song.album.artist.slug, images: [], portrait: song.album.coverArt }
     : null
+  const showArtistPageLink = song.album?.artist && !isOtherArtist(song.album.artist)
+  const albumPagePath = buildAlbumPath({
+    albumSlug: song.album?.slug,
+    artistSlug: song.album?.artist?.slug,
+    artist: song.album?.artist,
+  })
   const streamLinks = [
     { href: song.soundcloudUrl, label: 'SoundCloud', icon: FaSoundcloud },
     { href: song.spotifyUrl, label: 'Spotify', icon: FaSpotify },
@@ -49,15 +56,19 @@ export default function SongHeader({ song }) {
       </div>
       <div className="song-header-info">
         <div className="song-header-artist-links">
-          <Link
-            to={`/artists/${song.album.artist.slug}`}
-            className="song-header-artist-link"
-            onMouseEnter={() => prefetchArtistPage(artistLinkData)}
-            onFocus={() => prefetchArtistPage(artistLinkData)}
-            onTouchStart={() => prefetchArtistPage(artistLinkData)}
-          >
-            {song.album.artist.name}
-          </Link>
+          {showArtistPageLink ? (
+            <Link
+              to={`/artists/${song.album.artist.slug}`}
+              className="song-header-artist-link"
+              onMouseEnter={() => prefetchArtistPage(artistLinkData)}
+              onFocus={() => prefetchArtistPage(artistLinkData)}
+              onTouchStart={() => prefetchArtistPage(artistLinkData)}
+            >
+              {song.album.artist.name}
+            </Link>
+          ) : (
+            <span className="song-header-artist-link">{song.album.artist.name}</span>
+          )}
           {song.meta?.featuredArtistLinks?.length > 0 && (
             <span className="song-header-featured-artists">
               {'feat. '}
@@ -75,9 +86,7 @@ export default function SongHeader({ song }) {
         </div>
         <h1 className="song-header-title">{song.title}</h1>
         <p className="song-header-meta">
-          <Link to={`/${song.album.artist.slug}/${song.album.slug}`}>
-            {song.album.title}
-          </Link>
+          {albumPagePath ? <Link to={albumPagePath}>{song.album.title}</Link> : song.album.title}
           {song.meta?.releaseDate && ` · ${new Date(song.meta.releaseDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })}`}
           {song.duration && ` · ${song.duration}`}
         </p>

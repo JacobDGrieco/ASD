@@ -1,18 +1,16 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import '../../styles/AdminLoginPage.css'
 
 export default function AdminLoginPage() {
   const { token, session, login } = useAdminAuth()
-  const navigate = useNavigate()
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
   if (token) {
-    navigate(session?.role === 'ARTIST' ? '/admin/albums' : '/admin/artists', { replace: true })
-    return null
+    return <Navigate to={session?.role === 'ARTIST' ? '/admin/albums' : '/admin/artists'} replace />
   }
 
   const handleSubmit = async (e) => {

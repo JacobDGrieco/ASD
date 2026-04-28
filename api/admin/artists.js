@@ -3,6 +3,7 @@ import { canAccessArtist, isSuperAdmin, requireAdmin } from '../../src/lib/auth.
 import { hashPassword } from '../../src/lib/passwords.js'
 import { validateUniqueArtistPassword } from '../../src/lib/adminAccounts.js'
 import { clientImages, mergeLegacyImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js'
+import { isOtherArtist } from '../../src/lib/publicVisibility.js'
 import { slugify } from '../../src/lib/slugify.js'
 
 function withImages(artist) {
@@ -32,6 +33,52 @@ function includeArtist() {
   }
 }
 
+function selectArtistList() {
+  return {
+    id: true,
+    name: true,
+    slug: true,
+    portrait: true,
+    order: true,
+    soundcloudProfile: true,
+    spotifyProfile: true,
+    appleMusicProfile: true,
+    youtubeProfile: true,
+    images: {
+      take: 1,
+      orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+      select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+    },
+    _count: {
+      select: { images: true },
+    },
+    adminAccess: {
+      select: {
+        active: true,
+      },
+    },
+  }
+}
+
+function withListImages(artist) {
+  const previewImage = artist.images?.[0] ?? null
+  const images = previewImage
+    ? clientImages(mergeLegacyImages([previewImage], artist.portrait, {
+        fallbackUsage: 'portrait',
+        altText: artist.name,
+        idPrefix: artist.id,
+      }))
+    : []
+
+  return {
+    ...artist,
+    portrait: images[0]?.previewUrl ?? artist.portrait,
+    images,
+    imageCount: artist._count?.images ?? images.length,
+    hasAdminPassword: Boolean(artist.adminAccess?.active),
+  }
+}
+
 function buildAdminAccessUpdate(adminPassword) {
   if (adminPassword === undefined) return undefined
 
@@ -58,7 +105,7 @@ export default async function handler(req, res) {
   if (id) {
     const existingArtist = await prisma.artist.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, name: true, slug: true },
     })
 
     if (!existingArtist || !canAccessArtist(session, existingArtist.id)) {
@@ -66,6 +113,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT') {
+      if (isOtherArtist(existingArtist)) return res.status(403).json({ error: 'The Other artist is reserved.' })
       const { name, slug, bio, aboutMe, order, soundcloudProfile, spotifyProfile, appleMusicProfile, youtubeProfile, images, adminPassword } = req.body
       const passwordError = isSuperAdmin(session) ? await validateUniqueArtistPassword(adminPassword, id) : null
       if (passwordError) return res.status(400).json({ error: passwordError })
@@ -98,8 +146,17 @@ export default async function handler(req, res) {
 
     if (req.method === 'DELETE') {
       if (!isSuperAdmin(session)) return res.status(403).json({ error: 'Forbidden' })
+      if (isOtherArtist(existingArtist)) return res.status(403).json({ error: 'The Other artist is reserved.' })
       await prisma.artist.delete({ where: { id } })
       return res.status(204).end()
+    }
+
+    if (req.method === 'GET') {
+      const artist = await prisma.artist.findUnique({
+        where: { id },
+        include: includeArtist(),
+      })
+      return res.status(200).json(withImages(artist))
     }
 
     return res.status(405).json({ error: 'Method not allowed' })
@@ -107,17 +164,24 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const artists = await prisma.artist.findMany({
-      where: isSuperAdmin(session) || !session.artistId ? undefined : { id: session.artistId },
+      where: isSuperAdmin(session) || !session.artistId
+        ? undefined
+        : { id: session.artistId },
       orderBy: { order: 'asc' },
-      include: includeArtist(),
+      select: selectArtistList(),
     })
-    return res.status(200).json(artists.map(withImages))
+    return res.status(200).json(
+      artists
+        .filter((artist) => !isOtherArtist(artist))
+        .map(withListImages)
+    )
   }
 
   if (req.method === 'POST') {
     if (!isSuperAdmin(session)) return res.status(403).json({ error: 'Forbidden' })
 
     const { name, slug, bio, aboutMe, order, soundcloudProfile, spotifyProfile, appleMusicProfile, youtubeProfile, images, adminPassword } = req.body
+    if (isOtherArtist(slug || name)) return res.status(400).json({ error: 'The Other artist is reserved.' })
     const passwordError = await validateUniqueArtistPassword(adminPassword)
     if (passwordError) return res.status(400).json({ error: passwordError })
     const normalizedImages = normalizeImageInput(images, 'portrait')

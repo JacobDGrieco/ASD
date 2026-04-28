@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useLocation, useParams } from 'react-router-dom'
 import { TabPanel, TabView } from 'primereact/tabview'
 import { useApi } from '../hooks/useApi.js'
 import SongHeader from '../components/song/SongHeader.jsx'
@@ -11,7 +11,10 @@ import '../styles/SongPage.css'
 
 export default function SongPage() {
   const { albumSlug, songSlug } = useParams()
-  const { data: song, loading, error } = useApi(`/api/songs/${songSlug}?albumSlug=${encodeURIComponent(albumSlug)}`, {
+  const location = useLocation()
+  const routeAlbumSlug = albumSlug ?? new URLSearchParams(location.search).get('albumSlug') ?? ''
+  const albumQuery = routeAlbumSlug ? `?albumSlug=${encodeURIComponent(routeAlbumSlug)}` : ''
+  const { data: song, loading, error } = useApi(`/api/songs/${songSlug}${albumQuery}`, {
     refreshAtUtcMidnight: true,
   })
   const lyricLineCount = song?.lyricBlocks?.filter((block) => block.text?.trim()).length ?? 0
