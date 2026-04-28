@@ -128,11 +128,15 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  width: calc(100% - 24px);
   min-height: 44px;
   margin-left: 12px;
   margin-right: 12px;
   margin-bottom: 8px;
   padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  box-sizing: border-box;
   text-align: left;
   color: var(--text-muted);
   font-size: 0.9rem;
@@ -159,10 +163,16 @@
 }
 
 .admin-layout-sidebar-collapsed .admin-layout-brand,
-.admin-layout-sidebar-collapsed .admin-layout-link,
-.admin-layout-sidebar-collapsed .admin-layout-logout {
+.admin-layout-sidebar-collapsed .admin-layout-link {
   justify-content: center;
   width: 100%;
+  gap: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.admin-layout-sidebar-collapsed .admin-layout-logout {
+  justify-content: center;
   gap: 0;
   padding-left: 0;
   padding-right: 0;
