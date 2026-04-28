@@ -153,6 +153,12 @@ async function getArtists(res) {
       spotifyProfile: true,
       appleMusicProfile: true,
       youtubeProfile: true,
+      instagramProfile: true,
+      twitterProfile: true,
+      facebookProfile: true,
+      tiktokProfile: true,
+      snapchatProfile: true,
+      youtubeSocialProfile: true,
     },
   })
 

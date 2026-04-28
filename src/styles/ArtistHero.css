@@ -12,6 +12,9 @@
 	width: 280px;
 	padding: 20px;
 	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 22px;
 }
 
 .artist-hero-portrait-frame {
@@ -59,7 +62,7 @@
 }
 
 .artist-hero-info {
-	padding-top: 40px;
+	padding-top: 28px;
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
@@ -85,26 +88,50 @@
 	line-height: 1.8;
 }
 
+.artist-hero-link-groups {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+.artist-hero-link-group {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.artist-hero-link-group-label {
+	font-size: 0.72rem;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
 .artist-hero-links {
 	display: flex;
-	gap: 20px;
+	gap: 14px;
 	flex-wrap: wrap;
-	margin-top: 8px;
 }
 
 .artist-hero-links a {
-	font-size: 0.8rem;
-	letter-spacing: 0.1em;
-	text-transform: uppercase;
-	color: var(--text-muted);
-	border-bottom: 1px solid var(--border);
-	padding-bottom: 2px;
-	transition: color var(--transition), border-color var(--transition);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 48px;
+	height: 48px;
+	font-size: 1.3rem;
+	color: var(--text);
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.03);
+	transition: color var(--transition), border-color var(--transition), background var(--transition), transform var(--transition);
 }
 
 .artist-hero-links a:hover {
 	color: var(--accent);
 	border-color: var(--accent);
+	background: rgba(200, 169, 110, 0.08);
+	transform: translateY(-2px);
 	text-decoration: none;
 }
 

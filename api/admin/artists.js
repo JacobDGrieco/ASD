@@ -44,6 +44,12 @@ function selectArtistList() {
     spotifyProfile: true,
     appleMusicProfile: true,
     youtubeProfile: true,
+    instagramProfile: true,
+    twitterProfile: true,
+    facebookProfile: true,
+    tiktokProfile: true,
+    snapchatProfile: true,
+    youtubeSocialProfile: true,
     images: {
       take: 1,
       orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
@@ -114,7 +120,25 @@ export default async function handler(req, res) {
 
     if (req.method === 'PUT') {
       if (isOtherArtist(existingArtist)) return res.status(403).json({ error: 'The Other artist is reserved.' })
-      const { name, slug, bio, aboutMe, order, soundcloudProfile, spotifyProfile, appleMusicProfile, youtubeProfile, images, adminPassword } = req.body
+      const {
+        name,
+        slug,
+        bio,
+        aboutMe,
+        order,
+        soundcloudProfile,
+        spotifyProfile,
+        appleMusicProfile,
+        youtubeProfile,
+        instagramProfile,
+        twitterProfile,
+        facebookProfile,
+        tiktokProfile,
+        snapchatProfile,
+        youtubeSocialProfile,
+        images,
+        adminPassword,
+      } = req.body
       const passwordError = isSuperAdmin(session) ? await validateUniqueArtistPassword(adminPassword, id) : null
       if (passwordError) return res.status(400).json({ error: passwordError })
       const normalizedImages = images === undefined ? null : normalizeImageInput(images, 'portrait')
@@ -131,6 +155,12 @@ export default async function handler(req, res) {
           spotifyProfile,
           appleMusicProfile,
           youtubeProfile,
+          instagramProfile,
+          twitterProfile,
+          facebookProfile,
+          tiktokProfile,
+          snapchatProfile,
+          youtubeSocialProfile,
           adminAccess: isSuperAdmin(session) ? buildAdminAccessUpdate(adminPassword) : undefined,
           images: normalizedImages === null
             ? undefined
@@ -182,7 +212,25 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     if (!isSuperAdmin(session)) return res.status(403).json({ error: 'Forbidden' })
 
-    const { name, slug, bio, aboutMe, order, soundcloudProfile, spotifyProfile, appleMusicProfile, youtubeProfile, images, adminPassword } = req.body
+    const {
+      name,
+      slug,
+      bio,
+      aboutMe,
+      order,
+      soundcloudProfile,
+      spotifyProfile,
+      appleMusicProfile,
+      youtubeProfile,
+      instagramProfile,
+      twitterProfile,
+      facebookProfile,
+      tiktokProfile,
+      snapchatProfile,
+      youtubeSocialProfile,
+      images,
+      adminPassword,
+    } = req.body
     if (isOtherArtist(slug || name)) return res.status(400).json({ error: 'The Other artist is reserved.' })
     const passwordError = await validateUniqueArtistPassword(adminPassword)
     if (passwordError) return res.status(400).json({ error: passwordError })
@@ -199,6 +247,12 @@ export default async function handler(req, res) {
         spotifyProfile,
         appleMusicProfile,
         youtubeProfile,
+        instagramProfile,
+        twitterProfile,
+        facebookProfile,
+        tiktokProfile,
+        snapchatProfile,
+        youtubeSocialProfile,
         adminAccess: adminPassword
           ? {
               create: {

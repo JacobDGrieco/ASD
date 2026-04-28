@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FaApple, FaSoundcloud, FaSpotify, FaYoutube } from 'react-icons/fa';
+import { SiFacebook, SiInstagram, SiSnapchat, SiTiktok, SiX, SiYoutube } from 'react-icons/si';
 import { preloadImage, preloadImages } from '../../lib/publicPrefetch.js';
 import '../../styles/ArtistHero.css';
 
@@ -111,6 +112,22 @@ export default function ArtistHero({ artist }) {
 		return clearTimers;
 	}, [defaultImage, isHovered, sequence]);
 
+	const musicLinks = [
+		artist.soundcloudProfile ? { href: artist.soundcloudProfile, label: 'SoundCloud', icon: <FaSoundcloud /> } : null,
+		artist.spotifyProfile ? { href: artist.spotifyProfile, label: 'Spotify', icon: <FaSpotify /> } : null,
+		artist.appleMusicProfile ? { href: artist.appleMusicProfile, label: 'Apple Music', icon: <FaApple /> } : null,
+		artist.youtubeProfile ? { href: artist.youtubeProfile, label: 'YouTube Music', icon: <FaYoutube /> } : null,
+	].filter(Boolean);
+
+	const socialLinks = [
+		artist.instagramProfile ? { href: artist.instagramProfile, label: 'Instagram', icon: <SiInstagram /> } : null,
+		artist.twitterProfile ? { href: artist.twitterProfile, label: 'X', icon: <SiX /> } : null,
+		artist.facebookProfile ? { href: artist.facebookProfile, label: 'Facebook', icon: <SiFacebook /> } : null,
+		artist.tiktokProfile ? { href: artist.tiktokProfile, label: 'TikTok', icon: <SiTiktok /> } : null,
+		artist.snapchatProfile ? { href: artist.snapchatProfile, label: 'Snapchat', icon: <SiSnapchat /> } : null,
+		artist.youtubeSocialProfile ? { href: artist.youtubeSocialProfile, label: 'YouTube', icon: <SiYoutube /> } : null,
+	].filter(Boolean);
+
 	return (
 		<section className="artist-hero-hero">
 			<div
@@ -143,17 +160,39 @@ export default function ArtistHero({ artist }) {
 						/>
 					)}
 				</div>
+				{(musicLinks.length > 0 || socialLinks.length > 0) && (
+					<div className="artist-hero-link-groups">
+						{musicLinks.length > 0 && (
+							<div className="artist-hero-link-group">
+								<span className="artist-hero-link-group-label">Music</span>
+								<div className="artist-hero-links">
+									{musicLinks.map((link) => (
+										<a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.label} title={link.label}>
+											{link.icon}
+										</a>
+									))}
+								</div>
+							</div>
+						)}
+						{socialLinks.length > 0 && (
+							<div className="artist-hero-link-group">
+								<span className="artist-hero-link-group-label">Social</span>
+								<div className="artist-hero-links">
+									{socialLinks.map((link) => (
+										<a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.label} title={link.label}>
+											{link.icon}
+										</a>
+									))}
+								</div>
+							</div>
+						)}
+					</div>
+				)}
 			</div>
 			<div className="artist-hero-info">
 				<h1 className="artist-hero-name">{artist.name}</h1>
 				<p className="artist-hero-bio">{artist.bio}</p>
 				{artist.aboutMe && <p className="artist-hero-about">{artist.aboutMe}</p>}
-				<div className="artist-hero-links">
-					{artist.soundcloudProfile && <a href={artist.soundcloudProfile} target="_blank" rel="noopener noreferrer"><FaSoundcloud /></a>}
-					{artist.spotifyProfile && <a href={artist.spotifyProfile} target="_blank" rel="noopener noreferrer"><FaSpotify /></a>}
-					{artist.appleMusicProfile && <a href={artist.appleMusicProfile} target="_blank" rel="noopener noreferrer"><FaApple /></a>}
-					{artist.youtubeProfile && <a href={artist.youtubeProfile} target="_blank" rel="noopener noreferrer"><FaYoutube /></a>}
-				</div>
 			</div>
 		</section>
 	);

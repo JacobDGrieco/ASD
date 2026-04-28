@@ -20,6 +20,12 @@ model Artist {
   spotifyProfile    String?
   appleMusicProfile String?
   youtubeProfile    String?
+  instagramProfile  String?
+  twitterProfile    String?
+  facebookProfile   String?
+  tiktokProfile     String?
+  snapchatProfile   String?
+  youtubeSocialProfile String?
   images            ArtistImage[]
   albums            Album[]
   adminAccess       ArtistAdminAccess?
