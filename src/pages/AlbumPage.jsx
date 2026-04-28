@@ -11,7 +11,9 @@ import '../styles/SongPage.css';
 
 export default function AlbumPage() {
 	const { albumSlug } = useParams();
-	const { data: album, loading, error } = useApi(`/api/albums/${albumSlug}`);
+	const { data: album, loading, error } = useApi(`/api/albums/${albumSlug}`, {
+		refreshAtUtcMidnight: true,
+	});
 
 	if (!loading && (error || !album)) return <div className="page not-found"><h1>Album not found</h1></div>;
 

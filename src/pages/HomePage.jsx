@@ -17,11 +17,11 @@ export default function HomePage() {
   const {
     data: artists,
     error: artistsError,
-  } = useApi('/api/artists')
+  } = useApi('/api/artists', { refreshAtUtcMidnight: true })
   const {
     data: tracks,
     error: tracksError,
-  } = useApi('/api/record-player')
+  } = useApi('/api/record-player', { refreshAtUtcMidnight: true })
   const apiMessage = getHomePageApiMessage(import.meta.env.DEV)
 
   if ((artistsError || tracksError) && !artists && !tracks) {

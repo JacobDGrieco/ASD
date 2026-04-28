@@ -7,7 +7,9 @@ import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 
 export default function ArtistPage() {
   const { slug } = useParams()
-  const { data: artist, loading, error } = useApi(`/api/artists/${slug}`)
+  const { data: artist, loading, error } = useApi(`/api/artists/${slug}`, {
+    refreshAtUtcMidnight: true,
+  })
 
   if (!loading && (error || !artist)) return <div className="page not-found"><h1>Artist not found</h1></div>
 

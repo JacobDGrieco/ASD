@@ -17,7 +17,7 @@ export default function AlbumCard({ album, isOpen, isUnreleased = false, onClick
 	const content = (
 		<>
 			<div className="album-card-cover-wrap">
-				{isUnreleased && <span className="album-card-ribbon">Unreleased</span>}
+				{isUnreleased && <span className="album-card-ribbon">Empty</span>}
 				<ArtworkGallery images={album.images} title={album.title} showLabel className="album-card-gallery-trigger" />
 				{album.coverArt ? (
 					<img src={album.coverArt} alt={album.title} className="album-card-cover" />

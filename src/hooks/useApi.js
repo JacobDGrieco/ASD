@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { millisecondsUntilNextUtcMidnight } from '../lib/releaseSchedule.js'
 
 const apiCache = new Map()
 const inflightRequests = new Map()
@@ -40,7 +41,7 @@ export function prefetchApi(url, { maxAge = 5 * 60 * 1000 } = {}) {
   return request
 }
 
-export function useApi(url, { maxAge = 5 * 60 * 1000 } = {}) {
+export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = false } = {}) {
   const cached = url ? getCachedEntry(url, maxAge) : null
   const [data, setData] = useState(cached?.data ?? null)
   const [loading, setLoading] = useState(url !== null && !cached)
@@ -80,6 +81,43 @@ export function useApi(url, { maxAge = 5 * 60 * 1000 } = {}) {
       cancelled = true
     }
   }, [maxAge, url])
+
+  useEffect(() => {
+    if (!url || !refreshAtUtcMidnight) return undefined
+
+    let cancelled = false
+    let timeoutId = null
+
+    const scheduleRefresh = () => {
+      timeoutId = window.setTimeout(() => {
+        apiCache.delete(url)
+        inflightRequests.delete(url)
+
+        prefetchApi(url, { maxAge })
+          .then((nextData) => {
+            if (!cancelled) {
+              setData(nextData)
+              setError(null)
+            }
+          })
+          .catch((nextError) => {
+            if (!cancelled) {
+              setError(nextError.message)
+            }
+          })
+          .finally(() => {
+            if (!cancelled) scheduleRefresh()
+          })
+      }, millisecondsUntilNextUtcMidnight())
+    }
+
+    scheduleRefresh()
+
+    return () => {
+      cancelled = true
+      if (timeoutId !== null) window.clearTimeout(timeoutId)
+    }
+  }, [maxAge, refreshAtUtcMidnight, url])
 
   return { data, loading, error }
 }

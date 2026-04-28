@@ -1,5 +1,6 @@
 import { prisma } from '../src/lib/prisma.js'
 import { clientImages, mergeLegacyImages } from '../src/lib/images.js'
+import { isReleasedOnUtcDay } from '../src/lib/releaseSchedule.js'
 
 function formatArtistImages(artist) {
   return clientImages(
@@ -95,10 +96,19 @@ function formatPlacementSongs(placements) {
       title: placement.song.title,
       slug: placement.song.slug,
       duration: placement.song.duration,
+      releaseDate: placement.song.meta?.releaseDate ?? null,
       trackNumber: placement.trackNumber,
       discNumber: placement.discNumber,
       placementOrder: placement.placementOrder,
     }))
+}
+
+function isPublicAlbumReleased(album, now) {
+  return isReleasedOnUtcDay(album?.releaseDate, now)
+}
+
+function isPublicSongReleased(song, fallbackReleaseDate, now) {
+  return isReleasedOnUtcDay(song?.releaseDate ?? fallbackReleaseDate, now)
 }
 
 function resolvePrimaryPlacement(placements, albumSlug = null) {
@@ -142,6 +152,7 @@ async function getArtists(res) {
 
 async function getArtist(res, slug) {
   setPublicCache(res)
+  const now = new Date()
   const artist = await prisma.artist.findUnique({
     where: { slug },
     include: {
@@ -157,7 +168,15 @@ async function getArtist(res, slug) {
           songPlacements: {
             include: {
               song: {
-                select: { id: true, title: true, slug: true, duration: true },
+                select: {
+                  id: true,
+                  title: true,
+                  slug: true,
+                  duration: true,
+                  meta: {
+                    select: { releaseDate: true },
+                  },
+                },
               },
             },
             orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }, { placementOrder: 'asc' }],
@@ -175,6 +194,7 @@ async function getArtist(res, slug) {
     where: { featuredArtists: { contains: artist.name, mode: 'insensitive' } },
     select: {
       featuredArtists: true,
+      releaseDate: true,
       song: {
         select: {
           id: true,
@@ -210,12 +230,15 @@ async function getArtist(res, slug) {
   })
 
   const albumMap = new Map()
-  for (const { featuredArtists, song } of featuredMetas) {
+  for (const { featuredArtists, releaseDate, song } of featuredMetas) {
     const names = featuredArtists.split(';').map((name) => name.trim().toLowerCase())
     if (!names.includes(artist.name.toLowerCase())) continue
 
     for (const placement of song.placements) {
       const album = placement.album
+      if (!isPublicAlbumReleased(album, now)) continue
+      if (!isPublicSongReleased({ releaseDate }, album.releaseDate, now)) continue
+
       if (!albumMap.has(album.id)) {
         albumMap.set(album.id, { ...formatAlbumSummary(album), songs: [] })
       }
@@ -245,16 +268,21 @@ async function getArtist(res, slug) {
     ...artist,
     portrait: images[0]?.previewUrl ?? artist.portrait,
     images,
-    albums: artist.albums.map((album) => ({
-      ...formatAlbumSummary(album),
-      songs: formatPlacementSongs(album.songPlacements),
-    })),
+    albums: artist.albums
+      .filter((album) => isPublicAlbumReleased(album, now))
+      .map((album) => ({
+        ...formatAlbumSummary(album),
+        songs: formatPlacementSongs(album.songPlacements).filter((song) =>
+          isPublicSongReleased(song, album.releaseDate, now)
+        ),
+      })),
     featuredIn,
   })
 }
 
 async function getAlbum(res, slug) {
   setPublicCache(res)
+  const now = new Date()
   const album = await prisma.album.findUnique({
     where: { slug },
     include: {
@@ -265,7 +293,15 @@ async function getAlbum(res, slug) {
       songPlacements: {
         include: {
           song: {
-            select: { id: true, title: true, slug: true, duration: true },
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              duration: true,
+              meta: {
+                select: { releaseDate: true },
+              },
+            },
           },
         },
         orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }, { placementOrder: 'asc' }],
@@ -274,18 +310,22 @@ async function getAlbum(res, slug) {
   })
 
   if (!album) return res.status(404).json({ error: 'Album not found' })
+  if (!isPublicAlbumReleased(album, now)) return res.status(404).json({ error: 'Album not found' })
 
   const albumImages = formatAlbumImages(album)
   return res.status(200).json({
     ...album,
     coverArt: albumImages[0]?.previewUrl ?? album.coverArt,
     images: albumImages,
-    songs: formatPlacementSongs(album.songPlacements),
+    songs: formatPlacementSongs(album.songPlacements).filter((song) =>
+      isPublicSongReleased(song, album.releaseDate, now)
+    ),
   })
 }
 
 async function getSong(res, slug, albumSlug = null) {
   setPublicCache(res)
+  const now = new Date()
   const song = await prisma.song.findUnique({
     where: { slug },
     include: {
@@ -321,8 +361,20 @@ async function getSong(res, slug, albumSlug = null) {
 
   if (!song) return res.status(404).json({ error: 'Song not found' })
 
-  const primaryPlacement = resolvePrimaryPlacement(song.placements, albumSlug)
+  const releasedPlacements = song.placements.filter((placement) =>
+    isPublicAlbumReleased(placement.album, now)
+  )
+  const primaryPlacement = resolvePrimaryPlacement(releasedPlacements, albumSlug)
+  const requestedPlacement = resolvePrimaryPlacement(song.placements, albumSlug)
   const primaryAlbum = primaryPlacement?.album ?? null
+  const songReleaseDate = song.meta?.releaseDate ?? requestedPlacement?.album?.releaseDate ?? null
+
+  if (!requestedPlacement || !isPublicAlbumReleased(requestedPlacement.album, now)) {
+    return res.status(404).json({ error: 'Song not found' })
+  }
+  if (!isPublicSongReleased({ releaseDate: songReleaseDate }, requestedPlacement.album.releaseDate, now)) {
+    return res.status(404).json({ error: 'Song not found' })
+  }
 
   if (song.meta && !song.meta.releaseDate && primaryAlbum?.releaseDate) {
     song.meta = { ...song.meta, releaseDate: primaryAlbum.releaseDate }
@@ -346,7 +398,7 @@ async function getSong(res, slug, albumSlug = null) {
     }
   }
 
-  const placements = song.placements.map((placement) => {
+  const placements = releasedPlacements.map((placement) => {
     const album = formatAlbumSummary(placement.album)
     return {
       albumId: album.id,
@@ -356,6 +408,8 @@ async function getSong(res, slug, albumSlug = null) {
       album,
     }
   })
+
+  if (!placements.length) return res.status(404).json({ error: 'Song not found' })
 
   const songImages = formatSongImages(song)
 
@@ -377,6 +431,7 @@ async function getSong(res, slug, albumSlug = null) {
 async function getRecordPlayer(res) {
   try {
     setPublicCache(res)
+    const now = new Date()
     const tracks = await prisma.recordPlayerTrack.findMany({
       where: { active: true },
       orderBy: { position: 'asc' },
@@ -388,6 +443,9 @@ async function getRecordPlayer(res) {
             slug: true,
             soundcloudUrl: true,
             youtubeUrl: true,
+            meta: {
+              select: { releaseDate: true },
+            },
             placements: {
               orderBy: [{ placementOrder: 'asc' }],
               take: 1,
@@ -396,6 +454,7 @@ async function getRecordPlayer(res) {
                   select: {
                     coverArt: true,
                     title: true,
+                    releaseDate: true,
                     images: {
                       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
                       select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
@@ -415,6 +474,8 @@ async function getRecordPlayer(res) {
         .map((track) => {
           const placement = track.song.placements[0]
           if (!placement) return null
+          if (!isPublicAlbumReleased(placement.album, now)) return null
+          if (!isPublicSongReleased(track.song.meta, placement.album.releaseDate, now)) return null
 
           const album = formatAlbumSummary(placement.album)
           return {

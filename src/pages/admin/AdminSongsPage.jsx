@@ -330,6 +330,17 @@ export default function AdminSongsPage() {
 
   const artistName = (song) => primaryAlbum(song)?.artist?.name ?? null
 
+  const primaryTrackNumber = (song) => {
+    if (song.trackNumber) return song.trackNumber
+    if (Array.isArray(song.albumPlacements) && song.albumPlacements.length) {
+      return song.albumPlacements[0]?.trackNumber ?? null
+    }
+    if (Array.isArray(song.placements) && song.placements.length) {
+      return song.placements[0]?.trackNumber ?? null
+    }
+    return null
+  }
+
   const albumTitles = (song) => {
     const titles = placementAlbumIds(song)
       .map((albumId) => albumById[albumId]?.title ?? song.placements?.find((placement) => placement.albumId === albumId)?.album?.title ?? null)
@@ -386,6 +397,7 @@ export default function AdminSongsPage() {
           <thead>
             <tr>
               <th className="admin-artists-page-col-image">Images</th>
+              <th className="admin-artists-page-center-cell">#</th>
               <th className="admin-songs-col-title">Title</th>
               <th className="admin-songs-col-artist">Artist</th>
               <th className="admin-songs-col-featured">Featured</th>
@@ -427,6 +439,7 @@ export default function AdminSongsPage() {
               return (
                 <tr key={song.id}>
                   <td className="admin-artists-page-col-image">{imageCell(song)}</td>
+                  <td className="admin-artists-page-center-cell">{cell(primaryTrackNumber(song))}</td>
                   <td className="admin-songs-col-title">{cell(song.title)}</td>
                   <td className="admin-songs-col-artist">{cell(artistName(song))}</td>
                   <td className="admin-songs-col-featured">{cell(song.meta?.featuredArtists)}</td>
