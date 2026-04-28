@@ -25,6 +25,10 @@
 			"destination": "/api/public?resource=recordPlayer"
 		},
 		{
+			"source": "/api/videos",
+			"destination": "/api/public?resource=videos"
+		},
+		{
 			"source": "/admin",
 			"destination": "/index.html"
 		},
@@ -34,6 +38,10 @@
 		},
 		{
 			"source": "/artists/:path*",
+			"destination": "/index.html"
+		},
+		{
+			"source": "/videos",
 			"destination": "/index.html"
 		},
 		{

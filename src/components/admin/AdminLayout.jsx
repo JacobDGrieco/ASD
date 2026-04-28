@@ -13,6 +13,7 @@ export default function AdminLayout() {
 				{!isArtistScoped && <NavLink to="/admin/accounts" className={({ isActive }) => isActive ? `admin-layout-link admin-layout-active` : 'admin-layout-link'}>Accounts</NavLink>}
 				{!isArtistScoped && <NavLink to="/admin/artists" className={({ isActive }) => isActive ? `admin-layout-link admin-layout-active` : 'admin-layout-link'}>Artists</NavLink>}
 				<NavLink to="/admin/albums" className={({ isActive }) => isActive ? `admin-layout-link admin-layout-active` : 'admin-layout-link'}>Albums</NavLink>
+				<NavLink to="/admin/videos" className={({ isActive }) => isActive ? `admin-layout-link admin-layout-active` : 'admin-layout-link'}>Videos</NavLink>
 				<NavLink to="/admin/songs" className={({ isActive }) => isActive ? `admin-layout-link admin-layout-active` : 'admin-layout-link'}>Songs</NavLink>
 				{!isArtistScoped && <NavLink to="/admin/record-player" className={({ isActive }) => isActive ? `admin-layout-link admin-layout-active` : 'admin-layout-link'}>Record Player</NavLink>}
 				<button onClick={logout} className="admin-layout-logout">Log out</button>

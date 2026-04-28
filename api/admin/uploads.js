@@ -4,7 +4,7 @@ import { requireAdmin } from '../../src/lib/auth.js'
 
 const ALLOWED_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024
-const ALLOWED_FOLDERS = new Set(['artists', 'albums', 'songs'])
+const ALLOWED_FOLDERS = new Set(['artists', 'albums', 'songs', 'videos'])
 
 async function readJsonBody(req) {
   if (req.body && typeof req.body === 'object') return req.body

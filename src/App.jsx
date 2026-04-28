@@ -3,6 +3,7 @@ import { Routes, Route, Outlet } from 'react-router-dom'
 import Nav from './components/shared/Nav.jsx'
 import HomePage from './pages/HomePage.jsx'
 import ArtistPage from './pages/ArtistPage.jsx'
+import VideosPage from './pages/VideosPage.jsx'
 import SongPage from './pages/SongPage.jsx'
 import AlbumPage from './pages/AlbumPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
@@ -14,6 +15,7 @@ const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage.jsx'))
 const AdminAccountsPage = lazy(() => import('./pages/admin/AdminAccountsPage.jsx'))
 const AdminArtistsPage = lazy(() => import('./pages/admin/AdminArtistsPage.jsx'))
 const AdminAlbumsPage = lazy(() => import('./pages/admin/AdminAlbumsPage.jsx'))
+const AdminVideosPage = lazy(() => import('./pages/admin/AdminVideosPage.jsx'))
 const AdminSongsPage = lazy(() => import('./pages/admin/AdminSongsPage.jsx'))
 const AdminLyricsPage = lazy(() => import('./pages/admin/AdminLyricsPage.jsx'))
 const AdminRecordPlayerPage = lazy(() => import('./pages/admin/AdminRecordPlayerPage.jsx'))
@@ -44,6 +46,7 @@ export default function App() {
         <Routes>
           <Route element={<PublicLayout />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/videos" element={<VideosPage />} />
             <Route path="/artists/:slug" element={<ArtistPage />} />
             <Route path="/songs/:songSlug" element={<SongPage />} />
             <Route path="/:artistSlug/:albumSlug/:songSlug" element={<SongPage />} />
@@ -57,6 +60,7 @@ export default function App() {
               <Route path="/admin/accounts" element={<AdminAccountsPage />} />
               <Route path="/admin/artists" element={<AdminArtistsPage />} />
               <Route path="/admin/albums" element={<AdminAlbumsPage />} />
+              <Route path="/admin/videos" element={<AdminVideosPage />} />
               <Route path="/admin/songs" element={<AdminSongsPage />} />
               <Route path="/admin/lyrics/:songId" element={<AdminLyricsPage />} />
               <Route path="/admin/record-player" element={<AdminRecordPlayerPage />} />

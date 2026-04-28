@@ -261,6 +261,9 @@ export default async function handler(req, res) {
               },
             }
           : undefined,
+        videos: {
+          create: {},
+        },
         images: normalizedImages.length
           ? {
               createMany: {

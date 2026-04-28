@@ -28,9 +28,26 @@ model Artist {
   youtubeSocialProfile String?
   images            ArtistImage[]
   albums            Album[]
+  videos            ArtistVideo[]
   adminAccess       ArtistAdminAccess?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+model ArtistVideo {
+  id            String            @id @default(cuid())
+  artistId      String            @unique
+  artist        Artist            @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  title         String?
+  description   String?
+  posterUrl     String?
+  posterPathname String?
+  sourceType    ArtistVideoSource?
+  youtubeUrl    String?
+  videoUrl      String?
+  videosPageUrl String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 }
 
 model ArtistAdminAccess {
@@ -102,6 +119,11 @@ enum AlbumType {
   ALBUM
   SINGLE
   EP
+}
+
+enum ArtistVideoSource {
+  YOUTUBE
+  UPLOAD
 }
 
 model Song {

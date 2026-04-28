@@ -1,7 +1,10 @@
 import { prisma } from '../src/lib/prisma.js'
-import { clientImages, mergeLegacyImages } from '../src/lib/images.js'
-import { isOtherArtist } from '../src/lib/publicVisibility.js'
+import { buildClientImageUrl, clientImages, mergeLegacyImages } from '../src/lib/images.js'
+import { ARTIST_VIDEO_SOURCE, buildStaticArtistVideoPath, getYouTubeEmbedUrl } from '../src/lib/artistVideos.js'
+import { isOtherArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js'
 import { isReleasedOnUtcDay } from '../src/lib/releaseSchedule.js'
+
+const VIDEO_BASE_URL = process.env.VIDEO_BASE_URL || process.env.VITE_VIDEO_BASE_URL || ''
 
 function formatArtistImages(artist) {
   return clientImages(
@@ -127,6 +130,25 @@ function isPublicSongReleased(song, fallbackReleaseDate, now) {
 
 function isPublicArtistVisible(artist) {
   return !isOtherArtist(artist)
+}
+
+function formatArtistVideo(video) {
+  const resolvedVideoUrl = video.sourceType === ARTIST_VIDEO_SOURCE.UPLOAD
+    ? buildStaticArtistVideoPath(video.artist?.slug, VIDEO_BASE_URL)
+    : video.videoUrl
+
+  return {
+    id: video.id,
+    title: video.title,
+    description: video.description,
+    posterUrl: buildClientImageUrl({ url: video.posterUrl, pathname: video.posterPathname }),
+    sourceType: video.sourceType,
+    youtubeUrl: video.youtubeUrl,
+    youtubeEmbedUrl: getYouTubeEmbedUrl(video.youtubeUrl),
+    videoUrl: resolvedVideoUrl,
+    videosPageUrl: video.videosPageUrl,
+    artist: video.artist,
+  }
 }
 
 function resolvePrimaryPlacement(placements, albumSlug = null) {
@@ -304,6 +326,68 @@ async function getArtist(res, slug) {
       })),
     featuredIn,
   })
+}
+
+async function getVideos(res) {
+  setPublicCache(res)
+  const videos = await prisma.artistVideo.findMany({
+    where: {
+      artist: {
+        slug: {
+          not: OTHER_ARTIST_SLUG,
+        },
+      },
+    },
+    orderBy: [
+      { artist: { order: 'asc' } },
+      { artist: { name: 'asc' } },
+    ],
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      posterUrl: true,
+      posterPathname: true,
+      sourceType: true,
+      youtubeUrl: true,
+      videoUrl: true,
+      videosPageUrl: true,
+      artist: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          bio: true,
+          portrait: true,
+          images: {
+            orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+            select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+          },
+          order: true,
+        },
+      },
+    },
+  })
+
+  return res.status(200).json(
+    videos
+      .filter((video) => isPublicArtistVisible(video.artist))
+      .filter((video) => (
+        (video.sourceType === 'YOUTUBE' && video.youtubeUrl) ||
+        (video.sourceType === 'UPLOAD' && video.videoUrl)
+      ))
+      .map((video) => {
+        const artistImages = formatArtistImages(video.artist)
+        return formatArtistVideo({
+          ...video,
+          artist: {
+            ...video.artist,
+            portrait: artistImages[0]?.previewUrl ?? video.artist.portrait,
+            images: artistImages,
+          },
+        })
+      })
+  )
 }
 
 async function getAlbum(res, slug) {
@@ -534,6 +618,7 @@ export default async function handler(req, res) {
   if (resource === 'artist' && slug) return getArtist(res, slug)
   if (resource === 'album' && slug) return getAlbum(res, slug)
   if (resource === 'song' && slug) return getSong(res, slug, albumSlug)
+  if (resource === 'videos') return getVideos(res)
   if (resource === 'recordPlayer') return getRecordPlayer(res)
 
   return res.status(404).json({ error: 'Not found' })
