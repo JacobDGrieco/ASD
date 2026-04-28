@@ -11,8 +11,9 @@ function normalizeBaseUrl(baseUrl) {
 export function buildStaticArtistVideoPath(artistSlug, baseUrl = '') {
   if (typeof artistSlug !== 'string' || !artistSlug.trim()) return null
   const normalizedBase = normalizeBaseUrl(baseUrl)
-  const pathname = `/videos/${artistSlug.trim()}.mp4`
-  return normalizedBase ? `${normalizedBase}${pathname}` : pathname
+  const blobPath = `videos/${artistSlug.trim()}.mp4`
+  if (normalizedBase) return `${normalizedBase}/${blobPath}`
+  return `/api/blob?pathname=${encodeURIComponent(blobPath)}`
 }
 
 export function getYouTubeVideoId(url) {
