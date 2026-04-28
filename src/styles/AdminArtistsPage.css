@@ -393,11 +393,13 @@
 .admin-artists-page-action-cell {
 	width: 56px;
 	text-align: center;
+	overflow: visible;
 }
 
 .admin-artists-page-actions-col {
 	width: 116px;
 	min-width: 116px;
+	overflow: visible;
 }
 
 .admin-artists-page-actions {
@@ -413,15 +415,13 @@
 }
 
 .admin-inline-confirm-popover {
-	position: absolute;
-	top: calc(100% + 8px);
-	right: 0;
+	position: fixed;
 	width: 220px;
 	padding: 12px;
 	border: 1px solid var(--border);
 	background: var(--bg-surface);
 	box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
-	z-index: 20;
+	z-index: 1000;
 	text-align: left;
 }
 
@@ -550,6 +550,7 @@
 	z-index: 3;
 	box-shadow: -1px 0 0 var(--border);
 	text-align: center;
+	overflow: visible;
 }
 
 .admin-songs-actions {
@@ -699,6 +700,15 @@
 	color: var(--text-muted);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
+}
+
+.admin-modal-label-required {
+	color: #e06060;
+}
+
+.admin-artists-page-input-invalid {
+	border-color: #e06060;
+	box-shadow: 0 0 0 1px rgba(224, 96, 96, 0.45);
 }
 
 .admin-admin-account-toggle {

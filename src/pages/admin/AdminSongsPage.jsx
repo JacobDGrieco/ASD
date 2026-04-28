@@ -92,19 +92,46 @@ function buildPlacementForm(song) {
 }
 
 function validateSongForm(form) {
-  if (!form.title?.trim()) return 'Song title is required.'
-  if (!Array.isArray(form.albumPlacements) || form.albumPlacements.length === 0) return 'At least one album is required.'
+  const errors = {
+    title: '',
+    albumPlacementsRoot: '',
+    albumPlacements: Array.isArray(form.albumPlacements)
+      ? form.albumPlacements.map(() => ({ albumId: '', trackNumber: '', discNumber: '' }))
+      : [],
+  }
+
+  if (!form.title?.trim()) errors.title = 'Song title is required.'
+  if (!Array.isArray(form.albumPlacements) || form.albumPlacements.length === 0) {
+    errors.albumPlacementsRoot = 'At least one album is required.'
+    return errors
+  }
 
   const seenAlbumIds = new Set()
-  for (const placement of form.albumPlacements) {
-    if (!placement.albumId) return 'Each album card must have an album selected.'
-    if (seenAlbumIds.has(placement.albumId)) return 'Each album can only be selected once per song.'
-    if (!placement.trackNumber || Number(placement.trackNumber) < 1) return 'Track number must be at least 1 for each album card.'
-    if (!placement.discNumber || Number(placement.discNumber) < 1) return 'Disc number must be at least 1 for each album card.'
+  for (const [index, placement] of form.albumPlacements.entries()) {
+    if (!placement.albumId) errors.albumPlacements[index].albumId = 'Each album card must have an album selected.'
+    if (placement.albumId && seenAlbumIds.has(placement.albumId)) errors.albumPlacements[index].albumId = 'Each album can only be selected once per song.'
+    if (!placement.trackNumber || Number(placement.trackNumber) < 1) errors.albumPlacements[index].trackNumber = 'Track number must be at least 1.'
+    if (!placement.discNumber || Number(placement.discNumber) < 1) errors.albumPlacements[index].discNumber = 'Disc number must be at least 1.'
     seenAlbumIds.add(placement.albumId)
   }
 
-  return null
+  return errors
+}
+
+function hasSongValidationErrors(errors) {
+  if (!errors) return false
+  if (errors.title || errors.albumPlacementsRoot) return true
+  return Array.isArray(errors.albumPlacements) && errors.albumPlacements.some((placement) => placement.albumId || placement.trackNumber || placement.discNumber)
+}
+
+function hasSongInfoErrors(errors) {
+  return Boolean(errors?.title)
+}
+
+function hasAlbumErrors(errors) {
+  if (!errors) return false
+  if (errors.albumPlacementsRoot) return true
+  return Array.isArray(errors.albumPlacements) && errors.albumPlacements.some((placement) => placement.albumId || placement.trackNumber || placement.discNumber)
 }
 
 export default function AdminSongsPage() {
@@ -137,6 +164,8 @@ export default function AdminSongsPage() {
   const [filterTitle, setFilterTitle] = useState(initialFilterState.filterTitle)
   const [page, setPage] = useState(initialFilterState.page)
   const [loadingEditId, setLoadingEditId] = useState(null)
+  const [validationErrors, setValidationErrors] = useState(null)
+  const [activeTabIndex, setActiveTabIndex] = useState(0)
   const deferredFilterTitle = useDeferredValue(filterTitle)
   const hasHydratedArtistFilter = useRef(false)
   const hasHydratedAlbumFilter = useRef(false)
@@ -248,7 +277,19 @@ export default function AdminSongsPage() {
     if (page !== currentPage) setPage(currentPage)
   }, [page, currentPage])
 
-  const openCreate = () => setForm({ ...empty, albumPlacements: [createAlbumPlacement()] })
+  const openCreate = () => {
+    setValidationErrors(null)
+    setActiveTabIndex(0)
+    setForm({
+      ...empty,
+      albumPlacements: [
+        {
+          ...createAlbumPlacement(),
+          albumId: filterAlbum,
+        },
+      ],
+    })
+  }
   const openEdit = async (song) => {
     setLoadingEditId(song.id)
     try {
@@ -265,18 +306,28 @@ export default function AdminSongsPage() {
         releaseDate: detail.meta?.releaseDate ? detail.meta.releaseDate.slice(0, 10) : '',
         albumPlacements: buildPlacementForm(detail),
       })
+      setValidationErrors(null)
+      setActiveTabIndex(0)
     } finally {
       setLoadingEditId(null)
     }
   }
-  const closeForm = () => setForm(null)
+  const closeForm = () => {
+    setForm(null)
+    setValidationErrors(null)
+    setActiveTabIndex(0)
+  }
 
   const handleSave = async () => {
-    const validationError = validateSongForm(form)
-    if (validationError) {
-      window.alert(validationError)
+    const nextErrors = validateSongForm(form)
+    if (hasSongValidationErrors(nextErrors)) {
+      setValidationErrors(nextErrors)
+      if (hasAlbumErrors(nextErrors) && !hasSongInfoErrors(nextErrors)) {
+        setActiveTabIndex(1)
+      }
       return
     }
+    setValidationErrors(null)
 
     const isEdit = Boolean(form.id)
     const url = isEdit ? `/api/admin/songs?id=${form.id}` : '/api/admin/songs'
@@ -315,36 +366,83 @@ export default function AdminSongsPage() {
   }
 
   const set = (key) => (event) =>
-    setForm((current) => ({
-      ...current,
-      [key]: event.target.value,
-      ...(key === 'title' ? { slug: slugify(event.target.value) } : {}),
-    }))
+    setForm((current) => {
+      const nextValue = event.target.value
+      setValidationErrors((currentErrors) => currentErrors ? { ...currentErrors, [key]: '' } : currentErrors)
+      return {
+        ...current,
+        [key]: nextValue,
+        ...(key === 'title' ? { slug: slugify(nextValue) } : {}),
+      }
+    })
 
   const setAlbumPlacement = (index, key) => (event) =>
-    setForm((current) => ({
-      ...current,
-      albumPlacements: current.albumPlacements.map((placement, placementIndex) =>
-        placementIndex === index
-          ? {
-              ...placement,
-              [key]: key === 'albumId' ? event.target.value : Number(event.target.value),
-            }
-          : placement
-      ),
-    }))
+    setForm((current) => {
+      setValidationErrors((currentErrors) => {
+        if (!currentErrors?.albumPlacements?.[index]) return currentErrors
+        return {
+          ...currentErrors,
+          albumPlacementsRoot: '',
+          albumPlacements: currentErrors.albumPlacements.map((placementErrors, placementIndex) =>
+            placementIndex === index
+              ? { ...placementErrors, [key]: '' }
+              : placementErrors
+          ),
+        }
+      })
+
+      return {
+        ...current,
+        albumPlacements: current.albumPlacements.map((placement, placementIndex) =>
+          placementIndex === index
+            ? {
+                ...placement,
+                [key]: key === 'albumId' ? event.target.value : Number(event.target.value),
+              }
+            : placement
+        ),
+      }
+    })
 
   const addAlbumPlacement = () =>
-    setForm((current) => ({
-      ...current,
-      albumPlacements: [...current.albumPlacements, createAlbumPlacement()],
-    }))
+    setForm((current) => {
+      setValidationErrors((currentErrors) => currentErrors
+        ? {
+            ...currentErrors,
+            albumPlacementsRoot: '',
+            albumPlacements: [...(currentErrors.albumPlacements ?? []), { albumId: '', trackNumber: '', discNumber: '' }],
+          }
+        : currentErrors)
+
+      return {
+        ...current,
+        albumPlacements: [...current.albumPlacements, createAlbumPlacement()],
+      }
+    })
 
   const removeAlbumPlacement = (index) =>
-    setForm((current) => ({
-      ...current,
-      albumPlacements: current.albumPlacements.filter((_, placementIndex) => placementIndex !== index),
-    }))
+    setForm((current) => {
+      setValidationErrors((currentErrors) => currentErrors
+        ? {
+            ...currentErrors,
+            albumPlacementsRoot: '',
+            albumPlacements: (currentErrors.albumPlacements ?? []).filter((_, placementIndex) => placementIndex !== index),
+          }
+        : currentErrors)
+
+      return {
+        ...current,
+        albumPlacements: current.albumPlacements.filter((_, placementIndex) => placementIndex !== index),
+      }
+    })
+
+  const songFieldClassName = (fieldName) => (
+    `admin-artists-page-input${validationErrors?.[fieldName] ? ' admin-artists-page-input-invalid' : ''}`
+  )
+
+  const placementFieldClassName = (index, fieldName) => (
+    `admin-artists-page-input${validationErrors?.albumPlacements?.[index]?.[fieldName] ? ' admin-artists-page-input-invalid' : ''}`
+  )
 
   const cell = (value) =>
     value ? (
@@ -579,12 +677,12 @@ export default function AdminSongsPage() {
               </button>
             </div>
             <div className="admin-modal-body">
-              <TabView className="page-tabview admin-song-editor-tabs">
+              <TabView activeIndex={activeTabIndex} onTabChange={(event) => setActiveTabIndex(event.index)} className="page-tabview admin-song-editor-tabs">
                 <TabPanel header="Song Info">
                   <div className="admin-modal-grid">
                     <div className="admin-modal-field admin-modal-field-full">
-                      <label className="admin-modal-label">Title</label>
-                      <input type="text" placeholder="Title" value={form.title} onChange={set('title')} className="admin-artists-page-input" />
+                      <label className="admin-modal-label">Title <span className="admin-modal-label-required">*</span></label>
+                      <input type="text" placeholder="Title" value={form.title} onChange={set('title')} className={songFieldClassName('title')} aria-invalid={Boolean(validationErrors?.title)} />
                     </div>
                     <div className="admin-modal-field admin-modal-field-full">
                       <label className="admin-modal-label">Images</label>
@@ -660,8 +758,8 @@ export default function AdminSongsPage() {
                         </div>
                         <div className="admin-modal-grid admin-song-album-grid">
                           <div className="admin-modal-field admin-modal-field-full">
-                            <label className="admin-modal-label">Album</label>
-                            <select value={placement.albumId} onChange={setAlbumPlacement(index, 'albumId')} className="admin-artists-page-input">
+                            <label className="admin-modal-label">Album <span className="admin-modal-label-required">*</span></label>
+                            <select value={placement.albumId} onChange={setAlbumPlacement(index, 'albumId')} className={placementFieldClassName(index, 'albumId')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.albumId)}>
                               <option value="">- Album -</option>
                               {sortedAlbums.map((album) => (
                                 <option key={album.id} value={album.id}>
@@ -671,12 +769,12 @@ export default function AdminSongsPage() {
                             </select>
                           </div>
                           <div className="admin-modal-field">
-                            <label className="admin-modal-label">Track #</label>
-                            <input type="number" placeholder="Track #" value={placement.trackNumber} onChange={setAlbumPlacement(index, 'trackNumber')} className="admin-artists-page-input" />
+                            <label className="admin-modal-label">Track # <span className="admin-modal-label-required">*</span></label>
+                            <input type="number" placeholder="Track #" value={placement.trackNumber} onChange={setAlbumPlacement(index, 'trackNumber')} className={placementFieldClassName(index, 'trackNumber')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.trackNumber)} />
                           </div>
                           <div className="admin-modal-field">
-                            <label className="admin-modal-label">Disc #</label>
-                            <input type="number" placeholder="Disc #" value={placement.discNumber} onChange={setAlbumPlacement(index, 'discNumber')} className="admin-artists-page-input" />
+                            <label className="admin-modal-label">Disc # <span className="admin-modal-label-required">*</span></label>
+                            <input type="number" placeholder="Disc #" value={placement.discNumber} onChange={setAlbumPlacement(index, 'discNumber')} className={placementFieldClassName(index, 'discNumber')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.discNumber)} />
                           </div>
                         </div>
                       </div>

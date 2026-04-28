@@ -13,7 +13,7 @@ const PAGE_SIZE = 30
 const empty = {
   title: '',
   slug: '',
-  type: 'ALBUM',
+  type: '',
   images: [],
   otherArtistName: '',
   aboutText: '',
@@ -51,11 +51,13 @@ function withOtherArtistOption(artists) {
 }
 
 function validateAlbumForm(form) {
-  if (!form.title?.trim()) return 'Album title is required.'
-  if (!form.artistId) return 'Artist is required.'
-  if (form.artistId === OTHER_ARTIST_OPTION_ID && !form.otherArtistName?.trim()) return 'Other artist name is required.'
-  if (!form.releaseDate) return 'Release date is required.'
-  return null
+  const errors = {}
+  if (!form.title?.trim()) errors.title = 'Album title is required.'
+  if (!form.artistId) errors.artistId = 'Artist is required.'
+  if (form.artistId === OTHER_ARTIST_OPTION_ID && !form.otherArtistName?.trim()) errors.otherArtistName = 'Other artist name is required.'
+  if (!form.type) errors.type = 'Album type is required.'
+  if (!form.releaseDate) errors.releaseDate = 'Release date is required.'
+  return errors
 }
 
 export default function AdminAlbumsPage() {
@@ -71,6 +73,7 @@ export default function AdminAlbumsPage() {
   const [filterTitle, setFilterTitle] = useState('')
   const [page, setPage] = useState(1)
   const [loadingEditId, setLoadingEditId] = useState(null)
+  const [validationErrors, setValidationErrors] = useState({})
   const deferredFilterTitle = useDeferredValue(filterTitle)
 
   useEffect(() => {
@@ -117,7 +120,14 @@ export default function AdminAlbumsPage() {
     [filteredAlbums, page]
   )
 
-  const openCreate = () => setForm({ ...empty, artistId: scopedArtistId })
+  const openCreate = () => {
+    setValidationErrors({})
+    setForm({
+      ...empty,
+      artistId: isArtistScoped ? scopedArtistId : filterArtist,
+      type: filterType || empty.type,
+    })
+  }
   const openEdit = async (album) => {
     setLoadingEditId(album.id)
     try {
@@ -134,18 +144,23 @@ export default function AdminAlbumsPage() {
         youtubeUrl: detail.youtubeUrl ?? '',
         releaseDate: detail.releaseDate ? detail.releaseDate.slice(0, 10) : '',
       })
+      setValidationErrors({})
     } finally {
       setLoadingEditId(null)
     }
   }
-  const closeForm = () => setForm(null)
+  const closeForm = () => {
+    setForm(null)
+    setValidationErrors({})
+  }
 
   const handleSave = async () => {
-    const validationError = validateAlbumForm(form)
-    if (validationError) {
-      window.alert(validationError)
+    const nextErrors = validateAlbumForm(form)
+    if (Object.keys(nextErrors).length > 0) {
+      setValidationErrors(nextErrors)
       return
     }
+    setValidationErrors({})
 
     const isEdit = Boolean(form.id)
     const url = isEdit ? `/api/admin/albums?id=${form.id}` : '/api/admin/albums'
@@ -179,11 +194,27 @@ export default function AdminAlbumsPage() {
     primeAdminResource('albums-list', token, nextAlbums)
   }
 
-  const set = (key) => (event) => setForm((current) => ({
-    ...current,
-    [key]: event.target.value,
-    ...(key === 'title' ? { slug: slugify(event.target.value) } : {}),
-  }))
+  const set = (key) => (event) => setForm((current) => {
+    const nextValue = event.target.value
+    setValidationErrors((currentErrors) => {
+      if (!(key in currentErrors) && !(key === 'artistId' && 'otherArtistName' in currentErrors)) return currentErrors
+      const nextErrors = { ...currentErrors }
+      delete nextErrors[key]
+      if (key === 'artistId') delete nextErrors.otherArtistName
+      return nextErrors
+    })
+
+    return {
+      ...current,
+      [key]: nextValue,
+      ...(key === 'title' ? { slug: slugify(nextValue) } : {}),
+      ...(key === 'artistId' && nextValue !== OTHER_ARTIST_OPTION_ID ? { otherArtistName: '' } : {}),
+    }
+  })
+
+  const fieldClassName = (fieldName) => (
+    `admin-artists-page-input${validationErrors[fieldName] ? ' admin-artists-page-input-invalid' : ''}`
+  )
 
   const renderValue = (album, column) => {
     if (column.key === 'artistId') {
@@ -349,8 +380,8 @@ export default function AdminAlbumsPage() {
             <div className="admin-modal-body">
               <div className="admin-modal-grid">
                 <div className="admin-modal-field admin-modal-field-full">
-                  <label className="admin-modal-label">Title</label>
-                  <input type="text" placeholder="Title" value={form.title} onChange={set('title')} className="admin-artists-page-input" />
+                  <label className="admin-modal-label">Title <span className="admin-modal-label-required">*</span></label>
+                  <input type="text" placeholder="Title" value={form.title} onChange={set('title')} className={fieldClassName('title')} aria-invalid={Boolean(validationErrors.title)} />
                 </div>
                 <div className="admin-modal-field admin-modal-field-full">
                   <label className="admin-modal-label">Images</label>
@@ -363,7 +394,7 @@ export default function AdminAlbumsPage() {
                   />
                 </div>
                 <div className="admin-modal-field admin-modal-field-full">
-                  <label className="admin-modal-label">Artist</label>
+                  <label className="admin-modal-label">Artist <span className="admin-modal-label-required">*</span></label>
                   {isArtistScoped ? (
                     <input
                       type="text"
@@ -372,7 +403,7 @@ export default function AdminAlbumsPage() {
                       readOnly
                     />
                   ) : (
-                    <select value={form.artistId} onChange={set('artistId')} className="admin-artists-page-input">
+                    <select value={form.artistId} onChange={set('artistId')} className={fieldClassName('artistId')} aria-invalid={Boolean(validationErrors.artistId)}>
                       <option value="">- Artist -</option>
                       {artistOptions.map((artist) => <option key={artist.id} value={artist.id}>{artist.name}</option>)}
                     </select>
@@ -380,21 +411,22 @@ export default function AdminAlbumsPage() {
                 </div>
                 {form.artistId === OTHER_ARTIST_OPTION_ID && (
                   <div className="admin-modal-field admin-modal-field-full">
-                    <label className="admin-modal-label">Other Artist Name</label>
-                    <input type="text" placeholder="Artist name" value={form.otherArtistName} onChange={set('otherArtistName')} className="admin-artists-page-input" />
+                    <label className="admin-modal-label">Other Artist Name <span className="admin-modal-label-required">*</span></label>
+                    <input type="text" placeholder="Artist name" value={form.otherArtistName} onChange={set('otherArtistName')} className={fieldClassName('otherArtistName')} aria-invalid={Boolean(validationErrors.otherArtistName)} />
                   </div>
                 )}
                 <div className="admin-modal-field">
-                  <label className="admin-modal-label">Type</label>
-                  <select value={form.type} onChange={set('type')} className="admin-artists-page-input">
+                  <label className="admin-modal-label">Type <span className="admin-modal-label-required">*</span></label>
+                  <select value={form.type} onChange={set('type')} className={fieldClassName('type')} aria-invalid={Boolean(validationErrors.type)}>
+                    <option value="">- Type -</option>
                     <option value="ALBUM">Album</option>
                     <option value="SINGLE">Single</option>
                     <option value="EP">EP</option>
                   </select>
                 </div>
                 <div className="admin-modal-field">
-                  <label className="admin-modal-label">Release Date</label>
-                  <input type="date" value={form.releaseDate} onChange={set('releaseDate')} className="admin-artists-page-input" />
+                  <label className="admin-modal-label">Release Date <span className="admin-modal-label-required">*</span></label>
+                  <input type="date" value={form.releaseDate} onChange={set('releaseDate')} className={fieldClassName('releaseDate')} aria-invalid={Boolean(validationErrors.releaseDate)} />
                 </div>
                 <div className="admin-modal-field admin-modal-field-full">
                   <label className="admin-modal-label">About</label>

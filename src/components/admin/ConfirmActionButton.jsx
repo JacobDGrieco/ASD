@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 export default function ConfirmActionButton({
   message,
@@ -12,6 +13,48 @@ export default function ConfirmActionButton({
 }) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)
+  const popoverRef = useRef(null)
+  const [popoverStyle, setPopoverStyle] = useState(null)
+
+  useLayoutEffect(() => {
+    if (!open || typeof window === 'undefined') return undefined
+
+    const updatePosition = () => {
+      const trigger = rootRef.current
+      const popover = popoverRef.current
+      if (!trigger || !popover) return
+
+      const triggerRect = trigger.getBoundingClientRect()
+      const popoverRect = popover.getBoundingClientRect()
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
+      const gap = 8
+
+      let left = triggerRect.right - popoverRect.width
+      left = Math.max(gap, Math.min(left, viewportWidth - popoverRect.width - gap))
+
+      let top = triggerRect.bottom + gap
+      const bottomOverflow = top + popoverRect.height - viewportHeight
+      if (bottomOverflow > 0) {
+        top = Math.max(gap, triggerRect.top - popoverRect.height - gap)
+      }
+
+      setPopoverStyle({
+        position: 'fixed',
+        top: `${top}px`,
+        left: `${left}px`,
+      })
+    }
+
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [open])
 
   useEffect(() => {
     if (!open) return undefined
@@ -53,8 +96,14 @@ export default function ConfirmActionButton({
       >
         {children}
       </button>
-      {open && (
-        <div className="admin-inline-confirm-popover" role="dialog" aria-modal="false">
+      {open && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={popoverRef}
+          className="admin-inline-confirm-popover"
+          style={popoverStyle ?? undefined}
+          role="dialog"
+          aria-modal="false"
+        >
           <p className="admin-inline-confirm-message">{message}</p>
           <div className="admin-inline-confirm-actions">
             <button type="button" onClick={() => setOpen(false)} className="admin-artists-page-ghost-btn">
@@ -64,7 +113,8 @@ export default function ConfirmActionButton({
               {confirmLabel}
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
