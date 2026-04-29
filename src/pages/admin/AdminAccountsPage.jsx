@@ -100,9 +100,11 @@ export default function AdminAccountsPage() {
 
   return (
     <div>
-      <div className="admin-artists-page-header">
-        <h1 className="admin-artists-page-title">Accounts</h1>
-        <button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Account</button>
+      <div className="admin-artists-page-sticky-top">
+        <div className="admin-artists-page-header">
+          <h1 className="admin-artists-page-title">Accounts</h1>
+          <button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Account</button>
+        </div>
       </div>
 
       <div className="admin-artists-page-table-wrap">

@@ -5,6 +5,23 @@
 	margin-bottom: 24px;
 }
 
+.admin-artists-page-sticky-top {
+	position: sticky;
+	top: 0;
+	z-index: 12;
+	display: grid;
+	gap: 16px;
+	margin-bottom: 16px;
+	padding: 0 0 12px;
+	background: var(--bg);
+	box-shadow: 0 1px 0 var(--border);
+}
+
+.admin-artists-page-sticky-top .admin-artists-page-header,
+.admin-artists-page-sticky-top .admin-filter-bar {
+	margin-bottom: 0;
+}
+
 .admin-artists-page-title {
 	font-size: 1.5rem;
 }

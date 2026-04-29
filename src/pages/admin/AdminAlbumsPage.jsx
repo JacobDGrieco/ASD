@@ -273,39 +273,41 @@ export default function AdminAlbumsPage() {
 
   return (
     <div>
-      <div className="admin-artists-page-header">
-        <h1 className="admin-artists-page-title">Albums</h1>
-        <button onClick={openCreate} className="admin-artists-page-primary-btn">New Album</button>
-      </div>
+      <div className="admin-artists-page-sticky-top">
+        <div className="admin-artists-page-header">
+          <h1 className="admin-artists-page-title">Albums</h1>
+          <button onClick={openCreate} className="admin-artists-page-primary-btn">New Album</button>
+        </div>
 
-      <div className="admin-filter-bar">
-        <input
-          type="search"
-          value={filterTitle}
-          onChange={(e) => setFilterTitle(e.target.value)}
-          className="admin-filter-select"
-          placeholder="Search title..."
-        />
-        {!isArtistScoped && (
+        <div className="admin-filter-bar">
+          <input
+            type="search"
+            value={filterTitle}
+            onChange={(e) => setFilterTitle(e.target.value)}
+            className="admin-filter-select"
+            placeholder="Search title..."
+          />
+          {!isArtistScoped && (
+            <select
+              value={filterArtist}
+              onChange={(e) => setFilterArtist(e.target.value)}
+              className="admin-filter-select"
+            >
+              <option value="">All Artists</option>
+              {artistOptions.map((artist) => <option key={artist.id} value={artist.id}>{artist.name}</option>)}
+            </select>
+          )}
           <select
-            value={filterArtist}
-            onChange={(e) => setFilterArtist(e.target.value)}
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
             className="admin-filter-select"
           >
-            <option value="">All Artists</option>
-            {artistOptions.map((artist) => <option key={artist.id} value={artist.id}>{artist.name}</option>)}
+            <option value="">All Types</option>
+            <option value="ALBUM">Album</option>
+            <option value="SINGLE">Single</option>
+            <option value="EP">EP</option>
           </select>
-        )}
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="admin-filter-select"
-        >
-          <option value="">All Types</option>
-          <option value="ALBUM">Album</option>
-          <option value="SINGLE">Single</option>
-          <option value="EP">EP</option>
-        </select>
+        </div>
       </div>
 
       {!form && (

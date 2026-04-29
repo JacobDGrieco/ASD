@@ -232,9 +232,11 @@ export default function AdminArtistsPage() {
 
   return (
     <div>
-      <div className="admin-artists-page-header">
-        <h1 className="admin-artists-page-title">Artists</h1>
-        {isSuperAdmin && <button onClick={openCreate} className="admin-artists-page-primary-btn">New Artist</button>}
+      <div className="admin-artists-page-sticky-top">
+        <div className="admin-artists-page-header">
+          <h1 className="admin-artists-page-title">Artists</h1>
+          {isSuperAdmin && <button onClick={openCreate} className="admin-artists-page-primary-btn">New Artist</button>}
+        </div>
       </div>
 
       <div className="admin-artists-page-table-wrap">

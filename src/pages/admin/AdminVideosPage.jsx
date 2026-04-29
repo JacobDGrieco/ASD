@@ -126,8 +126,10 @@ export default function AdminVideosPage() {
 
   return (
     <div>
-      <div className="admin-artists-page-header">
-        <h1 className="admin-artists-page-title">Videos</h1>
+      <div className="admin-artists-page-sticky-top">
+        <div className="admin-artists-page-header">
+          <h1 className="admin-artists-page-title">Videos</h1>
+        </div>
       </div>
 
       <p className="admin-videos-page-note">

@@ -527,39 +527,41 @@ export default function AdminSongsPage() {
 
   return (
     <div>
-      <div className="admin-artists-page-header">
-        <h1 className="admin-artists-page-title">Songs</h1>
-        <button onClick={openCreate} className="admin-artists-page-primary-btn">
-          New Song
-        </button>
-      </div>
+      <div className="admin-artists-page-sticky-top">
+        <div className="admin-artists-page-header">
+          <h1 className="admin-artists-page-title">Songs</h1>
+          <button onClick={openCreate} className="admin-artists-page-primary-btn">
+            New Song
+          </button>
+        </div>
 
-      <div className="admin-filter-bar">
-        <input
-          type="search"
-          value={filterTitle}
-          onChange={(event) => setFilterTitle(event.target.value)}
-          className="admin-filter-select"
-          placeholder="Search title..."
-        />
-        {!isArtistScoped && (
-          <select value={filterArtist} onChange={(event) => setFilterArtist(event.target.value)} className="admin-filter-select">
-            <option value="">All Artists</option>
-            {sortedArtists.map((artist) => (
-              <option key={artist.id} value={artist.id}>
-                {artist.name}
+        <div className="admin-filter-bar">
+          <input
+            type="search"
+            value={filterTitle}
+            onChange={(event) => setFilterTitle(event.target.value)}
+            className="admin-filter-select"
+            placeholder="Search title..."
+          />
+          {!isArtistScoped && (
+            <select value={filterArtist} onChange={(event) => setFilterArtist(event.target.value)} className="admin-filter-select">
+              <option value="">All Artists</option>
+              {sortedArtists.map((artist) => (
+                <option key={artist.id} value={artist.id}>
+                  {artist.name}
+                </option>
+              ))}
+            </select>
+          )}
+          <select value={filterAlbum} onChange={(event) => setFilterAlbum(event.target.value)} className="admin-filter-select">
+            <option value="">All Albums</option>
+            {sortedAlbumOptions.map((album) => (
+              <option key={album.id} value={album.id}>
+                {album.title}
               </option>
             ))}
           </select>
-        )}
-        <select value={filterAlbum} onChange={(event) => setFilterAlbum(event.target.value)} className="admin-filter-select">
-          <option value="">All Albums</option>
-          {sortedAlbumOptions.map((album) => (
-            <option key={album.id} value={album.id}>
-              {album.title}
-            </option>
-          ))}
-        </select>
+        </div>
       </div>
 
       {!form && (
