@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { upload } from '@vercel/blob/client';
-import { FaImage, FaUpload } from 'react-icons/fa';
+import { FaLink, FaUpload } from 'react-icons/fa';
 import { buildClientImageUrl } from '../../lib/images.js';
 import '../../styles/AdminArtistsPage.css';
 
@@ -27,11 +27,22 @@ function getDefaultUsage(folder) {
 	return 'portrait';
 }
 
+function createClientImage(image, entityLabel, folder) {
+	return {
+		...image,
+		usage: image?.usage || getDefaultUsage(folder),
+		altText: image?.altText || entityLabel,
+		isPrimary: Boolean(image?.isPrimary),
+		previewUrl: buildClientImageUrl(image),
+	};
+}
+
 export default function ImageCollectionField({ value, onChange, token, folder, entityLabel }) {
 	const inputId = useId();
 	const images = Array.isArray(value) ? normalizePrimary(value) : [];
 	const [uploading, setUploading] = useState(false);
 	const [error, setError] = useState('');
+	const [imageUrl, setImageUrl] = useState('');
 	const [dragIndex, setDragIndex] = useState(null);
 	const [dropIndex, setDropIndex] = useState(null);
 
@@ -96,10 +107,7 @@ export default function ImageCollectionField({ value, onChange, token, folder, e
 					isPrimary: false,
 				};
 
-				uploadedImages.push({
-					...uploadedImage,
-					previewUrl: buildClientImageUrl(uploadedImage),
-				});
+				uploadedImages.push(createClientImage(uploadedImage, entityLabel, folder));
 			}
 
 			setImages([
@@ -117,25 +125,96 @@ export default function ImageCollectionField({ value, onChange, token, folder, e
 		}
 	};
 
+	const handleImportFromUrl = async () => {
+		const trimmedUrl = imageUrl.trim();
+		if (!trimmedUrl || !token) return;
+
+		setUploading(true);
+		setError('');
+
+		try {
+			const response = await fetch('/api/admin/uploads', {
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					type: 'image.import-from-url',
+					folder,
+					url: trimmedUrl,
+					entityLabel,
+				}),
+			});
+
+			const payload = await response.json().catch(() => ({}));
+			if (!response.ok) {
+				throw new Error(payload.error || 'Image import failed');
+			}
+
+			if (!payload?.image) {
+				throw new Error('Image import failed');
+			}
+
+			const nextImage = createClientImage(payload.image, entityLabel, folder);
+			setImages([
+				...images,
+				{
+					...nextImage,
+					isPrimary: images.length === 0,
+				},
+			]);
+			setImageUrl('');
+		} catch (uploadError) {
+			setError(uploadError instanceof Error ? uploadError.message : 'Image import failed');
+		} finally {
+			setUploading(false);
+		}
+	};
+
 	return (
 		<div className="admin-artists-page-image-field">
-			<label
-				htmlFor={inputId}
-				className="admin-artists-page-ghost-btn admin-artists-page-upload-btn"
-				title={uploading ? 'Uploading…' : 'Upload images'}
-				aria-label={uploading ? 'Uploading…' : 'Upload images'}
-			>
-				<FaUpload aria-hidden="true" />
-			</label>
-			<input
-				id={inputId}
-				type="file"
-				accept="image/*"
-				multiple
-				onChange={handleUpload}
-				className="admin-artists-page-file-input"
-				disabled={uploading}
-			/>
+			<div className="admin-artists-page-upload-controls">
+				<input
+					type="url"
+					value={imageUrl}
+					onChange={(event) => setImageUrl(event.target.value)}
+					onKeyDown={(event) => {
+						if (event.key === 'Enter') {
+							event.preventDefault();
+							void handleImportFromUrl();
+						}
+					}}
+					placeholder="Paste image URL to download and store"
+					className="admin-artists-page-input"
+					disabled={uploading}
+				/>
+				<button
+					type="button"
+					onClick={() => void handleImportFromUrl()}
+					className="admin-artists-page-ghost-btn admin-artists-page-upload-btn"
+					disabled={uploading || !imageUrl.trim()}
+					title="Import image from URL"
+					aria-label="Import image from URL"
+				>
+					<FaLink aria-hidden="true" />
+				</button>
+				<label
+					htmlFor={inputId}
+					className="admin-artists-page-ghost-btn admin-artists-page-upload-btn"
+				>
+					<FaUpload aria-hidden="true" />
+				</label>
+				<input
+					id={inputId}
+					type="file"
+					accept="image/*"
+					multiple
+					onChange={handleUpload}
+					className="admin-artists-page-file-input"
+					disabled={uploading}
+				/>
+			</div>
 
 			{images.length > 0 ? (
 				<div className="admin-artists-page-image-list">

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { TabPanel, TabView } from 'primereact/tabview'
 import { FaArrowLeft, FaArrowRight, FaExternalLinkAlt, FaPencilAlt, FaStickyNote, FaTimes, FaTrash } from 'react-icons/fa'
 import { SiApplemusic, SiSoundcloud, SiSpotify, SiYoutube } from 'react-icons/si'
+import AdminDateInput, { isValidDateInput } from '../../components/admin/AdminDateInput.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js'
@@ -94,6 +95,7 @@ function buildPlacementForm(song) {
 function validateSongForm(form) {
   const errors = {
     title: '',
+    releaseDate: '',
     albumPlacementsRoot: '',
     albumPlacements: Array.isArray(form.albumPlacements)
       ? form.albumPlacements.map(() => ({ albumId: '', trackNumber: '', discNumber: '' }))
@@ -101,6 +103,7 @@ function validateSongForm(form) {
   }
 
   if (!form.title?.trim()) errors.title = 'Song title is required.'
+  if (form.releaseDate && !isValidDateInput(form.releaseDate)) errors.releaseDate = 'Release date must use YYYY-MM-DD.'
   if (!Array.isArray(form.albumPlacements) || form.albumPlacements.length === 0) {
     errors.albumPlacementsRoot = 'At least one album is required.'
     return errors
@@ -125,7 +128,7 @@ function hasSongValidationErrors(errors) {
 }
 
 function hasSongInfoErrors(errors) {
-  return Boolean(errors?.title)
+  return Boolean(errors?.title || errors?.releaseDate)
 }
 
 function hasAlbumErrors(errors) {
@@ -373,6 +376,15 @@ export default function AdminSongsPage() {
         ...current,
         [key]: nextValue,
         ...(key === 'title' ? { slug: slugify(nextValue) } : {}),
+      }
+    })
+
+  const setReleaseDate = (value) =>
+    setForm((current) => {
+      setValidationErrors((currentErrors) => currentErrors ? { ...currentErrors, releaseDate: '' } : currentErrors)
+      return {
+        ...current,
+        releaseDate: value,
       }
     })
 
@@ -702,7 +714,7 @@ export default function AdminSongsPage() {
                     </div>
                     <div className="admin-modal-field">
                       <label className="admin-modal-label">Release Date</label>
-                      <input type="date" value={form.releaseDate} onChange={set('releaseDate')} className="admin-artists-page-input" />
+                      <AdminDateInput value={form.releaseDate} onChange={setReleaseDate} className={songFieldClassName('releaseDate')} ariaInvalid={Boolean(validationErrors?.releaseDate)} />
                     </div>
                     <div className="admin-modal-field admin-modal-field-full">
                       <label className="admin-modal-label">Featured Artists</label>

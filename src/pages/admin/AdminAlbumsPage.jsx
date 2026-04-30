@@ -1,6 +1,7 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { FaApple, FaExternalLinkAlt, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash, FaYoutube } from 'react-icons/fa'
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
+import AdminDateInput, { isValidDateInput } from '../../components/admin/AdminDateInput.jsx'
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js'
@@ -57,6 +58,7 @@ function validateAlbumForm(form) {
   if (form.artistId === OTHER_ARTIST_OPTION_ID && !form.otherArtistName?.trim()) errors.otherArtistName = 'Other artist name is required.'
   if (!form.type) errors.type = 'Album type is required.'
   if (!form.releaseDate) errors.releaseDate = 'Release date is required.'
+  else if (!isValidDateInput(form.releaseDate, { required: true })) errors.releaseDate = 'Release date must use YYYY-MM-DD.'
   return errors
 }
 
@@ -215,6 +217,20 @@ export default function AdminAlbumsPage() {
   const fieldClassName = (fieldName) => (
     `admin-artists-page-input${validationErrors[fieldName] ? ' admin-artists-page-input-invalid' : ''}`
   )
+
+  const setReleaseDate = (value) => setForm((current) => {
+    setValidationErrors((currentErrors) => {
+      if (!('releaseDate' in currentErrors)) return currentErrors
+      const nextErrors = { ...currentErrors }
+      delete nextErrors.releaseDate
+      return nextErrors
+    })
+
+    return {
+      ...current,
+      releaseDate: value,
+    }
+  })
 
   const renderValue = (album, column) => {
     if (column.key === 'artistId') {
@@ -428,7 +444,7 @@ export default function AdminAlbumsPage() {
                 </div>
                 <div className="admin-modal-field">
                   <label className="admin-modal-label">Release Date <span className="admin-modal-label-required">*</span></label>
-                  <input type="date" value={form.releaseDate} onChange={set('releaseDate')} className={fieldClassName('releaseDate')} aria-invalid={Boolean(validationErrors.releaseDate)} />
+                  <AdminDateInput value={form.releaseDate} onChange={setReleaseDate} className={fieldClassName('releaseDate')} ariaInvalid={Boolean(validationErrors.releaseDate)} required />
                 </div>
                 <div className="admin-modal-field admin-modal-field-full">
                   <label className="admin-modal-label">About</label>

@@ -269,11 +269,23 @@
 	gap: 12px;
 }
 
+.admin-artists-page-upload-controls {
+	display: flex;
+	gap: 10px;
+}
+
 .admin-artists-page-upload-btn {
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
 	width: fit-content;
+}
+
+.admin-artists-page-url-import {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 8px;
+	align-items: center;
 }
 
 .admin-artists-page-file-input {
