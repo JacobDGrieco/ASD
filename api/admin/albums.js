@@ -69,6 +69,50 @@ function includeAlbumList() {
   }
 }
 
+function normalizeAlbumDuplicateValue(value) {
+  return String(value ?? '').trim().toLowerCase()
+}
+
+function normalizeAlbumReleaseDate(value) {
+  if (!value) return ''
+  return String(value).slice(0, 10)
+}
+
+async function findDuplicateAlbum({ id, title, releaseDate, resolvedArtistId, otherArtistName }) {
+  const candidates = await prisma.album.findMany({
+    where: {
+      ...(id ? { id: { not: id } } : {}),
+      artistId: resolvedArtistId,
+    },
+    select: {
+      id: true,
+      title: true,
+      releaseDate: true,
+      otherArtistName: true,
+    },
+  })
+
+  const normalizedTitle = normalizeAlbumDuplicateValue(title)
+  const normalizedOtherArtistName = normalizeAlbumDuplicateValue(otherArtistName)
+  const normalizedReleaseDate = normalizeAlbumReleaseDate(releaseDate)
+
+  return candidates.find((album) => (
+    normalizeAlbumDuplicateValue(album.title) === normalizedTitle &&
+    normalizeAlbumDuplicateValue(album.otherArtistName) === normalizedOtherArtistName &&
+    normalizeAlbumReleaseDate(album.releaseDate) === normalizedReleaseDate
+  )) ?? null
+}
+
+function buildAlbumSlug({ title, artistSlugPart, releaseDate }) {
+  const slugParts = [title]
+
+  if (artistSlugPart) slugParts.push(artistSlugPart)
+
+  if (releaseDate) slugParts.push(normalizeAlbumReleaseDate(releaseDate))
+
+  return slugify(slugParts.filter(Boolean).join('-'))
+}
+
 async function loadAlbumForSession(session, id) {
   return prisma.album.findFirst({
     where: {
@@ -98,6 +142,18 @@ async function resolveAlbumArtistId(session, artistId) {
   return otherArtist.id
 }
 
+async function resolveAlbumArtistSlugPart(artistId, otherArtistName, resolvedArtistId) {
+  if (artistId === OTHER_ARTIST_OPTION_ID) return otherArtistName?.trim() || OTHER_ARTIST_NAME
+  if (!resolvedArtistId) return ''
+
+  const artist = await prisma.artist.findUnique({
+    where: { id: resolvedArtistId },
+    select: { slug: true },
+  })
+
+  return artist?.slug ?? resolvedArtistId
+}
+
 export default async function handler(req, res) {
   const session = requireAdmin(req, res)
   if (!session) return
@@ -113,15 +169,20 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT') {
-      const { title, slug, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, releaseDate, artistId, images } = req.body
+      const { title, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, releaseDate, artistId, images } = req.body
       const resolvedArtistId = await resolveAlbumArtistId(session, artistId)
       if (!resolvedArtistId) return res.status(400).json({ error: 'Artist is required.' })
+      const duplicateAlbum = await findDuplicateAlbum({ id, title, releaseDate, resolvedArtistId, otherArtistName: artistId === OTHER_ARTIST_OPTION_ID ? otherArtistName : '' })
+      if (duplicateAlbum) {
+        return res.status(409).json({ error: 'An album with this title, artist, and release date already exists.' })
+      }
+      const artistSlugPart = await resolveAlbumArtistSlugPart(artistId, otherArtistName, resolvedArtistId)
       const normalizedImages = normalizeImageInput(images, 'cover')
       const album = await prisma.album.update({
         where: { id },
         data: {
           title,
-          slug: slug || slugify(title),
+          slug: buildAlbumSlug({ title, artistSlugPart, releaseDate }),
           type,
           otherArtistName: artistId === OTHER_ARTIST_OPTION_ID ? otherArtistName?.trim() || null : null,
           coverArt: primaryImageReference(normalizedImages),
@@ -162,14 +223,19 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { title, slug, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, releaseDate, artistId, images } = req.body
+    const { title, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, releaseDate, artistId, images } = req.body
     const resolvedArtistId = await resolveAlbumArtistId(session, artistId)
     if (!resolvedArtistId) return res.status(400).json({ error: 'Artist is required.' })
+    const duplicateAlbum = await findDuplicateAlbum({ title, releaseDate, resolvedArtistId, otherArtistName: artistId === OTHER_ARTIST_OPTION_ID ? otherArtistName : '' })
+    if (duplicateAlbum) {
+      return res.status(409).json({ error: 'An album with this title, artist, and release date already exists.' })
+    }
+    const artistSlugPart = await resolveAlbumArtistSlugPart(artistId, otherArtistName, resolvedArtistId)
     const normalizedImages = normalizeImageInput(images, 'cover')
     const album = await prisma.album.create({
       data: {
         title,
-        slug: slug || slugify(title),
+        slug: buildAlbumSlug({ title, artistSlugPart, releaseDate }),
         type,
         otherArtistName: artistId === OTHER_ARTIST_OPTION_ID ? otherArtistName?.trim() || null : null,
         coverArt: primaryImageReference(normalizedImages),

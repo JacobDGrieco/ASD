@@ -51,7 +51,16 @@ function withOtherArtistOption(artists) {
   return [...artists, { id: OTHER_ARTIST_OPTION_ID, name: OTHER_ARTIST_NAME }]
 }
 
-function validateAlbumForm(form) {
+function normalizeAlbumDuplicateValue(value) {
+  return String(value ?? '').trim().toLowerCase()
+}
+
+function normalizeAlbumReleaseDate(value) {
+  if (!value) return ''
+  return String(value).slice(0, 10)
+}
+
+function validateAlbumForm(form, albums = []) {
   const errors = {}
   if (!form.title?.trim()) errors.title = 'Album title is required.'
   if (!form.artistId) errors.artistId = 'Artist is required.'
@@ -59,6 +68,32 @@ function validateAlbumForm(form) {
   if (!form.type) errors.type = 'Album type is required.'
   if (!form.releaseDate) errors.releaseDate = 'Release date is required.'
   else if (!isValidDateInput(form.releaseDate, { required: true })) errors.releaseDate = 'Release date must use YYYY-MM-DD.'
+
+  if (!errors.title && !errors.artistId && !errors.otherArtistName && !errors.releaseDate) {
+    const normalizedTitle = normalizeAlbumDuplicateValue(form.title)
+    const normalizedArtistId = form.artistId
+    const normalizedOtherArtistName = normalizeAlbumDuplicateValue(form.otherArtistName)
+    const normalizedReleaseDate = normalizeAlbumReleaseDate(form.releaseDate)
+
+    const duplicateAlbum = albums.find((album) => {
+      if (album.id === form.id) return false
+      if (normalizeAlbumDuplicateValue(album.title) !== normalizedTitle) return false
+
+      const albumArtistId = isOtherArtist(album.artist) ? OTHER_ARTIST_OPTION_ID : album.artistId
+      if (albumArtistId !== normalizedArtistId) return false
+
+      if (albumArtistId === OTHER_ARTIST_OPTION_ID) {
+        if (normalizeAlbumDuplicateValue(album.otherArtistName) !== normalizedOtherArtistName) return false
+      }
+
+      return normalizeAlbumReleaseDate(album.releaseDate) === normalizedReleaseDate
+    })
+
+    if (duplicateAlbum) {
+      errors.title = 'An album with this title, artist, and release date already exists.'
+    }
+  }
+
   return errors
 }
 
@@ -157,7 +192,7 @@ export default function AdminAlbumsPage() {
   }
 
   const handleSave = async () => {
-    const nextErrors = validateAlbumForm(form)
+    const nextErrors = validateAlbumForm(form, albums)
     if (Object.keys(nextErrors).length > 0) {
       setValidationErrors(nextErrors)
       return

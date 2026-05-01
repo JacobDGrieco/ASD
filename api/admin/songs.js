@@ -8,6 +8,7 @@ import {
   primaryImageReference,
   toImageCreateManyData,
 } from '../../src/lib/images.js'
+import { isOtherArtist, OTHER_ARTIST_NAME } from '../../src/lib/publicVisibility.js'
 
 function withImages(song) {
   const images = clientImages(
@@ -71,6 +72,129 @@ function validatePlacements(placements) {
   }
 
   return null
+}
+
+function normalizeSongDuplicateValue(value) {
+  return String(value ?? '').trim().toLowerCase()
+}
+
+function normalizeSongReleaseDate(value) {
+  if (!value) return ''
+  return String(value).slice(0, 10)
+}
+
+function albumArtistKey(album) {
+  if (!album) return ''
+  if (isOtherArtist(album.artist)) {
+    return `other:${normalizeSongDuplicateValue(album.otherArtistName || OTHER_ARTIST_NAME)}`
+  }
+
+  return `artist:${album.artistId ?? album.artist?.id ?? ''}`
+}
+
+async function loadPlacementAlbums(placements) {
+  const albumIds = [...new Set(placements.map((placement) => placement.albumId).filter(Boolean))]
+  if (!albumIds.length) return []
+
+  return prisma.album.findMany({
+    where: {
+      id: {
+        in: albumIds,
+      },
+    },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      otherArtistName: true,
+      artistId: true,
+      artist: {
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+        },
+      },
+    },
+  })
+}
+
+async function findDuplicateSong({ id, title, releaseDate, placements }) {
+  const albumIds = [...new Set(placements.map((placement) => placement.albumId).filter(Boolean))]
+  if (!albumIds.length) return null
+
+  const candidates = await prisma.song.findMany({
+    where: {
+      ...(id ? { id: { not: id } } : {}),
+      placements: {
+        some: {
+          albumId: {
+            in: albumIds,
+          },
+        },
+      },
+    },
+    include: {
+      placements: {
+        include: {
+          album: {
+            select: {
+              id: true,
+              title: true,
+              otherArtistName: true,
+              artistId: true,
+              artist: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      meta: {
+        select: {
+          releaseDate: true,
+        },
+      },
+    },
+  })
+
+  const placementAlbums = await loadPlacementAlbums(placements)
+  const placementAlbumById = Object.fromEntries(placementAlbums.map((album) => [album.id, album]))
+  const normalizedTitle = normalizeSongDuplicateValue(title)
+  const normalizedReleaseDate = normalizeSongReleaseDate(releaseDate)
+
+  return candidates.find((song) => {
+    if (normalizeSongDuplicateValue(song.title) !== normalizedTitle) return false
+    if (normalizeSongReleaseDate(song.meta?.releaseDate) !== normalizedReleaseDate) return false
+
+    return song.placements.some((placement) => {
+      const selectedAlbum = placementAlbumById[placement.albumId]
+      if (!selectedAlbum) return false
+
+      return (
+        normalizeSongDuplicateValue(selectedAlbum.title) === normalizeSongDuplicateValue(placement.album?.title) &&
+        albumArtistKey(selectedAlbum) === albumArtistKey(placement.album)
+      )
+    })
+  }) ?? null
+}
+
+function buildSongSlug({ title, album, releaseDate }) {
+  const slugParts = [title]
+
+  if (album?.slug) slugParts.push(album.slug)
+  else if (album?.title) slugParts.push(album.title)
+
+  if (album?.artist?.slug) slugParts.push(album.artist.slug)
+  else if (album?.artist?.name) slugParts.push(album.artist.name)
+
+  if (releaseDate) slugParts.push(normalizeSongReleaseDate(releaseDate))
+
+  return slugify(slugParts.filter(Boolean).join('-'))
 }
 
 function formatSong(song) {
@@ -198,7 +322,6 @@ export default async function handler(req, res) {
     if (req.method === 'PUT') {
       const {
         title,
-        slug,
         duration,
         soundcloudUrl,
         spotifyUrl,
@@ -218,14 +341,20 @@ export default async function handler(req, res) {
       if (!(await validatePlacementOwnership(session, placements))) {
         return res.status(403).json({ error: 'You can only assign songs to your own albums.' })
       }
+      const duplicateSong = await findDuplicateSong({ id, title, releaseDate, placements })
+      if (duplicateSong) {
+        return res.status(409).json({ error: 'A song with this title, album, artist, and release date already exists.' })
+      }
 
       const normalizedImages = normalizeImageInput(images, 'artwork')
+      const placementAlbums = await loadPlacementAlbums(placements)
+      const primaryAlbum = placementAlbums.find((album) => album.id === placements[0]?.albumId) ?? null
 
       await prisma.song.update({
         where: { id },
         data: {
           title,
-          slug: slug || slugify(title),
+          slug: buildSongSlug({ title, album: primaryAlbum, releaseDate }),
           duration,
           artwork: primaryImageReference(normalizedImages),
           soundcloudUrl,
@@ -309,7 +438,6 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const {
       title,
-      slug,
       duration,
       soundcloudUrl,
       spotifyUrl,
@@ -329,12 +457,18 @@ export default async function handler(req, res) {
     if (!(await validatePlacementOwnership(session, placements))) {
       return res.status(403).json({ error: 'You can only assign songs to your own albums.' })
     }
+    const duplicateSong = await findDuplicateSong({ title, releaseDate, placements })
+    if (duplicateSong) {
+      return res.status(409).json({ error: 'A song with this title, album, artist, and release date already exists.' })
+    }
 
     const normalizedImages = normalizeImageInput(images, 'artwork')
+    const placementAlbums = await loadPlacementAlbums(placements)
+    const primaryAlbum = placementAlbums.find((album) => album.id === placements[0]?.albumId) ?? null
     const song = await prisma.song.create({
       data: {
         title,
-        slug: slug || slugify(title),
+        slug: buildSongSlug({ title, album: primaryAlbum, releaseDate }),
         duration: duration ?? '',
         artwork: primaryImageReference(normalizedImages),
         soundcloudUrl,

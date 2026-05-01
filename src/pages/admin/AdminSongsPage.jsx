@@ -20,7 +20,7 @@ const SONGS_FILTER_STATE_KEY = 'admin-songs-page-state'
 function createAlbumPlacement() {
   return {
     albumId: '',
-    trackNumber: 1,
+    trackNumber: '',
     discNumber: 1,
   }
 }
@@ -54,6 +54,28 @@ function compareLexicographically(left, right) {
 
 function withOtherArtistOption(artists) {
   return [...artists, { id: OTHER_ARTIST_OPTION_ID, name: OTHER_ARTIST_NAME }]
+}
+
+function normalizeSongDuplicateValue(value) {
+  return String(value ?? '').trim().toLowerCase()
+}
+
+function normalizeSongReleaseDate(value) {
+  if (!value) return ''
+  return String(value).slice(0, 10)
+}
+
+function songReleaseDate(song) {
+  return song?.meta?.releaseDate ? String(song.meta.releaseDate).slice(0, 10) : ''
+}
+
+function albumArtistKey(album) {
+  if (!album) return ''
+  if (isOtherArtist(album.artist)) {
+    return `other:${normalizeSongDuplicateValue(album.otherArtistName || OTHER_ARTIST_NAME)}`
+  }
+
+  return `artist:${album.artistId ?? album.artist?.id ?? ''}`
 }
 
 function placementAlbumIds(song) {
@@ -92,7 +114,7 @@ function buildPlacementForm(song) {
   return [createAlbumPlacement()]
 }
 
-function validateSongForm(form) {
+function validateSongForm(form, songs = [], albumById = {}) {
   const errors = {
     title: '',
     releaseDate: '',
@@ -116,6 +138,34 @@ function validateSongForm(form) {
     if (!placement.trackNumber || Number(placement.trackNumber) < 1) errors.albumPlacements[index].trackNumber = 'Track number must be at least 1.'
     if (!placement.discNumber || Number(placement.discNumber) < 1) errors.albumPlacements[index].discNumber = 'Disc number must be at least 1.'
     seenAlbumIds.add(placement.albumId)
+  }
+
+  if (!errors.title && !errors.releaseDate && !errors.albumPlacementsRoot && !errors.albumPlacements.some((placement) => placement.albumId || placement.trackNumber || placement.discNumber)) {
+    const normalizedTitle = normalizeSongDuplicateValue(form.title)
+    const normalizedReleaseDate = normalizeSongReleaseDate(form.releaseDate)
+    const selectedAlbumIds = [...new Set(form.albumPlacements.map((placement) => placement.albumId).filter(Boolean))]
+
+    const duplicateSong = songs.find((song) => {
+      if (song.id === form.id) return false
+      if (normalizeSongDuplicateValue(song.title) !== normalizedTitle) return false
+      if (normalizeSongReleaseDate(songReleaseDate(song)) !== normalizedReleaseDate) return false
+
+      return placementAlbumIds(song).some((albumId) => {
+        if (!selectedAlbumIds.includes(albumId)) return false
+
+        const selectedAlbum = albumById[albumId]
+        const existingAlbum = albumById[albumId] ?? song.placements?.find((placement) => placement.albumId === albumId)?.album ?? null
+
+        return (
+          normalizeSongDuplicateValue(selectedAlbum?.title) === normalizeSongDuplicateValue(existingAlbum?.title) &&
+          albumArtistKey(selectedAlbum) === albumArtistKey(existingAlbum)
+        )
+      })
+    })
+
+    if (duplicateSong) {
+      errors.title = 'A song with this title, album, artist, and release date already exists.'
+    }
   }
 
   return errors
@@ -322,7 +372,7 @@ export default function AdminSongsPage() {
   }
 
   const handleSave = async () => {
-    const nextErrors = validateSongForm(form)
+    const nextErrors = validateSongForm(form, songs, albumById)
     if (hasSongValidationErrors(nextErrors)) {
       setValidationErrors(nextErrors)
       if (hasAlbumErrors(nextErrors) && !hasSongInfoErrors(nextErrors)) {
@@ -409,7 +459,11 @@ export default function AdminSongsPage() {
           placementIndex === index
             ? {
                 ...placement,
-                [key]: key === 'albumId' ? event.target.value : Number(event.target.value),
+                [key]: key === 'albumId'
+                  ? event.target.value
+                  : event.target.value === ''
+                    ? ''
+                    : Number(event.target.value),
               }
             : placement
         ),
