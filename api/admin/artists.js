@@ -1,5 +1,5 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { canAccessArtist, isSuperAdmin, requireAdmin } from '../../src/lib/auth.js'
+import { canAccessArtist, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
 import { hashPassword } from '../../src/lib/passwords.js'
 import { validateUniqueArtistPassword } from '../../src/lib/adminAccounts.js'
 import { clientImages, mergeLegacyImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js'
@@ -119,6 +119,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT') {
+      if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
       if (isOtherArtist(existingArtist)) return res.status(403).json({ error: 'The Other artist is reserved.' })
       const {
         name,
@@ -210,6 +211,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
+    if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
     if (!isSuperAdmin(session)) return res.status(403).json({ error: 'Forbidden' })
 
     const {

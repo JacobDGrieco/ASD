@@ -36,7 +36,8 @@ export default function AdminLyricsPage() {
   const { songId } = useParams()
   const { state } = useLocation()
   const navigate = useNavigate()
-  const { token } = useAdminAuth()
+  const { token, session } = useAdminAuth()
+  const isViewer = session?.role === 'VIEWER'
   const auth = { Authorization: `Bearer ${token}` }
 
   const [blocks, setBlocks] = useState([])
@@ -360,7 +361,7 @@ export default function AdminLyricsPage() {
 
       <div className="admin-lyrics-page-edit-pane">
         <p className="admin-lyrics-page-hint">Enter creates a new lyric line. Backspace on an empty lyric line removes it. Arrow keys move between lines. Tab inserts spaces. Annotations are edited directly per matching row.</p>
-        {selectedRows.length > 0 && (
+        {!isViewer && selectedRows.length > 0 && (
           <div className="admin-lyrics-page-bulk-actions">
             <span className="admin-lyrics-page-selection-summary">{selectedRows.length} line{selectedRows.length === 1 ? '' : 's'} selected</span>
             <button onClick={deleteSelectedRows} className="admin-lyrics-page-ghost-btn">Delete Selected</button>
@@ -376,7 +377,7 @@ export default function AdminLyricsPage() {
               <div className="admin-lyrics-page-editor-surface">
                 {lyricsRows.map((row, index) => (
                   <div key={row.id ?? `row-${index}`} className={`admin-lyrics-page-editor-row ${selectedRows.includes(index) ? 'admin-lyrics-page-selected-row' : ''}`.trim()}>
-                    <button type="button" className={`admin-lyrics-page-row-number ${selectedRows.includes(index) ? 'admin-lyrics-page-selected-number' : ''}`.trim()} onClick={(event) => handleRowSelection(index, event)} aria-label={`Select lyric line ${index + 1}`}>{index + 1}</button>
+                    <button type="button" className={`admin-lyrics-page-row-number ${selectedRows.includes(index) ? 'admin-lyrics-page-selected-number' : ''}`.trim()} onClick={(event) => !isViewer && handleRowSelection(index, event)} aria-label={`Select lyric line ${index + 1}`}>{index + 1}</button>
                     <textarea
                       ref={(element) => {
                         lyricRowRefs.current[index] = element
@@ -388,6 +389,7 @@ export default function AdminLyricsPage() {
                       className={`admin-lyrics-page-line-input admin-lyrics-page-lyric-input`}
                       rows={1}
                       spellCheck={false}
+                      disabled={isViewer}
                       aria-label={`Lyric line ${index + 1}`}
                     />
                   </div>
@@ -407,6 +409,7 @@ export default function AdminLyricsPage() {
                           type="button"
                           className={`admin-lyrics-page-line-input admin-lyrics-page-annotation-preview`}
                           onClick={() => {
+                            if (isViewer) return
                             setEditingAnnotationIndex(index)
                             pendingFocus.current = { column: 'annotations', index, cursor: 'end' }
                             setAnnotationRows((prev) => [...prev])
@@ -431,6 +434,7 @@ export default function AdminLyricsPage() {
                               className={`admin-lyrics-page-line-input admin-lyrics-page-annotation-textarea`}
                               rows={4}
                               spellCheck={false}
+                              disabled={isViewer}
                               aria-label={`Annotation line ${index + 1}`}
                             />
                           </div>
@@ -444,9 +448,11 @@ export default function AdminLyricsPage() {
           </div>
         )}
 
-        <button onClick={saveLyrics} className="admin-lyrics-page-primary-btn" disabled={isSaving || isLoading}>
-          {isSaving ? 'Saving...' : 'Save Lyrics'}
-        </button>
+        {!isViewer && (
+          <button onClick={saveLyrics} className="admin-lyrics-page-primary-btn" disabled={isSaving || isLoading}>
+            {isSaving ? 'Saving...' : 'Save Lyrics'}
+          </button>
+        )}
       </div>
     </div>
   )

@@ -66,7 +66,8 @@ function findArtist(rows, artistId) {
 }
 
 export default function AdminVideosPage() {
-  const { token } = useAdminAuth()
+  const { token, session } = useAdminAuth()
+  const isViewer = session?.role === 'VIEWER'
   const auth = { Authorization: `Bearer ${token}` }
   const [rows, setRows] = useState([])
   const [form, setForm] = useState(null)
@@ -181,9 +182,11 @@ export default function AdminVideosPage() {
                 </td>
                 <td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
                   <div className="admin-artists-page-actions">
-                    <button type="button" onClick={() => openEdit(row)} disabled={loadingArtistId === row.artist.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit video" title="Edit">
-                      <FaPencilAlt aria-hidden="true" />
-                    </button>
+                    {!isViewer && (
+                      <button type="button" onClick={() => openEdit(row)} disabled={loadingArtistId === row.artist.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit video" title="Edit">
+                        <FaPencilAlt aria-hidden="true" />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

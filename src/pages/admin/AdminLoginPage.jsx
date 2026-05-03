@@ -28,21 +28,24 @@ export default function AdminLoginPage() {
 
   return (
     <div className="admin-login-page-page">
-      <form className="admin-login-page-form" onSubmit={handleSubmit}>
-        <h1 className="admin-login-page-title">ASD Admin</h1>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          className="admin-login-page-input"
-          autoFocus
-        />
-        {error && <p className="admin-login-page-error">{error}</p>}
-        <button type="submit" disabled={loading} className="admin-login-page-button">
-          {loading ? 'Entering…' : 'Enter'}
-        </button>
-      </form>
+      <div>
+        <form className="admin-login-page-form" onSubmit={handleSubmit}>
+          <h1 className="admin-login-page-title">ASD Admin</h1>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            className="admin-login-page-input"
+            autoFocus
+          />
+          {error && <p className="admin-login-page-error">{error}</p>}
+          <button type="submit" disabled={loading} className="admin-login-page-button">
+            {loading ? 'Entering…' : 'Enter'}
+          </button>
+        </form>
+        <p className="admin-login-page-viewer-hint">Viewer access password: <strong>viewer</strong></p>
+      </div>
     </div>
   )
 }

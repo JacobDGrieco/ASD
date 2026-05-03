@@ -9,6 +9,7 @@ const ADMIN_SIDEBAR_STATE_KEY = 'admin-sidebar-collapsed';
 export default function AdminLayout() {
 	const { logout, session } = useAdminAuth();
 	const isArtistScoped = session?.role === 'ARTIST';
+	const isViewer = session?.role === 'VIEWER';
 	const [isCollapsed, setIsCollapsed] = useState(() => {
 		if (typeof window === 'undefined') return false;
 
@@ -25,12 +26,14 @@ export default function AdminLayout() {
 	}, [isCollapsed]);
 
 	const links = [
-		...(!isArtistScoped ? [
+		...(!isArtistScoped && !isViewer ? [
 			{ to: '/admin/accounts', label: 'Accounts', icon: <FaUserShield aria-hidden="true" /> },
+		] : []),
+		...(!isArtistScoped ? [
 			{ to: '/admin/artists', label: 'Artists', icon: <FaMicrophoneAlt aria-hidden="true" /> },
 		] : []),
 		{ to: '/admin/albums', label: 'Albums', icon: <FaCompactDisc aria-hidden="true" /> },
-		{ to: '/admin/videos', label: 'Videos', icon: <FaVideo aria-hidden="true" /> },
+		...(!isViewer ? [{ to: '/admin/videos', label: 'Videos', icon: <FaVideo aria-hidden="true" /> }] : []),
 		{ to: '/admin/songs', label: 'Songs', icon: <FaMusic aria-hidden="true" /> },
 		...(!isArtistScoped ? [{ to: '/admin/record-player', label: 'Record Player', icon: <FaRecordVinyl aria-hidden="true" /> }] : []),
 	];

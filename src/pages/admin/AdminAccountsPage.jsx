@@ -1,3 +1,4 @@
+import { Navigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { FaPencilAlt, FaTrash } from 'react-icons/fa'
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
@@ -17,10 +18,14 @@ function formatDate(value) {
 }
 
 export default function AdminAccountsPage() {
-  const { token } = useAdminAuth()
+  const { token, session } = useAdminAuth()
   const auth = { Authorization: `Bearer ${token}` }
   const [rows, setRows] = useState([])
   const [form, setForm] = useState(null)
+
+  if (session?.role !== 'SUPER_ADMIN') {
+    return <Navigate to="/admin" replace />
+  }
 
   useEffect(() => {
     fetch('/api/admin/accounts', { headers: auth })

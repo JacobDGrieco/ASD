@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { put } from '@vercel/blob'
 import { handleUpload } from '@vercel/blob/client'
-import { requireAdmin } from '../../src/lib/auth.js'
+import { isViewer, requireAdmin } from '../../src/lib/auth.js'
 
 const ALLOWED_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024
@@ -120,7 +120,9 @@ export default async function handler(req, res) {
 
   try {
     const body = await readJsonBody(req)
-    if (!requireAdmin(req, res)) return
+    const uploadSession = requireAdmin(req, res)
+    if (!uploadSession) return
+    if (isViewer(uploadSession)) return res.status(403).json({ error: 'Forbidden' })
 
     if (body?.type === 'image.import-from-url') {
       const image = await importImageFromUrl(body)

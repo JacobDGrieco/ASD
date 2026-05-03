@@ -1,5 +1,5 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { requireSuperAdmin } from '../../src/lib/auth.js'
+import { isSuperAdmin, isViewer, requireAdmin, viewerSongVisibilityWhere } from '../../src/lib/auth.js'
 import { isOtherArtist, OTHER_ARTIST_NAME } from '../../src/lib/publicVisibility.js'
 
 function logTiming(label, startedAt) {
@@ -28,13 +28,18 @@ function toSongOption(song) {
 export default async function handler(req, res) {
   const requestStartedAt = Date.now()
   const authStartedAt = Date.now()
-  const session = requireSuperAdmin(req, res)
+  const session = requireAdmin(req, res)
   logTiming('auth', authStartedAt)
   if (!session) return
+
+  if (!isSuperAdmin(session) && !isViewer(session)) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
 
   const resource = typeof req.query.resource === 'string' ? req.query.resource : ''
 
   if (req.method === 'GET' && resource === 'songs') {
+    if (!isSuperAdmin(session)) return res.status(403).json({ error: 'Forbidden' })
     const queryStartedAt = Date.now()
     const query = typeof req.query.q === 'string' ? req.query.q.trim() : ''
     if (query.length < 2) return res.status(200).json([])
@@ -109,6 +114,11 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     const prismaStartedAt = Date.now()
     const tracks = await prisma.recordPlayerTrack.findMany({
+      where: isViewer(session)
+        ? {
+            song: viewerSongVisibilityWhere(),
+          }
+        : undefined,
       orderBy: { position: 'asc' },
       include: {
         song: {
@@ -139,6 +149,7 @@ export default async function handler(req, res) {
     return res.status(200).json(payload)
   }
   if (req.method === 'PUT') {
+    if (!isSuperAdmin(session)) return res.status(403).json({ error: 'Forbidden' })
     const writeStartedAt = Date.now()
     const { tracks } = req.body
     await prisma.recordPlayerTrack.deleteMany()

@@ -1,5 +1,5 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { artistScopedAlbumWhere, isSuperAdmin, requireAdmin } from '../../src/lib/auth.js'
+import { artistScopedAlbumWhere, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
 import { clientImages, mergeLegacyImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js'
 import { OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID, OTHER_ARTIST_SLUG } from '../../src/lib/publicVisibility.js'
 import { slugify } from '../../src/lib/slugify.js'
@@ -169,6 +169,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT') {
+      if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
       const { title, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, releaseDate, artistId, images } = req.body
       const resolvedArtistId = await resolveAlbumArtistId(session, artistId)
       if (!resolvedArtistId) return res.status(400).json({ error: 'Artist is required.' })
@@ -206,6 +207,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
+      if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
       await prisma.album.delete({ where: { id } })
       return res.status(204).end()
     }
@@ -223,6 +225,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
+    if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
     const { title, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, releaseDate, artistId, images } = req.body
     const resolvedArtistId = await resolveAlbumArtistId(session, artistId)
     if (!resolvedArtistId) return res.status(400).json({ error: 'Artist is required.' })

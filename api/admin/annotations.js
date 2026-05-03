@@ -1,5 +1,5 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { artistScopedSongWhere, requireAdmin } from '../../src/lib/auth.js'
+import { artistScopedSongWhere, isViewer, requireAdmin } from '../../src/lib/auth.js'
 
 async function loadAnnotationForSession(session, id) {
   return prisma.annotation.findFirst({
@@ -26,6 +26,7 @@ async function loadLyricBlockForSession(session, lyricBlockId) {
 export default async function handler(req, res) {
   const session = requireAdmin(req, res)
   if (!session) return
+  if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
 
   const { id } = req.query
 

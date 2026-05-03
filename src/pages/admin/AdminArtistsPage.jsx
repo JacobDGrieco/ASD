@@ -55,6 +55,7 @@ function validateArtistForm(form) {
 export default function AdminArtistsPage() {
   const { token, session } = useAdminAuth()
   const isSuperAdmin = session?.role !== 'ARTIST'
+  const isViewer = session?.role === 'VIEWER'
   const auth = { Authorization: `Bearer ${token}` }
   const [artists, setArtists] = useState([])
   const [form, setForm] = useState(null)
@@ -235,7 +236,7 @@ export default function AdminArtistsPage() {
       <div className="admin-artists-page-sticky-top">
         <div className="admin-artists-page-header">
           <h1 className="admin-artists-page-title">Artists</h1>
-          {isSuperAdmin && <button onClick={openCreate} className="admin-artists-page-primary-btn">New Artist</button>}
+          {isSuperAdmin && !isViewer && <button onClick={openCreate} className="admin-artists-page-primary-btn">New Artist</button>}
         </div>
       </div>
 
@@ -243,7 +244,7 @@ export default function AdminArtistsPage() {
         <table className="admin-artists-page-table">
           <thead>
             <tr>
-              {isSuperAdmin && <th className="admin-artists-page-drag-header"></th>}
+              {isSuperAdmin && !isViewer && <th className="admin-artists-page-drag-header"></th>}
               {columns.map((column) => <th key={column.key} className={column.className}>{renderHeader(column)}</th>)}
               <th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
             </tr>
@@ -259,7 +260,7 @@ export default function AdminArtistsPage() {
                   handleDrop(artist.id)
                 }}
               >
-                {isSuperAdmin && (
+                {isSuperAdmin && !isViewer && (
                   <td className="admin-artists-page-drag-cell">
                     <button
                       type="button"
@@ -281,10 +282,12 @@ export default function AdminArtistsPage() {
                 ))}
                 <td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
                   <div className="admin-artists-page-actions">
-                    <button type="button" onClick={() => void openEdit(artist)} disabled={loadingEditId === artist.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit artist" title="Edit">
-                      <FaPencilAlt aria-hidden="true" />
-                    </button>
-                    {isSuperAdmin && (
+                    {!isViewer && (
+                      <button type="button" onClick={() => void openEdit(artist)} disabled={loadingEditId === artist.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit artist" title="Edit">
+                        <FaPencilAlt aria-hidden="true" />
+                      </button>
+                    )}
+                    {isSuperAdmin && !isViewer && (
                       <ConfirmActionButton
                         message="Delete this artist and all their albums/songs?"
                         onConfirm={() => handleDelete(artist.id)}

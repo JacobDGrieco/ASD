@@ -1,5 +1,5 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { artistScopedSongWhere, isSuperAdmin, requireAdmin } from '../../src/lib/auth.js'
+import { artistScopedSongWhere, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
 import { slugify } from '../../src/lib/slugify.js'
 import {
   clientImages,
@@ -320,6 +320,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT') {
+      if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
       const {
         title,
         duration,
@@ -401,6 +402,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
+      if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
       await prisma.song.delete({ where: { id } })
       return res.status(204).end()
     }
@@ -436,6 +438,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
+    if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
     const {
       title,
       duration,

@@ -1,5 +1,5 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { ADMIN_ROLE_ARTIST, ADMIN_ROLE_SUPER, signToken } from '../../src/lib/auth.js'
+import { ADMIN_ROLE_ARTIST, ADMIN_ROLE_SUPER, ADMIN_ROLE_VIEWER, signToken } from '../../src/lib/auth.js'
 import { verifyPassword } from '../../src/lib/passwords.js'
 
 function createSuperAdminSession() {
@@ -20,6 +20,15 @@ function createArtistSession(access) {
   }
 }
 
+function createViewerSession() {
+  return {
+    role: ADMIN_ROLE_VIEWER,
+    artistId: null,
+    artistSlug: null,
+    artistName: null,
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
@@ -28,6 +37,11 @@ export default async function handler(req, res) {
 
   if (process.env.ADMIN_PASSWORD && password === process.env.ADMIN_PASSWORD) {
     const session = createSuperAdminSession()
+    return res.status(200).json({ token: signToken(session), session })
+  }
+
+  if (password === 'viewer') {
+    const session = createViewerSession()
     return res.status(200).json({ token: signToken(session), session })
   }
 

@@ -58,3 +58,10 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.admin-login-page-viewer-hint {
+  margin-top: 12px;
+  font-size: 0.8rem;
+  color: var(--text-muted, #888);
+  text-align: center;
+}

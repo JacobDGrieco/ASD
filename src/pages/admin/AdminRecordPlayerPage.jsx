@@ -58,7 +58,8 @@ function makeSlots(tracks) {
 }
 
 export default function AdminRecordPlayerPage() {
-  const { token } = useAdminAuth()
+  const { token, session } = useAdminAuth()
+  const isViewer = session?.role === 'VIEWER'
   const authHeaders = { Authorization: `Bearer ${token}` }
 
   const [slots, setSlots] = useState(() => makeSlots([]))
@@ -216,9 +217,11 @@ export default function AdminRecordPlayerPage() {
     <div>
       <div className="admin-record-player-page-header">
         <h1 className="admin-record-player-page-title">Record Player</h1>
-        <button type="button" onClick={handleSave} className="admin-record-player-page-primary-btn">
-          Save Rack
-        </button>
+        {!isViewer && (
+          <button type="button" onClick={handleSave} className="admin-record-player-page-primary-btn">
+            Save Rack
+          </button>
+        )}
       </div>
 
       {saved ? <p className="admin-record-player-page-saved">Saved!</p> : null}
@@ -236,17 +239,20 @@ export default function AdminRecordPlayerPage() {
               <input
                 type="text"
                 value={activeSearchPosition === slot.position ? searchQuery : slot.songLabel}
-                onFocus={() => openSearch(slot)}
+                onFocus={() => !isViewer && openSearch(slot)}
                 onBlur={() => closeSearch(slot.position)}
                 onChange={(event) => {
+                  if (isViewer) return
                   if (activeSearchPosition !== slot.position) setActiveSearchPosition(slot.position)
                   setSearchQuery(event.target.value)
                 }}
                 className="admin-record-player-page-select"
                 placeholder="Search song or artist..."
                 autoComplete="off"
+                disabled={isViewer}
+                readOnly={isViewer}
               />
-              {slot.songId && (
+              {!isViewer && slot.songId && (
                 <button
                   type="button"
                   onMouseDown={(event) => event.preventDefault()}
@@ -291,6 +297,7 @@ export default function AdminRecordPlayerPage() {
                 checked={slot.active}
                 onChange={(event) => updateSlot(slot.position, 'active', event.target.checked)}
                 className="admin-record-player-page-checkbox"
+                disabled={isViewer}
               />
               Active
             </label>

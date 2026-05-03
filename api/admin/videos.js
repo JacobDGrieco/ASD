@@ -1,5 +1,5 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { canAccessArtist, isSuperAdmin, requireAdmin } from '../../src/lib/auth.js'
+import { canAccessArtist, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
 import { buildClientImageUrl } from '../../src/lib/images.js'
 import { buildStaticArtistVideoPath, normalizeArtistVideoInput, validateArtistVideoInput, ARTIST_VIDEO_SOURCE } from '../../src/lib/artistVideos.js'
 import { isOtherArtist } from '../../src/lib/publicVisibility.js'
@@ -63,6 +63,7 @@ async function ensureArtistVideoRows(session) {
 export default async function handler(req, res) {
   const session = requireAdmin(req, res)
   if (!session) return
+  if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
 
   if (req.method === 'GET') {
     const artists = await ensureArtistVideoRows(session)
@@ -91,6 +92,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'PUT') {
+    if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
     const { artistId } = req.query
     const targetArtistId = typeof artistId === 'string' && artistId ? artistId : session.artistId
     if (!targetArtistId) return res.status(400).json({ error: 'Artist id is required' })

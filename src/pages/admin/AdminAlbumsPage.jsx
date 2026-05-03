@@ -100,6 +100,7 @@ function validateAlbumForm(form, albums = []) {
 export default function AdminAlbumsPage() {
   const { token, session } = useAdminAuth()
   const isArtistScoped = session?.role === 'ARTIST'
+  const isViewer = session?.role === 'VIEWER'
   const scopedArtistId = session?.artistId ?? ''
   const auth = { Authorization: `Bearer ${token}` }
   const [albums, setAlbums] = useState([])
@@ -327,7 +328,7 @@ export default function AdminAlbumsPage() {
       <div className="admin-artists-page-sticky-top">
         <div className="admin-artists-page-header">
           <h1 className="admin-artists-page-title">Albums</h1>
-          <button onClick={openCreate} className="admin-artists-page-primary-btn">New Album</button>
+          {!isViewer && <button onClick={openCreate} className="admin-artists-page-primary-btn">New Album</button>}
         </div>
 
         <div className="admin-filter-bar">
@@ -380,18 +381,22 @@ export default function AdminAlbumsPage() {
                   ))}
                   <td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
                     <div className="admin-artists-page-actions">
-                      <button type="button" onClick={() => void openEdit(album)} disabled={loadingEditId === album.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit album" title="Edit">
-                        <FaPencilAlt aria-hidden="true" />
-                      </button>
-                      <ConfirmActionButton
-                        message="Delete this album and all its songs?"
-                        onConfirm={() => handleDelete(album.id)}
-                        buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-                        buttonAriaLabel="Delete album"
-                        buttonTitle="Delete"
-                      >
-                        <FaTrash aria-hidden="true" />
-                      </ConfirmActionButton>
+                      {!isViewer && (
+                        <button type="button" onClick={() => void openEdit(album)} disabled={loadingEditId === album.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit album" title="Edit">
+                          <FaPencilAlt aria-hidden="true" />
+                        </button>
+                      )}
+                      {!isViewer && (
+                        <ConfirmActionButton
+                          message="Delete this album and all its songs?"
+                          onConfirm={() => handleDelete(album.id)}
+                          buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+                          buttonAriaLabel="Delete album"
+                          buttonTitle="Delete"
+                        >
+                          <FaTrash aria-hidden="true" />
+                        </ConfirmActionButton>
+                      )}
                     </div>
                   </td>
                 </tr>

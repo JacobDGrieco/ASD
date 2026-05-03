@@ -1,5 +1,5 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { artistScopedSongWhere, requireAdmin } from '../../src/lib/auth.js'
+import { artistScopedSongWhere, isViewer, requireAdmin } from '../../src/lib/auth.js'
 
 async function loadSongForLyrics(session, songId) {
   return prisma.song.findFirst({
@@ -31,6 +31,7 @@ export default async function handler(req, res) {
     return res.status(200).json(blocks)
   }
   if (req.method === 'PUT') {
+    if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
     const { blocks } = req.body
     const existingBlocks = await prisma.lyricBlock.findMany({
       where: { songId },

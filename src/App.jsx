@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react'
-import { Routes, Route, Outlet } from 'react-router-dom'
+import { Routes, Route, Outlet, Navigate } from 'react-router-dom'
 import Nav from './components/shared/Nav.jsx'
 import HomePage from './pages/HomePage.jsx'
 import ArtistPage from './pages/ArtistPage.jsx'
@@ -39,6 +39,12 @@ function AdminHomeRedirect() {
   return <AdminArtistsPage />
 }
 
+function AdminVideosAccessRoute() {
+  const { session } = useAdminAuth()
+  if (session?.role === 'VIEWER') return <Navigate to="/admin" replace />
+  return <AdminVideosPage />
+}
+
 export default function App() {
   return (
     <AdminProvider>
@@ -60,7 +66,7 @@ export default function App() {
               <Route path="/admin/accounts" element={<AdminAccountsPage />} />
               <Route path="/admin/artists" element={<AdminArtistsPage />} />
               <Route path="/admin/albums" element={<AdminAlbumsPage />} />
-              <Route path="/admin/videos" element={<AdminVideosPage />} />
+              <Route path="/admin/videos" element={<AdminVideosAccessRoute />} />
               <Route path="/admin/songs" element={<AdminSongsPage />} />
               <Route path="/admin/lyrics/:songId" element={<AdminLyricsPage />} />
               <Route path="/admin/record-player" element={<AdminRecordPlayerPage />} />

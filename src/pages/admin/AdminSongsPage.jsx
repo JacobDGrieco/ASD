@@ -190,6 +190,7 @@ function hasAlbumErrors(errors) {
 export default function AdminSongsPage() {
   const { token, session } = useAdminAuth()
   const isArtistScoped = session?.role === 'ARTIST'
+  const isViewer = session?.role === 'VIEWER'
   const auth = { Authorization: `Bearer ${token}` }
   const initialFilterState = (() => {
     if (typeof window === 'undefined') {
@@ -596,9 +597,11 @@ export default function AdminSongsPage() {
       <div className="admin-artists-page-sticky-top">
         <div className="admin-artists-page-header">
           <h1 className="admin-artists-page-title">Songs</h1>
-          <button onClick={openCreate} className="admin-artists-page-primary-btn">
-            New Song
-          </button>
+          {!isViewer && (
+            <button onClick={openCreate} className="admin-artists-page-primary-btn">
+              New Song
+            </button>
+          )}
         </div>
 
         <div className="admin-filter-bar">
@@ -699,18 +702,22 @@ export default function AdminSongsPage() {
                       >
                         <FaStickyNote aria-hidden="true" />
                       </Link>
-                      <button type="button" onClick={() => void openEdit(song)} disabled={loadingEditId === song.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit song" title="Edit">
-                        <FaPencilAlt aria-hidden="true" />
-                      </button>
-                      <ConfirmActionButton
-                        message="Delete this song and all its lyrics/annotations?"
-                        onConfirm={() => handleDelete(song.id)}
-                        buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-                        buttonAriaLabel="Delete song"
-                        buttonTitle="Delete"
-                      >
-                        <FaTrash aria-hidden="true" />
-                      </ConfirmActionButton>
+                      {!isViewer && (
+                        <button type="button" onClick={() => void openEdit(song)} disabled={loadingEditId === song.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit song" title="Edit">
+                          <FaPencilAlt aria-hidden="true" />
+                        </button>
+                      )}
+                      {!isViewer && (
+                        <ConfirmActionButton
+                          message="Delete this song and all its lyrics/annotations?"
+                          onConfirm={() => handleDelete(song.id)}
+                          buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+                          buttonAriaLabel="Delete song"
+                          buttonTitle="Delete"
+                        >
+                          <FaTrash aria-hidden="true" />
+                        </ConfirmActionButton>
+                      )}
                     </div>
                   </td>
                 </tr>
