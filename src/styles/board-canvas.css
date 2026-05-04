@@ -1,0 +1,28 @@
+.board-viewport {
+  position: fixed;
+  inset: 0;
+  top: 52px;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+}
+
+.board-viewport:active { cursor: grabbing; }
+.board-viewport-edit { cursor: default; }
+.board-viewport-edit:active { cursor: default; }
+
+.board-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: #b5864d;
+  background-image:
+    radial-gradient(ellipse at 15% 20%, #c8986a 0%, transparent 40%),
+    radial-gradient(ellipse at 85% 75%, #9e7038 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 50%, #b88950 0%, transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Crect width='6' height='6' fill='%23b5864d'/%3E%3Ccircle cx='1' cy='1' r='0.6' fill='%23a07040' opacity='0.35'/%3E%3Ccircle cx='4' cy='4' r='0.5' fill='%23c49060' opacity='0.25'/%3E%3Ccircle cx='2' cy='5' r='0.4' fill='%23906030' opacity='0.3'/%3E%3C/svg%3E");
+  box-shadow:
+    inset 0 0 0 8px #7a5530,
+    inset 0 0 0 14px #5a3e22,
+    inset 0 0 0 16px #7a5530;
+}

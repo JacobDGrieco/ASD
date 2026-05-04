@@ -3,7 +3,7 @@ import { canAccessArtist, isSuperAdmin, isViewer, requireAdmin } from '../../src
 import { hashPassword } from '../../src/lib/passwords.js'
 import { validateUniqueArtistPassword } from '../../src/lib/adminAccounts.js'
 import { clientImages, mergeLegacyImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js'
-import { isOtherArtist } from '../../src/lib/publicVisibility.js'
+import { isReservedHiddenArtist } from '../../src/lib/publicVisibility.js'
 import { slugify } from '../../src/lib/slugify.js'
 
 function withImages(artist) {
@@ -120,7 +120,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'PUT') {
       if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
-      if (isOtherArtist(existingArtist)) return res.status(403).json({ error: 'The Other artist is reserved.' })
+      if (isReservedHiddenArtist(existingArtist)) return res.status(403).json({ error: 'This reserved artist cannot be edited here.' })
       const {
         name,
         slug,
@@ -179,7 +179,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'DELETE') {
       if (!isSuperAdmin(session)) return res.status(403).json({ error: 'Forbidden' })
-      if (isOtherArtist(existingArtist)) return res.status(403).json({ error: 'The Other artist is reserved.' })
+      if (isReservedHiddenArtist(existingArtist)) return res.status(403).json({ error: 'This reserved artist cannot be deleted here.' })
       await prisma.artist.delete({ where: { id } })
       return res.status(204).end()
     }
@@ -205,7 +205,7 @@ export default async function handler(req, res) {
     })
     return res.status(200).json(
       artists
-        .filter((artist) => !isOtherArtist(artist))
+        .filter((artist) => !isReservedHiddenArtist(artist))
         .map(withListImages)
     )
   }
@@ -233,7 +233,7 @@ export default async function handler(req, res) {
       images,
       adminPassword,
     } = req.body
-    if (isOtherArtist(slug || name)) return res.status(400).json({ error: 'The Other artist is reserved.' })
+    if (isReservedHiddenArtist(slug || name)) return res.status(400).json({ error: 'This artist name is reserved.' })
     const passwordError = await validateUniqueArtistPassword(adminPassword)
     if (passwordError) return res.status(400).json({ error: passwordError })
     const normalizedImages = normalizeImageInput(images, 'portrait')

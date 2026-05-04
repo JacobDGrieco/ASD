@@ -6,6 +6,7 @@ import ArtistPage from './pages/ArtistPage.jsx'
 import VideosPage from './pages/VideosPage.jsx'
 import SongPage from './pages/SongPage.jsx'
 import AlbumPage from './pages/AlbumPage.jsx'
+import BoardPage from './pages/BoardPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import AdminLayout from './components/admin/AdminLayout.jsx'
 import AdminRoute from './components/admin/AdminRoute.jsx'
@@ -15,6 +16,7 @@ const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage.jsx'))
 const AdminAccountsPage = lazy(() => import('./pages/admin/AdminAccountsPage.jsx'))
 const AdminArtistsPage = lazy(() => import('./pages/admin/AdminArtistsPage.jsx'))
 const AdminAlbumsPage = lazy(() => import('./pages/admin/AdminAlbumsPage.jsx'))
+const AdminBoardPage = lazy(() => import('./pages/admin/AdminBoardPage.jsx'))
 const AdminVideosPage = lazy(() => import('./pages/admin/AdminVideosPage.jsx'))
 const AdminSongsPage = lazy(() => import('./pages/admin/AdminSongsPage.jsx'))
 const AdminLyricsPage = lazy(() => import('./pages/admin/AdminLyricsPage.jsx'))
@@ -52,6 +54,7 @@ export default function App() {
         <Routes>
           <Route element={<PublicLayout />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/board" element={<BoardPage />} />
             <Route path="/videos" element={<VideosPage />} />
             <Route path="/artists/:slug" element={<ArtistPage />} />
             <Route path="/songs/:songSlug" element={<SongPage />} />
@@ -66,6 +69,7 @@ export default function App() {
               <Route path="/admin/accounts" element={<AdminAccountsPage />} />
               <Route path="/admin/artists" element={<AdminArtistsPage />} />
               <Route path="/admin/albums" element={<AdminAlbumsPage />} />
+              <Route path="/admin/board" element={<AdminBoardPage />} />
               <Route path="/admin/videos" element={<AdminVideosAccessRoute />} />
               <Route path="/admin/songs" element={<AdminSongsPage />} />
               <Route path="/admin/lyrics/:songId" element={<AdminLyricsPage />} />

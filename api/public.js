@@ -1,7 +1,7 @@
 import { prisma } from '../src/lib/prisma.js'
 import { buildClientImageUrl, clientImages, mergeLegacyImages } from '../src/lib/images.js'
 import { ARTIST_VIDEO_SOURCE, buildStaticArtistVideoPath, getYouTubeEmbedUrl } from '../src/lib/artistVideos.js'
-import { isOtherArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js'
+import { isReservedHiddenArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js'
 import { isReleasedOnUtcDay } from '../src/lib/releaseSchedule.js'
 
 const VIDEO_BASE_URL = process.env.VIDEO_BASE_URL || process.env.VITE_VIDEO_BASE_URL || ''
@@ -129,7 +129,7 @@ function isPublicSongReleased(song, fallbackReleaseDate, now) {
 }
 
 function isPublicArtistVisible(artist) {
-  return !isOtherArtist(artist)
+  return !isReservedHiddenArtist(artist)
 }
 
 function formatArtistVideo(video) {
@@ -607,6 +607,40 @@ async function getRecordPlayer(res) {
   }
 }
 
+async function getBoardPosts(res) {
+  setPublicCache(res)
+  const now = new Date()
+  const ageCap = new Date()
+  ageCap.setDate(ageCap.getDate() - 90)
+
+  const posts = await prisma.boardPost.findMany({
+    where: {
+      publishedAt: { not: null, lte: now },
+      archivedAt: null,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      AND: [{ publishedAt: { gte: ageCap } }],
+    },
+    orderBy: { publishedAt: 'desc' },
+    take: 25,
+    select: {
+      id: true,
+      title: true,
+      headline: true,
+      body: true,
+      imageUrl: true,
+      posX: true,
+      posY: true,
+      rotation: true,
+      positionPinnedUntil: true,
+      pinColor: true,
+      publishedAt: true,
+      artist: { select: { id: true, name: true, slug: true } },
+    },
+  })
+
+  return res.status(200).json(posts)
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
@@ -620,6 +654,7 @@ export default async function handler(req, res) {
   if (resource === 'song' && slug) return getSong(res, slug, albumSlug)
   if (resource === 'videos') return getVideos(res)
   if (resource === 'recordPlayer') return getRecordPlayer(res)
+  if (resource === 'boardPosts') return getBoardPosts(res)
 
   return res.status(404).json({ error: 'Not found' })
 }

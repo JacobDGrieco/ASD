@@ -1,0 +1,281 @@
+.admin-board-page {
+  padding: 24px;
+}
+
+.admin-board-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.admin-board-page-title {
+  font-size: 22px;
+  color: #c8a96e;
+  letter-spacing: 2px;
+}
+
+.admin-board-page-new-btn {
+  background: #c8a96e;
+  color: #0a0a0a;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+}
+
+.admin-board-page-loading {
+  color: #888;
+  font-size: 14px;
+}
+
+.admin-board-page-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-board-page-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin-board-page-table th,
+.admin-board-page-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #2a2a2a;
+  color: #e0d6c8;
+}
+
+.admin-board-page-table th {
+  color: #888;
+  font-weight: normal;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-board-page-col-thumb { width: 60px; }
+.admin-board-page-col-sm { width: 120px; }
+.admin-board-page-col-pos { width: 180px; }
+.admin-board-page-col-actions { width: 120px; }
+
+.admin-board-page-thumb {
+  width: 40px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 2px;
+  display: block;
+}
+
+.admin-board-page-thumb-placeholder {
+  width: 40px;
+  height: 60px;
+  background: #2a2a2a;
+  border-radius: 2px;
+}
+
+.admin-board-page-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.admin-board-page-badge-published { background: #1a3a1a; color: #6dc86d; }
+.admin-board-page-badge-draft { background: #2a2a1a; color: #c8c86d; }
+.admin-board-page-badge-archived { background: #2a1a1a; color: #c86d6d; }
+.admin-board-page-badge-draft { color: #888; background: none; font-size: 11px; }
+
+.admin-board-page-release-btn {
+  display: block;
+  margin-top: 4px;
+  background: none;
+  border: 1px solid #555;
+  color: #888;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.admin-board-page-release-btn:hover { color: #c8a96e; border-color: #c8a96e; }
+
+.admin-board-page-archived {
+  margin-top: 32px;
+  border-top: 1px solid #2a2a2a;
+  padding-top: 16px;
+}
+
+.admin-board-page-archived-toggle {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+
+.admin-board-page .admin-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.admin-board-page .admin-modal-field,
+.admin-board-page .admin-modal-field-full {
+  gap: 8px;
+}
+
+.admin-board-page-form-message {
+  padding: 12px 14px;
+  border: 1px solid rgba(224, 96, 96, 0.35);
+  border-radius: 10px;
+  background: rgba(224, 96, 96, 0.08);
+  color: #f0b0b0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-board-page-field-error {
+  margin: 0;
+  color: #e38b8b;
+  font-size: 12px;
+}
+
+.admin-board-page-text-input,
+.admin-board-page-date-input,
+.admin-board-page-color-input {
+  width: 100%;
+  min-height: 42px;
+  background: linear-gradient(180deg, #151515, #101010);
+  border: 1px solid #2d2d2d;
+  color: #e7dcc9;
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.admin-board-page-text-input,
+.admin-board-page-date-input {
+  padding: 0 14px;
+  font-size: 14px;
+}
+
+.admin-board-page-text-input::placeholder {
+  color: #756b60;
+}
+
+.admin-board-page-text-input:focus,
+.admin-board-page-date-input:focus,
+.admin-board-page-color-input:focus {
+  outline: none;
+  border-color: rgba(200, 169, 110, 0.9);
+  box-shadow: 0 0 0 3px rgba(200, 169, 110, 0.14);
+}
+
+.admin-board-page-input-invalid {
+  border-color: rgba(224, 96, 96, 0.9);
+  box-shadow: 0 0 0 3px rgba(224, 96, 96, 0.12);
+}
+
+.admin-board-page-settings-row {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 16px;
+  align-items: end;
+  padding-top: 4px;
+}
+
+.admin-board-page-select-input {
+  appearance: none;
+}
+
+.admin-board-page-color-field {
+  min-width: 0;
+}
+
+.admin-board-page-color-input {
+  height: 42px;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.admin-board-page-date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(78%) sepia(12%) saturate(688%) hue-rotate(358deg) brightness(93%) contrast(87%);
+}
+
+.admin-board-page-publish-panel {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(24, 24, 24, 0.95), rgba(16, 16, 16, 0.98));
+}
+
+.admin-board-page-publish-header {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-board-page-publish-summary {
+  color: #b7ab9a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-board-page-publish-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-board-page-publish-option {
+  min-width: 120px;
+  padding: 10px 14px;
+  border: 1px solid #343434;
+  border-radius: 10px;
+  background: #121212;
+  color: #b7ab9a;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.admin-board-page-publish-option:hover {
+  border-color: #6c5b40;
+  color: #f1e5d2;
+}
+
+.admin-board-page-publish-option-active {
+  border-color: #c8a96e;
+  background: rgba(200, 169, 110, 0.14);
+  color: #f5e6cc;
+}
+
+.admin-board-page-publish-date-field {
+  max-width: 220px;
+}
+
+@media (max-width: 720px) {
+  .admin-board-page-settings-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-board-page-publish-options {
+    flex-direction: column;
+  }
+
+  .admin-board-page-publish-option,
+  .admin-board-page-publish-date-field {
+    max-width: none;
+    width: 100%;
+  }
+}

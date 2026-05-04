@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, NavLink, Link } from 'react-router-dom';
-import { FaChevronLeft, FaChevronRight, FaCompactDisc, FaMicrophoneAlt, FaMusic, FaSignOutAlt, FaUserShield, FaVideo, FaRecordVinyl } from 'react-icons/fa';
+import { FaBullhorn, FaChevronLeft, FaChevronRight, FaCompactDisc, FaMicrophoneAlt, FaMusic, FaSignOutAlt, FaUserShield, FaVideo, FaRecordVinyl } from 'react-icons/fa';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import '../../styles/AdminLayout.css';
 
@@ -33,6 +33,7 @@ export default function AdminLayout() {
 			{ to: '/admin/artists', label: 'Artists', icon: <FaMicrophoneAlt aria-hidden="true" /> },
 		] : []),
 		{ to: '/admin/albums', label: 'Albums', icon: <FaCompactDisc aria-hidden="true" /> },
+		{ to: '/admin/board', label: 'Board', icon: <FaBullhorn aria-hidden="true" /> },
 		...(!isViewer ? [{ to: '/admin/videos', label: 'Videos', icon: <FaVideo aria-hidden="true" /> }] : []),
 		{ to: '/admin/songs', label: 'Songs', icon: <FaMusic aria-hidden="true" /> },
 		...(!isArtistScoped ? [{ to: '/admin/record-player', label: 'Record Player', icon: <FaRecordVinyl aria-hidden="true" /> }] : []),

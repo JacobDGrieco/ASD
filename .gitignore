@@ -33,6 +33,6 @@ imgs
 .worktrees
 docs/superpowers
 .claude
-
+.superpowers
 .vercel
 .env*.local

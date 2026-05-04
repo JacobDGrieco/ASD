@@ -28,6 +28,7 @@ model Artist {
   youtubeSocialProfile String?
   images            ArtistImage[]
   albums            Album[]
+  boardPosts        BoardPost[]
   videos            ArtistVideo[]
   adminAccess       ArtistAdminAccess?
   createdAt         DateTime @default(now())
@@ -217,4 +218,27 @@ model RecordPlayerTrack {
 
   @@unique([position])
   @@index([songId])
+}
+
+model BoardPost {
+  id                  String    @id @default(cuid())
+  artistId            String
+  artist              Artist    @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  title               String
+  headline            String
+  body                String    @default("")
+  imageUrl            String?
+  posX                Float?
+  posY                Float?
+  rotation            Float?
+  positionPinnedUntil DateTime?
+  pinColor            String?
+  publishedAt         DateTime?
+  archivedAt          DateTime?
+  expiresAt           DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([artistId])
+  @@index([publishedAt])
 }
