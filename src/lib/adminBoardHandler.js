@@ -1,6 +1,6 @@
-import { prisma } from '../../src/lib/prisma.js'
-import { isArtistAdmin, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
-import { ASD_RECORDS_ARTIST_NAME, ASD_RECORDS_ARTIST_OPTION_ID, ASD_RECORDS_ARTIST_SLUG } from '../../src/lib/publicVisibility.js'
+import { prisma } from './prisma.js'
+import { isArtistAdmin, isSuperAdmin, isViewer } from './auth.js'
+import { ASD_RECORDS_ARTIST_NAME, ASD_RECORDS_ARTIST_OPTION_ID, ASD_RECORDS_ARTIST_SLUG } from './publicVisibility.js'
 
 const BOARD_COUNT_CAP = 25
 const BOARD_AGE_DAYS = 90
@@ -95,10 +95,7 @@ async function autoArchiveOldest() {
   })
 }
 
-export default async function handler(req, res) {
-  const session = requireAdmin(req, res)
-  if (!session) return
-
+export async function handleAdminBoard(req, res, session) {
   const { id, action } = req.query
 
   if (id) {

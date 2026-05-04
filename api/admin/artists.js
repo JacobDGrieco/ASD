@@ -2,6 +2,7 @@ import { prisma } from '../../src/lib/prisma.js'
 import { canAccessArtist, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
 import { hashPassword } from '../../src/lib/passwords.js'
 import { validateUniqueArtistPassword } from '../../src/lib/adminAccounts.js'
+import { handleAdminBoard } from '../../src/lib/adminBoardHandler.js'
 import { clientImages, mergeLegacyImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js'
 import { isReservedHiddenArtist } from '../../src/lib/publicVisibility.js'
 import { slugify } from '../../src/lib/slugify.js'
@@ -105,6 +106,7 @@ function buildAdminAccessUpdate(adminPassword) {
 export default async function handler(req, res) {
   const session = requireAdmin(req, res)
   if (!session) return
+  if (req.query.resource === 'board') return handleAdminBoard(req, res, session)
 
   const { id } = req.query
 
