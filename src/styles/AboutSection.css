@@ -17,3 +17,13 @@
   color: var(--text-muted);
   max-width: 620px;
 }
+
+@media (max-width: 640px) {
+  .about-section-section {
+    padding: 28px 0;
+  }
+
+  .about-section-text {
+    line-height: 1.75;
+  }
+}

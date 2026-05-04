@@ -1,7 +1,7 @@
 .board-viewport {
   position: fixed;
   inset: 0;
-  top: 52px;
+  top: var(--nav-height);
   overflow: hidden;
   cursor: grab;
   user-select: none;

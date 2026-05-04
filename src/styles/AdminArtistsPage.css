@@ -814,3 +814,74 @@
 	border-top: 1px solid var(--border);
 	flex-shrink: 0;
 }
+
+@media (max-width: 900px) {
+	.admin-artists-page-header {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 12px;
+	}
+
+	.admin-artists-page-sticky-top {
+		top: 0;
+	}
+
+	.admin-pagination {
+		justify-content: space-between;
+		flex-wrap: wrap;
+	}
+}
+
+@media (max-width: 720px) {
+	.admin-artists-page-form {
+		padding: 18px 16px;
+	}
+
+	.admin-artists-page-fields,
+	.admin-modal-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.admin-artists-page-form-actions,
+	.admin-modal-footer {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.admin-artists-page-form-actions > *,
+	.admin-modal-footer > * {
+		width: 100%;
+	}
+
+	.admin-modal-overlay {
+		padding: 12px;
+	}
+
+	.admin-modal {
+		max-height: calc(100vh - 24px);
+	}
+
+	.admin-modal-header,
+	.admin-modal-body,
+	.admin-modal-footer {
+		padding-left: 16px;
+		padding-right: 16px;
+	}
+
+	.admin-artists-page-upload-controls {
+		flex-direction: column;
+	}
+
+	.admin-artists-page-url-import {
+		grid-template-columns: 1fr;
+	}
+
+	.admin-filter-bar {
+		align-items: stretch;
+	}
+
+	.admin-filter-select {
+		width: 100%;
+		min-width: 0;
+	}
+}

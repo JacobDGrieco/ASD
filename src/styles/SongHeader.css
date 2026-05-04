@@ -144,7 +144,8 @@
 @media (max-width: 720px) {
 	.song-header-header {
 		flex-direction: column;
-		padding: 88px 24px 32px;
+		padding: 92px 20px 28px;
+		gap: 22px;
 	}
 
 	.song-header-media-column {
@@ -161,5 +162,17 @@
 	.song-header-stream-links {
 		width: 100%;
 		justify-content: center;
+	}
+}
+
+@media (max-width: 480px) {
+	.song-header-title {
+		font-size: 1.8rem;
+	}
+
+	.song-header-meta,
+	.song-header-artist-link,
+	.song-header-featured-artists {
+		font-size: 0.78rem;
 	}
 }

@@ -210,3 +210,48 @@
 		font-size: 0.9rem;
 	}
 }
+
+@media (max-width: 640px) {
+	.turntable-wrap {
+		gap: 18px;
+	}
+
+	.turntable-scene {
+		width: min(100vw - 32px, 360px);
+		height: min(84vw, 300px);
+	}
+
+	.turntable-body {
+		border-radius: 24px;
+	}
+
+	.turntable-body::before {
+		inset: 18px;
+		border-radius: 18px;
+	}
+
+	.turntable-platter {
+		width: 190px;
+		height: 190px;
+		left: 41%;
+	}
+
+	.turntable-label,
+	.turntable-label-blank {
+		width: 76px;
+		height: 76px;
+	}
+
+	.turntable-tonearm {
+		width: 132px;
+		right: 6%;
+	}
+
+	.turntable-track-title {
+		font-size: 1rem;
+	}
+
+	.turntable-track-artist {
+		font-size: 0.82rem;
+	}
+}

@@ -310,7 +310,9 @@ export default function AdminBoardPage() {
 				)}
 			</div>
 
-			{!loading ? (
+			{loading ? (
+				<p className="admin-board-page-loading">Loading posts...</p>
+			) : (
 				<div className="admin-board-page-table-wrap">
 					<table className="admin-board-page-table">
 						<thead>
@@ -327,7 +329,7 @@ export default function AdminBoardPage() {
 						<tbody>{activePosts.map(renderRow)}</tbody>
 					</table>
 				</div>
-			) : ""}
+			)}
 
 			{isSuperAdmin && archivedPosts.length > 0 && (
 				<div className="admin-board-page-archived">
@@ -335,39 +337,43 @@ export default function AdminBoardPage() {
 						className="admin-board-page-archived-toggle"
 						onClick={() => setArchivedOpen((v) => !v)}
 					>
-						{archivedOpen ? '▾' : '▸'} Archived ({archivedPosts.length})
+						{archivedOpen ? 'v' : '>'} Archived ({archivedPosts.length})
 					</button>
 					{archivedOpen && (
-						<table className="admin-board-page-table">
-							<tbody>
-								{archivedPosts.map((post) => (
-									<tr key={post.id}>
-										<td className="admin-board-page-col-thumb">
-											{post.imageUrl
-												? <img src={post.imageUrl} alt={post.title} className="admin-board-page-thumb" />
-												: <div className="admin-board-page-thumb-placeholder" />}
-										</td>
-										<td className="admin-board-page-col-title">{post.title}</td>
-										<td className="admin-board-page-col-sm">{post.artist?.name}</td>
-										<td colSpan={3} />
-										<td className="admin-board-page-col-actions">
-											<button
-												className="admin-artists-page-ghost-btn"
-												onClick={() => toggleArchive(post, false)}
-											>Restore</button>
-											<ConfirmActionButton
-												message="Delete this archived board post?"
-												buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-												buttonAriaLabel="Delete archived post"
-												onConfirm={() => deletePost(post)}
-											>
-												<FaTrash />
-											</ConfirmActionButton>
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
+						<div className="admin-board-page-table-wrap">
+							<table className="admin-board-page-table">
+								<tbody>
+									{archivedPosts.map((post) => (
+										<tr key={post.id}>
+											<td className="admin-board-page-col-thumb">
+												{post.imageUrl
+													? <img src={post.imageUrl} alt={post.title} className="admin-board-page-thumb" />
+													: <div className="admin-board-page-thumb-placeholder" />}
+											</td>
+											<td className="admin-board-page-col-title">{post.title}</td>
+											<td className="admin-board-page-col-sm">{post.artist?.name}</td>
+											<td colSpan={3} />
+											<td className="admin-board-page-col-actions">
+												<button
+													className="admin-artists-page-ghost-btn"
+													onClick={() => toggleArchive(post, false)}
+												>
+													Restore
+												</button>
+												<ConfirmActionButton
+													message="Delete this archived board post?"
+													buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+													buttonAriaLabel="Delete archived post"
+													onConfirm={() => deletePost(post)}
+												>
+													<FaTrash />
+												</ConfirmActionButton>
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
 					)}
 				</div>
 			)}
@@ -377,7 +383,7 @@ export default function AdminBoardPage() {
 					<div className="admin-modal" onClick={(e) => e.stopPropagation()}>
 						<div className="admin-modal-header">
 							<h2 className="admin-modal-title">{editing ? 'Edit Post' : 'New Post'}</h2>
-							<button className="admin-modal-close" onClick={closeModal}>✕</button>
+							<button className="admin-modal-close" onClick={closeModal}>x</button>
 						</div>
 						<div className="admin-modal-body">
 							{formMessage ? (
@@ -530,7 +536,7 @@ export default function AdminBoardPage() {
 							<button type="button" className="admin-artists-page-ghost-btn" onClick={closeModal}>Cancel</button>
 							<button type="button" className="admin-artists-page-primary-btn" onClick={save} disabled={saving}>
 								{saving
-									? 'Saving…'
+									? 'Saving...'
 									: form.publishMode === 'draft'
 										? 'Save Draft'
 										: form.publishMode === 'publish'

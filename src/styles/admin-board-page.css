@@ -265,6 +265,26 @@
 }
 
 @media (max-width: 720px) {
+  .admin-board-page {
+    padding: 0;
+  }
+
+  .admin-board-page-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .admin-board-page-new-btn {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .admin-board-page-table th,
+  .admin-board-page-table td {
+    padding: 10px;
+  }
+
   .admin-board-page-settings-row {
     grid-template-columns: 1fr;
   }
@@ -277,5 +297,11 @@
   .admin-board-page-publish-date-field {
     max-width: none;
     width: 100%;
+  }
+
+  .admin-board-page .admin-modal-body,
+  .admin-board-page .admin-modal-footer {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 }

@@ -23,3 +23,13 @@
     gap: 56px;
   }
 }
+
+@media (max-width: 640px) {
+  .record-player-section {
+    padding: 72px 16px 80px;
+  }
+
+  .record-player-inner {
+    gap: 40px;
+  }
+}

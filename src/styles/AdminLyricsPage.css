@@ -192,7 +192,20 @@
 }
 
 @media (max-width: 900px) {
+  .admin-lyrics-page-header,
+  .admin-lyrics-page-bulk-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .admin-lyrics-page-editor-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-lyrics-page-editor-row,
+  .admin-lyrics-page-annotation-editor-row {
+    grid-template-columns: 42px minmax(0, 1fr);
   }
 }

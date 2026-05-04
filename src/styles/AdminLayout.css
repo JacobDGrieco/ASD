@@ -198,3 +198,88 @@
   padding: 32px 40px;
   overflow-y: auto;
 }
+
+@media (max-width: 900px) {
+  .admin-layout-layout {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .admin-layout-sidebar,
+  .admin-layout-sidebar-collapsed {
+    width: 100%;
+    height: auto;
+    padding: 12px 16px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    overflow: visible;
+  }
+
+  .admin-layout-brand-row,
+  .admin-layout-sidebar-collapsed .admin-layout-brand-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 0 0 12px;
+    margin-bottom: 12px;
+  }
+
+  .admin-layout-brand,
+  .admin-layout-sidebar-collapsed .admin-layout-brand {
+    justify-content: flex-start;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .admin-layout-collapse-btn {
+    display: none;
+  }
+
+  .admin-layout-nav,
+  .admin-layout-sidebar-collapsed .admin-layout-nav {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 8px;
+    padding: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .admin-layout-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .admin-layout-link,
+  .admin-layout-sidebar-collapsed .admin-layout-link {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 10px 14px;
+    gap: 8px;
+  }
+
+  .admin-layout-sidebar-collapsed .admin-layout-label,
+  .admin-layout-label {
+    width: auto;
+    opacity: 1;
+  }
+
+  .admin-layout-sidebar-collapsed .admin-layout-link-icon,
+  .admin-layout-sidebar-collapsed .admin-layout-brand-icon {
+    margin: 0;
+  }
+
+  .admin-layout-logout,
+  .admin-layout-sidebar-collapsed .admin-layout-logout {
+    margin: 12px 0 0;
+    width: fit-content;
+    min-height: 40px;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+
+  .admin-layout-main {
+    padding: 24px 20px 32px;
+    overflow: visible;
+  }
+}

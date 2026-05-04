@@ -135,6 +135,59 @@
 	text-decoration: none;
 }
 
+@media (max-width: 960px) {
+	.artist-hero-hero {
+		gap: 36px;
+		padding: 108px 32px 52px;
+	}
+
+	.artist-hero-portrait-wrap {
+		width: 232px;
+		padding: 12px;
+	}
+
+	.artist-hero-info {
+		padding-top: 12px;
+	}
+
+	.artist-hero-name {
+		font-size: 2.4rem;
+	}
+}
+
+@media (max-width: 720px) {
+	.artist-hero-hero {
+		flex-direction: column;
+		gap: 24px;
+		padding: 96px 20px 40px;
+	}
+
+	.artist-hero-portrait-wrap {
+		width: min(100%, 280px);
+		padding: 0;
+	}
+
+	.artist-hero-info {
+		max-width: none;
+		padding-top: 0;
+	}
+
+	.artist-hero-name {
+		font-size: 2rem;
+	}
+
+	.artist-hero-about {
+		font-size: 0.92rem;
+		line-height: 1.7;
+	}
+
+	.artist-hero-links a {
+		width: 44px;
+		height: 44px;
+		font-size: 1.15rem;
+	}
+}
+
 @keyframes artist-portrait-enter {
 	from {
 		opacity: 0.3;

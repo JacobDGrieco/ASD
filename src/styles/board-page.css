@@ -40,3 +40,20 @@
 .board-edit-fab:hover { background: #2a2010; }
 .board-edit-fab-active { background: #c8a96e; color: #1a1008; }
 .board-edit-fab-active:hover { background: #b89860; }
+
+@media (max-width: 640px) {
+  .board-drag-hint {
+    bottom: 18px;
+    width: calc(100vw - 32px);
+    padding: 8px 12px;
+    font-size: 10px;
+    text-align: center;
+  }
+
+  .board-edit-fab {
+    right: 16px;
+    bottom: 16px;
+    padding: 10px 14px;
+    font-size: 11px;
+  }
+}

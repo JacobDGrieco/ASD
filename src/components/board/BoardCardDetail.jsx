@@ -47,7 +47,7 @@ export default function BoardCardDetail({ post, onClose }) {
             style={{ perspective: 1200 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <button className="board-detail-close" onClick={onClose} aria-label="Close">✕</button>
+            <button className="board-detail-close" onClick={onClose} aria-label="Close">x</button>
             {post.imageUrl && (
               <img src={post.imageUrl} alt={post.title} className="board-detail-image" />
             )}

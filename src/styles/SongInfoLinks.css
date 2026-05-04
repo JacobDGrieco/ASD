@@ -37,3 +37,18 @@
   color: var(--text);
   background: var(--bg-raised);
 }
+
+@media (max-width: 640px) {
+  .song-info-links-section {
+    padding: 28px 0 40px;
+  }
+
+  .song-info-links-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .song-info-links-label {
+    min-width: 0;
+  }
+}

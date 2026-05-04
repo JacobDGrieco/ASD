@@ -84,7 +84,7 @@
 .board-detail-backdrop {
   position: fixed;
   inset: 0;
-  top: 52px;
+  top: var(--nav-height);
   background: rgba(0, 0, 0, 0.82);
   backdrop-filter: blur(4px);
   z-index: 400;
@@ -165,3 +165,28 @@
 .board-detail-content p { margin: 0 0 10px; }
 .board-detail-content ul { margin: 0 0 10px; padding-left: 20px; }
 .board-detail-content a { color: #8a5a1e; text-decoration: underline; }
+
+@media (max-width: 640px) {
+  .board-detail-backdrop {
+    padding: 16px;
+    align-items: flex-start;
+  }
+
+  .board-detail-card {
+    width: 100%;
+    max-height: calc(100vh - var(--nav-height) - 32px);
+    margin-top: 8px;
+  }
+
+  .board-detail-image {
+    max-height: 220px;
+  }
+
+  .board-detail-body {
+    padding: 20px 18px 22px;
+  }
+
+  .board-detail-title {
+    font-size: 1.35rem;
+  }
+}

@@ -42,3 +42,9 @@
     transform: translateY(0);
   }
 }
+
+@media (max-width: 720px) {
+  .discography-section {
+    padding: 44px 20px;
+  }
+}

@@ -85,7 +85,7 @@ export default function BoardPage() {
       <BoardCardDetail post={selectedPost} onClose={() => setSelectedPost(null)} />
 
       {showHint && (
-        <div className="board-drag-hint">↔ Drag to explore the board</div>
+        <div className="board-drag-hint">Drag to explore the board</div>
       )}
 
       {isSuperAdmin && (

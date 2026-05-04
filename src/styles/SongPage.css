@@ -117,3 +117,15 @@
 		padding: 24px 16px 28px;
 	}
 }
+
+@media (max-width: 420px) {
+	.page-tabview .p-tabview-nav li {
+		flex: 1 0 auto;
+	}
+
+	.page-tabview .p-tabview-nav li .p-tabview-nav-link {
+		padding-left: 0.8rem;
+		padding-right: 0.8rem;
+		font-size: 0.9rem;
+	}
+}

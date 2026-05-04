@@ -241,3 +241,23 @@
     padding: 14px;
   }
 }
+
+@media (max-width: 520px) {
+  .videos-page-title {
+    font-size: clamp(2rem, 12vw, 2.8rem);
+    line-height: 1;
+  }
+
+  .videos-page-card-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .videos-page-card {
+    min-height: 220px;
+  }
+
+  .videos-page-status {
+    margin-top: 96px;
+    padding: 18px;
+  }
+}
