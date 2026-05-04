@@ -21,8 +21,13 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@tiptap/extension-link": "^3.22.5",
+    "@tiptap/react": "^3.22.5",
+    "@tiptap/starter-kit": "^3.22.5",
     "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "^2.3.3",
+    "dompurify": "^3.4.2",
+    "framer-motion": "^12.38.0",
     "jsonwebtoken": "^9.0.3",
     "primeicons": "^7.0.0",
     "primereact": "^10.9.7",
