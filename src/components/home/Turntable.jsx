@@ -1,7 +1,15 @@
 import SoundCloudPlayer from '../shared/SoundCloudPlayer.jsx'
 import '../../styles/Turntable.css'
 
-export default function Turntable({ activeTrack, isPlaying, onTonearmToggle }) {
+export default function Turntable({
+  activeTrack,
+  isPlaying,
+  autoPlayOnReady = false,
+  onTonearmToggle,
+  onPlaybackStart,
+  onPlaybackPause,
+  onPlaybackEnd,
+}) {
   const coverArt = activeTrack?.song.album.coverArt ?? null
   const title = activeTrack?.song.title ?? null
   const artist = activeTrack?.song.album.artist.name ?? null
@@ -47,7 +55,15 @@ export default function Turntable({ activeTrack, isPlaying, onTonearmToggle }) {
       )}
       {scUrl && (
         <div className="turntable-player">
-          <SoundCloudPlayer url={scUrl} isPlaying={isPlaying} hidden />
+          <SoundCloudPlayer
+            url={scUrl}
+            isPlaying={isPlaying}
+            hidden
+            autoPlayOnReady={autoPlayOnReady}
+            onPlaybackStart={onPlaybackStart}
+            onPlaybackPause={onPlaybackPause}
+            onPlaybackEnd={onPlaybackEnd}
+          />
         </div>
       )}
     </div>

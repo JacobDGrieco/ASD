@@ -20,6 +20,7 @@ export default function HomePage() {
   } = useApi('/api/artists', { refreshAtUtcMidnight: true })
   const {
     data: tracks,
+    loading: tracksLoading,
     error: tracksError,
   } = useApi('/api/record-player', { refreshAtUtcMidnight: true })
   const apiMessage = getHomePageApiMessage(import.meta.env.DEV)
@@ -44,7 +45,12 @@ export default function HomePage() {
   return (
     <div className="page">
       {artists && <ArtistSplash artists={artists} />}
-      {tracks && tracks.length > 0 && <RecordPlayer tracks={tracks} />}
+      {!tracksLoading && (
+        <RecordPlayer
+          tracks={tracks ?? []}
+          message={tracksError ? 'The home page could not load record-player tracks from the API.' : null}
+        />
+      )}
     </div>
   )
 }

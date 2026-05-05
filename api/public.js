@@ -1,7 +1,7 @@
 import { prisma } from '../src/lib/prisma.js'
 import { buildClientImageUrl, clientImages, mergeLegacyImages } from '../src/lib/images.js'
 import { ARTIST_VIDEO_SOURCE, buildStaticArtistVideoPath, getYouTubeEmbedUrl } from '../src/lib/artistVideos.js'
-import { isReservedHiddenArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js'
+import { isOtherArtist, isReservedHiddenArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js'
 import { isReleasedOnUtcDay } from '../src/lib/releaseSchedule.js'
 
 const VIDEO_BASE_URL = process.env.VIDEO_BASE_URL || process.env.VITE_VIDEO_BASE_URL || ''
@@ -560,7 +560,6 @@ async function getRecordPlayer(res) {
             },
             placements: {
               orderBy: [{ placementOrder: 'asc' }],
-              take: 1,
               include: {
                 album: {
                   select: {
@@ -585,10 +584,11 @@ async function getRecordPlayer(res) {
     return res.status(200).json(
       tracks
         .map((track) => {
-          const placement = track.song.placements[0]
+          const placement = track.song.placements.find((candidate) => (
+            isPublicAlbumReleased(candidate.album, now) &&
+            isPublicSongReleased(track.song.meta, candidate.album.releaseDate, now)
+          ))
           if (!placement) return null
-          if (!isPublicAlbumReleased(placement.album, now)) return null
-          if (!isPublicSongReleased(track.song.meta, placement.album.releaseDate, now)) return null
 
           const album = formatAlbumSummary(placement.album)
           return {
@@ -603,7 +603,7 @@ async function getRecordPlayer(res) {
     )
   } catch (error) {
     console.error('Record player route failed', error)
-    return res.status(200).json([])
+    return res.status(500).json({ error: 'Record player unavailable' })
   }
 }
 

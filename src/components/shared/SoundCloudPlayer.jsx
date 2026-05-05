@@ -25,9 +25,21 @@ function loadWidgetApi() {
   })
 }
 
-export default function SoundCloudPlayer({ url, isPlaying = false, hidden = false }) {
+export default function SoundCloudPlayer({
+  url,
+  isPlaying = false,
+  hidden = false,
+  autoPlayOnReady = false,
+  onPlaybackStart = null,
+  onPlaybackPause = null,
+  onPlaybackEnd = null,
+}) {
   const iframeRef = useRef(null)
   const widgetRef = useRef(null)
+  const hasStartedTrackRef = useRef(false)
+  const onPlaybackStartRef = useRef(onPlaybackStart)
+  const onPlaybackPauseRef = useRef(onPlaybackPause)
+  const onPlaybackEndRef = useRef(onPlaybackEnd)
   const [isReady, setIsReady] = useState(false)
   const [widgetApiFailed, setWidgetApiFailed] = useState(false)
 
@@ -38,9 +50,16 @@ export default function SoundCloudPlayer({ url, isPlaying = false, hidden = fals
   }, [url])
 
   useEffect(() => {
+    onPlaybackStartRef.current = onPlaybackStart
+    onPlaybackPauseRef.current = onPlaybackPause
+    onPlaybackEndRef.current = onPlaybackEnd
+  }, [onPlaybackEnd, onPlaybackPause, onPlaybackStart])
+
+  useEffect(() => {
     setIsReady(false)
     widgetRef.current = null
     setWidgetApiFailed(false)
+    hasStartedTrackRef.current = false
 
     if (!url || !iframeRef.current) return undefined
 
@@ -58,6 +77,22 @@ export default function SoundCloudPlayer({ url, isPlaying = false, hidden = fals
           if (isCancelled) return
           setIsReady(true)
         })
+
+        widget.bind(Widget.Events.PLAY, () => {
+          if (isCancelled) return
+          onPlaybackStartRef.current?.()
+        })
+
+        widget.bind(Widget.Events.PAUSE, () => {
+          if (isCancelled) return
+          onPlaybackPauseRef.current?.()
+        })
+
+        widget.bind(Widget.Events.FINISH, () => {
+          if (isCancelled) return
+          hasStartedTrackRef.current = false
+          onPlaybackEndRef.current?.()
+        })
       })
       .catch(() => {
         if (!isCancelled) setWidgetApiFailed(true)
@@ -72,18 +107,28 @@ export default function SoundCloudPlayer({ url, isPlaying = false, hidden = fals
   useEffect(() => {
     if (!url || !isReady || !widgetRef.current) return
 
-    if (isPlaying) {
+    const shouldPlay = isPlaying || autoPlayOnReady
+
+    if (shouldPlay) {
+      widgetRef.current.setVolume?.(100)
+
+      if (!hasStartedTrackRef.current) {
+        widgetRef.current.seekTo?.(0)
+        hasStartedTrackRef.current = true
+      }
+
       widgetRef.current.play()
       return
     }
 
     widgetRef.current.pause()
-  }, [isPlaying, isReady, url])
+  }, [autoPlayOnReady, isPlaying, isReady, url])
 
   if (!url) return null
 
   return (
     <iframe
+      key={src}
       ref={iframeRef}
       title="SoundCloud Player"
       width={hidden ? '1' : '100%'}

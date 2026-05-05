@@ -27,9 +27,24 @@
 		padding: 16px 14px 0;
 		max-width: 100%;
 		flex-wrap: wrap;
+		justify-content: center;
 	}
 
 	.vinyl-rack-shelf {
 		height: 10px;
+	}
+}
+
+@media (max-width: 1320px) {
+	.vinyl-rack-rack {
+		align-items: center;
+	}
+
+	.vinyl-rack-slot-row {
+		justify-content: center;
+	}
+
+	.vinyl-rack-shelf {
+		width: min(100%, 720px);
 	}
 }

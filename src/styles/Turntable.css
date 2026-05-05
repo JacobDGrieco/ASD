@@ -43,8 +43,8 @@
 	border-radius: 50%;
 	background:
 		radial-gradient(circle at 50% 50%, #2f2f2f 0 16%, #111 17% 58%, #060606 59% 100%);
-	top: 50%;
-	left: 39%;
+	top: 25%;
+	left: 18%;
 	transform: translate(-50%, -50%);
 	box-shadow:
 		0 0 0 10px #1a1a1a,
@@ -185,6 +185,8 @@
 	.turntable-platter {
 		width: 228px;
 		height: 228px;
+		top: 44%;
+		left: 42%;
 	}
 
 	.turntable-label,
@@ -233,7 +235,8 @@
 	.turntable-platter {
 		width: 190px;
 		height: 190px;
-		left: 41%;
+		top: 45%;
+		left: 43%;
 	}
 
 	.turntable-label,
