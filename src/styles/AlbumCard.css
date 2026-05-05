@@ -18,6 +18,7 @@
 .album-card-card:hover {
 	background: var(--bg-raised);
 	border-color: var(--border);
+	box-shadow: 0 0 0 2px var(--accent), 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .album-card-open {

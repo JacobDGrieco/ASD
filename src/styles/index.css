@@ -21,7 +21,7 @@
 html, body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Georgia', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 16px;
   line-height: 1.6;
   min-height: 100vh;
@@ -30,6 +30,16 @@ html, body {
 
 body {
   min-width: 320px;
+}
+
+h1,
+h2,
+h3,
+.artist-hero-name,
+.song-header-title,
+.album-details-title,
+.nav-logo {
+  font-family: 'Playfair Display', serif;
 }
 
 a {

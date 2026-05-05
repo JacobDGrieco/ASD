@@ -41,6 +41,10 @@
 .board-edit-fab-active { background: #c8a96e; color: #1a1008; }
 .board-edit-fab-active:hover { background: #b89860; }
 
+body:has(.board-viewport) {
+  background-color: #1e1208;
+}
+
 @media (max-width: 640px) {
   .board-drag-hint {
     bottom: 18px;

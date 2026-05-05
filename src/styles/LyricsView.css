@@ -10,7 +10,7 @@
 
 .lyrics-view-line {
 	padding: 4px 0;
-	line-height: 1.9;
+	line-height: 2.1;
 	font-size: 1.05rem;
 }
 
@@ -41,6 +41,9 @@
 .lyrics-view-active {
 	color: var(--accent);
 	background: var(--accent-dim);
+	border-left: 2px solid var(--accent);
+	padding-left: 10px;
+	margin-left: -12px;
 }
 
 .lyrics-view-popup-overlay {

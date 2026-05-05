@@ -1,5 +1,5 @@
-import { Suspense, lazy } from 'react'
-import { Routes, Route, Outlet, Navigate } from 'react-router-dom'
+import { Suspense, lazy, useEffect } from 'react'
+import { Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom'
 import Nav from './components/shared/Nav.jsx'
 import HomePage from './pages/HomePage.jsx'
 import ArtistPage from './pages/ArtistPage.jsx'
@@ -10,6 +10,7 @@ import BoardPage from './pages/BoardPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import AdminLayout from './components/admin/AdminLayout.jsx'
 import AdminRoute from './components/admin/AdminRoute.jsx'
+import SideRails from './components/shared/SideRails.jsx'
 import { AdminProvider, useAdminAuth } from './lib/adminAuth.jsx'
 
 const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage.jsx'))
@@ -26,9 +27,20 @@ function RouteFallback() {
   return <div className="page" style={{ minHeight: '100vh' }} />
 }
 
+function ScrollToTop() {
+  const location = useLocation()
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [location.pathname, location.search, location.hash])
+
+  return null
+}
+
 function PublicLayout() {
   return (
     <>
+      <ScrollToTop />
       <Nav />
       <Outlet />
     </>
@@ -78,6 +90,7 @@ export default function App() {
           </Route>
         </Routes>
       </Suspense>
+      <SideRails />
     </AdminProvider>
   )
 }

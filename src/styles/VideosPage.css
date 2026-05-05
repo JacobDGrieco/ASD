@@ -162,6 +162,30 @@
   color: var(--text-muted);
 }
 
+.videos-page-player-empty-state {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  opacity: 0.5;
+}
+
+.videos-page-player-empty-state p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.videos-page-player-empty-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
 .videos-page-info h2 {
   margin-top: 12px;
   font-size: clamp(1.6rem, 3vw, 2.3rem);
