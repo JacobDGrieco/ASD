@@ -3,6 +3,26 @@
   height: 100vh;
   overflow: hidden;
   background: var(--bg);
+  font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+}
+
+.admin-layout-layout h1,
+.admin-layout-layout h2,
+.admin-layout-layout h3,
+.admin-layout-brand,
+.admin-layout-link,
+.admin-layout-logout {
+  font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+}
+
+.admin-layout-layout .admin-artists-page-title,
+.admin-layout-layout .admin-artists-page-form-title,
+.admin-layout-layout .admin-modal-title,
+.admin-layout-layout .admin-board-page-title,
+.admin-layout-layout .admin-record-player-page-title,
+.admin-layout-layout .admin-lyrics-page-title,
+.admin-layout-layout .admin-song-album-card-title {
+  font-family: 'Playfair Display', Georgia, serif;
 }
 
 .admin-layout-sidebar {

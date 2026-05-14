@@ -4,6 +4,7 @@
   justify-content: center;
   min-height: 100vh;
   background: var(--bg);
+  font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
 }
 
 .admin-login-page-form {
@@ -20,6 +21,7 @@
   font-size: 1.5rem;
   color: var(--accent);
   letter-spacing: 0.05em;
+  font-family: 'Playfair Display', Georgia, serif;
 }
 
 .admin-login-page-input {
