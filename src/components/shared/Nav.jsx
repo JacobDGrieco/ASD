@@ -14,10 +14,10 @@ export default function Nav() {
 
 	return (
 		<nav className={scrolled ? 'nav-nav nav-scrolled' : 'nav-nav'}>
-			<Link to="/" className="nav-logo"><img src="/favicon.png" alt="" className="nav-logo-mark" />ASD Records</Link>
+			<Link to="/" className="nav-logo"><img src="/favicon.png" alt="" className="nav-logo-mark" />ASD RECORDS</Link>
 			<div className="nav-links">
-				<NavLink to="/board" className={({ isActive }) => isActive ? 'nav-link nav-link-active' : 'nav-link'}>The Board</NavLink>
-				<NavLink to="/videos" className={({ isActive }) => isActive ? 'nav-link nav-link-active' : 'nav-link'}>Videos</NavLink>
+				<NavLink to="/board" className={({ isActive }) => isActive ? 'nav-link nav-link-active' : 'nav-link'}>THE BOARD</NavLink>
+				<NavLink to="/videos" className={({ isActive }) => isActive ? 'nav-link nav-link-active' : 'nav-link'}>VIDEOS</NavLink>
 			</div>
 		</nav>
 	);

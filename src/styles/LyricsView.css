@@ -1,7 +1,10 @@
+.lyrics-view-section {}
+
 .lyrics-view-lyrics {
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
+	padding: 20px 30px;
 }
 
 .lyrics-view-line-wrap {
@@ -12,6 +15,7 @@
 	padding: 4px 0;
 	line-height: 2.1;
 	font-size: 1.05rem;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 }
 
 .lyrics-view-line-blank {
@@ -28,7 +32,6 @@
 	border: none;
 	padding: 0;
 	font: inherit;
-	font-size: 1.05rem;
 	color: var(--text);
 	border-bottom: 1px dashed var(--accent);
 	cursor: pointer;

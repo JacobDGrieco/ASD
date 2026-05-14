@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite",
     "dev:vercel": "npx vercel dev",
+    "dev:vercel:host": "npx vercel dev --listen 0.0.0.0:3000",
     "build": "vite build",
     "postinstall": "prisma generate",
     "lint": "eslint .",

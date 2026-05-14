@@ -1,91 +1,85 @@
 .home-page-content {
-  position: relative;
-  z-index: 1;
+	position: relative;
+	z-index: 1;
 }
 
 .home-about {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 80px 60px;
-  border-top: 1px solid var(--border);
-  display: grid;
-  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.55fr);
-  gap: 48px;
-  align-items: start;
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 80px 60px;
+	border-top: 1px solid var(--border);
+	display: grid;
+	grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.55fr);
+	gap: 48px;
+	align-items: start;
 }
 
 .home-about-copy {
-  max-width: 520px;
-}
-
-.home-section-eyebrow {
-  margin-bottom: 14px;
-  color: var(--accent);
-  font-size: 0.75rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+	max-width: 520px;
 }
 
 .home-about-title {
-  max-width: 12ch;
-  font-size: clamp(2.2rem, 4vw, 3.6rem);
-  line-height: 1.02;
+	max-width: 12ch;
+	font-size: clamp(2.2rem, 4vw, 3.6rem);
+	line-height: 1.02;
+	letter-spacing: 0.08rem;
 }
 
 .home-about-copy p {
-  margin-top: 18px;
-  color: rgba(232, 232, 232, 0.7);
-  line-height: 1.85;
+	font-family: var(--font-description);
+	margin-top: 18px;
+	color: rgba(232, 232, 232, 0.7);
+	line-height: 1.85;
 }
 
 .home-latest {
-  min-width: 0;
+	min-width: 0;
 }
 
 .home-latest-inline {
-  padding-top: 8px;
+	padding-top: 8px;
 }
 
 .home-latest-row {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding-bottom: 8px;
-  scrollbar-width: thin;
+	display: flex;
+	gap: 12px;
+	overflow-x: auto;
+	padding-bottom: 8px;
+	scrollbar-width: thin;
 }
 
 .home-latest-row .album-card-card {
-  background: rgba(10, 10, 10, 0.24);
+	background: rgba(10, 10, 10, 0.24);
 }
 
 .home-latest-empty {
-  padding: 28px 24px;
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  background: rgba(10, 10, 10, 0.35);
+	padding: 28px 24px;
+	border: 1px solid var(--border);
+	color: var(--text-muted);
+	background: rgba(10, 10, 10, 0.35);
 }
 
 @media (min-width: 1200px) {
-  .home-latest-row {
-    overflow: visible;
-    flex-wrap: wrap;
-  }
+	.home-latest-row {
+		overflow: visible;
+		flex-wrap: wrap;
+	}
 }
 
 @media (max-width: 920px) {
-  .home-about {
-    padding: 64px 32px;
-    grid-template-columns: 1fr;
-    gap: 32px;
-  }
+	.home-about {
+		padding: 64px 32px;
+		grid-template-columns: 1fr;
+		gap: 32px;
+	}
 
-  .home-latest {
-    padding: 48px 32px;
-  }
+	.home-latest {
+		padding: 48px 32px;
+	}
 }
 
 @media (max-width: 640px) {
-  .home-about {
-    padding: 48px 20px;
-  }
+	.home-about {
+		padding: 48px 20px;
+	}
 }

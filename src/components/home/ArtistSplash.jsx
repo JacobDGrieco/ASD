@@ -3,10 +3,8 @@ import { Link } from 'react-router-dom';
 import { preloadImage, preloadImages, prefetchArtistPage } from '../../lib/publicPrefetch.js';
 import '../../styles/ArtistSplash.css';
 
+const AUTO_SWAP_INTERVAL_MS = 20000;
 const IMAGE_TRANSITION_MS = 480;
-const IMAGE_HOVER_DELAY_MS = 320;
-const IMAGE_HOLD_MS = 420;
-const IMAGE_LAST_HOLD_MS = 1100;
 const CARD_WAVE_DELAY_MS = 120;
 
 function uniqueUrls(urls) {
@@ -26,15 +24,14 @@ function getArtistImages(artist) {
 	};
 }
 
-function ArtistCard({ artist, imagePriority = 'auto', shouldEagerLoad = false, enterDelayMs = 0 }) {
+function ArtistCard({ artist, imagePriority = 'auto', enterDelayMs = 0 }) {
 	const { images, defaultImage, sequence } = useMemo(() => getArtistImages(artist), [artist]);
 	const [currentImage, setCurrentImage] = useState(defaultImage);
 	const [previousImage, setPreviousImage] = useState(null);
-	const [isHovered, setIsHovered] = useState(false);
 	const [isTransitioning, setIsTransitioning] = useState(false);
 	const timeoutRefs = useRef([]);
 	const currentImageRef = useRef(defaultImage);
-	const hoverRunIdRef = useRef(0);
+	const cycleRunIdRef = useRef(0);
 
 	const clearTimers = () => {
 		timeoutRefs.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
@@ -52,7 +49,7 @@ function ArtistCard({ artist, imagePriority = 'auto', shouldEagerLoad = false, e
 
 	useEffect(() => {
 		clearTimers();
-		hoverRunIdRef.current += 1;
+		cycleRunIdRef.current += 1;
 		setCurrentImage(defaultImage);
 		currentImageRef.current = defaultImage;
 		setPreviousImage(null);
@@ -68,65 +65,58 @@ function ArtistCard({ artist, imagePriority = 'auto', shouldEagerLoad = false, e
 
 	useEffect(() => {
 		clearTimers();
-		hoverRunIdRef.current += 1;
+		cycleRunIdRef.current += 1;
 
-		if (!isHovered || sequence.length === 0) {
+		if (sequence.length === 0 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 			setCurrentImage(defaultImage);
 			setPreviousImage(null);
 			setIsTransitioning(false);
 			return clearTimers;
 		}
 
-		const runId = hoverRunIdRef.current;
+		const runId = cycleRunIdRef.current;
 
 		const runSequence = async () => {
 			void preloadImages(sequence, { priority: 'high' });
-			await wait(IMAGE_HOVER_DELAY_MS);
-			if (hoverRunIdRef.current !== runId) return;
 
-			while (hoverRunIdRef.current === runId) {
-				for (const [index, image] of sequence.entries()) {
-					if (hoverRunIdRef.current !== runId) return;
+			let nextIndex = 0;
 
-					const activeImage = currentImageRef.current;
-					if (activeImage !== image) {
-						setPreviousImage(activeImage);
-						setCurrentImage(image);
-						currentImageRef.current = image;
-						setIsTransitioning(true);
-						await wait(IMAGE_TRANSITION_MS);
-						if (hoverRunIdRef.current !== runId) return;
-						setPreviousImage(null);
-						setIsTransitioning(false);
-					}
+			while (cycleRunIdRef.current === runId) {
+				const image = sequence[nextIndex];
+				if (cycleRunIdRef.current !== runId) return;
 
-					const holdDuration = index === sequence.length - 1 ? IMAGE_LAST_HOLD_MS : IMAGE_HOLD_MS;
-					await wait(holdDuration);
-					if (hoverRunIdRef.current !== runId) return;
+				await wait(AUTO_SWAP_INTERVAL_MS);
+				if (cycleRunIdRef.current !== runId) return;
+
+				const activeImage = currentImageRef.current;
+				if (activeImage !== image) {
+					setPreviousImage(activeImage);
+					setCurrentImage(image);
+					currentImageRef.current = image;
+					setIsTransitioning(true);
+					await wait(IMAGE_TRANSITION_MS);
+					if (cycleRunIdRef.current !== runId) return;
+					setPreviousImage(null);
+					setIsTransitioning(false);
 				}
+
+				nextIndex = (nextIndex + 1) % sequence.length;
 			}
 		};
 
 		void runSequence();
 
 		return clearTimers;
-	}, [defaultImage, isHovered, sequence]);
-
-	function handlePointerEnter() {
-		prefetchArtistPage(artist);
-		setIsHovered(true);
-	}
+	}, [defaultImage, sequence]);
 
 	return (
 		<Link
 			to={`/artists/${artist.slug}`}
 			className="artist-splash-card"
 			style={{ '--artist-splash-enter-delay': `${enterDelayMs}ms` }}
-			onMouseEnter={handlePointerEnter}
-			onMouseLeave={() => setIsHovered(false)}
-			onFocus={handlePointerEnter}
-			onTouchStart={handlePointerEnter}
-			onBlur={() => setIsHovered(false)}
+			onMouseEnter={() => prefetchArtistPage(artist)}
+			onFocus={() => prefetchArtistPage(artist)}
+			onTouchStart={() => prefetchArtistPage(artist)}
 		>
 			<span className="artist-splash-name-art" data-text={artist.name}>
 				{artist.name}
@@ -206,7 +196,6 @@ export default function ArtistSplash({ artists }) {
 						key={artist.id}
 						artist={artist}
 						imagePriority={index < priorityCount ? 'high' : 'auto'}
-						shouldEagerLoad={index < priorityCount}
 						enterDelayMs={index * CARD_WAVE_DELAY_MS}
 					/>
 				))}

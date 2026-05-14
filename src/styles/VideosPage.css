@@ -33,6 +33,7 @@
 }
 
 .videos-page-copy {
+  font-family: var(--font-description);
   width: min(760px, 100%);
   margin-top: 14px;
   color: rgba(232, 232, 232, 0.76);
@@ -197,11 +198,16 @@
   font-size: 1rem;
 }
 
+.videos-page-info > p:not(.videos-page-artist-link) {
+  font-family: var(--font-description);
+}
+
 .videos-page-info p + p {
   margin-top: 12px;
 }
 
 .videos-page-bio {
+  font-family: var(--font-description);
   color: rgba(232, 232, 232, 0.7);
 }
 

@@ -88,11 +88,12 @@
 .album-card-info {
 	display: flex;
 	flex-direction: column;
-	gap: 2px;
+	gap: 1px;
 }
 
 .album-card-title {
-	font-size: 0.85rem;
+	font-size: 1.1rem;
+	letter-spacing: 0.07rem;
 	color: var(--text);
 	white-space: nowrap;
 	overflow: hidden;
@@ -101,7 +102,8 @@
 }
 
 .album-card-meta {
-	font-size: 0.75rem;
+	font-size: 0.9rem;
+	letter-spacing: 0.07rem;
 	color: var(--text-muted);
 }
 

@@ -45,7 +45,7 @@ export default function AdminLayout() {
 				<div className="admin-layout-brand-row">
 					<Link to="/" className="admin-layout-brand" title="ASD Records" aria-label="ASD Records home">
 						<img src="/favicon.png" alt="" className="admin-layout-brand-icon" />
-						<span className="admin-layout-label">ASD Records</span>
+						<span className="admin-layout-label">ASD RECORDS</span>
 					</Link>
 					<button
 						type="button"

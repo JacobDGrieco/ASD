@@ -61,11 +61,6 @@
 	z-index: 0;
 }
 
-.artist-hero-portrait-wrap:hover .artist-hero-portrait,
-.artist-hero-portrait-frame:focus-visible .artist-hero-portrait {
-	transform: scale(1.03);
-}
-
 .artist-hero-enter-right {
 	animation: artist-portrait-enter 0.36s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
@@ -90,13 +85,15 @@
 }
 
 .artist-hero-bio {
-	font-size: 1rem;
+	font-size: 1.3rem;
+	letter-spacing: 0.08rem;
 	color: var(--accent);
 	font-style: italic;
 }
 
 .artist-hero-about {
-	font-size: 0.95rem;
+	font-family: var(--font-description);
+	font-size: 1.1rem;
 	color: var(--text-muted);
 	line-height: 1.8;
 }
@@ -114,7 +111,7 @@
 }
 
 .artist-hero-link-group-label {
-	font-size: 0.72rem;
+	font-size: 0.92rem;
 	letter-spacing: 0.18em;
 	text-transform: uppercase;
 	color: var(--text-muted);

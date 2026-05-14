@@ -21,6 +21,7 @@
 }
 
 .album-details-text {
+  font-family: var(--font-description);
   font-size: 0.95rem;
   line-height: 1.9;
   color: var(--text-muted);
@@ -50,6 +51,7 @@
 }
 
 .album-details-empty {
+  font-family: var(--font-description);
   margin: 0;
   color: var(--text-muted);
   line-height: 1.8;

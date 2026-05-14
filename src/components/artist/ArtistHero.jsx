@@ -4,10 +4,8 @@ import { SiFacebook, SiInstagram, SiSnapchat, SiTiktok, SiX, SiYoutube } from 'r
 import { preloadImage, preloadImages } from '../../lib/publicPrefetch.js';
 import '../../styles/ArtistHero.css';
 
+const AUTO_SWAP_INTERVAL_MS = 20000;
 const IMAGE_TRANSITION_MS = 480;
-const IMAGE_HOVER_DELAY_MS = 320;
-const IMAGE_HOLD_MS = 420;
-const IMAGE_LAST_HOLD_MS = 1100;
 
 function uniqueUrls(urls) {
 	return [...new Set(urls.filter(Boolean))];
@@ -30,11 +28,10 @@ export default function ArtistHero({ artist }) {
 	const { images, defaultImage, sequence } = useMemo(() => getArtistImages(artist), [artist]);
 	const [currentImage, setCurrentImage] = useState(defaultImage);
 	const [previousImage, setPreviousImage] = useState(null);
-	const [isHovered, setIsHovered] = useState(false);
 	const [isTransitioning, setIsTransitioning] = useState(false);
 	const timeoutRefs = useRef([]);
 	const currentImageRef = useRef(defaultImage);
-	const hoverRunIdRef = useRef(0);
+	const cycleRunIdRef = useRef(0);
 
 	const clearTimers = () => {
 		timeoutRefs.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
@@ -52,7 +49,7 @@ export default function ArtistHero({ artist }) {
 
 	useEffect(() => {
 		clearTimers();
-		hoverRunIdRef.current += 1;
+		cycleRunIdRef.current += 1;
 		setCurrentImage(defaultImage);
 		currentImageRef.current = defaultImage;
 		setPreviousImage(null);
@@ -68,49 +65,49 @@ export default function ArtistHero({ artist }) {
 
 	useEffect(() => {
 		clearTimers();
-		hoverRunIdRef.current += 1;
+		cycleRunIdRef.current += 1;
 
-		if (!isHovered || sequence.length === 0) {
+		if (sequence.length === 0 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 			setCurrentImage(defaultImage);
 			setPreviousImage(null);
 			setIsTransitioning(false);
 			return clearTimers;
 		}
 
-		const runId = hoverRunIdRef.current;
+		const runId = cycleRunIdRef.current;
 
 		const runSequence = async () => {
 			void preloadImages(sequence, { priority: 'high' });
-			await wait(IMAGE_HOVER_DELAY_MS);
-			if (hoverRunIdRef.current !== runId) return;
 
-			while (hoverRunIdRef.current === runId) {
-				for (const [index, image] of sequence.entries()) {
-					if (hoverRunIdRef.current !== runId) return;
+			let nextIndex = 0;
 
-					const activeImage = currentImageRef.current;
-					if (activeImage !== image) {
-						setPreviousImage(activeImage);
-						setCurrentImage(image);
-						currentImageRef.current = image;
-						setIsTransitioning(true);
-						await wait(IMAGE_TRANSITION_MS);
-						if (hoverRunIdRef.current !== runId) return;
-						setPreviousImage(null);
-						setIsTransitioning(false);
-					}
+			while (cycleRunIdRef.current === runId) {
+				const image = sequence[nextIndex];
+				if (cycleRunIdRef.current !== runId) return;
 
-					const holdDuration = index === sequence.length - 1 ? IMAGE_LAST_HOLD_MS : IMAGE_HOLD_MS;
-					await wait(holdDuration);
-					if (hoverRunIdRef.current !== runId) return;
+				await wait(AUTO_SWAP_INTERVAL_MS);
+				if (cycleRunIdRef.current !== runId) return;
+
+				const activeImage = currentImageRef.current;
+				if (activeImage !== image) {
+					setPreviousImage(activeImage);
+					setCurrentImage(image);
+					currentImageRef.current = image;
+					setIsTransitioning(true);
+					await wait(IMAGE_TRANSITION_MS);
+					if (cycleRunIdRef.current !== runId) return;
+					setPreviousImage(null);
+					setIsTransitioning(false);
 				}
+
+				nextIndex = (nextIndex + 1) % sequence.length;
 			}
 		};
 
 		void runSequence();
 
 		return clearTimers;
-	}, [defaultImage, isHovered, sequence]);
+	}, [defaultImage, sequence]);
 
 	const musicLinks = [
 		artist.soundcloudProfile ? { href: artist.soundcloudProfile, label: 'SoundCloud', icon: <FaSoundcloud /> } : null,
@@ -130,14 +127,8 @@ export default function ArtistHero({ artist }) {
 
 	return (
 		<section className="artist-hero-hero">
-			<div
-				className="artist-hero-portrait-wrap"
-				onMouseEnter={() => setIsHovered(true)}
-				onMouseLeave={() => setIsHovered(false)}
-				onFocus={() => setIsHovered(true)}
-				onBlur={() => setIsHovered(false)}
-			>
-				<div className="artist-hero-portrait-frame" tabIndex={0}>
+			<div className="artist-hero-portrait-wrap">
+				<div className="artist-hero-portrait-frame">
 					{previousImage && (
 						<img
 							key={`previous-${previousImage}`}

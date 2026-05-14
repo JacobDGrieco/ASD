@@ -12,6 +12,7 @@
 }
 
 .about-section-text {
+  font-family: var(--font-description);
   font-size: 0.95rem;
   line-height: 1.9;
   color: var(--text-muted);
