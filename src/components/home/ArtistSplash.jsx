@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { preloadImage, preloadImages, prefetchArtistPage } from '../../lib/publicPrefetch.js';
+import { buildStaticArtistVideoPath } from '../../lib/artistVideos.js';
 import '../../styles/ArtistSplash.css';
 
-const AUTO_SWAP_INTERVAL_MS = 20000;
+const AUTO_SWAP_INTERVAL_MS = 500;
 const IMAGE_TRANSITION_MS = 480;
 const CARD_WAVE_DELAY_MS = 120;
 
@@ -29,6 +30,7 @@ function ArtistCard({ artist, imagePriority = 'auto', enterDelayMs = 0 }) {
 	const [currentImage, setCurrentImage] = useState(defaultImage);
 	const [previousImage, setPreviousImage] = useState(null);
 	const [isTransitioning, setIsTransitioning] = useState(false);
+	const [isActive, setIsActive] = useState(false);
 	const timeoutRefs = useRef([]);
 	const currentImageRef = useRef(defaultImage);
 	const cycleRunIdRef = useRef(0);
@@ -63,17 +65,25 @@ function ArtistCard({ artist, imagePriority = 'auto', enterDelayMs = 0 }) {
 		return undefined;
 	}, [defaultImage, imagePriority, images]);
 
-	useEffect(() => {
+	const resetToDefault = () => {
 		clearTimers();
 		cycleRunIdRef.current += 1;
+		setIsActive(false);
+		setCurrentImage(defaultImage);
+		currentImageRef.current = defaultImage;
+		setPreviousImage(null);
+		setIsTransitioning(false);
+	};
+
+	const startSequence = () => {
+		setIsActive(true);
 
 		if (sequence.length === 0 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-			setCurrentImage(defaultImage);
-			setPreviousImage(null);
-			setIsTransitioning(false);
-			return clearTimers;
+			return;
 		}
 
+		clearTimers();
+		cycleRunIdRef.current += 1;
 		const runId = cycleRunIdRef.current;
 
 		const runSequence = async () => {
@@ -83,9 +93,6 @@ function ArtistCard({ artist, imagePriority = 'auto', enterDelayMs = 0 }) {
 
 			while (cycleRunIdRef.current === runId) {
 				const image = sequence[nextIndex];
-				if (cycleRunIdRef.current !== runId) return;
-
-				await wait(AUTO_SWAP_INTERVAL_MS);
 				if (cycleRunIdRef.current !== runId) return;
 
 				const activeImage = currentImageRef.current;
@@ -101,21 +108,33 @@ function ArtistCard({ artist, imagePriority = 'auto', enterDelayMs = 0 }) {
 				}
 
 				nextIndex = (nextIndex + 1) % sequence.length;
+				await wait(AUTO_SWAP_INTERVAL_MS);
 			}
 		};
 
 		void runSequence();
+	};
 
+	useEffect(() => {
+		resetToDefault();
 		return clearTimers;
 	}, [defaultImage, sequence]);
 
 	return (
 		<Link
 			to={`/artists/${artist.slug}`}
-			className="artist-splash-card"
+			className={`artist-splash-card ${isActive ? 'artist-splash-card-active' : ''}`.trim()}
 			style={{ '--artist-splash-enter-delay': `${enterDelayMs}ms` }}
-			onMouseEnter={() => prefetchArtistPage(artist)}
-			onFocus={() => prefetchArtistPage(artist)}
+			onMouseEnter={() => {
+				prefetchArtistPage(artist);
+				startSequence();
+			}}
+			onMouseLeave={resetToDefault}
+			onFocus={() => {
+				prefetchArtistPage(artist);
+				startSequence();
+			}}
+			onBlur={resetToDefault}
 			onTouchStart={() => prefetchArtistPage(artist)}
 		>
 			<span className="artist-splash-name-art" data-text={artist.name}>
@@ -149,7 +168,7 @@ function ArtistCard({ artist, imagePriority = 'auto', enterDelayMs = 0 }) {
 }
 
 export default function ArtistSplash({ artists }) {
-	const heroVideo = import.meta.env.VITE_HOME_HERO_VIDEO || '/hero-video.mp4';
+	const heroVideo = import.meta.env.VITE_HOME_HERO_VIDEO || buildStaticArtistVideoPath('hero-video');
 	const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
 	const priorityCount = 3;
 

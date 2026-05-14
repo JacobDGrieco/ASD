@@ -14,6 +14,7 @@
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
+	object-position: center;
 }
 
 .artist-splash-overlay {
@@ -71,6 +72,19 @@
 		border-color 0.35s ease;
 }
 
+.artist-splash-card:hover,
+.artist-splash-card:focus-visible,
+.artist-splash-card-active {
+	transform: translateY(-10px) scale(1.02);
+	filter: saturate(1);
+}
+
+.artist-splash-card:hover .artist-splash-card-frame,
+.artist-splash-card:focus-visible .artist-splash-card-frame,
+.artist-splash-card-active .artist-splash-card-frame {
+	box-shadow: 0 30px 72px rgba(0, 0, 0, 0.58);
+}
+
 .artist-splash-portrait {
 	position: absolute;
 	inset: 0;
@@ -107,7 +121,7 @@
 	width: max-content;
 	max-width: min(92vw, 420px);
 	padding: 0 10px;
-	color: #f4efe7;
+	color: transparent;
 	font-size: clamp(1.8rem, 3.5vw, 3.4rem);
 	line-height: 0.9;
 	letter-spacing: 0.16em;
@@ -116,22 +130,47 @@
 	font-style: italic;
 	opacity: 0;
 	pointer-events: none;
-	text-shadow:
-		0 10px 30px rgba(0, 0, 0, 0.55),
-		0 0 18px rgba(255, 255, 255, 0.16);
-	-webkit-text-stroke: 1px rgba(255, 255, 255, 0.18);
+	text-shadow: none;
+	background: black;
+	-webkit-text-stroke: 0 transparent;
+	background-clip: text;
 	transition: opacity 0.26s ease, transform 0.26s ease;
-	mix-blend-mode: screen;
+	mix-blend-mode: normal;
+}
+
+.artist-splash-name-art::before {
+	content: attr(data-text);
+	position: absolute;
+	inset: 0;
+	color: #f7eddc;
+	text-shadow:
+		0 8px 22px rgba(0, 0, 0, 0.42),
+		0 0 10px rgba(255, 232, 188, 0.18);
+	-webkit-text-stroke: 1.5px rgba(82, 49, 18, 0.42);
+	z-index: -1;
 }
 
 .artist-splash-name-art::after {
 	content: attr(data-text);
 	position: absolute;
 	inset: 0;
-	color: rgba(255, 186, 92, 0.32);
-	transform: translate(8px, 7px) scale(1.01);
+	color: rgba(179, 120, 52, 0.38);
+	transform: translate(2px, 2px) scale(1.005);
 	filter: blur(1px);
 	z-index: -1;
+}
+
+.artist-splash-card:hover .artist-splash-name-art,
+.artist-splash-card:focus-visible .artist-splash-name-art,
+.artist-splash-card-active .artist-splash-name-art {
+	opacity: 1;
+	transform: translate(-50%, 0) rotate(-7deg) scale(1);
+}
+
+.artist-splash-card:hover .artist-splash-portrait,
+.artist-splash-card:focus-visible .artist-splash-portrait,
+.artist-splash-card-active .artist-splash-portrait {
+	filter: grayscale(0%) brightness(0.96);
 }
 
 @media (max-width: 900px) {
