@@ -2,7 +2,9 @@ import { Link } from 'react-router-dom'
 import { FaApple, FaSoundcloud, FaSpotify, FaYoutube } from 'react-icons/fa'
 import { prefetchArtistPage } from '../../lib/publicPrefetch.js'
 import { buildAlbumPath, isOtherArtist } from '../../lib/publicVisibility.js'
+import AppleMusicPlayer from '../shared/AppleMusicPlayer.jsx'
 import SoundCloudPlayer from '../shared/SoundCloudPlayer.jsx'
+import SpotifyPlayer from '../shared/SpotifyPlayer.jsx'
 import ArtworkGallery from '../shared/ArtworkGallery.jsx'
 import '../../styles/SongHeader.css'
 
@@ -26,6 +28,7 @@ export default function SongHeader({ song }) {
     { href: song.appleMusicUrl, label: 'Apple Music', icon: FaApple },
     { href: song.youtubeUrl, label: 'YouTube', icon: FaYoutube },
   ].filter((link) => link.href)
+  const playerUrl = song.soundcloudUrl || song.spotifyUrl || song.appleMusicUrl || null
 
   return (
     <section className="song-header-header">
@@ -90,9 +93,14 @@ export default function SongHeader({ song }) {
           {song.meta?.releaseDate && ` · ${new Date(song.meta.releaseDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })}`}
           {song.duration && ` · ${song.duration}`}
         </p>
-        {song.soundcloudUrl && (
+        {playerUrl && (
           <div className="song-header-player">
-            <SoundCloudPlayer url={song.soundcloudUrl} autoPlay={false} />
+            {song.soundcloudUrl
+              ? <SoundCloudPlayer url={song.soundcloudUrl} autoPlay={false} />
+              : song.spotifyUrl
+                ? <SpotifyPlayer url={song.spotifyUrl} />
+                : <AppleMusicPlayer url={song.appleMusicUrl} />
+            }
           </div>
         )}
       </div>
