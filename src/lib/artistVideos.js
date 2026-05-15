@@ -3,15 +3,49 @@ export const ARTIST_VIDEO_SOURCE = {
   UPLOAD: 'UPLOAD',
 }
 
+const DEFAULT_STATIC_VIDEO_EXTENSION = 'mp4'
+
 function normalizeBaseUrl(baseUrl) {
   if (typeof baseUrl !== 'string') return ''
   return baseUrl.trim().replace(/\/+$/, '')
 }
 
-export function buildStaticArtistVideoPath(artistSlug, baseUrl = '') {
+function normalizeVideoExtension(extension) {
+  if (typeof extension !== 'string') return DEFAULT_STATIC_VIDEO_EXTENSION
+  const normalized = extension.trim().toLowerCase().replace(/^\./, '')
+  return normalized || DEFAULT_STATIC_VIDEO_EXTENSION
+}
+
+export function getVideoMimeType(url) {
+  if (typeof url !== 'string') return undefined
+  const normalized = url.toLowerCase()
+  if (normalized.endsWith('.mov')) return 'video/quicktime'
+  if (normalized.endsWith('.webm')) return 'video/webm'
+  if (normalized.endsWith('.ogg') || normalized.endsWith('.ogv')) return 'video/ogg'
+  return 'video/mp4'
+}
+
+export function getStaticArtistVideoExtension(value, fallback = DEFAULT_STATIC_VIDEO_EXTENSION) {
+  if (typeof value !== 'string' || !value.trim()) return normalizeVideoExtension(fallback)
+
+  const trimmed = value.trim()
+
+  try {
+    const parsed = new URL(trimmed, 'https://local.invalid')
+    const pathnameParam = parsed.searchParams.get('pathname')
+    const candidatePath = pathnameParam || parsed.pathname
+    const extension = candidatePath.match(/\.([a-z0-9]+)$/i)?.[1]
+    return normalizeVideoExtension(extension || fallback)
+  } catch {
+    const extension = trimmed.match(/\.([a-z0-9]+)$/i)?.[1]
+    return normalizeVideoExtension(extension || fallback)
+  }
+}
+
+export function buildStaticArtistVideoPath(artistSlug, baseUrl = '', extension = DEFAULT_STATIC_VIDEO_EXTENSION) {
   if (typeof artistSlug !== 'string' || !artistSlug.trim()) return null
   const normalizedBase = normalizeBaseUrl(baseUrl)
-  const blobPath = `videos/${artistSlug.trim()}.mp4`
+  const blobPath = `videos/${artistSlug.trim()}.${normalizeVideoExtension(extension)}`
   if (normalizedBase) return `${normalizedBase}/${blobPath}`
   return `/api/blob?pathname=${encodeURIComponent(blobPath)}`
 }

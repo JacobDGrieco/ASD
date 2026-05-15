@@ -2,19 +2,11 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaExternalLinkAlt, FaPlay } from 'react-icons/fa';
 import { prefetchApi, useApi } from '../hooks/useApi.js';
-import { ARTIST_VIDEO_SOURCE } from '../lib/artistVideos.js';
+import { ARTIST_VIDEO_SOURCE, getVideoMimeType } from '../lib/artistVideos.js';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import '../styles/VideosPage.css';
 
 void prefetchApi('/api/videos');
-
-function guessVideoMimeType(url) {
-	if (typeof url !== 'string') return undefined;
-	const normalized = url.toLowerCase();
-	if (normalized.endsWith('.webm')) return 'video/webm';
-	if (normalized.endsWith('.ogg') || normalized.endsWith('.ogv')) return 'video/ogg';
-	return 'video/mp4';
-}
 
 function VideoPlayer({ video }) {
 	if (!video) {
@@ -56,7 +48,7 @@ function VideoPlayer({ video }) {
 					preload="metadata"
 					poster={video.posterUrl || video.artist?.portrait || undefined}
 				>
-					<source src={video.videoUrl} type={guessVideoMimeType(video.videoUrl)} />
+					<source src={video.videoUrl} type={getVideoMimeType(video.videoUrl)} />
 				</video>
 			</div>
 		);

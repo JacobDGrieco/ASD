@@ -3,7 +3,7 @@ import { FaExternalLinkAlt, FaPencilAlt } from 'react-icons/fa'
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js'
-import { ARTIST_VIDEO_SOURCE, buildStaticArtistVideoPath, validateArtistVideoInput } from '../../lib/artistVideos.js'
+import { ARTIST_VIDEO_SOURCE, buildStaticArtistVideoPath, getStaticArtistVideoExtension, validateArtistVideoInput } from '../../lib/artistVideos.js'
 import '../../styles/AdminArtistsPage.css'
 import '../../styles/AdminVideosPage.css'
 
@@ -65,6 +65,12 @@ function findArtist(rows, artistId) {
   return rows.find((row) => row.artist.id === artistId)?.artist ?? null
 }
 
+function buildArtistStaticVideoUrl(rows, artistId, currentVideoUrl = '', baseUrl = '') {
+  const artist = findArtist(rows, artistId)
+  const extension = getStaticArtistVideoExtension(currentVideoUrl)
+  return buildStaticArtistVideoPath(artist?.slug, baseUrl, extension)
+}
+
 export default function AdminVideosPage() {
   const { token, session } = useAdminAuth()
   const isViewer = session?.role === 'VIEWER'
@@ -95,10 +101,9 @@ export default function AdminVideosPage() {
   const closeForm = () => setForm(null)
 
   const handleSave = async () => {
-    const artist = findArtist(rows, form.artistId)
     const payload = {
       ...buildPayload(form),
-      videoUrl: form.sourceType === ARTIST_VIDEO_SOURCE.UPLOAD ? buildStaticArtistVideoPath(artist?.slug, VIDEO_BASE_URL) : form.videoUrl,
+      videoUrl: form.sourceType === ARTIST_VIDEO_SOURCE.UPLOAD ? buildArtistStaticVideoUrl(rows, form.artistId, form.videoUrl, VIDEO_BASE_URL) : form.videoUrl,
     }
     const validationError = validateArtistVideoInput(payload)
     if (validationError) {
@@ -134,7 +139,7 @@ export default function AdminVideosPage() {
       </div>
 
       <p className="admin-videos-page-note">
-        Each artist has one video row. Posters upload the same way as other site images. Static videos automatically resolve to <code>&lt;base&gt;/videos/&lt;artist-slug&gt;.mp4</code>.
+        Each artist has one video row. Posters upload the same way as other site images. Static videos automatically resolve to <code>&lt;base&gt;/videos/&lt;artist-slug&gt;.[mp4|mov]</code>.
       </p>
 
       <div className="admin-artists-page-table-wrap">
@@ -234,7 +239,7 @@ export default function AdminVideosPage() {
                       ...current,
                       sourceType: event.target.value,
                       youtubeUrl: event.target.value === ARTIST_VIDEO_SOURCE.YOUTUBE ? current.youtubeUrl : '',
-                      videoUrl: event.target.value === ARTIST_VIDEO_SOURCE.UPLOAD ? buildStaticArtistVideoPath(findArtist(rows, current.artistId)?.slug, VIDEO_BASE_URL) ?? '' : '',
+                      videoUrl: event.target.value === ARTIST_VIDEO_SOURCE.UPLOAD ? buildArtistStaticVideoUrl(rows, current.artistId, current.videoUrl, VIDEO_BASE_URL) ?? '' : '',
                     }))}
                     className="admin-artists-page-input"
                   >
@@ -254,7 +259,7 @@ export default function AdminVideosPage() {
                     <label className="admin-modal-label">Local/Static Video Path</label>
                     <input
                       type="text"
-                      value={buildStaticArtistVideoPath(findArtist(rows, form.artistId)?.slug, VIDEO_BASE_URL) ?? ''}
+                      value={buildArtistStaticVideoUrl(rows, form.artistId, form.videoUrl, VIDEO_BASE_URL) ?? ''}
                       className="admin-artists-page-input"
                       disabled
                     />
