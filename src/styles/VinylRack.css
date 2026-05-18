@@ -1,7 +1,7 @@
 .vinyl-rack-rack {
 	display: flex;
 	flex-direction: column;
-	align-items: flex-start;
+	align-items: center;
 	gap: 12px;
 }
 
@@ -19,6 +19,15 @@
 	background: linear-gradient(180deg, #575757, #1a1a1a);
 	border-radius: 999px;
 	box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+.vinyl-rack-instructions {
+
+	margin: 6px 0 0;
+	font-family: var(--font-description);
+	font-size: 0.9rem;
+	line-height: 1.55;
+	color: rgba(232, 232, 232, 0.62);
 }
 
 @media (max-width: 900px) {
@@ -46,5 +55,9 @@
 
 	.vinyl-rack-shelf {
 		width: min(100%, 720px);
+	}
+
+	.vinyl-rack-instructions {
+		text-align: center;
 	}
 }
