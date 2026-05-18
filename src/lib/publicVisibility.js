@@ -41,6 +41,13 @@ export function isReservedHiddenArtist(value) {
   return isOtherArtist(value) || isAsdRecordsArtist(value)
 }
 
+export function hasPublicArtistPage(value) {
+  if (!value) return false
+  if (isReservedHiddenArtist(value)) return false
+  if (typeof value === 'object' && value.isVisible === false) return false
+  return true
+}
+
 export function buildSongPath({ songSlug, albumSlug = null, artistSlug = null, artist = null }) {
   if (!songSlug) return null
 
@@ -50,12 +57,14 @@ export function buildSongPath({ songSlug, albumSlug = null, artistSlug = null, a
     return `/songs/${songSlug}${params}`
   }
 
+  if (artist && !hasPublicArtistPage(artist)) return null
   if (!artistSlug || !albumSlug) return null
   return `/${artistSlug}/${albumSlug}/${songSlug}`
 }
 
 export function buildAlbumPath({ albumSlug, artistSlug = null, artist = null }) {
   if (!albumSlug) return null
+  if (artist && !hasPublicArtistPage(artist)) return null
   if (isReservedHiddenArtist(artist ?? artistSlug)) return null
   if (!artistSlug) return null
 

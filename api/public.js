@@ -45,6 +45,15 @@ function setPublicCache(res) {
   res.setHeader('Cache-Control', 'no-store')
 }
 
+function publicArtistSelect() {
+  return {
+    id: true,
+    name: true,
+    slug: true,
+    isVisible: true,
+  }
+}
+
 function parseCreditNames(value) {
   if (typeof value !== 'string') return []
   return value
@@ -59,15 +68,18 @@ async function resolveArtistLinksByName(names) {
 
   const matched = await prisma.artist.findMany({
     where: {
+      isVisible: true,
       OR: uniqueNames.map((name) => ({
         name: { equals: name, mode: 'insensitive' },
       })),
     },
-    select: { name: true, slug: true },
+    select: publicArtistSelect(),
   })
 
   return Object.fromEntries(
-    matched.map((artist) => [artist.name.trim().toLowerCase(), artist.slug])
+    matched
+      .filter(isPublicArtistVisible)
+      .map((artist) => [artist.name.trim().toLowerCase(), artist.slug])
   )
 }
 
@@ -129,7 +141,8 @@ function isPublicSongReleased(song, fallbackReleaseDate, now) {
 }
 
 function isPublicArtistVisible(artist) {
-  return !isReservedHiddenArtist(artist)
+  if (!artist) return false
+  return !isReservedHiddenArtist(artist) && artist?.isVisible !== false
 }
 
 function formatArtistVideo(video) {
@@ -158,12 +171,14 @@ function resolvePrimaryPlacement(placements, albumSlug = null) {
 
 async function getArtists(res) {
   setPublicCache(res)
+  const now = new Date()
   const artists = await prisma.artist.findMany({
     orderBy: { order: 'asc' },
     select: {
       id: true,
       name: true,
       slug: true,
+      isVisible: true,
       bio: true,
       portrait: true,
       images: {
@@ -181,6 +196,42 @@ async function getArtists(res) {
       tiktokProfile: true,
       snapchatProfile: true,
       youtubeSocialProfile: true,
+      albums: {
+        orderBy: { releaseDate: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          type: true,
+          releaseDate: true,
+          coverArt: true,
+          otherArtistName: true,
+          soundcloudUrl: true,
+          spotifyUrl: true,
+          appleMusicUrl: true,
+          youtubeUrl: true,
+          images: {
+            orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+            select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+          },
+          songPlacements: {
+            include: {
+              song: {
+                select: {
+                  id: true,
+                  title: true,
+                  slug: true,
+                  duration: true,
+                  meta: {
+                    select: { releaseDate: true },
+                  },
+                },
+              },
+            },
+            orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }, { placementOrder: 'asc' }],
+          },
+        },
+      },
     },
   })
 
@@ -191,6 +242,14 @@ async function getArtists(res) {
         ...artist,
         portrait: images[0]?.previewUrl ?? artist.portrait,
         images,
+        albums: (artist.albums ?? [])
+          .filter((album) => isPublicAlbumReleased(album, now))
+          .map((album) => ({
+            ...formatAlbumSummary(album),
+            songs: formatPlacementSongs(album.songPlacements).filter((song) =>
+              isPublicSongReleased(song, album.releaseDate, now)
+            ),
+          })),
       }
     }).filter(isPublicArtistVisible)
   )
@@ -267,7 +326,7 @@ async function getArtist(res, slug) {
                     orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
                     select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
                   },
-                  artist: { select: { name: true, slug: true } },
+                  artist: { select: publicArtistSelect() },
                 },
               },
             },
@@ -284,6 +343,7 @@ async function getArtist(res, slug) {
 
     for (const placement of song.placements) {
       const album = placement.album
+      if (!isPublicArtistVisible(album.artist)) continue
       if (!isPublicAlbumReleased(album, now)) continue
       if (!isPublicSongReleased({ releaseDate }, album.releaseDate, now)) continue
 
@@ -357,6 +417,7 @@ async function getVideos(res) {
           id: true,
           name: true,
           slug: true,
+          isVisible: true,
           bio: true,
           portrait: true,
           images: {
@@ -399,7 +460,7 @@ async function getAlbum(res, slug) {
       images: {
         orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
       },
-      artist: { select: { name: true, slug: true } },
+      artist: { select: publicArtistSelect() },
       songPlacements: {
         include: {
           song: {
@@ -455,7 +516,7 @@ async function getSong(res, slug, albumSlug = null) {
                 orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
                 select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
               },
-              artist: { select: { name: true, slug: true } },
+              artist: { select: publicArtistSelect() },
             },
           },
         },
@@ -474,6 +535,7 @@ async function getSong(res, slug, albumSlug = null) {
   if (!song) return res.status(404).json({ error: 'Song not found' })
 
   const releasedPlacements = song.placements.filter((placement) =>
+    isPublicArtistVisible(placement.album.artist) &&
     isPublicAlbumReleased(placement.album, now)
   )
   const primaryPlacement = resolvePrimaryPlacement(releasedPlacements, albumSlug)
@@ -481,7 +543,7 @@ async function getSong(res, slug, albumSlug = null) {
   const primaryAlbum = primaryPlacement?.album ?? null
   const songReleaseDate = song.meta?.releaseDate ?? requestedPlacement?.album?.releaseDate ?? null
 
-  if (!requestedPlacement || !isPublicAlbumReleased(requestedPlacement.album, now)) {
+  if (!requestedPlacement || !isPublicArtistVisible(requestedPlacement.album.artist) || !isPublicAlbumReleased(requestedPlacement.album, now)) {
     return res.status(404).json({ error: 'Song not found' })
   }
   if (!isPublicSongReleased({ releaseDate: songReleaseDate }, requestedPlacement.album.releaseDate, now)) {
@@ -571,7 +633,7 @@ async function getRecordPlayer(res) {
                       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
                       select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
                     },
-                    artist: { select: { name: true } },
+                    artist: { select: { name: true, slug: true, isVisible: true } },
                   },
                 },
               },
@@ -585,6 +647,7 @@ async function getRecordPlayer(res) {
       tracks
         .map((track) => {
           const placement = track.song.placements.find((candidate) => (
+            isPublicArtistVisible(candidate.album.artist) &&
             isPublicAlbumReleased(candidate.album, now) &&
             isPublicSongReleased(track.song.meta, candidate.album.releaseDate, now)
           ))
@@ -619,6 +682,9 @@ async function getBoardPosts(res) {
       archivedAt: null,
       OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
       AND: [{ publishedAt: { gte: ageCap } }],
+      artist: {
+        isVisible: true,
+      },
     },
     orderBy: { publishedAt: 'desc' },
     take: 25,
@@ -634,11 +700,11 @@ async function getBoardPosts(res) {
       positionPinnedUntil: true,
       pinColor: true,
       publishedAt: true,
-      artist: { select: { id: true, name: true, slug: true } },
+      artist: { select: publicArtistSelect() },
     },
   })
 
-  return res.status(200).json(posts)
+  return res.status(200).json(posts.filter((post) => isPublicArtistVisible(post.artist)))
 }
 
 export default async function handler(req, res) {

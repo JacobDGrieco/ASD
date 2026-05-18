@@ -39,6 +39,7 @@ function selectArtistList() {
     id: true,
     name: true,
     slug: true,
+    isVisible: true,
     portrait: true,
     order: true,
     soundcloudProfile: true,
@@ -139,6 +140,7 @@ export default async function handler(req, res) {
         tiktokProfile,
         snapchatProfile,
         youtubeSocialProfile,
+        isVisible,
         images,
         adminPassword,
       } = req.body
@@ -150,6 +152,7 @@ export default async function handler(req, res) {
         data: {
           name,
           slug: slug !== undefined ? (slug || slugify(name)) : undefined,
+          isVisible,
           bio,
           aboutMe,
           portrait: normalizedImages === null ? undefined : primaryImageReference(normalizedImages),
@@ -232,6 +235,7 @@ export default async function handler(req, res) {
       tiktokProfile,
       snapchatProfile,
       youtubeSocialProfile,
+      isVisible,
       images,
       adminPassword,
     } = req.body
@@ -243,6 +247,7 @@ export default async function handler(req, res) {
       data: {
         name,
         slug: slug || slugify(name),
+        isVisible: isVisible ?? true,
         bio: bio ?? '',
         aboutMe: aboutMe ?? '',
         portrait: primaryImageReference(normalizedImages),

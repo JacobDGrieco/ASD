@@ -12,6 +12,7 @@ model Artist {
   id                String   @id @default(cuid())
   name              String
   slug              String   @unique
+  isVisible         Boolean  @default(true)
   bio               String   @default("")
   aboutMe           String   @default("")
   portrait          String   @default("")

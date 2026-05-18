@@ -48,6 +48,11 @@ function primaryImage(images) {
   return images.find((image) => image.isPrimary) ?? images[0]
 }
 
+function isSongHidden(song) {
+  const album = song?.album ?? song?.placements?.[0]?.album ?? null
+  return !isOtherArtist(album?.artist) && album?.artist?.isVisible === false
+}
+
 function compareLexicographically(left, right) {
   return left.localeCompare(right, undefined, { sensitivity: 'base', numeric: true })
 }
@@ -584,7 +589,9 @@ export default function AdminSongsPage() {
 
     return (
       <div className="admin-artists-page-image-summary">
-        <img src={image.previewUrl || image.url} alt={song.title} className="admin-artists-page-thumb" />
+        <div className={`admin-artists-page-thumb-frame ${isSongHidden(song) ? 'admin-artists-page-thumb-frame-hidden' : ''}`.trim()}>
+          <img src={image.previewUrl || image.url} alt={song.title} className="admin-artists-page-thumb" />
+        </div>
         <span className="admin-artists-page-image-count">
           {song.imageCount ?? song.images?.length ?? 1} image{(song.imageCount ?? song.images?.length ?? 1) === 1 ? '' : 's'}
         </span>
@@ -678,7 +685,7 @@ export default function AdminSongsPage() {
               const dateStr = releaseDate ? String(releaseDate).slice(0, 10) : ''
 
               return (
-                <tr key={song.id}>
+                <tr key={song.id} className={isSongHidden(song) ? 'admin-artists-page-hidden-row' : ''}>
                   <td className="admin-artists-page-col-image">{imageCell(song)}</td>
                   <td className="admin-songs-col-track admin-artists-page-center-cell">{cell(primaryTrackNumber(song))}</td>
                   <td className="admin-songs-col-title">{cell(song.title)}</td>

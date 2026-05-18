@@ -8,6 +8,19 @@ import '../styles/VideosPage.css';
 
 void prefetchApi('/api/videos');
 
+function getPlayableVideoUrl(url) {
+	if (typeof url !== 'string' || !url) return url;
+	if (!url.startsWith('/api/blob?')) return url;
+
+	try {
+		const parsed = new URL(url, window.location.origin);
+		parsed.searchParams.set('redirect', '1');
+		return `${parsed.pathname}${parsed.search}`;
+	} catch {
+		return `${url}${url.includes('?') ? '&' : '?'}redirect=1`;
+	}
+}
+
 function VideoPlayer({ video }) {
 	if (!video) {
 		return (
@@ -37,10 +50,11 @@ function VideoPlayer({ video }) {
 	}
 
 	if (video.sourceType === ARTIST_VIDEO_SOURCE.UPLOAD && video.videoUrl) {
+		const playableVideoUrl = getPlayableVideoUrl(video.videoUrl);
 		return (
 			<div className="videos-page-player-frame">
 				<video
-					key={video.videoUrl}
+					key={playableVideoUrl}
 					className="videos-page-video"
 					autoPlay
 					controls
@@ -48,7 +62,7 @@ function VideoPlayer({ video }) {
 					preload="metadata"
 					poster={video.posterUrl || video.artist?.portrait || undefined}
 				>
-					<source src={video.videoUrl} type={getVideoMimeType(video.videoUrl)} />
+					<source src={playableVideoUrl} type={getVideoMimeType(playableVideoUrl)} />
 				</video>
 			</div>
 		);

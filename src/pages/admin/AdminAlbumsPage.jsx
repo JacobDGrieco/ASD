@@ -43,6 +43,10 @@ function primaryImage(images) {
   return images.find((image) => image.isPrimary) ?? images[0]
 }
 
+function isAlbumHidden(album) {
+  return !isOtherArtist(album?.artist) && album?.artist?.isVisible === false
+}
+
 function compareLexicographically(left, right) {
   return left.localeCompare(right, undefined, { sensitivity: 'base', numeric: true })
 }
@@ -304,7 +308,9 @@ export default function AdminAlbumsPage() {
       if (!image) return <span className="admin-artists-page-empty-value">-</span>
       return (
         <div className="admin-artists-page-image-summary">
-          <img src={image.previewUrl || image.url} alt={album.title} className="admin-artists-page-thumb" />
+          <div className={`admin-artists-page-thumb-frame ${isAlbumHidden(album) ? 'admin-artists-page-thumb-frame-hidden' : ''}`.trim()}>
+            <img src={image.previewUrl || image.url} alt={album.title} className="admin-artists-page-thumb" />
+          </div>
           <span className="admin-artists-page-image-count">{album.imageCount ?? album.images?.length ?? 1} image{(album.imageCount ?? album.images?.length ?? 1) === 1 ? '' : 's'}</span>
         </div>
       )
@@ -373,7 +379,7 @@ export default function AdminAlbumsPage() {
             </thead>
             <tbody>
               {pagedAlbums.map((album) => (
-                <tr key={album.id}>
+                <tr key={album.id} className={isAlbumHidden(album) ? 'admin-artists-page-hidden-row' : ''}>
                   {columns.map((column) => (
                     <td key={column.key} className={`${column.className ?? ''} ${column.key === 'type' ? 'admin-artists-page-muted' : ''}`.trim()}>
                       {renderValue(album, column)}

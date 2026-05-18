@@ -38,7 +38,7 @@ function withListImages(album) {
 
 function includeAlbum() {
   return {
-    artist: { select: { id: true, name: true, slug: true } },
+    artist: { select: { id: true, name: true, slug: true, isVisible: true } },
     images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
   }
 }
@@ -57,7 +57,7 @@ function includeAlbumList() {
     youtubeUrl: true,
     releaseDate: true,
     artistId: true,
-    artist: { select: { id: true, name: true, slug: true } },
+    artist: { select: { id: true, name: true, slug: true, isVisible: true } },
     images: {
       take: 1,
       orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],

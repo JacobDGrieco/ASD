@@ -148,10 +148,10 @@ export default function AdminVideosPage() {
             <tr>
               <th className="admin-artists-page-col-image">Poster</th>
               <th className="admin-artists-page-col-lg">Artist</th>
-              <th className="admin-artists-page-col-xl">Title</th>
+              <th className="admin-artists-page-col-xxl">Title</th>
               <th className="admin-artists-page-col-sm">Source</th>
-              <th className="admin-artists-page-col-wide">Video</th>
-              <th className="admin-artists-page-col-wide">Video Page</th>
+              <th className="admin-artists-page-col-action admin-artists-page-center-cell">Video</th>
+              <th className="admin-artists-page-col-action admin-artists-page-center-cell">Video Page</th>
               <th className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
             </tr>
           </thead>
@@ -164,10 +164,9 @@ export default function AdminVideosPage() {
                 <td><span className="admin-artists-page-cell-value">{row.artist.name}</span></td>
                 <td>
                   <span className="admin-artists-page-cell-value">{row.title || '-'}</span>
-                  {row.description ? <span className="admin-artists-page-wrap-value admin-videos-page-description">{row.description}</span> : null}
                 </td>
                 <td><span className="admin-artists-page-cell-value">{row.sourceType === ARTIST_VIDEO_SOURCE.YOUTUBE ? 'YouTube' : row.sourceType === ARTIST_VIDEO_SOURCE.UPLOAD ? 'Local' : '-'}</span></td>
-                <td>
+                <td className="admin-artists-page-center-cell">
                   {row.sourceType === ARTIST_VIDEO_SOURCE.YOUTUBE && row.youtubeUrl ? (
                     <a href={row.youtubeUrl} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" title="Open video">
                       <FaExternalLinkAlt aria-hidden="true" />
@@ -178,7 +177,7 @@ export default function AdminVideosPage() {
                     </a>
                   ) : <span className="admin-artists-page-empty-value">-</span>}
                 </td>
-                <td>
+                <td className="admin-artists-page-center-cell">
                   {row.videosPageUrl ? (
                     <a href={row.videosPageUrl} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" title="Open full videos page">
                       <FaExternalLinkAlt aria-hidden="true" />

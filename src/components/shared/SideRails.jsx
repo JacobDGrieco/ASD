@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import '../../styles/SideRails.css'
 
 const LEFT_RAIL_TEXT = Array.from({ length: 18 }, (_, index) => `left-${index}`)
@@ -7,6 +8,7 @@ const RIGHT_RAIL_COUNT = 24
 const RIGHT_RAIL_ROTATE_MS = 60 * 1000
 
 export default function SideRails() {
+  const location = useLocation()
   const [startIndex, setStartIndex] = useState(0)
 
   useEffect(() => {
@@ -21,6 +23,8 @@ export default function SideRails() {
     () => Array.from({ length: RIGHT_RAIL_COUNT }, (_, index) => ARTIST_NAMES[(startIndex + index) % ARTIST_NAMES.length]),
     [startIndex]
   )
+
+  if (location.pathname.startsWith('/admin')) return null
 
   return (
     <div className="side-rails" aria-hidden="true">

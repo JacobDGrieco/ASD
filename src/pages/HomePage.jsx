@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { prefetchApi, useApi } from '../hooks/useApi.js';
 import ArtistSplash from '../components/home/ArtistSplash.jsx';
 import RecordPlayer from '../components/home/RecordPlayer.jsx';
@@ -18,9 +18,38 @@ export function getHomePageApiMessage(isDev) {
 	return 'The frontend loaded, but the site could not reach its API routes. This usually means the deployment is missing environment variables, database access, or a failing serverless function.';
 }
 
+function HomeHeroPlaceholder() {
+	return (
+		<section className="home-shell home-shell-hero" aria-hidden="true">
+			<div className="home-shell-overlay" />
+			<div className="home-shell-artist-row">
+				{Array.from({ length: 5 }, (_, index) => (
+					<div key={index} className="home-shell-artist-card" />
+				))}
+			</div>
+		</section>
+	);
+}
+
+function HomeRecordPlayerPlaceholder() {
+	return (
+		<section className="home-shell home-shell-record-player" aria-hidden="true">
+			<div className="home-shell-record-player-inner">
+				<div className="home-shell-turntable" />
+				<div className="home-shell-rack">
+					{Array.from({ length: 6 }, (_, index) => (
+						<div key={index} className="home-shell-record" />
+					))}
+				</div>
+			</div>
+		</section>
+	);
+}
+
 export default function HomePage() {
 	const {
 		data: artists,
+		loading: artistsLoading,
 		error: artistsError,
 	} = useApi('/api/artists', { refreshAtUtcMidnight: true });
 	const {
@@ -28,34 +57,10 @@ export default function HomePage() {
 		loading: tracksLoading,
 		error: tracksError,
 	} = useApi('/api/record-player', { refreshAtUtcMidnight: true });
-	const [artistDetails, setArtistDetails] = useState([]);
 	const apiMessage = getHomePageApiMessage(import.meta.env.DEV);
 
-	useEffect(() => {
-		if (!artists?.length) {
-			setArtistDetails([]);
-			return;
-		}
-
-		let cancelled = false;
-
-		Promise.all(
-			artists.map((artist) =>
-				prefetchApi(`/api/artists/${artist.slug}`)
-					.then((detail) => detail ?? null)
-					.catch(() => null)
-			)
-		).then((details) => {
-			if (!cancelled) setArtistDetails(details.filter(Boolean));
-		});
-
-		return () => {
-			cancelled = true;
-		};
-	}, [artists]);
-
 	const latestReleases = useMemo(() => {
-		return artistDetails
+		return (artists ?? [])
 			.flatMap((artist) =>
 				(artist.albums ?? []).map((album) => ({
 					...album,
@@ -64,7 +69,7 @@ export default function HomePage() {
 			)
 			.sort((left, right) => new Date(right.releaseDate).getTime() - new Date(left.releaseDate).getTime())
 			.slice(0, 6);
-	}, [artistDetails]);
+	}, [artists]);
 
 	if ((artistsError || tracksError) && !artists && !tracks) {
 		return (
@@ -90,13 +95,17 @@ export default function HomePage() {
 		<div className="page aurora-page">
 			<AuroraBackground />
 			<div className="aurora-page-content home-page-content">
-				{artists && <ArtistSplash artists={artists} />}
-				{!tracksLoading && (
-					<RecordPlayer
-						tracks={tracks ?? []}
-						message={tracksError ? 'The home page could not load record-player tracks from the API.' : null}
-					/>
-				)}
+				<div className="home-stage">
+					{artists?.length ? <ArtistSplash artists={artists} /> : artistsLoading ? <HomeHeroPlaceholder /> : null}
+					{tracksLoading ? (
+						<HomeRecordPlayerPlaceholder />
+					) : (
+						<RecordPlayer
+							tracks={tracks ?? []}
+							message={tracksError ? 'The home page could not load record-player tracks from the API.' : null}
+						/>
+					)}
+				</div>
 				<section className="home-about">
 					<div className="home-about-copy">
 						<h2 className="home-about-title">Independent music from the underground.</h2>
@@ -141,6 +150,12 @@ export default function HomePage() {
 										/>
 									);
 								})}
+							</div>
+						) : artistsLoading ? (
+							<div className="home-latest-row home-latest-row-loading" aria-hidden="true">
+								{Array.from({ length: 4 }, (_, index) => (
+									<div key={index} className="home-latest-card-placeholder" />
+								))}
 							</div>
 						) : (
 							<div className="home-latest-empty">Latest releases will appear here once public catalog data is available.</div>
