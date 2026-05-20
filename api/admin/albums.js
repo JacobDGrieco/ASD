@@ -1,5 +1,7 @@
 import { prisma } from '../../src/lib/prisma.js'
 import { artistScopedAlbumWhere, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
+import { normalizeVisibilityInput } from '../../src/lib/contentVisibility.js'
+import { releaseVisibilityUpperBound } from '../../src/lib/releaseSchedule.js'
 import { clientImages, mergeLegacyImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js'
 import { OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID, OTHER_ARTIST_SLUG } from '../../src/lib/publicVisibility.js'
 import { slugify } from '../../src/lib/slugify.js'
@@ -48,6 +50,8 @@ function includeAlbumList() {
     id: true,
     title: true,
     slug: true,
+    isVisible: true,
+    autoShowOnRelease: true,
     type: true,
     otherArtistName: true,
     coverArt: true,
@@ -67,6 +71,22 @@ function includeAlbumList() {
       select: { images: true },
     },
   }
+}
+
+async function syncAlbumReleaseVisibility() {
+  await prisma.album.updateMany({
+    where: {
+      isVisible: false,
+      autoShowOnRelease: true,
+      releaseDate: {
+        lt: releaseVisibilityUpperBound(),
+      },
+    },
+    data: {
+      isVisible: true,
+      autoShowOnRelease: false,
+    },
+  })
 }
 
 function normalizeAlbumDuplicateValue(value) {
@@ -157,6 +177,7 @@ async function resolveAlbumArtistSlugPart(artistId, otherArtistName, resolvedArt
 export default async function handler(req, res) {
   const session = requireAdmin(req, res)
   if (!session) return
+  await syncAlbumReleaseVisibility()
 
   const { id } = req.query
 
@@ -179,11 +200,18 @@ export default async function handler(req, res) {
       }
       const artistSlugPart = await resolveAlbumArtistSlugPart(artistId, otherArtistName, resolvedArtistId)
       const normalizedImages = normalizeImageInput(images, 'cover')
+      const visibility = normalizeVisibilityInput({
+        isVisible: req.body.isVisible,
+        autoShowOnRelease: req.body.autoShowOnRelease,
+        releaseDate,
+      })
       const album = await prisma.album.update({
         where: { id },
         data: {
           title,
           slug: buildAlbumSlug({ title, artistSlugPart, releaseDate }),
+          isVisible: visibility.isVisible,
+          autoShowOnRelease: visibility.autoShowOnRelease,
           type,
           otherArtistName: artistId === OTHER_ARTIST_OPTION_ID ? otherArtistName?.trim() || null : null,
           coverArt: primaryImageReference(normalizedImages),
@@ -235,10 +263,17 @@ export default async function handler(req, res) {
     }
     const artistSlugPart = await resolveAlbumArtistSlugPart(artistId, otherArtistName, resolvedArtistId)
     const normalizedImages = normalizeImageInput(images, 'cover')
+    const visibility = normalizeVisibilityInput({
+      isVisible: req.body.isVisible,
+      autoShowOnRelease: req.body.autoShowOnRelease,
+      releaseDate,
+    })
     const album = await prisma.album.create({
       data: {
         title,
         slug: buildAlbumSlug({ title, artistSlugPart, releaseDate }),
+        isVisible: visibility.isVisible,
+        autoShowOnRelease: visibility.autoShowOnRelease,
         type,
         otherArtistName: artistId === OTHER_ARTIST_OPTION_ID ? otherArtistName?.trim() || null : null,
         coverArt: primaryImageReference(normalizedImages),

@@ -1,10 +1,9 @@
 import jwt from 'jsonwebtoken'
+import { releaseVisibilityUpperBound } from './releaseSchedule.js'
 
 export const ADMIN_ROLE_SUPER = 'SUPER_ADMIN'
 export const ADMIN_ROLE_ARTIST = 'ARTIST'
 export const ADMIN_ROLE_VIEWER = 'VIEWER'
-const VIEWER_TIME_ZONE = 'America/New_York'
-
 function secret() {
   return process.env.JWT_SECRET
 }
@@ -88,22 +87,32 @@ export function canAccessArtist(session, artistId) {
 }
 
 function viewerReleaseDateUpperBound() {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: VIEWER_TIME_ZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-
-  const [year, month, day] = formatter.format(new Date()).split('-').map(Number)
-  return new Date(Date.UTC(year, month - 1, day + 1))
+  return releaseVisibilityUpperBound()
 }
 
 export function viewerAlbumVisibilityWhere() {
+  const upperBound = viewerReleaseDateUpperBound()
+
   return {
-    releaseDate: {
-      lt: viewerReleaseDateUpperBound(),
-    },
+    AND: [
+      {
+        OR: [
+          { isVisible: true },
+          {
+            AND: [
+              { isVisible: false },
+              { autoShowOnRelease: true },
+              { releaseDate: { lt: upperBound } },
+            ],
+          },
+        ],
+      },
+      {
+        releaseDate: {
+          lt: upperBound,
+        },
+      },
+    ],
   }
 }
 
@@ -112,6 +121,31 @@ export function viewerSongVisibilityWhere() {
 
   return {
     AND: [
+      {
+        OR: [
+          { isVisible: true },
+          {
+            AND: [
+              { isVisible: false },
+              { autoShowOnRelease: true },
+              {
+                OR: [
+                  { meta: { is: { releaseDate: { lt: upperBound } } } },
+                  {
+                    placements: {
+                      some: {
+                        album: {
+                          releaseDate: { lt: upperBound },
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
       {
         OR: [
           { meta: { is: null } },

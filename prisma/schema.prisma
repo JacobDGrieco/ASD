@@ -66,6 +66,8 @@ model Album {
   id            String       @id @default(cuid())
   title         String
   slug          String       @unique
+  isVisible     Boolean      @default(true)
+  autoShowOnRelease Boolean  @default(false)
   type          AlbumType
   coverArt      String       @default("")
   otherArtistName String?
@@ -132,6 +134,8 @@ model Song {
   id            String              @id @default(cuid())
   title         String
   slug          String              @unique
+  isVisible     Boolean             @default(true)
+  autoShowOnRelease Boolean         @default(false)
   duration      String              @default("")
   artwork       String              @default("")
   soundcloudUrl String?

@@ -1,4 +1,5 @@
 import { prisma } from '../src/lib/prisma.js'
+import { isEffectivelyVisible } from '../src/lib/contentVisibility.js'
 import { buildClientImageUrl, clientImages, mergeLegacyImages } from '../src/lib/images.js'
 import { ARTIST_VIDEO_SOURCE, buildStaticArtistVideoPath, getYouTubeEmbedUrl } from '../src/lib/artistVideos.js'
 import { isOtherArtist, isReservedHiddenArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js'
@@ -124,6 +125,8 @@ function formatPlacementSongs(placements) {
       id: placement.song.id,
       title: placement.song.title,
       slug: placement.song.slug,
+      isVisible: placement.song.isVisible,
+      autoShowOnRelease: placement.song.autoShowOnRelease,
       duration: placement.song.duration,
       releaseDate: placement.song.meta?.releaseDate ?? null,
       trackNumber: placement.trackNumber,
@@ -133,11 +136,12 @@ function formatPlacementSongs(placements) {
 }
 
 function isPublicAlbumReleased(album, now) {
-  return isReleasedOnUtcDay(album?.releaseDate, now)
+  return isReleasedOnUtcDay(album?.releaseDate, now) && isEffectivelyVisible(album, album?.releaseDate, now)
 }
 
 function isPublicSongReleased(song, fallbackReleaseDate, now) {
-  return isReleasedOnUtcDay(song?.releaseDate ?? fallbackReleaseDate, now)
+  const releaseDate = song?.releaseDate ?? fallbackReleaseDate
+  return isReleasedOnUtcDay(releaseDate, now) && isEffectivelyVisible(song, releaseDate, now)
 }
 
 function isPublicArtistVisible(artist) {
@@ -202,6 +206,8 @@ async function getArtists(res) {
           id: true,
           title: true,
           slug: true,
+          isVisible: true,
+          autoShowOnRelease: true,
           type: true,
           releaseDate: true,
           coverArt: true,
@@ -221,6 +227,8 @@ async function getArtists(res) {
                   id: true,
                   title: true,
                   slug: true,
+                  isVisible: true,
+                  autoShowOnRelease: true,
                   duration: true,
                   meta: {
                     select: { releaseDate: true },
@@ -277,6 +285,8 @@ async function getArtist(res, slug) {
                   id: true,
                   title: true,
                   slug: true,
+                  isVisible: true,
+                  autoShowOnRelease: true,
                   duration: true,
                   meta: {
                     select: { releaseDate: true },
@@ -306,6 +316,8 @@ async function getArtist(res, slug) {
           id: true,
           title: true,
           slug: true,
+          isVisible: true,
+          autoShowOnRelease: true,
           duration: true,
           placements: {
             orderBy: [{ placementOrder: 'asc' }],
@@ -318,6 +330,8 @@ async function getArtist(res, slug) {
                   id: true,
                   title: true,
                   slug: true,
+                  isVisible: true,
+                  autoShowOnRelease: true,
                   coverArt: true,
                   otherArtistName: true,
                   releaseDate: true,
@@ -345,7 +359,7 @@ async function getArtist(res, slug) {
       const album = placement.album
       if (!isPublicArtistVisible(album.artist)) continue
       if (!isPublicAlbumReleased(album, now)) continue
-      if (!isPublicSongReleased({ releaseDate }, album.releaseDate, now)) continue
+      if (!isPublicSongReleased({ ...song, releaseDate }, album.releaseDate, now)) continue
 
       if (!albumMap.has(album.id)) {
         albumMap.set(album.id, { ...formatAlbumSummary(album), songs: [] })
@@ -468,6 +482,8 @@ async function getAlbum(res, slug) {
               id: true,
               title: true,
               slug: true,
+              isVisible: true,
+              autoShowOnRelease: true,
               duration: true,
               meta: {
                 select: { releaseDate: true },
@@ -509,6 +525,8 @@ async function getSong(res, slug, albumSlug = null) {
               id: true,
               title: true,
               slug: true,
+              isVisible: true,
+              autoShowOnRelease: true,
               coverArt: true,
               otherArtistName: true,
               releaseDate: true,
@@ -546,7 +564,7 @@ async function getSong(res, slug, albumSlug = null) {
   if (!requestedPlacement || !isPublicArtistVisible(requestedPlacement.album.artist) || !isPublicAlbumReleased(requestedPlacement.album, now)) {
     return res.status(404).json({ error: 'Song not found' })
   }
-  if (!isPublicSongReleased({ releaseDate: songReleaseDate }, requestedPlacement.album.releaseDate, now)) {
+  if (!isPublicSongReleased({ ...song, releaseDate: songReleaseDate }, requestedPlacement.album.releaseDate, now)) {
     return res.status(404).json({ error: 'Song not found' })
   }
 
@@ -615,6 +633,8 @@ async function getRecordPlayer(res) {
             id: true,
             title: true,
             slug: true,
+            isVisible: true,
+            autoShowOnRelease: true,
             soundcloudUrl: true,
             youtubeUrl: true,
             meta: {
@@ -625,6 +645,8 @@ async function getRecordPlayer(res) {
               include: {
                 album: {
                   select: {
+                    isVisible: true,
+                    autoShowOnRelease: true,
                     coverArt: true,
                     title: true,
                     otherArtistName: true,
@@ -649,7 +671,7 @@ async function getRecordPlayer(res) {
           const placement = track.song.placements.find((candidate) => (
             isPublicArtistVisible(candidate.album.artist) &&
             isPublicAlbumReleased(candidate.album, now) &&
-            isPublicSongReleased(track.song.meta, candidate.album.releaseDate, now)
+            isPublicSongReleased(track.song, candidate.album.releaseDate, now)
           ))
           if (!placement) return null
 

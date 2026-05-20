@@ -1,11 +1,12 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FaApple, FaExternalLinkAlt, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash, FaYoutube } from 'react-icons/fa'
+import { FaApple, FaExternalLinkAlt, FaEye, FaEyeSlash, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash, FaYoutube } from 'react-icons/fa'
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
 import AdminDateInput, { isValidDateInput } from '../../components/admin/AdminDateInput.jsx'
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js'
+import { defaultVisibilityForReleaseDate, isEffectivelyVisible } from '../../lib/contentVisibility.js'
 import { isOtherArtist, OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID } from '../../lib/publicVisibility.js'
 import { slugify } from '../../lib/slugify.js'
 import '../../styles/AdminArtistsPage.css'
@@ -15,6 +16,8 @@ const PAGE_SIZE = 30
 const empty = {
   title: '',
   slug: '',
+  isVisible: true,
+  autoShowOnRelease: false,
   type: '',
   images: [],
   otherArtistName: '',
@@ -45,7 +48,10 @@ function primaryImage(images) {
 }
 
 function isAlbumHidden(album) {
-  return !isOtherArtist(album?.artist) && album?.artist?.isVisible === false
+  return (
+    (!isOtherArtist(album?.artist) && album?.artist?.isVisible === false) ||
+    !isEffectivelyVisible(album, album?.releaseDate)
+  )
 }
 
 function compareLexicographically(left, right) {
@@ -63,6 +69,14 @@ function normalizeAlbumDuplicateValue(value) {
 function normalizeAlbumReleaseDate(value) {
   if (!value) return ''
   return String(value).slice(0, 10)
+}
+
+function hasManualAlbumVisibilityChoice(album) {
+  const defaultVisibility = defaultVisibilityForReleaseDate(album?.releaseDate)
+  return (
+    album?.isVisible !== defaultVisibility.isVisible ||
+    Boolean(album?.autoShowOnRelease) !== defaultVisibility.autoShowOnRelease
+  )
 }
 
 function validateAlbumForm(form, albums = []) {
@@ -118,6 +132,7 @@ export default function AdminAlbumsPage() {
   const [page, setPage] = useState(1)
   const [loadingEditId, setLoadingEditId] = useState(null)
   const [validationErrors, setValidationErrors] = useState({})
+  const [visibilityTouched, setVisibilityTouched] = useState(false)
   const deferredFilterTitle = useDeferredValue(filterTitle)
 
   useEffect(() => {
@@ -166,6 +181,7 @@ export default function AdminAlbumsPage() {
 
   const openCreate = () => {
     setValidationErrors({})
+    setVisibilityTouched(false)
     setForm({
       ...empty,
       artistId: isArtistScoped ? scopedArtistId : filterArtist,
@@ -176,7 +192,9 @@ export default function AdminAlbumsPage() {
     setLoadingEditId(album.id)
     try {
       const detail = await fetch(`/api/admin/albums?id=${album.id}`, { headers: auth }).then((r) => r.json())
+      setVisibilityTouched(hasManualAlbumVisibilityChoice(detail))
       setForm({
+        ...empty,
         ...detail,
         artistId: isOtherArtist(detail.artist) ? OTHER_ARTIST_OPTION_ID : detail.artistId,
         otherArtistName: detail.otherArtistName ?? '',
@@ -196,6 +214,7 @@ export default function AdminAlbumsPage() {
   const closeForm = () => {
     setForm(null)
     setValidationErrors({})
+    setVisibilityTouched(false)
   }
 
   const handleSave = async () => {
@@ -288,6 +307,7 @@ export default function AdminAlbumsPage() {
     return {
       ...current,
       releaseDate: value,
+      ...(!visibilityTouched ? defaultVisibilityForReleaseDate(value) : {}),
     }
   })
 
@@ -463,8 +483,28 @@ export default function AdminAlbumsPage() {
             <div className="admin-modal-body">
               <div className="admin-modal-grid">
                 <div className="admin-modal-field admin-modal-field-full">
-                  <label className="admin-modal-label">Title <span className="admin-modal-label-required">*</span></label>
-                  <input type="text" placeholder="Title" value={form.title} onChange={set('title')} className={fieldClassName('title')} aria-invalid={Boolean(validationErrors.title)} />
+                  <div className="admin-artists-page-name-field">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVisibilityTouched(true)
+                        setForm((current) => ({
+                          ...current,
+                          isVisible: !current.isVisible,
+                          autoShowOnRelease: false,
+                        }))
+                      }}
+                      className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
+                      aria-label={form.isVisible ? 'Album is visible to the public. Click to hide.' : 'Album is hidden from the public. Click to show.'}
+                      title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
+                    >
+                      {form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
+                    </button>
+                    <div className="admin-artists-page-name-field-main">
+                      <label className="admin-modal-label">Title <span className="admin-modal-label-required">*</span></label>
+                      <input type="text" placeholder="Title" value={form.title} onChange={set('title')} className={fieldClassName('title')} aria-invalid={Boolean(validationErrors.title)} />
+                    </div>
+                  </div>
                 </div>
                 <div className="admin-modal-field admin-modal-field-full">
                   <label className="admin-modal-label">Images</label>

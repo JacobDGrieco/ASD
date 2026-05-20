@@ -2,12 +2,13 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { TabPanel, TabView } from 'primereact/tabview'
-import { FaArrowLeft, FaArrowRight, FaExternalLinkAlt, FaPencilAlt, FaStickyNote, FaTimes, FaTrash } from 'react-icons/fa'
+import { FaArrowLeft, FaArrowRight, FaExternalLinkAlt, FaEye, FaEyeSlash, FaPencilAlt, FaStickyNote, FaTimes, FaTrash } from 'react-icons/fa'
 import { SiApplemusic, SiSoundcloud, SiSpotify, SiYoutube } from 'react-icons/si'
 import AdminDateInput, { isValidDateInput } from '../../components/admin/AdminDateInput.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js'
+import { defaultVisibilityForReleaseDate, isEffectivelyVisible } from '../../lib/contentVisibility.js'
 import { isOtherArtist, OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID } from '../../lib/publicVisibility.js'
 import { slugify } from '../../lib/slugify.js'
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx'
@@ -29,6 +30,8 @@ function createAlbumPlacement() {
 const empty = {
   title: '',
   slug: '',
+  isVisible: true,
+  autoShowOnRelease: false,
   duration: '',
   soundcloudUrl: '',
   spotifyUrl: '',
@@ -53,6 +56,7 @@ function createSongFormFromAlbumPrefill(prefill = {}) {
     spotifyUrl: prefill.spotifyUrl ?? '',
     appleMusicUrl: prefill.appleMusicUrl ?? '',
     youtubeUrl: prefill.youtubeUrl ?? '',
+    ...defaultVisibilityForReleaseDate(prefill.releaseDate ?? ''),
     albumPlacements: [
       {
         ...createAlbumPlacement(),
@@ -71,7 +75,11 @@ function primaryImage(images) {
 
 function isSongHidden(song) {
   const album = song?.album ?? song?.placements?.[0]?.album ?? null
-  return !isOtherArtist(album?.artist) && album?.artist?.isVisible === false
+  const releaseDate = song?.meta?.releaseDate ?? album?.releaseDate ?? null
+  return (
+    (!isOtherArtist(album?.artist) && album?.artist?.isVisible === false) ||
+    !isEffectivelyVisible(song, releaseDate)
+  )
 }
 
 function compareLexicographically(left, right) {
@@ -93,6 +101,15 @@ function normalizeSongReleaseDate(value) {
 
 function songReleaseDate(song) {
   return song?.meta?.releaseDate ? String(song.meta.releaseDate).slice(0, 10) : ''
+}
+
+function hasManualSongVisibilityChoice(song) {
+  const releaseDate = song?.meta?.releaseDate ?? song?.placements?.[0]?.album?.releaseDate ?? ''
+  const defaultVisibility = defaultVisibilityForReleaseDate(releaseDate)
+  return (
+    song?.isVisible !== defaultVisibility.isVisible ||
+    Boolean(song?.autoShowOnRelease) !== defaultVisibility.autoShowOnRelease
+  )
 }
 
 function albumArtistKey(album) {
@@ -248,6 +265,7 @@ export default function AdminSongsPage() {
   const [loadingEditId, setLoadingEditId] = useState(null)
   const [validationErrors, setValidationErrors] = useState(null)
   const [activeTabIndex, setActiveTabIndex] = useState(0)
+  const [visibilityTouched, setVisibilityTouched] = useState(false)
   const deferredFilterTitle = useDeferredValue(filterTitle)
   const hasHydratedArtistFilter = useRef(false)
   const hasHydratedAlbumFilter = useRef(false)
@@ -362,12 +380,17 @@ export default function AdminSongsPage() {
   const openCreate = () => {
     setValidationErrors(null)
     setActiveTabIndex(0)
-    setForm(createSongFormFromAlbumPrefill({ albumId: filterAlbum }))
+    setVisibilityTouched(false)
+    setForm(createSongFormFromAlbumPrefill({
+      albumId: filterAlbum,
+      releaseDate: filterAlbum ? albumById[filterAlbum]?.releaseDate?.slice?.(0, 10) ?? '' : '',
+    }))
   }
   const openEdit = async (song) => {
     setLoadingEditId(song.id)
     try {
       const detail = await fetch(`/api/admin/songs?id=${song.id}`, { headers: auth }).then((response) => response.json())
+      setVisibilityTouched(hasManualSongVisibilityChoice(detail))
       setForm({
         ...empty,
         ...detail,
@@ -390,6 +413,7 @@ export default function AdminSongsPage() {
     setForm(null)
     setValidationErrors(null)
     setActiveTabIndex(0)
+    setVisibilityTouched(false)
   }
 
   useEffect(() => {
@@ -398,6 +422,7 @@ export default function AdminSongsPage() {
 
     setValidationErrors(null)
     setActiveTabIndex(0)
+    setVisibilityTouched(false)
     if (prefill.artistId) setFilterArtist(prefill.artistId)
     if (prefill.albumId) setFilterAlbum(prefill.albumId)
     setForm(createSongFormFromAlbumPrefill(prefill))
@@ -468,11 +493,18 @@ export default function AdminSongsPage() {
       return {
         ...current,
         releaseDate: value,
+        ...(!visibilityTouched ? defaultVisibilityForReleaseDate(value) : {}),
       }
     })
 
   const setAlbumPlacement = (index, key) => (event) =>
     setForm((current) => {
+      const nextValue = key === 'albumId'
+        ? event.target.value
+        : event.target.value === ''
+          ? ''
+          : Number(event.target.value)
+
       setValidationErrors((currentErrors) => {
         if (!currentErrors?.albumPlacements?.[index]) return currentErrors
         return {
@@ -492,14 +524,18 @@ export default function AdminSongsPage() {
           placementIndex === index
             ? {
                 ...placement,
-                [key]: key === 'albumId'
-                  ? event.target.value
-                  : event.target.value === ''
-                    ? ''
-                    : Number(event.target.value),
+                [key]: nextValue,
               }
             : placement
         ),
+        ...(() => {
+          if (current.releaseDate || visibilityTouched) return {}
+          const nextPlacements = current.albumPlacements.map((placement, placementIndex) =>
+            placementIndex === index ? { ...placement, [key]: nextValue } : placement
+          )
+          const primaryAlbumReleaseDate = albumById[nextPlacements[0]?.albumId]?.releaseDate?.slice?.(0, 10) ?? ''
+          return defaultVisibilityForReleaseDate(primaryAlbumReleaseDate)
+        })(),
       }
     })
 
@@ -532,6 +568,12 @@ export default function AdminSongsPage() {
       return {
         ...current,
         albumPlacements: current.albumPlacements.filter((_, placementIndex) => placementIndex !== index),
+        ...(() => {
+          if (current.releaseDate || visibilityTouched) return {}
+          const nextPlacements = current.albumPlacements.filter((_, placementIndex) => placementIndex !== index)
+          const primaryAlbumReleaseDate = albumById[nextPlacements[0]?.albumId]?.releaseDate?.slice?.(0, 10) ?? ''
+          return defaultVisibilityForReleaseDate(primaryAlbumReleaseDate)
+        })(),
       }
     })
 
@@ -790,8 +832,28 @@ export default function AdminSongsPage() {
                 <TabPanel header="Song Info">
                   <div className="admin-modal-grid">
                     <div className="admin-modal-field admin-modal-field-full">
-                      <label className="admin-modal-label">Title <span className="admin-modal-label-required">*</span></label>
-                      <input type="text" placeholder="Title" value={form.title} onChange={set('title')} className={songFieldClassName('title')} aria-invalid={Boolean(validationErrors?.title)} />
+                      <div className="admin-artists-page-name-field">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setVisibilityTouched(true)
+                            setForm((current) => ({
+                              ...current,
+                              isVisible: !current.isVisible,
+                              autoShowOnRelease: false,
+                            }))
+                          }}
+                          className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
+                          aria-label={form.isVisible ? 'Song is visible to the public. Click to hide.' : 'Song is hidden from the public. Click to show.'}
+                          title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
+                        >
+                          {form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
+                        </button>
+                        <div className="admin-artists-page-name-field-main">
+                          <label className="admin-modal-label">Title <span className="admin-modal-label-required">*</span></label>
+                          <input type="text" placeholder="Title" value={form.title} onChange={set('title')} className={songFieldClassName('title')} aria-invalid={Boolean(validationErrors?.title)} />
+                        </div>
+                      </div>
                     </div>
                     <div className="admin-modal-field admin-modal-field-full">
                       <label className="admin-modal-label">Images</label>

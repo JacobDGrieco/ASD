@@ -1,5 +1,7 @@
 import { prisma } from '../../src/lib/prisma.js'
 import { artistScopedSongWhere, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
+import { normalizeVisibilityInput } from '../../src/lib/contentVisibility.js'
+import { releaseVisibilityUpperBound } from '../../src/lib/releaseSchedule.js'
 import { slugify } from '../../src/lib/slugify.js'
 import {
   clientImages,
@@ -279,6 +281,60 @@ function songListInclude() {
   }
 }
 
+function effectiveSongReleaseDate(song) {
+  return song?.meta?.releaseDate ?? song?.placements?.[0]?.album?.releaseDate ?? null
+}
+
+async function syncSongReleaseVisibility() {
+  const candidates = await prisma.song.findMany({
+    where: {
+      isVisible: false,
+      autoShowOnRelease: true,
+    },
+    select: {
+      id: true,
+      meta: {
+        select: {
+          releaseDate: true,
+        },
+      },
+      placements: {
+        orderBy: [{ placementOrder: 'asc' }],
+        take: 1,
+        select: {
+          album: {
+            select: {
+              releaseDate: true,
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const upperBound = releaseVisibilityUpperBound()
+  const releasedIds = candidates
+    .filter((song) => {
+      const releaseDate = effectiveSongReleaseDate(song)
+      return releaseDate && new Date(releaseDate).getTime() < upperBound.getTime()
+    })
+    .map((song) => song.id)
+
+  if (!releasedIds.length) return
+
+  await prisma.song.updateMany({
+    where: {
+      id: {
+        in: releasedIds,
+      },
+    },
+    data: {
+      isVisible: true,
+      autoShowOnRelease: false,
+    },
+  })
+}
+
 async function loadSong(session, id) {
   const song = await prisma.song.findFirst({
     where: {
@@ -310,6 +366,7 @@ async function validatePlacementOwnership(session, placements) {
 export default async function handler(req, res) {
   const session = requireAdmin(req, res)
   if (!session) return
+  await syncSongReleaseVisibility()
 
   const { id } = req.query
 
@@ -352,12 +409,20 @@ export default async function handler(req, res) {
       const normalizedImages = normalizeImageInput(images, 'artwork')
       const placementAlbums = await loadPlacementAlbums(placements)
       const primaryAlbum = placementAlbums.find((album) => album.id === placements[0]?.albumId) ?? null
+      const effectiveReleaseDate = releaseDate || primaryAlbum?.releaseDate || null
+      const visibility = normalizeVisibilityInput({
+        isVisible: req.body.isVisible,
+        autoShowOnRelease: req.body.autoShowOnRelease,
+        releaseDate: effectiveReleaseDate,
+      })
 
       await prisma.song.update({
         where: { id },
         data: {
           title,
           slug: buildSongSlug({ title, album: primaryAlbum, releaseDate }),
+          isVisible: visibility.isVisible,
+          autoShowOnRelease: visibility.autoShowOnRelease,
           duration,
           artwork: primaryImageReference(normalizedImages),
           soundcloudUrl,
@@ -470,10 +535,18 @@ export default async function handler(req, res) {
     const normalizedImages = normalizeImageInput(images, 'artwork')
     const placementAlbums = await loadPlacementAlbums(placements)
     const primaryAlbum = placementAlbums.find((album) => album.id === placements[0]?.albumId) ?? null
+    const effectiveReleaseDate = releaseDate || primaryAlbum?.releaseDate || null
+    const visibility = normalizeVisibilityInput({
+      isVisible: req.body.isVisible,
+      autoShowOnRelease: req.body.autoShowOnRelease,
+      releaseDate: effectiveReleaseDate,
+    })
     const song = await prisma.song.create({
       data: {
         title,
         slug: buildSongSlug({ title, album: primaryAlbum, releaseDate }),
+        isVisible: visibility.isVisible,
+        autoShowOnRelease: visibility.autoShowOnRelease,
         duration: duration ?? '',
         artwork: primaryImageReference(normalizedImages),
         soundcloudUrl,

@@ -326,7 +326,6 @@ export default function AdminArtistsPage() {
 						<div className="admin-modal-body">
 							<div className="admin-modal-grid">
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Name</label>
 									<div className="admin-artists-page-name-field">
 										<button
 											type="button"
@@ -337,13 +336,16 @@ export default function AdminArtistsPage() {
 										>
 											{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
 										</button>
-										<input
-											type="text"
-											placeholder="Name"
-											value={form.name}
-											onChange={(event) => setForm((current) => ({ ...current, name: event.target.value, slug: slugify(event.target.value) }))}
-											className="admin-artists-page-input"
-										/>
+										<div className="admin-artists-page-name-field-main">
+											<label className="admin-modal-label">Name</label>
+											<input
+												type="text"
+												placeholder="Name"
+												value={form.name}
+												onChange={(event) => setForm((current) => ({ ...current, name: event.target.value, slug: slugify(event.target.value) }))}
+												className="admin-artists-page-input"
+											/>
+										</div>
 									</div>
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
