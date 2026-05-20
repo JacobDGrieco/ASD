@@ -10,6 +10,7 @@ import { defaultVisibilityForReleaseDate, isEffectivelyVisible } from '../../lib
 import { isOtherArtist, OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID } from '../../lib/publicVisibility.js'
 import { slugify } from '../../lib/slugify.js'
 import '../../styles/AdminArtistsPage.css'
+import '../../styles/AdminAlbumsPage.css'
 
 const PAGE_SIZE = 30
 
@@ -28,6 +29,15 @@ const empty = {
   youtubeUrl: '',
   releaseDate: '',
   artistId: '',
+}
+
+function iconLabel(icon, text) {
+  return (
+    <span className="admin-modal-label-with-icon">
+      <span className="admin-modal-label-icon" aria-hidden="true">{icon}</span>
+      <span>{text}</span>
+    </span>
+  )
 }
 
 const columns = [
@@ -516,21 +526,36 @@ export default function AdminAlbumsPage() {
                     entityLabel={form.title || 'Album image'}
                   />
                 </div>
-                <div className="admin-modal-field admin-modal-field-full">
-                  <label className="admin-modal-label">Artist <span className="admin-modal-label-required">*</span></label>
-                  {isArtistScoped ? (
-                    <input
-                      type="text"
-                      value={artistOptions.find((artist) => artist.id === scopedArtistId)?.name ?? ''}
-                      className="admin-artists-page-input"
-                      readOnly
-                    />
-                  ) : (
-                    <select value={form.artistId} onChange={set('artistId')} className={fieldClassName('artistId')} aria-invalid={Boolean(validationErrors.artistId)}>
-                      <option value="">- Artist -</option>
-                      {artistOptions.map((artist) => <option key={artist.id} value={artist.id}>{artist.name}</option>)}
+                <div className="admin-modal-field admin-modal-field-full admin-albums-modal-meta-row">
+                  <div className="admin-modal-field admin-albums-modal-meta-artist">
+                    <label className="admin-modal-label">Artist <span className="admin-modal-label-required">*</span></label>
+                    {isArtistScoped ? (
+                      <input
+                        type="text"
+                        value={artistOptions.find((artist) => artist.id === scopedArtistId)?.name ?? ''}
+                        className="admin-artists-page-input"
+                        readOnly
+                      />
+                    ) : (
+                      <select value={form.artistId} onChange={set('artistId')} className={fieldClassName('artistId')} aria-invalid={Boolean(validationErrors.artistId)}>
+                        <option value="">- Artist -</option>
+                        {artistOptions.map((artist) => <option key={artist.id} value={artist.id}>{artist.name}</option>)}
+                      </select>
+                    )}
+                  </div>
+                  <div className="admin-modal-field admin-albums-modal-meta-type">
+                    <label className="admin-modal-label">Type <span className="admin-modal-label-required">*</span></label>
+                    <select value={form.type} onChange={set('type')} className={fieldClassName('type')} aria-invalid={Boolean(validationErrors.type)}>
+                      <option value="">- Type -</option>
+                      <option value="ALBUM">Album</option>
+                      <option value="SINGLE">Single</option>
+                      <option value="EP">EP</option>
                     </select>
-                  )}
+                  </div>
+                  <div className="admin-modal-field admin-albums-modal-meta-date">
+                    <label className="admin-modal-label">Release Date <span className="admin-modal-label-required">*</span></label>
+                    <AdminDateInput value={form.releaseDate} onChange={setReleaseDate} className={fieldClassName('releaseDate')} ariaInvalid={Boolean(validationErrors.releaseDate)} required />
+                  </div>
                 </div>
                 {form.artistId === OTHER_ARTIST_OPTION_ID && (
                   <div className="admin-modal-field admin-modal-field-full">
@@ -538,37 +563,24 @@ export default function AdminAlbumsPage() {
                     <input type="text" placeholder="Artist name" value={form.otherArtistName} onChange={set('otherArtistName')} className={fieldClassName('otherArtistName')} aria-invalid={Boolean(validationErrors.otherArtistName)} />
                   </div>
                 )}
-                <div className="admin-modal-field">
-                  <label className="admin-modal-label">Type <span className="admin-modal-label-required">*</span></label>
-                  <select value={form.type} onChange={set('type')} className={fieldClassName('type')} aria-invalid={Boolean(validationErrors.type)}>
-                    <option value="">- Type -</option>
-                    <option value="ALBUM">Album</option>
-                    <option value="SINGLE">Single</option>
-                    <option value="EP">EP</option>
-                  </select>
-                </div>
-                <div className="admin-modal-field">
-                  <label className="admin-modal-label">Release Date <span className="admin-modal-label-required">*</span></label>
-                  <AdminDateInput value={form.releaseDate} onChange={setReleaseDate} className={fieldClassName('releaseDate')} ariaInvalid={Boolean(validationErrors.releaseDate)} required />
-                </div>
                 <div className="admin-modal-field admin-modal-field-full">
                   <label className="admin-modal-label">About</label>
                   <textarea placeholder="About this album..." value={form.aboutText} onChange={set('aboutText')} className="admin-artists-page-input admin-modal-textarea" rows={5} />
                 </div>
                 <div className="admin-modal-field admin-modal-field-full">
-                  <label className="admin-modal-label">SoundCloud URL</label>
+                  <label className="admin-modal-label">{iconLabel(<FaSoundcloud />, 'SoundCloud URL')}</label>
                   <input type="url" placeholder="SoundCloud URL" value={form.soundcloudUrl} onChange={set('soundcloudUrl')} className="admin-artists-page-input" />
                 </div>
                 <div className="admin-modal-field admin-modal-field-full">
-                  <label className="admin-modal-label">Spotify URL</label>
+                  <label className="admin-modal-label">{iconLabel(<FaSpotify />, 'Spotify URL')}</label>
                   <input type="url" placeholder="Spotify URL" value={form.spotifyUrl} onChange={set('spotifyUrl')} className="admin-artists-page-input" />
                 </div>
                 <div className="admin-modal-field admin-modal-field-full">
-                  <label className="admin-modal-label">Apple Music URL</label>
+                  <label className="admin-modal-label">{iconLabel(<FaApple />, 'Apple Music URL')}</label>
                   <input type="url" placeholder="Apple Music URL" value={form.appleMusicUrl} onChange={set('appleMusicUrl')} className="admin-artists-page-input" />
                 </div>
                 <div className="admin-modal-field admin-modal-field-full">
-                  <label className="admin-modal-label">YouTube URL</label>
+                  <label className="admin-modal-label">{iconLabel(<FaYoutube />, 'YouTube URL')}</label>
                   <input type="url" placeholder="YouTube URL" value={form.youtubeUrl} onChange={set('youtubeUrl')} className="admin-artists-page-input" />
                 </div>
               </div>

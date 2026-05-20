@@ -28,6 +28,15 @@ const empty = {
 	youtubeSocialProfile: '',
 };
 
+function iconLabel(icon, text) {
+	return (
+		<span className="admin-modal-label-with-icon">
+			<span className="admin-modal-label-icon" aria-hidden="true">{icon}</span>
+			<span>{text}</span>
+		</span>
+	);
+}
+
 const columns = [
 	{ key: 'images', label: 'Images', kind: 'images', className: 'admin-artists-page-col-image' },
 	{ key: 'name', label: 'Name', placeholder: 'Name', className: 'admin-artists-page-col-lg' },
@@ -379,43 +388,43 @@ export default function AdminArtistsPage() {
 									/>
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">SoundCloud URL</label>
+									<label className="admin-modal-label">{iconLabel(<FaSoundcloud />, 'SoundCloud URL')}</label>
 									<input type="url" placeholder="SoundCloud URL" value={form.soundcloudProfile} onChange={(event) => setForm((current) => ({ ...current, soundcloudProfile: event.target.value }))} className="admin-artists-page-input" />
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Spotify URL</label>
+									<label className="admin-modal-label">{iconLabel(<FaSpotify />, 'Spotify URL')}</label>
 									<input type="url" placeholder="Spotify URL" value={form.spotifyProfile} onChange={(event) => setForm((current) => ({ ...current, spotifyProfile: event.target.value }))} className="admin-artists-page-input" />
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Apple Music URL</label>
+									<label className="admin-modal-label">{iconLabel(<FaApple />, 'Apple Music URL')}</label>
 									<input type="url" placeholder="Apple Music URL" value={form.appleMusicProfile} onChange={(event) => setForm((current) => ({ ...current, appleMusicProfile: event.target.value }))} className="admin-artists-page-input" />
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">YouTube Music URL</label>
+									<label className="admin-modal-label">{iconLabel(<FaYoutube />, 'YouTube Music URL')}</label>
 									<input type="url" placeholder="YouTube Music URL" value={form.youtubeProfile} onChange={(event) => setForm((current) => ({ ...current, youtubeProfile: event.target.value }))} className="admin-artists-page-input" />
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Instagram URL</label>
+									<label className="admin-modal-label">{iconLabel(<SiInstagram />, 'Instagram URL')}</label>
 									<input type="url" placeholder="Instagram URL" value={form.instagramProfile} onChange={(event) => setForm((current) => ({ ...current, instagramProfile: event.target.value }))} className="admin-artists-page-input" />
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">X URL</label>
+									<label className="admin-modal-label">{iconLabel(<SiX />, 'X URL')}</label>
 									<input type="url" placeholder="X URL" value={form.twitterProfile} onChange={(event) => setForm((current) => ({ ...current, twitterProfile: event.target.value }))} className="admin-artists-page-input" />
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Facebook URL</label>
+									<label className="admin-modal-label">{iconLabel(<SiFacebook />, 'Facebook URL')}</label>
 									<input type="url" placeholder="Facebook URL" value={form.facebookProfile} onChange={(event) => setForm((current) => ({ ...current, facebookProfile: event.target.value }))} className="admin-artists-page-input" />
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">TikTok URL</label>
+									<label className="admin-modal-label">{iconLabel(<SiTiktok />, 'TikTok URL')}</label>
 									<input type="url" placeholder="TikTok URL" value={form.tiktokProfile} onChange={(event) => setForm((current) => ({ ...current, tiktokProfile: event.target.value }))} className="admin-artists-page-input" />
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Snapchat URL</label>
+									<label className="admin-modal-label">{iconLabel(<SiSnapchat />, 'Snapchat URL')}</label>
 									<input type="url" placeholder="Snapchat URL" value={form.snapchatProfile} onChange={(event) => setForm((current) => ({ ...current, snapchatProfile: event.target.value }))} className="admin-artists-page-input" />
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">YouTube Social URL</label>
+									<label className="admin-modal-label">{iconLabel(<SiYoutube />, 'YouTube Social URL')}</label>
 									<input type="url" placeholder="YouTube Social URL" value={form.youtubeSocialProfile} onChange={(event) => setForm((current) => ({ ...current, youtubeSocialProfile: event.target.value }))} className="admin-artists-page-input" />
 								</div>
 							</div>

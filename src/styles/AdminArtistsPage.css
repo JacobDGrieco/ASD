@@ -579,6 +579,19 @@
 	border: 0;
 }
 
+.admin-modal-label-with-icon {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.admin-modal-label-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.95em;
+}
+
 .admin-artists-page-primary-btn {
 	padding: 8px 16px;
 	background: var(--accent);

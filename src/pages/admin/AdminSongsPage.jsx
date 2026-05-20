@@ -47,6 +47,15 @@ const empty = {
   albumPlacements: [createAlbumPlacement()],
 }
 
+function iconLabel(icon, text) {
+  return (
+    <span className="admin-modal-label-with-icon">
+      <span className="admin-modal-label-icon" aria-hidden="true">{icon}</span>
+      <span>{text}</span>
+    </span>
+  )
+}
+
 function createSongFormFromAlbumPrefill(prefill = {}) {
   return {
     ...empty,
@@ -898,19 +907,19 @@ export default function AdminSongsPage() {
                       />
                     </div>
                     <div className="admin-modal-field admin-modal-field-full">
-                      <label className="admin-modal-label">SoundCloud URL</label>
+                      <label className="admin-modal-label">{iconLabel(<SiSoundcloud />, 'SoundCloud URL')}</label>
                       <input type="text" placeholder="SoundCloud URL" value={form.soundcloudUrl} onChange={set('soundcloudUrl')} className="admin-artists-page-input" />
                     </div>
                     <div className="admin-modal-field admin-modal-field-full">
-                      <label className="admin-modal-label">Spotify URL</label>
+                      <label className="admin-modal-label">{iconLabel(<SiSpotify />, 'Spotify URL')}</label>
                       <input type="text" placeholder="Spotify URL" value={form.spotifyUrl} onChange={set('spotifyUrl')} className="admin-artists-page-input" />
                     </div>
                     <div className="admin-modal-field admin-modal-field-full">
-                      <label className="admin-modal-label">Apple Music URL</label>
+                      <label className="admin-modal-label">{iconLabel(<SiApplemusic />, 'Apple Music URL')}</label>
                       <input type="text" placeholder="Apple Music URL" value={form.appleMusicUrl} onChange={set('appleMusicUrl')} className="admin-artists-page-input" />
                     </div>
                     <div className="admin-modal-field admin-modal-field-full">
-                      <label className="admin-modal-label">YouTube URL</label>
+                      <label className="admin-modal-label">{iconLabel(<SiYoutube />, 'YouTube URL')}</label>
                       <input type="text" placeholder="YouTube URL" value={form.youtubeUrl} onChange={set('youtubeUrl')} className="admin-artists-page-input" />
                     </div>
                   </div>
