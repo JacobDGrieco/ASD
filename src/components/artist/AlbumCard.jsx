@@ -15,7 +15,7 @@ function getSongSlugFromPath(to) {
 
 export default function AlbumCard({ album, isOpen, isUnreleased = false, onClick, to, subtitle }) {
 	const year = new Date(album.releaseDate).getFullYear();
-	const className = `album-card-card ${isOpen ? 'album-card-open' : ''}`;
+	const className = `album-card-card ${isOpen ? 'album-card-open' : ''} ${album.isPubliclyVisible === false ? 'album-card-hidden' : ''}`.trim();
 	const streamLinks = [
 		{ href: album.soundcloudUrl, label: 'SoundCloud', icon: FaSoundcloud },
 		{ href: album.spotifyUrl, label: 'Spotify', icon: FaSpotify },

@@ -2,7 +2,7 @@ import AlbumCard from './AlbumCard.jsx'
 import { buildAlbumPath, buildSongPath, isOtherArtist } from '../../lib/publicVisibility.js'
 import '../../styles/Discography.css'
 
-export default function FeaturedOn({ featuredIn }) {
+export default function FeaturedOn({ featuredIn, adminPreview = false }) {
   if (!featuredIn?.length) return null
 
   return (
@@ -17,6 +17,8 @@ export default function FeaturedOn({ featuredIn }) {
                 songSlug: leadSong?.slug,
                 albumSlug: album.slug,
                 artist: album.artist,
+                song: leadSong,
+                allowHidden: adminPreview,
               })
             : singleSong
             ? buildSongPath({
@@ -24,11 +26,15 @@ export default function FeaturedOn({ featuredIn }) {
                 albumSlug: album.slug,
                 artistSlug: album.artist.slug,
                 artist: album.artist,
+                song: singleSong,
+                allowHidden: adminPreview,
               })
             : buildAlbumPath({
                 albumSlug: album.slug,
                 artistSlug: album.artist.slug,
                 artist: album.artist,
+                album,
+                allowHidden: adminPreview,
               })
           return (
             <AlbumCard

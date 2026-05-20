@@ -72,6 +72,27 @@
 		border-color 0.35s ease;
 }
 
+.artist-splash-card-hidden .artist-splash-card-frame::before,
+.artist-splash-card-hidden .artist-splash-card-frame::after {
+	content: "";
+	position: absolute;
+	inset: 50%;
+	width: 170%;
+	height: 2px;
+	background: rgba(228, 108, 108, 0.88);
+	transform-origin: center;
+	z-index: 2;
+	pointer-events: none;
+}
+
+.artist-splash-card-hidden .artist-splash-card-frame::before {
+	transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.artist-splash-card-hidden .artist-splash-card-frame::after {
+	transform: translate(-50%, -50%) rotate(-45deg);
+}
+
 .artist-splash-card:hover,
 .artist-splash-card:focus-visible,
 .artist-splash-card-active {

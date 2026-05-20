@@ -1,9 +1,10 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import AlbumCard from './AlbumCard.jsx'
 import TrackList from './TrackList.jsx'
+import { buildSongPath } from '../../lib/publicVisibility.js'
 import '../../styles/Discography.css'
 
-export default function Discography({ albums, artistSlug }) {
+export default function Discography({ albums, artistSlug, artist = null, adminPreview = false }) {
   const gridRef = useRef(null)
   const [openAlbumId, setOpenAlbumId] = useState(null)
   const [columns, setColumns] = useState(1)
@@ -46,7 +47,14 @@ export default function Discography({ albums, artistSlug }) {
           const to = isUnreleased
             ? undefined
             : singleSong
-            ? `/${artistSlug}/${album.slug}/${singleSong.slug}`
+            ? buildSongPath({
+                songSlug: singleSong.slug,
+                albumSlug: album.slug,
+                artistSlug,
+                artist,
+                song: singleSong,
+                allowHidden: adminPreview,
+              })
             : undefined
 
           return (
@@ -63,9 +71,11 @@ export default function Discography({ albums, artistSlug }) {
                   <TrackList
                     songs={openAlbum.songs}
                     artistSlug={artistSlug}
+                    artist={artist}
                     albumSlug={openAlbum.slug}
                     albumHref={`/${artistSlug}/${openAlbum.slug}`}
                     albumTitle={openAlbum.title}
+                    allowHidden={adminPreview}
                   />
                 </div>
               )}

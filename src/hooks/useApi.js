@@ -4,45 +4,45 @@ import { millisecondsUntilNextUtcMidnight } from '../lib/releaseSchedule.js'
 const apiCache = new Map()
 const inflightRequests = new Map()
 
-function getCachedEntry(url, maxAge) {
-  const entry = apiCache.get(url)
+function getCachedEntry(cacheKey, maxAge) {
+  const entry = apiCache.get(cacheKey)
   if (!entry) return null
   if (Date.now() - entry.timestamp > maxAge) {
-    apiCache.delete(url)
+    apiCache.delete(cacheKey)
     return null
   }
   return entry
 }
 
-async function fetchJson(url) {
-  const response = await fetch(url)
+async function fetchJson(url, headers) {
+  const response = await fetch(url, headers ? { headers } : undefined)
   if (!response.ok) throw new Error(String(response.status))
   return response.json()
 }
 
-export function prefetchApi(url, { maxAge = 5 * 60 * 1000 } = {}) {
+export function prefetchApi(url, { maxAge = 5 * 60 * 1000, headers, cacheKey = url } = {}) {
   if (!url) return Promise.resolve(null)
 
-  const cached = getCachedEntry(url, maxAge)
+  const cached = getCachedEntry(cacheKey, maxAge)
   if (cached) return Promise.resolve(cached.data)
 
-  if (inflightRequests.has(url)) return inflightRequests.get(url)
+  if (inflightRequests.has(cacheKey)) return inflightRequests.get(cacheKey)
 
-  const request = fetchJson(url)
+  const request = fetchJson(url, headers)
     .then((data) => {
-      apiCache.set(url, { data, timestamp: Date.now() })
+      apiCache.set(cacheKey, { data, timestamp: Date.now() })
       return data
     })
     .finally(() => {
-      inflightRequests.delete(url)
+      inflightRequests.delete(cacheKey)
     })
 
-  inflightRequests.set(url, request)
+  inflightRequests.set(cacheKey, request)
   return request
 }
 
-export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = false } = {}) {
-  const cached = url ? getCachedEntry(url, maxAge) : null
+export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = false, headers, cacheKey = url } = {}) {
+  const cached = url ? getCachedEntry(cacheKey, maxAge) : null
   const [data, setData] = useState(cached?.data ?? null)
   const [loading, setLoading] = useState(url !== null && !cached)
   const [error, setError] = useState(null)
@@ -51,7 +51,7 @@ export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = fal
     if (!url) return
 
     let cancelled = false
-    const cachedEntry = getCachedEntry(url, maxAge)
+    const cachedEntry = getCachedEntry(cacheKey, maxAge)
 
     if (cachedEntry) {
       setData(cachedEntry.data)
@@ -63,7 +63,7 @@ export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = fal
     setLoading(true)
     setError(null)
 
-    prefetchApi(url, { maxAge })
+    prefetchApi(url, { maxAge, headers, cacheKey })
       .then((nextData) => {
         if (!cancelled) {
           setData(nextData)
@@ -80,7 +80,7 @@ export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = fal
     return () => {
       cancelled = true
     }
-  }, [maxAge, url])
+  }, [cacheKey, headers, maxAge, url])
 
   useEffect(() => {
     if (!url || !refreshAtUtcMidnight) return undefined
@@ -90,10 +90,10 @@ export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = fal
 
     const scheduleRefresh = () => {
       timeoutId = window.setTimeout(() => {
-        apiCache.delete(url)
-        inflightRequests.delete(url)
+        apiCache.delete(cacheKey)
+        inflightRequests.delete(cacheKey)
 
-        prefetchApi(url, { maxAge })
+        prefetchApi(url, { maxAge, headers, cacheKey })
           .then((nextData) => {
             if (!cancelled) {
               setData(nextData)
@@ -117,7 +117,7 @@ export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = fal
       cancelled = true
       if (timeoutId !== null) window.clearTimeout(timeoutId)
     }
-  }, [maxAge, refreshAtUtcMidnight, url])
+  }, [cacheKey, headers, maxAge, refreshAtUtcMidnight, url])
 
   return { data, loading, error }
 }

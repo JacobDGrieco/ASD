@@ -43,6 +43,27 @@
 	z-index: 0;
 }
 
+.artist-hero-hero-hidden .artist-hero-portrait-frame::before,
+.artist-hero-hero-hidden .artist-hero-portrait-frame::after {
+	content: "";
+	position: absolute;
+	inset: 50%;
+	width: 175%;
+	height: 2px;
+	background: rgba(228, 108, 108, 0.88);
+	transform-origin: center;
+	z-index: 2;
+	pointer-events: none;
+}
+
+.artist-hero-hero-hidden .artist-hero-portrait-frame::before {
+	transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.artist-hero-hero-hidden .artist-hero-portrait-frame::after {
+	transform: translate(-50%, -50%) rotate(-45deg);
+}
+
 .artist-hero-portrait {
 	position: absolute;
 	inset: 0;
@@ -77,6 +98,19 @@
 	max-width: 520px;
 }
 
+.artist-hero-visibility-badge {
+	display: inline-flex;
+	width: fit-content;
+	padding: 6px 10px;
+	border: 1px solid rgba(228, 108, 108, 0.45);
+	border-radius: 999px;
+	background: rgba(70, 20, 20, 0.24);
+	color: #efb0b0;
+	font-size: 0.72rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+}
+
 .artist-hero-name {
 	font-size: 3rem;
 	font-weight: normal;
@@ -96,6 +130,13 @@
 	font-size: 1.1rem;
 	color: var(--text-muted);
 	line-height: 1.8;
+}
+
+.artist-hero-hero-hidden .artist-hero-name,
+.artist-hero-hero-hidden .artist-hero-bio,
+.artist-hero-hero-hidden .artist-hero-about {
+	text-decoration: line-through;
+	text-decoration-color: rgba(228, 108, 108, 0.88);
 }
 
 .artist-hero-link-groups {

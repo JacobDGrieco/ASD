@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useParams } from 'react-router-dom'
 import { TabPanel, TabView } from 'primereact/tabview'
 import { useApi } from '../hooks/useApi.js'
@@ -7,15 +7,23 @@ import LyricsView from '../components/song/LyricsView.jsx'
 import AboutSection from '../components/song/AboutSection.jsx'
 import SongInfoLinks from '../components/song/SongInfoLinks.jsx'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
+import { useAdminAuth } from '../lib/adminAuth.jsx'
+import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js'
 import '../styles/SongPage.css'
 
 export default function SongPage() {
   const { albumSlug, songSlug } = useParams()
   const location = useLocation()
+  const { session, token } = useAdminAuth()
+  const adminPreview = isAdminPreviewSession(session, token)
   const routeAlbumSlug = albumSlug ?? new URLSearchParams(location.search).get('albumSlug') ?? ''
   const albumQuery = routeAlbumSlug ? `?albumSlug=${encodeURIComponent(routeAlbumSlug)}` : ''
-  const { data: song, loading, error } = useApi(`/api/songs/${songSlug}${albumQuery}`, {
+  const apiUrl = `/api/songs/${songSlug}${albumQuery}`
+  const previewHeaders = useMemo(() => publicPreviewHeaders(adminPreview ? token : null), [adminPreview, token])
+  const { data: song, loading, error } = useApi(apiUrl, {
     refreshAtUtcMidnight: true,
+    headers: previewHeaders,
+    cacheKey: publicPreviewCacheKey(apiUrl, adminPreview),
   })
   const lyricLineCount = song?.lyricBlocks?.filter((block) => block.text?.trim()).length ?? 0
   const defaultTabIndex = lyricLineCount < 2 ? 1 : 0
@@ -33,7 +41,7 @@ export default function SongPage() {
       <AuroraBackground />
       {song && (
         <div className="aurora-page-content">
-          <SongHeader song={song} />
+          <SongHeader song={song} adminPreview={adminPreview} />
           <div className="song-page-body">
             <TabView className="page-tabview" activeIndex={activeTabIndex} onTabChange={(event) => setActiveTabIndex(event.index)}>
               <TabPanel header="Lyrics">

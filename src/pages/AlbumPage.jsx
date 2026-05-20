@@ -1,18 +1,27 @@
 import { useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import { useMemo } from 'react';
 import { FaApple, FaSoundcloud, FaSpotify, FaYoutube } from 'react-icons/fa';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { useApi } from '../hooks/useApi.js';
 import AlbumDetails from '../components/album/AlbumDetails.jsx';
 import TrackList from '../components/artist/TrackList.jsx';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
+import { useAdminAuth } from '../lib/adminAuth.jsx';
+import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js';
 import '../styles/SongHeader.css';
 import '../styles/SongPage.css';
 
 export default function AlbumPage() {
 	const { albumSlug } = useParams();
-	const { data: album, loading, error } = useApi(`/api/albums/${albumSlug}`, {
+	const { session, token } = useAdminAuth();
+	const adminPreview = isAdminPreviewSession(session, token);
+	const apiUrl = `/api/albums/${albumSlug}`;
+	const previewHeaders = useMemo(() => publicPreviewHeaders(adminPreview ? token : null), [adminPreview, token]);
+	const { data: album, loading, error } = useApi(apiUrl, {
 		refreshAtUtcMidnight: true,
+		headers: previewHeaders,
+		cacheKey: publicPreviewCacheKey(apiUrl, adminPreview),
 	});
 
 	if (!loading && (error || !album)) return <div className="page not-found"><h1>Album not found</h1></div>;
@@ -26,7 +35,7 @@ export default function AlbumPage() {
 					<div className="song-page-body">
 						<TabView className="page-tabview">
 							<TabPanel header="Tracklist">
-								<TrackList songs={album.songs} artistSlug={album.artist.slug} albumSlug={albumSlug} />
+								<TrackList songs={album.songs} artistSlug={album.artist.slug} artist={album.artist} albumSlug={albumSlug} allowHidden={adminPreview} />
 							</TabPanel>
 							<TabPanel header="About & Info">
 								<AlbumDetails album={album} />
@@ -49,7 +58,7 @@ function AlbumHeader({ album }) {
 	].filter((link) => link.href);
 
 	return (
-		<section className="song-header-header">
+		<section className={`song-header-header ${album.isPubliclyVisible === false ? 'song-header-hidden' : ''}`.trim()}>
 			<div className="song-header-media-column">
 				<div className="song-header-art-wrap">
 					{album.coverArt
@@ -76,6 +85,7 @@ function AlbumHeader({ album }) {
 				)}
 			</div>
 			<div className="song-header-info">
+				{album.isPubliclyVisible === false && <span className="song-header-visibility-badge">Hidden in public view</span>}
 				<div className="song-header-artist-links">
 					<Link to={`/artists/${album.artist.slug}`} className="song-header-artist-link">
 						{album.artist.name}

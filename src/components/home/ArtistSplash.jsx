@@ -123,7 +123,7 @@ function ArtistCard({ artist, imagePriority = 'auto', enterDelayMs = 0 }) {
 	return (
 		<Link
 			to={`/artists/${artist.slug}`}
-			className={`artist-splash-card ${isActive ? 'artist-splash-card-active' : ''}`.trim()}
+			className={`artist-splash-card ${isActive ? 'artist-splash-card-active' : ''} ${artist.isPubliclyVisible === false ? 'artist-splash-card-hidden' : ''}`.trim()}
 			style={{ '--artist-splash-enter-delay': `${enterDelayMs}ms` }}
 			onMouseEnter={() => {
 				prefetchArtistPage(artist);

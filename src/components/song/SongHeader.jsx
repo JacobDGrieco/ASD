@@ -8,7 +8,7 @@ import SpotifyPlayer from '../shared/SpotifyPlayer.jsx'
 import ArtworkGallery from '../shared/ArtworkGallery.jsx'
 import '../../styles/SongHeader.css'
 
-export default function SongHeader({ song }) {
+export default function SongHeader({ song, adminPreview = false }) {
   const hasSongArtwork = Array.isArray(song.images) && song.images.length > 0
   const artwork = hasSongArtwork
     ? song.images[0]?.previewUrl || song.images[0]?.url || song.artwork || song.album.coverArt
@@ -21,6 +21,8 @@ export default function SongHeader({ song }) {
     albumSlug: song.album?.slug,
     artistSlug: song.album?.artist?.slug,
     artist: song.album?.artist,
+    album: song.album,
+    allowHidden: adminPreview,
   })
   const streamLinks = [
     { href: song.soundcloudUrl, label: 'SoundCloud', icon: FaSoundcloud },
@@ -31,7 +33,7 @@ export default function SongHeader({ song }) {
   const playerUrl = song.soundcloudUrl || song.spotifyUrl || song.appleMusicUrl || null
 
   return (
-    <section className="song-header-header">
+    <section className={`song-header-header ${song.isPubliclyVisible === false ? 'song-header-hidden' : ''}`.trim()}>
       <div className="song-header-media-column">
         <div className="song-header-art-wrap">
           {hasSongArtwork && <ArtworkGallery images={song.images} title={song.title} />}
@@ -58,6 +60,7 @@ export default function SongHeader({ song }) {
         )}
       </div>
       <div className="song-header-info">
+        {song.isPubliclyVisible === false && <span className="song-header-visibility-badge">Hidden in public view</span>}
         <div className="song-header-artist-links">
           {showArtistPageLink ? (
             <Link

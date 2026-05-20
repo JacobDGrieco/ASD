@@ -1,5 +1,6 @@
 import { prisma } from '../src/lib/prisma.js'
 import { isEffectivelyVisible } from '../src/lib/contentVisibility.js'
+import { verifyToken } from '../src/lib/auth.js'
 import { buildClientImageUrl, clientImages, mergeLegacyImages } from '../src/lib/images.js'
 import { ARTIST_VIDEO_SOURCE, buildStaticArtistVideoPath, getYouTubeEmbedUrl } from '../src/lib/artistVideos.js'
 import { isOtherArtist, isReservedHiddenArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js'
@@ -46,6 +47,12 @@ function setPublicCache(res) {
   res.setHeader('Cache-Control', 'no-store')
 }
 
+function readPreviewSession(req) {
+  const auth = req.headers.authorization
+  if (!auth?.startsWith('Bearer ')) return null
+  return verifyToken(auth.slice(7))
+}
+
 function publicArtistSelect() {
   return {
     id: true,
@@ -63,13 +70,13 @@ function parseCreditNames(value) {
     .filter(Boolean)
 }
 
-async function resolveArtistLinksByName(names) {
+async function resolveArtistLinksByName(names, includeHidden = false) {
   const uniqueNames = [...new Set((Array.isArray(names) ? names : []).map((name) => name.trim()).filter(Boolean))]
   if (!uniqueNames.length) return {}
 
   const matched = await prisma.artist.findMany({
     where: {
-      isVisible: true,
+      ...(includeHidden ? {} : { isVisible: true }),
       OR: uniqueNames.map((name) => ({
         name: { equals: name, mode: 'insensitive' },
       })),
@@ -79,7 +86,7 @@ async function resolveArtistLinksByName(names) {
 
   return Object.fromEntries(
     matched
-      .filter(isPublicArtistVisible)
+      .filter((artist) => includeHidden || isPublicArtistVisible(artist))
       .map((artist) => [artist.name.trim().toLowerCase(), artist.slug])
   )
 }
@@ -113,7 +120,7 @@ function formatAlbumSummary(album) {
   }
 }
 
-function formatPlacementSongs(placements) {
+function formatPlacementSongs(placements, fallbackReleaseDate = null, now = new Date()) {
   return placements
     .slice()
     .sort((left, right) => {
@@ -129,6 +136,10 @@ function formatPlacementSongs(placements) {
       autoShowOnRelease: placement.song.autoShowOnRelease,
       duration: placement.song.duration,
       releaseDate: placement.song.meta?.releaseDate ?? null,
+      isPubliclyVisible: isPublicSongReleased({
+        ...placement.song,
+        releaseDate: placement.song.meta?.releaseDate ?? null,
+      }, placement.album?.releaseDate ?? fallbackReleaseDate ?? null, now),
       trackNumber: placement.trackNumber,
       discNumber: placement.discNumber,
       placementOrder: placement.placementOrder,
@@ -173,7 +184,7 @@ function resolvePrimaryPlacement(placements, albumSlug = null) {
   return placements.find((placement) => placement.album.slug === albumSlug) ?? placements[0]
 }
 
-async function getArtists(res) {
+async function getArtists(res, includeHidden = false) {
   setPublicCache(res)
   const now = new Date()
   const artists = await prisma.artist.findMany({
@@ -248,22 +259,27 @@ async function getArtists(res) {
       const images = formatArtistImages(artist)
       return {
         ...artist,
+        isPubliclyVisible: isPublicArtistVisible(artist),
         portrait: images[0]?.previewUrl ?? artist.portrait,
         images,
         albums: (artist.albums ?? [])
-          .filter((album) => isPublicAlbumReleased(album, now))
+          .filter((album) => includeHidden || isPublicAlbumReleased(album, now))
           .map((album) => ({
             ...formatAlbumSummary(album),
-            songs: formatPlacementSongs(album.songPlacements).filter((song) =>
-              isPublicSongReleased(song, album.releaseDate, now)
-            ),
+            isPubliclyVisible: isPublicAlbumReleased(album, now) && isPublicArtistVisible(artist),
+            songs: formatPlacementSongs(album.songPlacements, album.releaseDate, now)
+              .map((song) => ({
+                ...song,
+                isPubliclyVisible: song.isPubliclyVisible && isPublicArtistVisible(artist),
+              }))
+              .filter((song) => includeHidden || isPublicSongReleased(song, album.releaseDate, now)),
           })),
       }
-    }).filter(isPublicArtistVisible)
+    }).filter((artist) => includeHidden || isPublicArtistVisible(artist))
   )
 }
 
-async function getArtist(res, slug) {
+async function getArtist(res, slug, includeHidden = false) {
   setPublicCache(res)
   const now = new Date()
   const artist = await prisma.artist.findUnique({
@@ -302,7 +318,7 @@ async function getArtist(res, slug) {
   })
 
   if (!artist) return res.status(404).json({ error: 'Artist not found' })
-  if (!isPublicArtistVisible(artist)) return res.status(404).json({ error: 'Artist not found' })
+  if (!includeHidden && !isPublicArtistVisible(artist)) return res.status(404).json({ error: 'Artist not found' })
 
   const images = formatArtistImages(artist)
 
@@ -357,12 +373,16 @@ async function getArtist(res, slug) {
 
     for (const placement of song.placements) {
       const album = placement.album
-      if (!isPublicArtistVisible(album.artist)) continue
-      if (!isPublicAlbumReleased(album, now)) continue
-      if (!isPublicSongReleased({ ...song, releaseDate }, album.releaseDate, now)) continue
+      if (!includeHidden && !isPublicArtistVisible(album.artist)) continue
+      if (!includeHidden && !isPublicAlbumReleased(album, now)) continue
+      if (!includeHidden && !isPublicSongReleased({ ...song, releaseDate }, album.releaseDate, now)) continue
 
       if (!albumMap.has(album.id)) {
-        albumMap.set(album.id, { ...formatAlbumSummary(album), songs: [] })
+        albumMap.set(album.id, {
+          ...formatAlbumSummary(album),
+          isPubliclyVisible: isPublicAlbumReleased(album, now) && isPublicArtistVisible(album.artist),
+          songs: [],
+        })
       }
 
       albumMap.get(album.id).songs.push({
@@ -370,6 +390,7 @@ async function getArtist(res, slug) {
         title: song.title,
         slug: song.slug,
         duration: song.duration,
+        isPubliclyVisible: isPublicSongReleased({ ...song, releaseDate }, album.releaseDate, now) && isPublicAlbumReleased(album, now) && isPublicArtistVisible(album.artist),
         trackNumber: placement.trackNumber,
         discNumber: placement.discNumber,
         placementOrder: placement.placementOrder,
@@ -388,15 +409,20 @@ async function getArtist(res, slug) {
 
   return res.status(200).json({
     ...artist,
+    isPubliclyVisible: isPublicArtistVisible(artist),
     portrait: images[0]?.previewUrl ?? artist.portrait,
     images,
     albums: artist.albums
-      .filter((album) => isPublicAlbumReleased(album, now))
+      .filter((album) => includeHidden || isPublicAlbumReleased(album, now))
       .map((album) => ({
         ...formatAlbumSummary(album),
-        songs: formatPlacementSongs(album.songPlacements).filter((song) =>
-          isPublicSongReleased(song, album.releaseDate, now)
-        ),
+        isPubliclyVisible: isPublicAlbumReleased(album, now) && isPublicArtistVisible(artist),
+        songs: formatPlacementSongs(album.songPlacements, album.releaseDate, now)
+          .map((song) => ({
+            ...song,
+            isPubliclyVisible: song.isPubliclyVisible && isPublicArtistVisible(artist),
+          }))
+          .filter((song) => includeHidden || isPublicSongReleased(song, album.releaseDate, now)),
       })),
     featuredIn,
   })
@@ -465,7 +491,7 @@ async function getVideos(res) {
   )
 }
 
-async function getAlbum(res, slug) {
+async function getAlbum(res, slug, includeHidden = false) {
   setPublicCache(res)
   const now = new Date()
   const album = await prisma.album.findUnique({
@@ -497,21 +523,25 @@ async function getAlbum(res, slug) {
   })
 
   if (!album) return res.status(404).json({ error: 'Album not found' })
-  if (!isPublicArtistVisible(album.artist)) return res.status(404).json({ error: 'Album not found' })
-  if (!isPublicAlbumReleased(album, now)) return res.status(404).json({ error: 'Album not found' })
+  if (!includeHidden && !isPublicArtistVisible(album.artist)) return res.status(404).json({ error: 'Album not found' })
+  if (!includeHidden && !isPublicAlbumReleased(album, now)) return res.status(404).json({ error: 'Album not found' })
 
   const albumImages = formatAlbumImages(album)
   return res.status(200).json({
     ...album,
+    isPubliclyVisible: isPublicAlbumReleased(album, now) && isPublicArtistVisible(album.artist),
     coverArt: albumImages[0]?.previewUrl ?? album.coverArt,
     images: albumImages,
-    songs: formatPlacementSongs(album.songPlacements).filter((song) =>
-      isPublicSongReleased(song, album.releaseDate, now)
-    ),
+    songs: formatPlacementSongs(album.songPlacements, album.releaseDate, now)
+      .map((song) => ({
+        ...song,
+        isPubliclyVisible: song.isPubliclyVisible && isPublicArtistVisible(album.artist),
+      }))
+      .filter((song) => includeHidden || isPublicSongReleased(song, album.releaseDate, now)),
   })
 }
 
-async function getSong(res, slug, albumSlug = null) {
+async function getSong(res, slug, albumSlug = null, includeHidden = false) {
   setPublicCache(res)
   const now = new Date()
   const song = await prisma.song.findUnique({
@@ -553,18 +583,20 @@ async function getSong(res, slug, albumSlug = null) {
   if (!song) return res.status(404).json({ error: 'Song not found' })
 
   const releasedPlacements = song.placements.filter((placement) =>
-    isPublicArtistVisible(placement.album.artist) &&
-    isPublicAlbumReleased(placement.album, now)
+    includeHidden || (
+      isPublicArtistVisible(placement.album.artist) &&
+      isPublicAlbumReleased(placement.album, now)
+    )
   )
   const primaryPlacement = resolvePrimaryPlacement(releasedPlacements, albumSlug)
   const requestedPlacement = resolvePrimaryPlacement(song.placements, albumSlug)
   const primaryAlbum = primaryPlacement?.album ?? null
   const songReleaseDate = song.meta?.releaseDate ?? requestedPlacement?.album?.releaseDate ?? null
 
-  if (!requestedPlacement || !isPublicArtistVisible(requestedPlacement.album.artist) || !isPublicAlbumReleased(requestedPlacement.album, now)) {
+  if (!requestedPlacement || (!includeHidden && (!isPublicArtistVisible(requestedPlacement.album.artist) || !isPublicAlbumReleased(requestedPlacement.album, now)))) {
     return res.status(404).json({ error: 'Song not found' })
   }
-  if (!isPublicSongReleased({ ...song, releaseDate: songReleaseDate }, requestedPlacement.album.releaseDate, now)) {
+  if (!includeHidden && !isPublicSongReleased({ ...song, releaseDate: songReleaseDate }, requestedPlacement.album.releaseDate, now)) {
     return res.status(404).json({ error: 'Song not found' })
   }
 
@@ -580,7 +612,7 @@ async function getSong(res, slug, albumSlug = null) {
       ...featuredArtistNames,
       ...producerNames,
       ...writerNames,
-    ])
+    ], includeHidden)
 
     song.meta = {
       ...song.meta,
@@ -597,7 +629,10 @@ async function getSong(res, slug, albumSlug = null) {
       trackNumber: placement.trackNumber,
       discNumber: placement.discNumber,
       placementOrder: placement.placementOrder,
-      album,
+      album: {
+        ...album,
+        isPubliclyVisible: isPublicAlbumReleased(placement.album, now) && isPublicArtistVisible(placement.album.artist),
+      },
     }
   })
 
@@ -607,6 +642,9 @@ async function getSong(res, slug, albumSlug = null) {
 
   return res.status(200).json({
     ...song,
+    isPubliclyVisible: isPublicSongReleased({ ...song, releaseDate: songReleaseDate }, requestedPlacement.album.releaseDate, now)
+      && isPublicAlbumReleased(requestedPlacement.album, now)
+      && isPublicArtistVisible(requestedPlacement.album.artist),
     album: placements.find((placement) => placement.album.slug === primaryAlbum?.slug)?.album ?? placements[0]?.album ?? null,
     albumId: primaryPlacement?.albumId ?? '',
     trackNumber: primaryPlacement?.trackNumber ?? null,
@@ -620,7 +658,7 @@ async function getSong(res, slug, albumSlug = null) {
   })
 }
 
-async function getRecordPlayer(res) {
+async function getRecordPlayer(res, includeHidden = false) {
   try {
     setPublicCache(res)
     const now = new Date()
@@ -669,9 +707,11 @@ async function getRecordPlayer(res) {
       tracks
         .map((track) => {
           const placement = track.song.placements.find((candidate) => (
-            isPublicArtistVisible(candidate.album.artist) &&
-            isPublicAlbumReleased(candidate.album, now) &&
-            isPublicSongReleased(track.song, candidate.album.releaseDate, now)
+            includeHidden || (
+              isPublicArtistVisible(candidate.album.artist) &&
+              isPublicAlbumReleased(candidate.album, now) &&
+              isPublicSongReleased(track.song, candidate.album.releaseDate, now)
+            )
           ))
           if (!placement) return null
 
@@ -680,6 +720,9 @@ async function getRecordPlayer(res) {
             ...track,
             song: {
               ...track.song,
+              isPubliclyVisible: isPublicSongReleased(track.song, placement.album.releaseDate, now)
+                && isPublicAlbumReleased(placement.album, now)
+                && isPublicArtistVisible(placement.album.artist),
               album,
             },
           }
@@ -731,17 +774,19 @@ async function getBoardPosts(res) {
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+  const previewSession = readPreviewSession(req)
+  const includeHidden = Boolean(previewSession)
 
   const resource = typeof req.query.resource === 'string' ? req.query.resource : ''
   const slug = normalizeSlug(req.query.slug)
   const albumSlug = typeof req.query.albumSlug === 'string' ? req.query.albumSlug : null
 
-  if (resource === 'artists') return getArtists(res)
-  if (resource === 'artist' && slug) return getArtist(res, slug)
-  if (resource === 'album' && slug) return getAlbum(res, slug)
-  if (resource === 'song' && slug) return getSong(res, slug, albumSlug)
+  if (resource === 'artists') return getArtists(res, includeHidden)
+  if (resource === 'artist' && slug) return getArtist(res, slug, includeHidden)
+  if (resource === 'album' && slug) return getAlbum(res, slug, includeHidden)
+  if (resource === 'song' && slug) return getSong(res, slug, albumSlug, includeHidden)
   if (resource === 'videos') return getVideos(res)
-  if (resource === 'recordPlayer') return getRecordPlayer(res)
+  if (resource === 'recordPlayer') return getRecordPlayer(res, includeHidden)
   if (resource === 'boardPosts') return getBoardPosts(res)
 
   return res.status(404).json({ error: 'Not found' })

@@ -1,0 +1,29 @@
+.public-admin-preview-exit {
+	position: fixed;
+	right: 24px;
+	bottom: 24px;
+	z-index: 220;
+	padding: 10px 18px;
+	border: 1px solid #c8a96e;
+	border-radius: 6px;
+	background: #1a1008;
+	color: #c8a96e;
+	font-size: 12px;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.public-admin-preview-exit:hover {
+	background: #2a2010;
+}
+
+@media (max-width: 640px) {
+	.public-admin-preview-exit {
+		right: 16px;
+		bottom: 16px;
+		padding: 10px 14px;
+		font-size: 11px;
+	}
+}

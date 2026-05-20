@@ -40,6 +40,7 @@
   align-items: center;
   gap: 16px;
   padding: 12px 14px;
+  position: relative;
   border-radius: var(--radius);
   color: var(--text);
   text-decoration: none;
@@ -48,6 +49,34 @@
 
 .track-list-row:hover {
   background: var(--bg-raised);
+}
+
+.track-list-row-hidden::before,
+.track-list-row-hidden::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 50%;
+  height: 1px;
+  background: rgba(228, 108, 108, 0.75);
+  pointer-events: none;
+}
+
+.track-list-row-hidden::before {
+  transform: rotate(2deg);
+}
+
+.track-list-row-hidden::after {
+  transform: rotate(-2deg);
+}
+
+.track-list-row-hidden .track-list-title,
+.track-list-row-hidden .track-list-duration,
+.track-list-row-hidden .track-list-num {
+  text-decoration: line-through;
+  text-decoration-color: rgba(228, 108, 108, 0.88);
+  opacity: 0.8;
 }
 
 .track-list-num {

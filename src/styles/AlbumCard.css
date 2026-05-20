@@ -26,6 +26,35 @@
 	border-color: var(--accent);
 }
 
+.album-card-hidden .album-card-cover-wrap::before,
+.album-card-hidden .album-card-cover-wrap::after {
+	content: "";
+	position: absolute;
+	inset: 50%;
+	width: 180%;
+	height: 2px;
+	background: rgba(228, 108, 108, 0.92);
+	transform-origin: center;
+	z-index: 2;
+	pointer-events: none;
+}
+
+.album-card-hidden .album-card-cover-wrap::before {
+	transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.album-card-hidden .album-card-cover-wrap::after {
+	transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.album-card-hidden .album-card-title,
+.album-card-hidden .album-card-meta {
+	text-decoration: line-through;
+	text-decoration-thickness: 1px;
+	text-decoration-color: rgba(228, 108, 108, 0.88);
+	opacity: 0.8;
+}
+
 .album-card-primary-action {
 	display: flex;
 	flex-direction: column;

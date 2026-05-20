@@ -126,7 +126,7 @@ export default function ArtistHero({ artist }) {
 	].filter(Boolean);
 
 	return (
-		<section className="artist-hero-hero">
+		<section className={`artist-hero-hero ${artist.isPubliclyVisible === false ? 'artist-hero-hero-hidden' : ''}`.trim()}>
 			<div className="artist-hero-portrait-wrap">
 				<div className="artist-hero-portrait-frame">
 					{previousImage && (
@@ -181,6 +181,7 @@ export default function ArtistHero({ artist }) {
 				)}
 			</div>
 			<div className="artist-hero-info">
+				{artist.isPubliclyVisible === false && <span className="artist-hero-visibility-badge">Hidden in public view</span>}
 				<h1 className="artist-hero-name">{artist.name}</h1>
 				<p className="artist-hero-bio">{artist.bio}</p>
 				{artist.aboutMe && <p className="artist-hero-about">{artist.aboutMe}</p>}

@@ -5,6 +5,8 @@ import RecordPlayer from '../components/home/RecordPlayer.jsx';
 import AlbumCard from '../components/artist/AlbumCard.jsx';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import { buildAlbumPath, buildSongPath } from '../lib/publicVisibility.js';
+import { useAdminAuth } from '../lib/adminAuth.jsx';
+import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js';
 import '../styles/HomePage.css';
 
 void prefetchApi('/api/artists');
@@ -47,16 +49,29 @@ function HomeRecordPlayerPlaceholder() {
 }
 
 export default function HomePage() {
+	const { session, token } = useAdminAuth();
+	const adminPreview = isAdminPreviewSession(session, token);
+	const artistHeaders = useMemo(() => publicPreviewHeaders(adminPreview ? token : null), [adminPreview, token]);
+	const artistApiUrl = '/api/artists';
+	const recordApiUrl = '/api/record-player';
 	const {
 		data: artists,
 		loading: artistsLoading,
 		error: artistsError,
-	} = useApi('/api/artists', { refreshAtUtcMidnight: true });
+	} = useApi(artistApiUrl, {
+		refreshAtUtcMidnight: true,
+		headers: artistHeaders,
+		cacheKey: publicPreviewCacheKey(artistApiUrl, adminPreview),
+	});
 	const {
 		data: tracks,
 		loading: tracksLoading,
 		error: tracksError,
-	} = useApi('/api/record-player', { refreshAtUtcMidnight: true });
+	} = useApi(recordApiUrl, {
+		refreshAtUtcMidnight: true,
+		headers: artistHeaders,
+		cacheKey: publicPreviewCacheKey(recordApiUrl, adminPreview),
+	});
 	const apiMessage = getHomePageApiMessage(import.meta.env.DEV);
 
 	const latestReleases = useMemo(() => {
@@ -129,16 +144,22 @@ export default function HomePage() {
 											albumSlug: album.slug,
 											artistSlug: album.artist?.slug,
 											artist: album.artist,
+											song: singleSong,
+											allowHidden: adminPreview,
 										})
 										: buildAlbumPath({
 											albumSlug: album.slug,
 											artistSlug: album.artist?.slug,
 											artist: album.artist,
+											album,
+											allowHidden: adminPreview,
 										}) ?? buildSongPath({
 											songSlug: leadSong?.slug,
 											albumSlug: album.slug,
 											artistSlug: album.artist?.slug,
 											artist: album.artist,
+											song: leadSong,
+											allowHidden: adminPreview,
 										});
 
 									return (
