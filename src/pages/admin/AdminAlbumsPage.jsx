@@ -1,4 +1,5 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { FaApple, FaExternalLinkAlt, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash, FaYoutube } from 'react-icons/fa'
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
 import AdminDateInput, { isValidDateInput } from '../../components/admin/AdminDateInput.jsx'
@@ -102,6 +103,7 @@ function validateAlbumForm(form, albums = []) {
 }
 
 export default function AdminAlbumsPage() {
+  const navigate = useNavigate()
   const { token, session } = useAdminAuth()
   const isArtistScoped = session?.role === 'ARTIST'
   const isViewer = session?.role === 'VIEWER'
@@ -227,6 +229,23 @@ export default function AdminAlbumsPage() {
     setAlbums(nextAlbums)
     primeAdminResource('albums-list', token, nextAlbums)
     closeForm()
+
+    if (!isEdit && saved.type === 'SINGLE') {
+      navigate('/admin/songs', {
+        state: {
+          createFromAlbum: {
+            albumId: saved.id,
+            artistId: saved.artistId,
+            title: saved.title ?? '',
+            releaseDate: saved.releaseDate ? String(saved.releaseDate).slice(0, 10) : '',
+            soundcloudUrl: saved.soundcloudUrl ?? '',
+            spotifyUrl: saved.spotifyUrl ?? '',
+            appleMusicUrl: saved.appleMusicUrl ?? '',
+            youtubeUrl: saved.youtubeUrl ?? '',
+          },
+        },
+      })
+    }
   }
 
   const handleDelete = async (id) => {

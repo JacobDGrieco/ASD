@@ -1,5 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { TabPanel, TabView } from 'primereact/tabview'
 import { FaArrowLeft, FaArrowRight, FaExternalLinkAlt, FaPencilAlt, FaStickyNote, FaTimes, FaTrash } from 'react-icons/fa'
 import { SiApplemusic, SiSoundcloud, SiSpotify, SiYoutube } from 'react-icons/si'
@@ -41,6 +42,26 @@ const empty = {
   images: [],
   tags: [],
   albumPlacements: [createAlbumPlacement()],
+}
+
+function createSongFormFromAlbumPrefill(prefill = {}) {
+  return {
+    ...empty,
+    title: prefill.title ?? '',
+    releaseDate: prefill.releaseDate ?? '',
+    soundcloudUrl: prefill.soundcloudUrl ?? '',
+    spotifyUrl: prefill.spotifyUrl ?? '',
+    appleMusicUrl: prefill.appleMusicUrl ?? '',
+    youtubeUrl: prefill.youtubeUrl ?? '',
+    albumPlacements: [
+      {
+        ...createAlbumPlacement(),
+        albumId: prefill.albumId ?? '',
+        trackNumber: 1,
+        discNumber: 1,
+      },
+    ],
+  }
 }
 
 function primaryImage(images) {
@@ -193,6 +214,8 @@ function hasAlbumErrors(errors) {
 }
 
 export default function AdminSongsPage() {
+  const location = useLocation()
+  const navigate = useNavigate()
   const { token, session } = useAdminAuth()
   const isArtistScoped = session?.role === 'ARTIST'
   const isViewer = session?.role === 'VIEWER'
@@ -339,15 +362,7 @@ export default function AdminSongsPage() {
   const openCreate = () => {
     setValidationErrors(null)
     setActiveTabIndex(0)
-    setForm({
-      ...empty,
-      albumPlacements: [
-        {
-          ...createAlbumPlacement(),
-          albumId: filterAlbum,
-        },
-      ],
-    })
+    setForm(createSongFormFromAlbumPrefill({ albumId: filterAlbum }))
   }
   const openEdit = async (song) => {
     setLoadingEditId(song.id)
@@ -376,6 +391,18 @@ export default function AdminSongsPage() {
     setValidationErrors(null)
     setActiveTabIndex(0)
   }
+
+  useEffect(() => {
+    const prefill = location.state?.createFromAlbum
+    if (!prefill || form) return
+
+    setValidationErrors(null)
+    setActiveTabIndex(0)
+    if (prefill.artistId) setFilterArtist(prefill.artistId)
+    if (prefill.albumId) setFilterAlbum(prefill.albumId)
+    setForm(createSongFormFromAlbumPrefill(prefill))
+    navigate(location.pathname, { replace: true, state: null })
+  }, [form, location.pathname, location.state, navigate])
 
   const handleSave = async () => {
     const nextErrors = validateSongForm(form, songs, albumById)
