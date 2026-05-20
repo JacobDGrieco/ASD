@@ -60,7 +60,11 @@ export default function ConfirmActionButton({
     if (!open) return undefined
 
     const handlePointerDown = (event) => {
-      if (!rootRef.current?.contains(event.target)) {
+      const target = event.target
+      const isInsideTrigger = rootRef.current?.contains(target)
+      const isInsidePopover = popoverRef.current?.contains(target)
+
+      if (!isInsideTrigger && !isInsidePopover) {
         setOpen(false)
       }
     }
