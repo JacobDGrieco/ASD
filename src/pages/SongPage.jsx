@@ -43,7 +43,7 @@ export default function SongPage() {
         <div className="aurora-page-content">
           <SongHeader song={song} adminPreview={adminPreview} />
           <div className="song-page-body">
-            <TabView className="page-tabview" activeIndex={activeTabIndex} onTabChange={(event) => setActiveTabIndex(event.index)}>
+            <TabView className="page-tabview song-page-tabview" activeIndex={activeTabIndex} onTabChange={(event) => setActiveTabIndex(event.index)}>
               <TabPanel header="Lyrics">
                 <LyricsView blocks={song.lyricBlocks} />
               </TabPanel>
