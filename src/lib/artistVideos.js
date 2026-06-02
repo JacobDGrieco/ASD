@@ -18,11 +18,30 @@ function normalizeVideoExtension(extension) {
 
 export function getVideoMimeType(url) {
   if (typeof url !== 'string') return undefined
-  const normalized = url.toLowerCase()
-  if (normalized.endsWith('.mov')) return 'video/quicktime'
-  if (normalized.endsWith('.webm')) return 'video/webm'
-  if (normalized.endsWith('.ogg') || normalized.endsWith('.ogv')) return 'video/ogg'
+  const extension = getStaticArtistVideoExtension(url)
+  if (extension === 'mov') return 'video/quicktime'
+  if (extension === 'webm') return 'video/webm'
+  if (extension === 'ogg' || extension === 'ogv') return 'video/ogg'
   return 'video/mp4'
+}
+
+export function getVideoSourceType(url) {
+  const extension = getStaticArtistVideoExtension(url)
+  if (extension === 'mov') return undefined
+  return getVideoMimeType(url)
+}
+
+export function getPlayableVideoUrl(url) {
+  if (typeof url !== 'string' || !url) return url
+  if (!url.startsWith('/api/blob?')) return url
+
+  try {
+    const parsed = new URL(url, 'https://local.invalid')
+    parsed.searchParams.set('redirect', '1')
+    return `${parsed.pathname}${parsed.search}`
+  } catch {
+    return `${url}${url.includes('?') ? '&' : '?'}redirect=1`
+  }
 }
 
 export function getStaticArtistVideoExtension(value, fallback = DEFAULT_STATIC_VIDEO_EXTENSION) {

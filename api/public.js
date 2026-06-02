@@ -2,7 +2,7 @@ import { prisma } from '../src/lib/prisma.js'
 import { isEffectivelyVisible } from '../src/lib/contentVisibility.js'
 import { verifyToken } from '../src/lib/auth.js'
 import { buildClientImageUrl, clientImages, mergeLegacyImages } from '../src/lib/images.js'
-import { ARTIST_VIDEO_SOURCE, buildStaticArtistVideoPath, getYouTubeEmbedUrl } from '../src/lib/artistVideos.js'
+import { ARTIST_VIDEO_SOURCE, buildStaticArtistVideoPath, getStaticArtistVideoExtension, getYouTubeEmbedUrl } from '../src/lib/artistVideos.js'
 import { isOtherArtist, isReservedHiddenArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js'
 import { isReleasedOnUtcDay } from '../src/lib/releaseSchedule.js'
 
@@ -161,8 +161,9 @@ function isPublicArtistVisible(artist) {
 }
 
 function formatArtistVideo(video) {
+  const videoExtension = getStaticArtistVideoExtension(video.videoUrl)
   const resolvedVideoUrl = video.sourceType === ARTIST_VIDEO_SOURCE.UPLOAD
-    ? buildStaticArtistVideoPath(video.artist?.slug, VIDEO_BASE_URL)
+    ? buildStaticArtistVideoPath(video.artist?.slug, VIDEO_BASE_URL, videoExtension)
     : video.videoUrl
 
   return {

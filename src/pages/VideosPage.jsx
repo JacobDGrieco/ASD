@@ -2,24 +2,11 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaExternalLinkAlt, FaPlay } from 'react-icons/fa';
 import { prefetchApi, useApi } from '../hooks/useApi.js';
-import { ARTIST_VIDEO_SOURCE, getVideoMimeType } from '../lib/artistVideos.js';
+import { ARTIST_VIDEO_SOURCE, getPlayableVideoUrl, getVideoSourceType } from '../lib/artistVideos.js';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import '../styles/VideosPage.css';
 
 void prefetchApi('/api/videos');
-
-function getPlayableVideoUrl(url) {
-	if (typeof url !== 'string' || !url) return url;
-	if (!url.startsWith('/api/blob?')) return url;
-
-	try {
-		const parsed = new URL(url, window.location.origin);
-		parsed.searchParams.set('redirect', '1');
-		return `${parsed.pathname}${parsed.search}`;
-	} catch {
-		return `${url}${url.includes('?') ? '&' : '?'}redirect=1`;
-	}
-}
 
 function VideoPlayer({ video }) {
 	if (!video) {
@@ -62,7 +49,7 @@ function VideoPlayer({ video }) {
 					preload="metadata"
 					poster={video.posterUrl || video.artist?.portrait || undefined}
 				>
-					<source src={playableVideoUrl} type={getVideoMimeType(playableVideoUrl)} />
+					<source src={playableVideoUrl} type={getVideoSourceType(playableVideoUrl)} />
 				</video>
 			</div>
 		);

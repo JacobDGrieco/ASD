@@ -17,7 +17,7 @@ export default function Nav() {
 			<Link to="/" className="nav-logo"><img src="/favicon.png" alt="" className="nav-logo-mark" />ASD RECORDS</Link>
 			<div className="nav-links">
 				<NavLink to="/board" className={({ isActive }) => isActive ? 'nav-link nav-link-active' : 'nav-link'}>THE BOARD</NavLink>
-				<NavLink to="/videos" className={({ isActive }) => isActive ? 'nav-link nav-link-active' : 'nav-link'}>VIDEOS</NavLink>
+				<NavLink to="/videos" className={({ isActive }) => isActive ? 'nav-link nav-link-active' : 'nav-link'}>THE STAGE</NavLink>
 			</div>
 		</nav>
 	);

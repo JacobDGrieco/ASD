@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { preloadImage, preloadImages, prefetchArtistPage } from '../../lib/publicPrefetch.js';
-import { buildStaticArtistVideoPath, getVideoMimeType } from '../../lib/artistVideos.js';
+import { getVideoSourceType } from '../../lib/artistVideos.js';
 import '../../styles/ArtistSplash.css';
 
 const AUTO_SWAP_INTERVAL_MS = 500;
 const IMAGE_TRANSITION_MS = 480;
 const CARD_WAVE_DELAY_MS = 120;
+const DEFAULT_HERO_VIDEO = 'https://yrvmwf5ltxj8zlrg.public.blob.vercel-storage.com/videos/hero-video.mov';
 
 function uniqueUrls(urls) {
 	return [...new Set(urls.filter(Boolean))];
@@ -168,8 +169,10 @@ function ArtistCard({ artist, imagePriority = 'auto', enterDelayMs = 0 }) {
 }
 
 export default function ArtistSplash({ artists }) {
-	const heroVideo = import.meta.env.VITE_HOME_HERO_VIDEO || buildStaticArtistVideoPath('hero-video');
-	const heroVideoMimeType = getVideoMimeType(heroVideo);
+	const heroVideos = useMemo(() => uniqueUrls([
+		import.meta.env.VITE_HOME_HERO_VIDEO,
+		DEFAULT_HERO_VIDEO,
+	]), []);
 	const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
 	const priorityCount = 3;
 
@@ -192,7 +195,7 @@ export default function ArtistSplash({ artists }) {
 			}
 			window.clearTimeout(handle);
 		};
-	}, []);
+	}, [heroVideos]);
 
 	return (
 		<section className="artist-splash-splash">
@@ -206,7 +209,13 @@ export default function ArtistSplash({ artists }) {
 					preload="metadata"
 					aria-hidden="true"
 				>
-					<source src={heroVideo} type={heroVideoMimeType} />
+					{heroVideos.map((heroVideo) => (
+						<source
+							key={heroVideo}
+							src={heroVideo}
+							type={getVideoSourceType(heroVideo)}
+						/>
+					))}
 				</video>
 			)}
 			<div className="artist-splash-overlay" />

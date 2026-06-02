@@ -1,14 +1,15 @@
 import { prisma } from '../../src/lib/prisma.js'
 import { canAccessArtist, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
 import { buildClientImageUrl } from '../../src/lib/images.js'
-import { buildStaticArtistVideoPath, normalizeArtistVideoInput, validateArtistVideoInput, ARTIST_VIDEO_SOURCE } from '../../src/lib/artistVideos.js'
+import { buildStaticArtistVideoPath, getStaticArtistVideoExtension, normalizeArtistVideoInput, validateArtistVideoInput, ARTIST_VIDEO_SOURCE } from '../../src/lib/artistVideos.js'
 import { isOtherArtist } from '../../src/lib/publicVisibility.js'
 
 const VIDEO_BASE_URL = process.env.VIDEO_BASE_URL || process.env.VITE_VIDEO_BASE_URL || ''
 
 function formatVideoRow(row) {
+  const videoExtension = getStaticArtistVideoExtension(row.videoUrl)
   const resolvedVideoUrl = row.sourceType === ARTIST_VIDEO_SOURCE.UPLOAD
-    ? buildStaticArtistVideoPath(row.artist?.slug, VIDEO_BASE_URL)
+    ? buildStaticArtistVideoPath(row.artist?.slug, VIDEO_BASE_URL, videoExtension)
     : row.videoUrl
 
   return {
@@ -108,11 +109,12 @@ export default async function handler(req, res) {
       ...req.body,
       artistId: targetArtistId,
     })
+    const videoExtension = getStaticArtistVideoExtension(normalized.videoUrl)
     const payload = normalized.sourceType === ARTIST_VIDEO_SOURCE.UPLOAD
       ? {
           ...normalized,
           youtubeUrl: null,
-          videoUrl: buildStaticArtistVideoPath(artist.slug, VIDEO_BASE_URL),
+          videoUrl: buildStaticArtistVideoPath(artist.slug, VIDEO_BASE_URL, videoExtension),
         }
       : normalized
     const validationError = validateArtistVideoInput(payload)
