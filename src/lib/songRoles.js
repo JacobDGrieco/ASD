@@ -1,0 +1,31 @@
+export const SONG_ROLES = [
+  'Featured Artist',
+  'Producer',
+  'Composer',
+  'Lyricist',
+  'Writer',
+  'Drummer',
+  'Bassist',
+  'Guitarist',
+  'Keyboardist',
+  'Vocalist',
+  'Mixing Engineer',
+  'Mastering Engineer',
+  'Recording Engineer',
+]
+
+export const ROLE_DISPLAY_LABELS = {
+  'Featured Artist':    'Featuring',
+  'Producer':           'Produced by',
+  'Composer':           'Composed by',
+  'Lyricist':           'Lyrics by',
+  'Writer':             'Written by',
+  'Drummer':            'Drums',
+  'Bassist':            'Bass',
+  'Guitarist':          'Guitar',
+  'Keyboardist':        'Keys',
+  'Vocalist':           'Vocals',
+  'Mixing Engineer':    'Mixed by',
+  'Mastering Engineer': 'Mastered by',
+  'Recording Engineer': 'Recorded by',
+}

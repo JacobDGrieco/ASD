@@ -13,6 +13,7 @@ import { isOtherArtist, OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID } from '../../
 import { slugify } from '../../lib/slugify.js'
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx'
 import ChipInputField from '../../components/admin/ChipInputField.jsx'
+import { SONG_ROLES } from '../../lib/songRoles.js'
 import '../../styles/AdminArtistsPage.css'
 import '../../styles/AdminSongsPage.css'
 
@@ -38,9 +39,7 @@ const empty = {
   appleMusicUrl: '',
   youtubeUrl: '',
   aboutText: '',
-  producers: '',
-  writers: '',
-  featuredArtists: '',
+  roles: [],
   releaseDate: '',
   images: [],
   tags: [],
@@ -405,9 +404,7 @@ export default function AdminSongsPage() {
         ...detail,
         images: detail.images ?? [],
         aboutText: detail.meta?.aboutText ?? '',
-        producers: detail.meta?.producers ?? '',
-        writers: detail.meta?.writers ?? '',
-        featuredArtists: detail.meta?.featuredArtists ?? '',
+        roles: Array.isArray(detail.meta?.roles) ? detail.meta.roles : [],
         tags: detail.meta?.tags ?? [],
         releaseDate: detail.meta?.releaseDate ? detail.meta.releaseDate.slice(0, 10) : '',
         albumPlacements: buildPlacementForm(detail),
@@ -443,7 +440,7 @@ export default function AdminSongsPage() {
     if (hasSongValidationErrors(nextErrors)) {
       setValidationErrors(nextErrors)
       if (hasAlbumErrors(nextErrors) && !hasSongInfoErrors(nextErrors)) {
-        setActiveTabIndex(1)
+        setActiveTabIndex(2)
       }
       return
     }
@@ -505,6 +502,24 @@ export default function AdminSongsPage() {
         ...(!visibilityTouched ? defaultVisibilityForReleaseDate(value) : {}),
       }
     })
+
+  const addRole = () =>
+    setForm((current) => ({
+      ...current,
+      roles: [...current.roles, { role: 'Featured Artist', name: '' }],
+    }))
+
+  const removeRole = (index) =>
+    setForm((current) => ({
+      ...current,
+      roles: current.roles.filter((_, i) => i !== index),
+    }))
+
+  const updateRole = (index, key, value) =>
+    setForm((current) => ({
+      ...current,
+      roles: current.roles.map((entry, i) => (i === index ? { ...entry, [key]: value } : entry)),
+    }))
 
   const setAlbumPlacement = (index, key) => (event) =>
     setForm((current) => {
@@ -883,18 +898,6 @@ export default function AdminSongsPage() {
                       <AdminDateInput value={form.releaseDate} onChange={setReleaseDate} className={songFieldClassName('releaseDate')} ariaInvalid={Boolean(validationErrors?.releaseDate)} />
                     </div>
                     <div className="admin-modal-field admin-modal-field-full">
-                      <label className="admin-modal-label">Featured Artists</label>
-                      <input type="text" placeholder="Featured artists" value={form.featuredArtists} onChange={set('featuredArtists')} className="admin-artists-page-input" />
-                    </div>
-                    <div className="admin-modal-field admin-modal-field-full">
-                      <label className="admin-modal-label">Producers</label>
-                      <input type="text" placeholder="Producers" value={form.producers} onChange={set('producers')} className="admin-artists-page-input" />
-                    </div>
-                    <div className="admin-modal-field admin-modal-field-full">
-                      <label className="admin-modal-label">Writers</label>
-                      <input type="text" placeholder="Writers" value={form.writers} onChange={set('writers')} className="admin-artists-page-input" />
-                    </div>
-                    <div className="admin-modal-field admin-modal-field-full">
                       <label className="admin-modal-label">About</label>
                       <textarea placeholder="About this song..." value={form.aboutText} onChange={set('aboutText')} className="admin-artists-page-input admin-modal-textarea" rows={5} />
                     </div>
@@ -923,6 +926,45 @@ export default function AdminSongsPage() {
                       <input type="text" placeholder="YouTube URL" value={form.youtubeUrl} onChange={set('youtubeUrl')} className="admin-artists-page-input" />
                     </div>
                   </div>
+                </TabPanel>
+                <TabPanel header="Roles">
+                  <div className="admin-song-roles-list">
+                    {form.roles.map((entry, index) => (
+                      <div key={index} className="admin-song-role-row">
+                        <select
+                          value={entry.role}
+                          onChange={(e) => updateRole(index, 'role', e.target.value)}
+                          className="admin-artists-page-input"
+                        >
+                          {SONG_ROLES.map((role) => (
+                            <option key={role} value={role}>{role}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="text"
+                          placeholder="Name"
+                          value={entry.name}
+                          onChange={(e) => updateRole(index, 'name', e.target.value)}
+                          className="admin-artists-page-input"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeRole(index)}
+                          className="admin-artists-page-danger-btn"
+                          aria-label="Remove role"
+                        >
+                          <FaTimes aria-hidden="true" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addRole}
+                    className="admin-artists-page-ghost-btn admin-song-add-role-btn"
+                  >
+                    + Add Role
+                  </button>
                 </TabPanel>
                 <TabPanel header="Album Info">
                   <div className="admin-song-album-cards">

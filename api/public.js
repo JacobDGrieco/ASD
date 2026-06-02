@@ -324,9 +324,13 @@ async function getArtist(res, slug, includeHidden = false) {
   const images = formatArtistImages(artist)
 
   const featuredMetas = await prisma.songMeta.findMany({
-    where: { featuredArtists: { contains: artist.name, mode: 'insensitive' } },
+    where: {
+      roles: {
+        array_contains: [{ role: 'Featured Artist' }],
+      },
+    },
     select: {
-      featuredArtists: true,
+      roles: true,
       releaseDate: true,
       song: {
         select: {
@@ -368,9 +372,12 @@ async function getArtist(res, slug, includeHidden = false) {
   })
 
   const albumMap = new Map()
-  for (const { featuredArtists, releaseDate, song } of featuredMetas) {
-    const names = featuredArtists.split(';').map((name) => name.trim().toLowerCase())
-    if (!names.includes(artist.name.toLowerCase())) continue
+  for (const { roles, releaseDate, song } of featuredMetas) {
+    const rolesArray = Array.isArray(roles) ? roles : []
+    const isFeatured = rolesArray.some(
+      (r) => r.role === 'Featured Artist' && r.name?.toLowerCase() === artist.name.toLowerCase()
+    )
+    if (!isFeatured) continue
 
     for (const placement of song.placements) {
       const album = placement.album
@@ -606,21 +613,18 @@ async function getSong(res, slug, albumSlug = null, includeHidden = false) {
   }
 
   if (song.meta) {
-    const featuredArtistNames = parseCreditNames(song.meta.featuredArtists)
-    const producerNames = parseCreditNames(song.meta.producers)
-    const writerNames = parseCreditNames(song.meta.writers)
-    const slugByName = await resolveArtistLinksByName([
-      ...featuredArtistNames,
-      ...producerNames,
-      ...writerNames,
-    ], includeHidden)
+    const roles = Array.isArray(song.meta.roles) ? song.meta.roles : []
+    const allNames = [...new Set(roles.map((r) => r.name).filter(Boolean))]
+    const slugByName = await resolveArtistLinksByName(allNames, includeHidden)
 
-    song.meta = {
-      ...song.meta,
-      featuredArtistLinks: mapArtistLinks(featuredArtistNames, slugByName),
-      producerLinks: mapArtistLinks(producerNames, slugByName),
-      writerLinks: mapArtistLinks(writerNames, slugByName),
+    const roleGroups = {}
+    for (const { role, name } of roles) {
+      if (!name?.trim()) continue
+      if (!roleGroups[role]) roleGroups[role] = []
+      roleGroups[role].push({ name, slug: slugByName[name.trim().toLowerCase()] ?? null })
     }
+
+    song.meta = { ...song.meta, roleGroups }
   }
 
   const placements = releasedPlacements.map((placement) => {

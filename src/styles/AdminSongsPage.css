@@ -49,3 +49,20 @@
 .admin-song-add-album-btn {
 	margin-top: 1rem;
 }
+
+.admin-song-roles-list {
+	display: grid;
+	gap: 0.5rem;
+	margin-bottom: 1rem;
+}
+
+.admin-song-role-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr auto;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.admin-song-add-role-btn {
+	margin-top: 0.25rem;
+}

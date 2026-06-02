@@ -185,11 +185,9 @@ model SongMeta {
   songId      String    @unique
   song        Song      @relation(fields: [songId], references: [id], onDelete: Cascade)
   aboutText   String    @default("")
-  producers   String    @default("")
-  writers     String    @default("")
-  featuredArtists String @default("")
   tags        String[]  @default([])
   releaseDate DateTime?
+  roles       Json      @default(dbgenerated("'[]'::jsonb"))
 }
 
 model LyricBlock {

@@ -11,6 +11,7 @@ import {
   toImageCreateManyData,
 } from '../../src/lib/images.js'
 import { isOtherArtist, OTHER_ARTIST_NAME } from '../../src/lib/publicVisibility.js'
+import { SONG_ROLES } from '../../src/lib/songRoles.js'
 
 function withImages(song) {
   const images = clientImages(
@@ -266,7 +267,6 @@ function songListInclude() {
     },
     meta: {
       select: {
-        featuredArtists: true,
         releaseDate: true,
       },
     },
@@ -388,9 +388,7 @@ export default async function handler(req, res) {
         appleMusicUrl,
         youtubeUrl,
         aboutText,
-        producers,
-        writers,
-        featuredArtists,
+        roles,
         releaseDate,
         images,
         tags,
@@ -444,22 +442,23 @@ export default async function handler(req, res) {
         },
       })
 
+      const normalizedRoles = Array.isArray(roles)
+        ? roles.filter((r) => SONG_ROLES.includes(r.role) && typeof r.name === 'string' && r.name.trim())
+              .map((r) => ({ role: r.role, name: r.name.trim() }))
+        : []
+
       await prisma.songMeta.upsert({
         where: { songId: id },
         create: {
           songId: id,
           aboutText: aboutText ?? '',
-          producers: producers ?? '',
-          writers: writers ?? '',
-          featuredArtists: featuredArtists ?? '',
+          roles: normalizedRoles,
           tags: Array.isArray(tags) ? tags : [],
           releaseDate: releaseDate ? new Date(releaseDate) : null,
         },
         update: {
           aboutText,
-          producers,
-          writers,
-          featuredArtists,
+          roles: normalizedRoles,
           tags: Array.isArray(tags) ? tags : [],
           releaseDate: releaseDate ? new Date(releaseDate) : null,
         },
@@ -514,9 +513,7 @@ export default async function handler(req, res) {
       appleMusicUrl,
       youtubeUrl,
       aboutText,
-      producers,
-      writers,
-      featuredArtists,
+      roles,
       releaseDate,
       images,
       tags,
@@ -568,13 +565,16 @@ export default async function handler(req, res) {
       },
     })
 
+    const normalizedRoles = Array.isArray(roles)
+      ? roles.filter((r) => SONG_ROLES.includes(r.role) && typeof r.name === 'string' && r.name.trim())
+            .map((r) => ({ role: r.role, name: r.name.trim() }))
+      : []
+
     await prisma.songMeta.create({
       data: {
         songId: song.id,
         aboutText: aboutText ?? '',
-        producers: producers ?? '',
-        writers: writers ?? '',
-        featuredArtists: featuredArtists ?? '',
+        roles: normalizedRoles,
         tags: Array.isArray(tags) ? tags : [],
         releaseDate: releaseDate ? new Date(releaseDate) : null,
       },
