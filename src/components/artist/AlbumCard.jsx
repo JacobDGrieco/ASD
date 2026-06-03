@@ -4,13 +4,11 @@ import { prefetchSongPage } from '../../lib/publicPrefetch.js';
 import ArtworkGallery from '../shared/ArtworkGallery.jsx';
 import '../../styles/AlbumCard.css';
 
-function getSongSlugFromPath(to) {
-	if (!to) return null;
-	const [pathname] = String(to).split('?');
-	const parts = pathname.split('/').filter(Boolean);
-	if (parts.length === 0) return null;
+function getSongIdFromPath(path) {
+	if (!path) return null;
+	const parts = path.split('/').filter(Boolean);
 	if (parts[0] === 'songs') return parts[1] ?? null;
-	return parts[2] ?? null;
+	return null;
 }
 
 export default function AlbumCard({ album, isOpen, isUnreleased = false, onClick, to, subtitle }) {
@@ -47,9 +45,9 @@ export default function AlbumCard({ album, isOpen, isUnreleased = false, onClick
 				<Link
 					to={to}
 					className="album-card-primary-action"
-					onMouseEnter={() => { const s = getSongSlugFromPath(to); if (s) prefetchSongPage(s, album.coverArt, album.slug); }}
-					onFocus={() => { const s = getSongSlugFromPath(to); if (s) prefetchSongPage(s, album.coverArt, album.slug); }}
-					onTouchStart={() => { const s = getSongSlugFromPath(to); if (s) prefetchSongPage(s, album.coverArt, album.slug); }}
+					onMouseEnter={() => { const s = getSongIdFromPath(to); if (s) prefetchSongPage(s, album.coverArt); }}
+					onFocus={() => { const s = getSongIdFromPath(to); if (s) prefetchSongPage(s, album.coverArt); }}
+					onTouchStart={() => { const s = getSongIdFromPath(to); if (s) prefetchSongPage(s, album.coverArt); }}
 				>
 					{content}
 				</Link>

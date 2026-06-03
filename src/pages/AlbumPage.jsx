@@ -13,10 +13,10 @@ import '../styles/SongHeader.css';
 import '../styles/SongPage.css';
 
 export default function AlbumPage() {
-	const { albumSlug } = useParams();
+	const { albumId } = useParams();
 	const { session, token } = useAdminAuth();
 	const adminPreview = isAdminPreviewSession(session, token);
-	const apiUrl = `/api/albums/${albumSlug}`;
+	const apiUrl = `/api/albums/${albumId}`;
 	const previewHeaders = useMemo(() => publicPreviewHeaders(adminPreview ? token : null), [adminPreview, token]);
 	const { data: album, loading, error } = useApi(apiUrl, {
 		refreshAtUtcMidnight: true,
@@ -35,7 +35,7 @@ export default function AlbumPage() {
 					<div className="song-page-body">
 						<TabView className="page-tabview">
 							<TabPanel header="Tracklist">
-								<TrackList songs={album.songs} artistSlug={album.artist.slug} artist={album.artist} albumSlug={albumSlug} allowHidden={adminPreview} />
+								<TrackList songs={album.songs} allowHidden={adminPreview} />
 							</TabPanel>
 							<TabPanel header="About & Info">
 								<AlbumDetails album={album} />

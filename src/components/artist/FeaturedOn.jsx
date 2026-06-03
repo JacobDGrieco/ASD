@@ -14,25 +14,15 @@ export default function FeaturedOn({ featuredIn, adminPreview = false }) {
           const leadSong = singleSong ?? album.songs?.[0] ?? null
           const to = isOtherArtist(album.artist)
             ? buildSongPath({
-                songSlug: leadSong?.slug,
-                albumSlug: album.slug,
-                artist: album.artist,
                 song: leadSong,
                 allowHidden: adminPreview,
               })
             : singleSong
             ? buildSongPath({
-                songSlug: singleSong.slug,
-                albumSlug: album.slug,
-                artistSlug: album.artist.slug,
-                artist: album.artist,
                 song: singleSong,
                 allowHidden: adminPreview,
               })
             : buildAlbumPath({
-                albumSlug: album.slug,
-                artistSlug: album.artist.slug,
-                artist: album.artist,
                 album,
                 allowHidden: adminPreview,
               })

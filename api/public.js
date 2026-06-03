@@ -180,9 +180,8 @@ function formatArtistVideo(video) {
   }
 }
 
-function resolvePrimaryPlacement(placements, albumSlug = null) {
-  if (!placements?.length) return null
-  return placements.find((placement) => placement.album.slug === albumSlug) ?? placements[0]
+function resolvePrimaryPlacement(placements) {
+  return placements?.[0] ?? null
 }
 
 async function getArtists(res, includeHidden = false) {
@@ -499,11 +498,11 @@ async function getVideos(res) {
   )
 }
 
-async function getAlbum(res, slug, includeHidden = false) {
+async function getAlbum(res, id, includeHidden = false) {
   setPublicCache(res)
   const now = new Date()
   const album = await prisma.album.findUnique({
-    where: { slug },
+    where: { id },
     include: {
       images: {
         orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
@@ -549,11 +548,11 @@ async function getAlbum(res, slug, includeHidden = false) {
   })
 }
 
-async function getSong(res, slug, albumSlug = null, includeHidden = false) {
+async function getSong(res, id, includeHidden = false) {
   setPublicCache(res)
   const now = new Date()
   const song = await prisma.song.findUnique({
-    where: { slug },
+    where: { id },
     include: {
       placements: {
         orderBy: [{ placementOrder: 'asc' }],
@@ -596,8 +595,8 @@ async function getSong(res, slug, albumSlug = null, includeHidden = false) {
       isPublicAlbumReleased(placement.album, now)
     )
   )
-  const primaryPlacement = resolvePrimaryPlacement(releasedPlacements, albumSlug)
-  const requestedPlacement = resolvePrimaryPlacement(song.placements, albumSlug)
+  const primaryPlacement = resolvePrimaryPlacement(releasedPlacements)
+  const requestedPlacement = resolvePrimaryPlacement(song.placements)
   const primaryAlbum = primaryPlacement?.album ?? null
   const songReleaseDate = song.meta?.releaseDate ?? requestedPlacement?.album?.releaseDate ?? null
 
@@ -784,12 +783,12 @@ export default async function handler(req, res) {
 
   const resource = typeof req.query.resource === 'string' ? req.query.resource : ''
   const slug = normalizeSlug(req.query.slug)
-  const albumSlug = typeof req.query.albumSlug === 'string' ? req.query.albumSlug : null
+  const id = typeof req.query.id === 'string' ? req.query.id.trim() : null
 
   if (resource === 'artists') return getArtists(res, includeHidden)
   if (resource === 'artist' && slug) return getArtist(res, slug, includeHidden)
-  if (resource === 'album' && slug) return getAlbum(res, slug, includeHidden)
-  if (resource === 'song' && slug) return getSong(res, slug, albumSlug, includeHidden)
+  if (resource === 'album' && id) return getAlbum(res, id, includeHidden)
+  if (resource === 'song' && id) return getSong(res, id, includeHidden)
   if (resource === 'videos') return getVideos(res)
   if (resource === 'recordPlayer') return getRecordPlayer(res, includeHidden)
   if (resource === 'boardPosts') return getBoardPosts(res)

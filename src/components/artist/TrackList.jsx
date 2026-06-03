@@ -3,7 +3,7 @@ import { prefetchSongPage } from '../../lib/publicPrefetch.js';
 import { buildSongPath } from '../../lib/publicVisibility.js';
 import '../../styles/TrackList.css';
 
-export default function TrackList({ songs, artistSlug, albumSlug, albumHref, albumTitle, artist = null, allowHidden = false }) {
+export default function TrackList({ songs, albumHref = null, allowHidden = false }) {
 	return (
 		<div className="track-list-list">
 			{albumHref && (
@@ -16,18 +16,11 @@ export default function TrackList({ songs, artistSlug, albumSlug, albumHref, alb
 			{songs.map((song) => (
 				<Link
 					key={song.id}
-					to={buildSongPath({
-						songSlug: song.slug,
-						albumSlug,
-						artistSlug,
-						artist,
-						song,
-						allowHidden,
-					}) ?? `/${artistSlug}/${albumSlug}/${song.slug}`}
+					to={buildSongPath({ song, allowHidden }) ?? '/'}
 					className={`track-list-row ${song.isPubliclyVisible === false ? 'track-list-row-hidden' : ''}`.trim()}
-					onMouseEnter={() => prefetchSongPage(song.slug, null, albumSlug)}
-					onFocus={() => prefetchSongPage(song.slug, null, albumSlug)}
-					onTouchStart={() => prefetchSongPage(song.slug, null, albumSlug)}
+					onMouseEnter={() => prefetchSongPage(song.id, null)}
+					onFocus={() => prefetchSongPage(song.id, null)}
+					onTouchStart={() => prefetchSongPage(song.id, null)}
 				>
 					<span className="track-list-num">{song.discNumber > 1 ? `${song.discNumber}-` : ''}{song.trackNumber}</span>
 					<span className="track-list-title">{song.title}</span>

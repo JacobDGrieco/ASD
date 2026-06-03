@@ -18,9 +18,6 @@ export default function SongHeader({ song, adminPreview = false }) {
     : null
   const showArtistPageLink = song.album?.artist && !isOtherArtist(song.album.artist)
   const albumPagePath = buildAlbumPath({
-    albumSlug: song.album?.slug,
-    artistSlug: song.album?.artist?.slug,
-    artist: song.album?.artist,
     album: song.album,
     allowHidden: adminPreview,
   })

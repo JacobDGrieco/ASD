@@ -88,9 +88,8 @@ export default function App() {
 						<Route path="/board" element={<BoardPage />} />
 						<Route path="/videos" element={<VideosPage />} />
 						<Route path="/artists/:slug" element={<ArtistPage />} />
-						<Route path="/songs/:songSlug" element={<SongPage />} />
-						<Route path="/:artistSlug/:albumSlug/:songSlug" element={<SongPage />} />
-						<Route path="/:artistSlug/:albumSlug" element={<AlbumPage />} />
+						<Route path="/albums/:albumId" element={<AlbumPage />} />
+						<Route path="/songs/:songId" element={<SongPage />} />
 						<Route path="*" element={<NotFoundPage />} />
 					</Route>
 					<Route path="/admin/login" element={<AdminLoginPage />} />

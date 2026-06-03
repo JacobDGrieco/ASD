@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useLocation, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { TabPanel, TabView } from 'primereact/tabview'
 import { useApi } from '../hooks/useApi.js'
 import SongHeader from '../components/song/SongHeader.jsx'
@@ -12,13 +12,10 @@ import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } fr
 import '../styles/SongPage.css'
 
 export default function SongPage() {
-  const { albumSlug, songSlug } = useParams()
-  const location = useLocation()
+  const { songId } = useParams()
   const { session, token } = useAdminAuth()
   const adminPreview = isAdminPreviewSession(session, token)
-  const routeAlbumSlug = albumSlug ?? new URLSearchParams(location.search).get('albumSlug') ?? ''
-  const albumQuery = routeAlbumSlug ? `?albumSlug=${encodeURIComponent(routeAlbumSlug)}` : ''
-  const apiUrl = `/api/songs/${songSlug}${albumQuery}`
+  const apiUrl = `/api/songs/${songId}`
   const previewHeaders = useMemo(() => publicPreviewHeaders(adminPreview ? token : null), [adminPreview, token])
   const { data: song, loading, error } = useApi(apiUrl, {
     refreshAtUtcMidnight: true,

@@ -139,28 +139,9 @@ export default function HomePage() {
 									const singleSong = album.songs?.length === 1 ? album.songs[0] : null;
 									const leadSong = singleSong ?? album.songs?.[0] ?? null;
 									const to = singleSong
-										? buildSongPath({
-											songSlug: singleSong.slug,
-											albumSlug: album.slug,
-											artistSlug: album.artist?.slug,
-											artist: album.artist,
-											song: singleSong,
-											allowHidden: adminPreview,
-										})
-										: buildAlbumPath({
-											albumSlug: album.slug,
-											artistSlug: album.artist?.slug,
-											artist: album.artist,
-											album,
-											allowHidden: adminPreview,
-										}) ?? buildSongPath({
-											songSlug: leadSong?.slug,
-											albumSlug: album.slug,
-											artistSlug: album.artist?.slug,
-											artist: album.artist,
-											song: leadSong,
-											allowHidden: adminPreview,
-										});
+										? buildSongPath({ song: singleSong, allowHidden: adminPreview })
+										: buildAlbumPath({ album, allowHidden: adminPreview })
+											?? buildSongPath({ song: leadSong, allowHidden: adminPreview });
 
 									return (
 										<AlbumCard

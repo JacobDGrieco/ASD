@@ -41,10 +41,8 @@ export function prefetchArtistPage(artist) {
   void preloadImages([artist.portrait, ...images].slice(0, 4), { priority: 'high' })
 }
 
-export function prefetchSongPage(slug, coverArt, albumSlug = null) {
-  if (!slug) return
-
-  const params = albumSlug ? `?albumSlug=${encodeURIComponent(albumSlug)}` : ''
-  prefetchApi(`/api/songs/${slug}${params}`).catch(() => {})
+export function prefetchSongPage(id, coverArt) {
+  if (!id) return
+  prefetchApi(`/api/songs/${id}`).catch(() => {})
   void preloadImage(coverArt, { priority: 'high' })
 }

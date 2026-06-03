@@ -47,14 +47,7 @@ export default function Discography({ albums, artistSlug, artist = null, adminPr
           const to = isUnreleased
             ? undefined
             : singleSong
-            ? buildSongPath({
-                songSlug: singleSong.slug,
-                albumSlug: album.slug,
-                artistSlug,
-                artist,
-                song: singleSong,
-                allowHidden: adminPreview,
-              })
+            ? buildSongPath({ song: singleSong, allowHidden: adminPreview })
             : undefined
 
           return (
@@ -70,11 +63,7 @@ export default function Discography({ albums, artistSlug, artist = null, adminPr
                 <div className="discography-expand" key={`${openAlbum.id}-expand`}>
                   <TrackList
                     songs={openAlbum.songs}
-                    artistSlug={artistSlug}
-                    artist={artist}
-                    albumSlug={openAlbum.slug}
-                    albumHref={`/${artistSlug}/${openAlbum.slug}`}
-                    albumTitle={openAlbum.title}
+                    albumHref={`/albums/${openAlbum.id}`}
                     allowHidden={adminPreview}
                   />
                 </div>
