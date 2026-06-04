@@ -129,6 +129,10 @@
   margin-bottom: 12px;
 }
 
+.admin-board-page .admin-modal {
+  max-width: 920px;
+}
+
 .admin-board-page .admin-modal-body {
   display: flex;
   flex-direction: column;
@@ -274,6 +278,232 @@
   max-width: 220px;
 }
 
+.admin-board-page-markdown-editor {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-board-page-markdown-label-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-board-page-markdown-file {
+  display: none;
+}
+
+.admin-board-page-markdown-counts {
+  color: #8d8376;
+  font-size: 12px;
+}
+
+.admin-board-page-markdown-formatbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px;
+  border: 1px solid #2d2d2d;
+  border-radius: 10px;
+  background: #101010;
+}
+
+.admin-board-page-markdown-format-actions,
+.admin-board-page-markdown-format-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.admin-board-page-markdown-format-actions {
+  min-width: 0;
+}
+
+.admin-board-page-markdown-format-status {
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.admin-board-page-markdown-format-btn {
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #b7ab9a;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.admin-board-page-markdown-format-btn:hover {
+  border-color: #4a4035;
+  background: rgba(200, 169, 110, 0.1);
+  color: #f0d59f;
+}
+
+.admin-board-page-markdown-format-btn-disabled {
+  color: #5f574d;
+  cursor: not-allowed;
+}
+
+.admin-board-page-markdown-format-btn-disabled:hover {
+  border-color: transparent;
+  background: transparent;
+  color: #5f574d;
+}
+
+.admin-board-page-markdown-help {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid #343434;
+  border-radius: 10px;
+  background: #111;
+  color: #b7ab9a;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.admin-board-page-markdown-help code {
+  color: #f0d59f;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
+.admin-board-page-markdown-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.9fr);
+  gap: 12px;
+}
+
+.admin-board-page-markdown-pane {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 6px;
+}
+
+.admin-board-page-markdown-pane-title {
+  color: #8d8376;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-board-page-markdown-input,
+.admin-board-page-markdown-preview {
+  min-height: 260px;
+  border: 1px solid #2d2d2d;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #151515, #101010);
+  color: #e7dcc9;
+}
+
+.admin-board-page-markdown-input {
+  width: 100%;
+  resize: vertical;
+  padding: 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
+.admin-board-page-markdown-input:focus {
+  outline: none;
+  border-color: rgba(200, 169, 110, 0.9);
+  box-shadow: 0 0 0 3px rgba(200, 169, 110, 0.14);
+}
+
+.admin-board-page-markdown-preview {
+  overflow: auto;
+  padding: 16px;
+}
+
+.admin-board-page-markdown-preview-empty {
+  color: #756b60;
+  font-size: 13px;
+}
+
+.admin-board-page-markdown-preview-content {
+  color: #e7dcc9;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: normal;
+}
+
+.admin-board-page-markdown-preview-content p {
+  margin: 0 0 12px;
+}
+
+.admin-board-page-markdown-preview-content h1,
+.admin-board-page-markdown-preview-content h2,
+.admin-board-page-markdown-preview-content h3 {
+  margin: 0 0 12px;
+  color: #f1e5d2;
+  font-family: Georgia, serif;
+  line-height: 1.2;
+}
+
+.admin-board-page-markdown-preview-content h1 {
+  font-size: 22px;
+}
+
+.admin-board-page-markdown-preview-content h2 {
+  font-size: 18px;
+}
+
+.admin-board-page-markdown-preview-content h3 {
+  font-size: 15px;
+}
+
+.admin-board-page-markdown-preview-content ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+
+.admin-board-page-markdown-preview-content ol {
+  margin: 0 0 12px;
+  padding-left: 22px;
+}
+
+.admin-board-page-markdown-preview-content blockquote {
+  margin: 0 0 12px;
+  padding: 2px 0 2px 12px;
+  border-left: 2px solid #c8a96e;
+  color: #cfc1ad;
+}
+
+.admin-board-page-markdown-preview-content hr {
+  height: 1px;
+  border: 0;
+  background: #3a332b;
+  margin: 14px 0;
+}
+
+.admin-board-page-markdown-preview-content code {
+  color: #f0d59f;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
+.admin-board-page-markdown-preview-content a {
+  color: #f0d59f;
+  text-decoration: underline;
+}
+
+.admin-board-page-markdown-preview-content img {
+  max-width: min(100%, 260px);
+  max-height: 240px;
+  object-fit: contain;
+  display: block;
+  margin: 12px auto;
+  border-radius: 6px;
+}
+
 @media (max-width: 720px) {
   .admin-board-page {
     padding: 0;
@@ -296,6 +526,10 @@
   }
 
   .admin-board-page-settings-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-board-page-markdown-grid {
     grid-template-columns: 1fr;
   }
 

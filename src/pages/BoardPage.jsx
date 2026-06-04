@@ -10,7 +10,7 @@ import '../styles/board-page.css'
 const DRAG_HINT_KEY = 'board-drag-hint-seen'
 
 export default function BoardPage() {
-  const { data: posts, loading } = useApi('/api/public?resource=boardPosts')
+  const { data: posts, loading } = useApi('/api/public?resource=boardPosts', { maxAge: 0 })
   const { session, token } = useAdminAuth()
   const isSuperAdmin = session?.role === 'SUPER_ADMIN'
   const [editMode, setEditMode] = useState(false)

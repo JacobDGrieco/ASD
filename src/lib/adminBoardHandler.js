@@ -1,11 +1,12 @@
 import { prisma } from './prisma.js'
 import { isArtistAdmin, isSuperAdmin, isViewer } from './auth.js'
-import { ASD_RECORDS_ARTIST_NAME, ASD_RECORDS_ARTIST_OPTION_ID, ASD_RECORDS_ARTIST_SLUG } from './publicVisibility.js'
+import { validateBoardBodyMarkdown } from './boardMarkdown.js'
+import { ASD_RECORDS_ARTIST_NAME, ASD_RECORDS_ARTIST_OPTION_ID, ASD_RECORDS_ARTIST_SLUG, OTHER_ARTIST_SLUG } from './publicVisibility.js'
 
 const BOARD_COUNT_CAP = 25
 const BOARD_AGE_DAYS = 90
 const MAX_BODY_IMAGES = 1
-const MAX_BODY_LINKS = 3
+const MAX_BODY_LINKS = 5
 
 function now() {
   return new Date()
@@ -23,6 +24,10 @@ function publicWhere() {
     archivedAt: null,
     OR: [{ expiresAt: null }, { expiresAt: { gt: now() } }],
     AND: [{ publishedAt: { gte: ageCapDate() } }],
+    artist: {
+      isVisible: true,
+      slug: { not: OTHER_ARTIST_SLUG },
+    },
   }
 }
 
@@ -36,24 +41,11 @@ function includeArtist() {
   return { select: { id: true, name: true, slug: true } }
 }
 
-function countHtmlOccurrences(html, pattern) {
-  return (String(html ?? '').match(pattern) ?? []).length
-}
-
 function validateBoardBody(body) {
-  const bodyHtml = String(body ?? '')
-  const imageCount = countHtmlOccurrences(bodyHtml, /<img\b/gi)
-  const linkCount = countHtmlOccurrences(bodyHtml, /<a\b[^>]*href\s*=/gi)
-
-  if (imageCount > MAX_BODY_IMAGES) {
-    return `Board posts can include at most ${MAX_BODY_IMAGES} image in the body.`
-  }
-
-  if (linkCount > MAX_BODY_LINKS) {
-    return `Board posts can include at most ${MAX_BODY_LINKS} links in the body.`
-  }
-
-  return null
+  return validateBoardBodyMarkdown(body, {
+    maxImages: MAX_BODY_IMAGES,
+    maxLinks: MAX_BODY_LINKS,
+  }) || null
 }
 
 async function resolveBoardArtistId(session, artistId) {

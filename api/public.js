@@ -3,7 +3,7 @@ import { isEffectivelyVisible } from '../src/lib/contentVisibility.js'
 import { verifyToken } from '../src/lib/auth.js'
 import { buildClientImageUrl, clientImages, mergeLegacyImages } from '../src/lib/images.js'
 import { ARTIST_VIDEO_SOURCE, buildStaticArtistVideoPath, getStaticArtistVideoExtension, getYouTubeEmbedUrl } from '../src/lib/artistVideos.js'
-import { isOtherArtist, isReservedHiddenArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js'
+import { hasPublicBoardSource, isOtherArtist, isReservedHiddenArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js'
 import { isReleasedOnUtcDay } from '../src/lib/releaseSchedule.js'
 
 const VIDEO_BASE_URL = process.env.VIDEO_BASE_URL || process.env.VITE_VIDEO_BASE_URL || ''
@@ -753,6 +753,7 @@ async function getBoardPosts(res) {
       AND: [{ publishedAt: { gte: ageCap } }],
       artist: {
         isVisible: true,
+        slug: { not: OTHER_ARTIST_SLUG },
       },
     },
     orderBy: { publishedAt: 'desc' },
@@ -773,7 +774,7 @@ async function getBoardPosts(res) {
     },
   })
 
-  return res.status(200).json(posts.filter((post) => isPublicArtistVisible(post.artist)))
+  return res.status(200).json(posts.filter((post) => hasPublicBoardSource(post.artist)))
 }
 
 export default async function handler(req, res) {

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FaPencilAlt, FaThumbtack, FaTrash } from 'react-icons/fa';
+import BoardMarkdownEditor from '../../components/admin/BoardMarkdownEditor.jsx';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
 import AdminDateInput from '../../components/admin/AdminDateInput.jsx';
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx';
-import RichTextEditor from '../../components/shared/RichTextEditor.jsx';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
+import { extractBoardBodyImagePathnames, validateBoardBodyMarkdown } from '../../lib/boardMarkdown.js';
 import { ASD_RECORDS_ARTIST_NAME, ASD_RECORDS_ARTIST_OPTION_ID, isAsdRecordsArtist } from '../../lib/publicVisibility.js';
 import '../../styles/admin-board-page.css';
 
@@ -52,6 +53,7 @@ export default function AdminBoardPage() {
 	const [archivedOpen, setArchivedOpen] = useState(false);
 	const [validationErrors, setValidationErrors] = useState({});
 	const [formMessage, setFormMessage] = useState('');
+	const [pendingBodyImagePathnames, setPendingBodyImagePathnames] = useState([]);
 
 	const activePosts = useMemo(() => posts.filter((p) => !p.archivedAt), [posts]);
 	const archivedPosts = useMemo(() => posts.filter((p) => p.archivedAt), [posts]);
@@ -96,6 +98,7 @@ export default function AdminBoardPage() {
 	function openCreate() {
 		setValidationErrors({});
 		setFormMessage('');
+		setPendingBodyImagePathnames([]);
 		setForm({
 			...empty,
 			artistId: isSuperAdmin ? ASD_RECORDS_ARTIST_OPTION_ID : '',
@@ -108,6 +111,7 @@ export default function AdminBoardPage() {
 	function openEdit(post) {
 		setValidationErrors({});
 		setFormMessage('');
+		setPendingBodyImagePathnames([]);
 		const publishedAt = post.publishedAt ? new Date(post.publishedAt) : null;
 		const publishMode = !publishedAt
 			? 'draft'
@@ -129,12 +133,33 @@ export default function AdminBoardPage() {
 		setModalOpen(true);
 	}
 
-	function closeModal() {
+	function cleanupBodyImageUploads(pathnames, body, { deleteAll = false } = {}) {
+		if (!token) return;
+
+		const uniquePathnames = [...new Set(pathnames)].filter(Boolean);
+		if (!uniquePathnames.length) return;
+
+		const referencedPathnames = deleteAll ? new Set() : extractBoardBodyImagePathnames(body);
+		const unusedPathnames = uniquePathnames.filter((pathname) => !referencedPathnames.has(pathname));
+		if (!unusedPathnames.length) return;
+
+		void fetch('/api/admin/uploads', {
+			method: 'DELETE',
+			headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+			body: JSON.stringify({ pathnames: unusedPathnames }),
+		});
+	}
+
+	function closeModal({ cleanupUploads = true } = {}) {
+		if (cleanupUploads) {
+			cleanupBodyImageUploads(pendingBodyImagePathnames, form.body, { deleteAll: true });
+		}
 		setModalOpen(false);
 		setEditing(null);
 		setForm(empty);
 		setValidationErrors({});
 		setFormMessage('');
+		setPendingBodyImagePathnames([]);
 	}
 
 	async function save() {
@@ -142,6 +167,8 @@ export default function AdminBoardPage() {
 		if (!form.title.trim()) nextErrors.title = 'Title is required.';
 		if (isSuperAdmin && !form.artistId) nextErrors.artistId = 'Choose who this post is from.';
 		if (form.publishMode === 'schedule' && !form.publishAt) nextErrors.publishAt = 'Scheduled publish date is required.';
+		const bodyError = validateBoardBodyMarkdown(form.body, { maxImages: 1, maxLinks: 5 });
+		if (bodyError) nextErrors.body = bodyError;
 		if (Object.keys(nextErrors).length > 0) {
 			setValidationErrors(nextErrors);
 			setFormMessage('');
@@ -192,8 +219,9 @@ export default function AdminBoardPage() {
 				if (!res.ok) throw new Error(updated.error ?? 'Save failed');
 				setPosts((prev) => [updated, ...prev]);
 			}
+			cleanupBodyImageUploads(pendingBodyImagePathnames, payload.body);
 			primeAdminResource('boardPosts', token, null);
-			closeModal();
+			closeModal({ cleanupUploads: false });
 		} catch (err) {
 			setFormMessage(err.message);
 		} finally {
@@ -439,12 +467,28 @@ export default function AdminBoardPage() {
 								</div>
 							)}
 							<div className="admin-modal-field admin-modal-field-full">
-								<label className="admin-modal-label">Body</label>
-								<RichTextEditor
+								<BoardMarkdownEditor
 									value={form.body}
-									onChange={(html) => setForm((f) => ({ ...f, body: html }))}
+									onChange={(markdown) => {
+										setForm((f) => ({ ...f, body: markdown }));
+										if (validationErrors.body) {
+											setValidationErrors((current) => {
+												const next = { ...current };
+												delete next.body;
+												return next;
+											});
+										}
+									}}
+									token={token}
+									entityLabel={form.title || 'Board image'}
+									error={validationErrors.body}
+									onBodyImageUpload={(pathname) => {
+										setPendingBodyImagePathnames((current) => (
+											current.includes(pathname) ? current : [...current, pathname]
+										));
+									}}
 									maxImages={1}
-									maxLinks={3}
+									maxLinks={5}
 								/>
 							</div>
 							<div className="admin-modal-field admin-modal-field-full">

@@ -48,6 +48,13 @@ export function hasPublicArtistPage(value) {
   return true
 }
 
+export function hasPublicBoardSource(value) {
+  if (!value) return false
+  if (typeof value === 'object' && value.isVisible === false) return false
+  if (isOtherArtist(value)) return false
+  return true
+}
+
 export function buildSongPath({ song, allowHidden = false }) {
   if (!song?.id) return null
   if (!allowHidden && song.isPubliclyVisible === false) return null

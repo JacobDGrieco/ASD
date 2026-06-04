@@ -5,6 +5,11 @@ const apiCache = new Map()
 const inflightRequests = new Map()
 
 function getCachedEntry(cacheKey, maxAge) {
+  if (maxAge <= 0) {
+    apiCache.delete(cacheKey)
+    return null
+  }
+
   const entry = apiCache.get(cacheKey)
   if (!entry) return null
   if (Date.now() - entry.timestamp > maxAge) {

@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import DOMPurify from 'dompurify'
+import { renderBoardBodyMarkdown } from '../../lib/boardMarkdown.js'
 import '../../styles/board-card.css'
 
 const overlayVariants = {
@@ -25,7 +26,7 @@ const detailVariants = {
 }
 
 export default function BoardCardDetail({ post, onClose }) {
-  const safeBody = post ? DOMPurify.sanitize(post.body ?? '') : ''
+  const safeBody = post ? DOMPurify.sanitize(renderBoardBodyMarkdown(post.body)) : ''
 
   return (
     <AnimatePresence>
@@ -49,7 +50,9 @@ export default function BoardCardDetail({ post, onClose }) {
           >
             <button className="board-detail-close" onClick={onClose} aria-label="Close">x</button>
             {post.imageUrl && (
-              <img src={post.imageUrl} alt={post.title} className="board-detail-image" />
+              <div className="board-detail-media">
+                <img src={post.imageUrl} alt={post.title} className="board-detail-image" />
+              </div>
             )}
             <div className="board-detail-body">
               <div className="board-detail-artist">{post.artist?.name}</div>

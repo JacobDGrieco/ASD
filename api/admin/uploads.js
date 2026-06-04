@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer'
-import { put } from '@vercel/blob'
+import { del, put } from '@vercel/blob'
 import { handleUpload } from '@vercel/blob/client'
 import { isViewer, requireAdmin } from '../../src/lib/auth.js'
 
@@ -36,6 +36,16 @@ function sanitizeSegment(value) {
 
 function normalizeFolder(value) {
   return ALLOWED_FOLDERS.has(value) ? value : 'artists'
+}
+
+function normalizeBlobPathname(value) {
+  const pathname = typeof value === 'string' ? value.trim().replace(/^\/+/, '') : ''
+  if (!pathname) return ''
+
+  const folder = pathname.split('/')[0]
+  if (!ALLOWED_FOLDERS.has(folder)) return ''
+
+  return pathname
 }
 
 function extensionFromUrl(url) {
@@ -122,13 +132,25 @@ async function importImageFromUrl(body) {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+  if (req.method !== 'POST' && req.method !== 'DELETE') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
     const body = await readJsonBody(req)
     const uploadSession = requireAdmin(req, res)
     if (!uploadSession) return
     if (isViewer(uploadSession)) return res.status(403).json({ error: 'Forbidden' })
+
+    if (req.method === 'DELETE') {
+      const requestedPathnames = Array.isArray(body?.pathnames) ? body.pathnames : [body?.pathname]
+      const pathnames = [...new Set(requestedPathnames.map(normalizeBlobPathname).filter(Boolean))]
+
+      if (!pathnames.length) {
+        return res.status(400).json({ error: 'Valid blob pathname is required' })
+      }
+
+      await del(pathnames)
+      return res.status(200).json({ deleted: pathnames })
+    }
 
     if (body?.type === 'image.import-from-url') {
       const image = await importImageFromUrl(body)
