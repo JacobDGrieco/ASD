@@ -1,20 +1,54 @@
 .song-info-links-section {
-  padding: 40px 0 60px;
-  border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--text);
+}
+
+.song-info-links-block {
+  padding: 26px 0;
+  border-top: 1px solid var(--border);
+}
+
+.song-info-links-block:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.song-info-links-heading {
+  margin: 0 0 16px;
+  font: inherit;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.song-info-links-about {
+  max-width: 640px;
+  margin: 0 0 18px;
+  font: inherit;
+  color: var(--text);
+}
+
+.song-info-links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .song-info-links-row {
-  display: flex;
-  gap: 16px;
-  font-size: 0.85rem;
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  column-gap: 20px;
+  align-items: baseline;
+  font: inherit;
 }
 
 .song-info-links-label {
-  color: var(--text-muted);
-  min-width: 100px;
+  color: var(--text);
 }
 
 .song-info-links-value {
@@ -25,6 +59,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-top: 12px;
 }
 
 .song-info-links-tag {
@@ -35,20 +70,17 @@
   border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--text);
+  font: inherit;
   background: var(--bg-raised);
 }
 
 @media (max-width: 640px) {
-  .song-info-links-section {
-    padding: 28px 0 40px;
+  .song-info-links-block {
+    padding: 22px 0;
   }
 
   .song-info-links-row {
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .song-info-links-label {
-    min-width: 0;
+    grid-template-columns: 1fr;
+    row-gap: 2px;
   }
 }

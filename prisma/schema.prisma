@@ -186,6 +186,8 @@ model SongMeta {
   song        Song      @relation(fields: [songId], references: [id], onDelete: Cascade)
   aboutText   String    @default("")
   tags        String[]  @default([])
+  bpm         String    @default("")
+  key         String    @default("")
   releaseDate DateTime?
   roles       Json      @default(dbgenerated("'[]'::jsonb"))
 }

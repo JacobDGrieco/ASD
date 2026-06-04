@@ -392,6 +392,8 @@ export default async function handler(req, res) {
         releaseDate,
         images,
         tags,
+        bpm,
+        key,
       } = req.body
       const placements = normalizePlacements(req.body)
       const validationError = validatePlacements(placements)
@@ -454,12 +456,16 @@ export default async function handler(req, res) {
           aboutText: aboutText ?? '',
           roles: normalizedRoles,
           tags: Array.isArray(tags) ? tags : [],
+          bpm: bpm ?? '',
+          key: key ?? '',
           releaseDate: releaseDate ? new Date(releaseDate) : null,
         },
         update: {
           aboutText,
           roles: normalizedRoles,
           tags: Array.isArray(tags) ? tags : [],
+          bpm: bpm ?? '',
+          key: key ?? '',
           releaseDate: releaseDate ? new Date(releaseDate) : null,
         },
       })
@@ -517,6 +523,8 @@ export default async function handler(req, res) {
       releaseDate,
       images,
       tags,
+      bpm,
+      key,
     } = req.body
     const placements = normalizePlacements(req.body)
     const validationError = validatePlacements(placements)
@@ -576,6 +584,8 @@ export default async function handler(req, res) {
         aboutText: aboutText ?? '',
         roles: normalizedRoles,
         tags: Array.isArray(tags) ? tags : [],
+        bpm: bpm ?? '',
+        key: key ?? '',
         releaseDate: releaseDate ? new Date(releaseDate) : null,
       },
     })

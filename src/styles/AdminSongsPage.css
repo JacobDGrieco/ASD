@@ -1,13 +1,85 @@
 /* Songs page reuses AdminArtistsPage.css styles via shared import */
 
-.admin-song-editor-tabs .p-tabview-panels {
-	padding-left: 0;
-	padding-right: 0;
+.admin-song-modal {
+	height: min(72rem, calc(100vh - 48px));
+}
+
+.admin-song-modal .admin-modal-body {
+	min-height: 0;
+}
+
+.admin-song-modal-error {
+	margin: 20px 0;
+	padding: 14px 16px;
+	border: 1px solid rgba(224, 96, 96, 0.35);
+	background: rgba(224, 96, 96, 0.08);
+	color: #e0a8a8;
+	line-height: 1.45;
+}
+
+.admin-song-editor-tabs.page-tabview.p-tabview {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
 	padding-bottom: 0;
 }
 
+.admin-song-editor-tabs .p-tabview-nav {
+	flex: 0 0 auto;
+}
+
+.admin-song-editor-tabs .p-tabview-panels {
+	flex: 1 1 auto;
+	min-height: 0;
+	padding-left: 0;
+	padding-right: 0;
+	padding-bottom: 18px;
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+}
+
 .admin-song-editor-tabs .p-tabview-panel {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 auto;
+	min-height: 0;
 	padding: 15px;
+	overflow: hidden;
+}
+
+.admin-song-editor-tabs .p-tabview-panel>.admin-modal-grid {
+	overflow-y: auto;
+}
+
+.admin-song-tab-layout {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.admin-song-tab-scroll {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+}
+
+.admin-song-tab-actions {
+	display: flex;
+	flex: 0 0 auto;
+	justify-content: stretch;
+	padding-top: 15px;
+	margin-top: 15px;
+	border-top: 1px solid var(--border);
+}
+
+.admin-song-tab-actions>button {
+	width: 100%;
+	min-height: 40px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .admin-song-album-cards {
@@ -46,14 +118,19 @@
 	max-width: 3.5rem;
 }
 
+.admin-song-metadata-grid {
+	display: grid;
+	grid-template-columns: minmax(86px, 0.7fr) minmax(180px, 1.3fr) minmax(96px, 0.75fr) minmax(150px, 1.15fr);
+	gap: 12px;
+}
+
 .admin-song-add-album-btn {
-	margin-top: 1rem;
+	margin-top: 0;
 }
 
 .admin-song-roles-list {
 	display: grid;
 	gap: 0.5rem;
-	margin-bottom: 1rem;
 }
 
 .admin-song-role-row {
@@ -64,5 +141,21 @@
 }
 
 .admin-song-add-role-btn {
-	margin-top: 0.25rem;
+	margin-top: 0;
+}
+
+@media (max-width: 760px) {
+	.admin-song-modal {
+		height: calc(100vh - 24px);
+	}
+
+	.admin-song-metadata-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 480px) {
+	.admin-song-metadata-grid {
+		grid-template-columns: 1fr;
+	}
 }

@@ -5,7 +5,7 @@
 }
 
 .page-tabview.p-tabview {
-	padding: 22px 0 56px;
+	padding: 10px 0px;
 }
 
 .page-tabview .p-tabview-nav {
@@ -96,8 +96,10 @@
 
 .page-tab-empty-state {
 	margin: 0;
-	color: var(--text-muted);
-	line-height: 1.8;
+	color: var(--text);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+	font-size: 0.95rem;
+	line-height: 1.75;
 }
 
 @media (max-width: 640px) {

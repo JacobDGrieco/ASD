@@ -1,547 +1,653 @@
-import { useEffect, useMemo, useState } from 'react'
-import { TabPanel, TabView } from 'primereact/tabview'
-import { FaEye, FaEyeSlash, FaTimes } from 'react-icons/fa'
-import { SiApplemusic, SiSoundcloud, SiSpotify, SiYoutube } from 'react-icons/si'
-import AdminDateInput, { isValidDateInput } from './AdminDateInput.jsx'
-import ImageCollectionField from './ImageCollectionField.jsx'
-import ChipInputField from './ChipInputField.jsx'
-import { SONG_ROLES } from '../../lib/songRoles.js'
-import { defaultVisibilityForReleaseDate } from '../../lib/contentVisibility.js'
-import { isOtherArtist, OTHER_ARTIST_NAME } from '../../lib/publicVisibility.js'
-import { slugify } from '../../lib/slugify.js'
-import '../../styles/AdminArtistsPage.css'
-import '../../styles/AdminSongsPage.css'
+import { useEffect, useMemo, useState } from 'react';
+import { TabPanel, TabView } from 'primereact/tabview';
+import { FaEye, FaEyeSlash, FaPlus, FaTimes } from 'react-icons/fa';
+import { SiApplemusic, SiSoundcloud, SiSpotify, SiYoutube } from 'react-icons/si';
+import AdminDateInput, { isValidDateInput } from './AdminDateInput.jsx';
+import ImageCollectionField from './ImageCollectionField.jsx';
+import ChipInputField from './ChipInputField.jsx';
+import { SONG_ROLES } from '../../lib/songRoles.js';
+import { defaultVisibilityForReleaseDate } from '../../lib/contentVisibility.js';
+import { isOtherArtist, OTHER_ARTIST_NAME } from '../../lib/publicVisibility.js';
+import { slugify } from '../../lib/slugify.js';
+import '../../styles/AdminArtistsPage.css';
+import '../../styles/AdminSongsPage.css';
 
 function createAlbumPlacement() {
-  return { albumId: '', trackNumber: '', discNumber: 1 }
+	return { albumId: '', trackNumber: '', discNumber: 1 };
 }
 
 const emptyForm = {
-  title: '',
-  slug: '',
-  isVisible: true,
-  autoShowOnRelease: false,
-  duration: '',
-  soundcloudUrl: '',
-  spotifyUrl: '',
-  appleMusicUrl: '',
-  youtubeUrl: '',
-  aboutText: '',
-  roles: [],
-  releaseDate: '',
-  images: [],
-  tags: [],
-  albumPlacements: [createAlbumPlacement()],
-}
+	title: '',
+	slug: '',
+	isVisible: true,
+	autoShowOnRelease: false,
+	duration: '',
+	soundcloudUrl: '',
+	spotifyUrl: '',
+	appleMusicUrl: '',
+	youtubeUrl: '',
+	aboutText: '',
+	roles: [],
+	releaseDate: '',
+	images: [],
+	tags: [],
+	bpm: '',
+	key: '',
+	albumPlacements: [createAlbumPlacement()],
+};
+
+const SONG_KEYS = [
+	'C Major',
+	'C Minor',
+	'Db Major',
+	'Db Minor',
+	'D Major',
+	'D Minor',
+	'Eb Major',
+	'Eb Minor',
+	'E Major',
+	'E Minor',
+	'F Major',
+	'F Minor',
+	'Gb Major',
+	'Gb Minor',
+	'G Major',
+	'G Minor',
+	'Ab Major',
+	'Ab Minor',
+	'A Major',
+	'A Minor',
+	'Bb Major',
+	'Bb Minor',
+	'B Major',
+	'B Minor',
+];
 
 function iconLabel(icon, text) {
-  return (
-    <span className="admin-modal-label-with-icon">
-      <span className="admin-modal-label-icon" aria-hidden="true">{icon}</span>
-      <span>{text}</span>
-    </span>
-  )
+	return (
+		<span className="admin-modal-label-with-icon">
+			<span className="admin-modal-label-icon" aria-hidden="true">{icon}</span>
+			<span>{text}</span>
+		</span>
+	);
 }
 
 function normalizeSongDuplicateValue(value) {
-  return String(value ?? '').trim().toLowerCase()
+	return String(value ?? '').trim().toLowerCase();
 }
 
 function normalizeSongReleaseDate(value) {
-  if (!value) return ''
-  return String(value).slice(0, 10)
+	if (!value) return '';
+	return String(value).slice(0, 10);
 }
 
 function albumArtistKey(album) {
-  if (!album) return ''
-  if (isOtherArtist(album.artist)) {
-    return `other:${normalizeSongDuplicateValue(album.otherArtistName || OTHER_ARTIST_NAME)}`
-  }
-  return `artist:${album.artistId ?? album.artist?.id ?? ''}`
+	if (!album) return '';
+	if (isOtherArtist(album.artist)) {
+		return `other:${normalizeSongDuplicateValue(album.otherArtistName || OTHER_ARTIST_NAME)}`;
+	}
+	return `artist:${album.artistId ?? album.artist?.id ?? ''}`;
 }
 
 function placementAlbumIds(song) {
-  if (Array.isArray(song.albumIds) && song.albumIds.length) return song.albumIds
-  if (Array.isArray(song.placements) && song.placements.length) return song.placements.map((p) => p.albumId)
-  return song.albumId ? [song.albumId] : []
+	if (Array.isArray(song.albumIds) && song.albumIds.length) return song.albumIds;
+	if (Array.isArray(song.placements) && song.placements.length) return song.placements.map((p) => p.albumId);
+	return song.albumId ? [song.albumId] : [];
 }
 
 function buildPlacementForm(song) {
-  if (Array.isArray(song.albumPlacements) && song.albumPlacements.length) {
-    return song.albumPlacements.map((p) => ({
-      albumId: p.albumId ?? '',
-      trackNumber: Number(p.trackNumber ?? 1),
-      discNumber: Number(p.discNumber ?? 1),
-    }))
-  }
-  if (Array.isArray(song.placements) && song.placements.length) {
-    return song.placements.map((p) => ({
-      albumId: p.albumId ?? p.album?.id ?? '',
-      trackNumber: Number(p.trackNumber ?? 1),
-      discNumber: Number(p.discNumber ?? 1),
-    }))
-  }
-  if (song.albumId) {
-    return [{ albumId: song.albumId, trackNumber: Number(song.trackNumber ?? 1), discNumber: Number(song.discNumber ?? 1) }]
-  }
-  return [createAlbumPlacement()]
+	if (Array.isArray(song.albumPlacements) && song.albumPlacements.length) {
+		return song.albumPlacements.map((p) => ({
+			albumId: p.albumId ?? '',
+			trackNumber: Number(p.trackNumber ?? 1),
+			discNumber: Number(p.discNumber ?? 1),
+		}));
+	}
+	if (Array.isArray(song.placements) && song.placements.length) {
+		return song.placements.map((p) => ({
+			albumId: p.albumId ?? p.album?.id ?? '',
+			trackNumber: Number(p.trackNumber ?? 1),
+			discNumber: Number(p.discNumber ?? 1),
+		}));
+	}
+	if (song.albumId) {
+		return [{ albumId: song.albumId, trackNumber: Number(song.trackNumber ?? 1), discNumber: Number(song.discNumber ?? 1) }];
+	}
+	return [createAlbumPlacement()];
 }
 
 function hasManualSongVisibilityChoice(song) {
-  const releaseDate = song?.meta?.releaseDate ?? song?.placements?.[0]?.album?.releaseDate ?? ''
-  const defaultVisibility = defaultVisibilityForReleaseDate(releaseDate)
-  return (
-    song?.isVisible !== defaultVisibility.isVisible ||
-    Boolean(song?.autoShowOnRelease) !== defaultVisibility.autoShowOnRelease
-  )
+	const releaseDate = song?.meta?.releaseDate ?? song?.placements?.[0]?.album?.releaseDate ?? '';
+	const defaultVisibility = defaultVisibilityForReleaseDate(releaseDate);
+	return (
+		song?.isVisible !== defaultVisibility.isVisible ||
+		Boolean(song?.autoShowOnRelease) !== defaultVisibility.autoShowOnRelease
+	);
 }
 
 function validateSongForm(form, songs = [], albumById = {}) {
-  const errors = {
-    title: '',
-    releaseDate: '',
-    albumPlacementsRoot: '',
-    albumPlacements: Array.isArray(form.albumPlacements)
-      ? form.albumPlacements.map(() => ({ albumId: '', trackNumber: '', discNumber: '' }))
-      : [],
-  }
+	const errors = {
+		title: '',
+		releaseDate: '',
+		albumPlacementsRoot: '',
+		albumPlacements: Array.isArray(form.albumPlacements)
+			? form.albumPlacements.map(() => ({ albumId: '', trackNumber: '', discNumber: '' }))
+			: [],
+	};
 
-  if (!form.title?.trim()) errors.title = 'Song title is required.'
-  if (form.releaseDate && !isValidDateInput(form.releaseDate)) errors.releaseDate = 'Release date must use YYYY-MM-DD.'
-  if (!Array.isArray(form.albumPlacements) || form.albumPlacements.length === 0) {
-    errors.albumPlacementsRoot = 'At least one album is required.'
-    return errors
-  }
+	if (!form.title?.trim()) errors.title = 'Song title is required.';
+	if (form.releaseDate && !isValidDateInput(form.releaseDate)) errors.releaseDate = 'Release date must use YYYY-MM-DD.';
+	if (!Array.isArray(form.albumPlacements) || form.albumPlacements.length === 0) {
+		errors.albumPlacementsRoot = 'At least one album is required.';
+		return errors;
+	}
 
-  const seenAlbumIds = new Set()
-  for (const [index, placement] of form.albumPlacements.entries()) {
-    if (!placement.albumId) errors.albumPlacements[index].albumId = 'Each album card must have an album selected.'
-    if (placement.albumId && seenAlbumIds.has(placement.albumId)) errors.albumPlacements[index].albumId = 'Each album can only be selected once per song.'
-    if (!placement.trackNumber || Number(placement.trackNumber) < 1) errors.albumPlacements[index].trackNumber = 'Track number must be at least 1.'
-    if (!placement.discNumber || Number(placement.discNumber) < 1) errors.albumPlacements[index].discNumber = 'Disc number must be at least 1.'
-    seenAlbumIds.add(placement.albumId)
-  }
+	const seenAlbumIds = new Set();
+	for (const [index, placement] of form.albumPlacements.entries()) {
+		if (!placement.albumId) errors.albumPlacements[index].albumId = 'Each album card must have an album selected.';
+		if (placement.albumId && seenAlbumIds.has(placement.albumId)) errors.albumPlacements[index].albumId = 'Each album can only be selected once per song.';
+		if (!placement.trackNumber || Number(placement.trackNumber) < 1) errors.albumPlacements[index].trackNumber = 'Track number must be at least 1.';
+		if (!placement.discNumber || Number(placement.discNumber) < 1) errors.albumPlacements[index].discNumber = 'Disc number must be at least 1.';
+		seenAlbumIds.add(placement.albumId);
+	}
 
-  if (!errors.title && !errors.releaseDate && !errors.albumPlacementsRoot && !errors.albumPlacements.some((p) => p.albumId || p.trackNumber || p.discNumber)) {
-    const normalizedTitle = normalizeSongDuplicateValue(form.title)
-    const normalizedReleaseDate = normalizeSongReleaseDate(form.releaseDate)
-    const selectedAlbumIds = [...new Set(form.albumPlacements.map((p) => p.albumId).filter(Boolean))]
+	if (!errors.title && !errors.releaseDate && !errors.albumPlacementsRoot && !errors.albumPlacements.some((p) => p.albumId || p.trackNumber || p.discNumber)) {
+		const normalizedTitle = normalizeSongDuplicateValue(form.title);
+		const normalizedReleaseDate = normalizeSongReleaseDate(form.releaseDate);
+		const selectedAlbumIds = [...new Set(form.albumPlacements.map((p) => p.albumId).filter(Boolean))];
 
-    const duplicateSong = songs.find((song) => {
-      if (song.id === form.id) return false
-      if (normalizeSongDuplicateValue(song.title) !== normalizedTitle) return false
-      if (normalizeSongReleaseDate(song.meta?.releaseDate) !== normalizedReleaseDate) return false
-      return placementAlbumIds(song).some((albumId) => {
-        if (!selectedAlbumIds.includes(albumId)) return false
-        const selectedAlbum = albumById[albumId]
-        const existingAlbum = albumById[albumId] ?? song.placements?.find((p) => p.albumId === albumId)?.album ?? null
-        return (
-          normalizeSongDuplicateValue(selectedAlbum?.title) === normalizeSongDuplicateValue(existingAlbum?.title) &&
-          albumArtistKey(selectedAlbum) === albumArtistKey(existingAlbum)
-        )
-      })
-    })
+		const duplicateSong = songs.find((song) => {
+			if (song.id === form.id) return false;
+			if (normalizeSongDuplicateValue(song.title) !== normalizedTitle) return false;
+			if (normalizeSongReleaseDate(song.meta?.releaseDate) !== normalizedReleaseDate) return false;
+			return placementAlbumIds(song).some((albumId) => {
+				if (!selectedAlbumIds.includes(albumId)) return false;
+				const selectedAlbum = albumById[albumId];
+				const existingAlbum = albumById[albumId] ?? song.placements?.find((p) => p.albumId === albumId)?.album ?? null;
+				return (
+					normalizeSongDuplicateValue(selectedAlbum?.title) === normalizeSongDuplicateValue(existingAlbum?.title) &&
+					albumArtistKey(selectedAlbum) === albumArtistKey(existingAlbum)
+				);
+			});
+		});
 
-    if (duplicateSong) {
-      errors.title = 'A song with this title, album, artist, and release date already exists.'
-    }
-  }
+		if (duplicateSong) {
+			errors.title = 'A song with this title, album, artist, and release date already exists.';
+		}
+	}
 
-  return errors
+	return errors;
 }
 
 function hasSongValidationErrors(errors) {
-  if (!errors) return false
-  if (errors.title || errors.albumPlacementsRoot) return true
-  return Array.isArray(errors.albumPlacements) && errors.albumPlacements.some((p) => p.albumId || p.trackNumber || p.discNumber)
+	if (!errors) return false;
+	if (errors.title || errors.albumPlacementsRoot) return true;
+	return Array.isArray(errors.albumPlacements) && errors.albumPlacements.some((p) => p.albumId || p.trackNumber || p.discNumber);
 }
 
 function hasSongInfoErrors(errors) {
-  return Boolean(errors?.title || errors?.releaseDate)
+	return Boolean(errors?.title || errors?.releaseDate);
 }
 
 function hasAlbumErrors(errors) {
-  if (!errors) return false
-  if (errors.albumPlacementsRoot) return true
-  return Array.isArray(errors.albumPlacements) && errors.albumPlacements.some((p) => p.albumId || p.trackNumber || p.discNumber)
+	if (!errors) return false;
+	if (errors.albumPlacementsRoot) return true;
+	return Array.isArray(errors.albumPlacements) && errors.albumPlacements.some((p) => p.albumId || p.trackNumber || p.discNumber);
 }
 
 function initFormFromPrefill(prefill = {}) {
-  return {
-    ...emptyForm,
-    title: prefill.title ?? '',
-    releaseDate: prefill.releaseDate ?? '',
-    soundcloudUrl: prefill.soundcloudUrl ?? '',
-    spotifyUrl: prefill.spotifyUrl ?? '',
-    appleMusicUrl: prefill.appleMusicUrl ?? '',
-    youtubeUrl: prefill.youtubeUrl ?? '',
-    ...defaultVisibilityForReleaseDate(prefill.releaseDate ?? ''),
-    albumPlacements: [{
-      ...createAlbumPlacement(),
-      albumId: prefill.albumId ?? '',
-      trackNumber: 1,
-      discNumber: 1,
-    }],
-  }
+	return {
+		...emptyForm,
+		title: prefill.title ?? '',
+		releaseDate: prefill.releaseDate ?? '',
+		soundcloudUrl: prefill.soundcloudUrl ?? '',
+		spotifyUrl: prefill.spotifyUrl ?? '',
+		appleMusicUrl: prefill.appleMusicUrl ?? '',
+		youtubeUrl: prefill.youtubeUrl ?? '',
+		...defaultVisibilityForReleaseDate(prefill.releaseDate ?? ''),
+		albumPlacements: [{
+			...createAlbumPlacement(),
+			albumId: prefill.albumId ?? '',
+			trackNumber: 1,
+			discNumber: 1,
+		}],
+	};
 }
 
 export default function AdminSongFormModal({
-  songId,
-  prefill,
-  songs,
-  albums,
-  token,
-  session,
-  onSaved,
-  onClose,
+	songId,
+	prefill,
+	songs,
+	albums,
+	token,
+	session,
+	onSaved,
+	onClose,
 }) {
-  const isArtistScoped = session?.role === 'ARTIST'
-  const isViewer = session?.role === 'VIEWER'
+	const isArtistScoped = session?.role === 'ARTIST';
+	const isViewer = session?.role === 'VIEWER';
 
-  const [form, setForm] = useState(null)
-  const [validationErrors, setValidationErrors] = useState(null)
-  const [activeTabIndex, setActiveTabIndex] = useState(0)
-  const [visibilityTouched, setVisibilityTouched] = useState(false)
-  const [loading, setLoading] = useState(Boolean(songId))
+	const [form, setForm] = useState(null);
+	const [validationErrors, setValidationErrors] = useState(null);
+	const [activeTabIndex, setActiveTabIndex] = useState(0);
+	const [visibilityTouched, setVisibilityTouched] = useState(false);
+	const [loading, setLoading] = useState(Boolean(songId));
+	const [loadError, setLoadError] = useState('');
 
-  const albumById = useMemo(
-    () => Object.fromEntries(albums.map((album) => [album.id, album])),
-    [albums]
-  )
+	const albumById = useMemo(
+		() => Object.fromEntries(albums.map((album) => [album.id, album])),
+		[albums]
+	);
 
-  const sortedAlbums = useMemo(
-    () => [...albums].sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base', numeric: true })),
-    [albums]
-  )
+	const sortedAlbums = useMemo(
+		() => [...albums].sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base', numeric: true })),
+		[albums]
+	);
 
-  useEffect(() => {
-    if (!songId) {
-      setForm(initFormFromPrefill(prefill ?? {}))
-      setVisibilityTouched(false)
-      setValidationErrors(null)
-      setActiveTabIndex(0)
-      setLoading(false)
-      return
-    }
+	useEffect(() => {
+		if (!songId) {
+			setForm(initFormFromPrefill(prefill ?? {}));
+			setVisibilityTouched(false);
+			setValidationErrors(null);
+			setActiveTabIndex(0);
+			setLoading(false);
+			setLoadError('');
+			return;
+		}
 
-    setLoading(true)
-    fetch(`/api/admin/songs?id=${songId}`, { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => r.json())
-      .then((detail) => {
-        setVisibilityTouched(hasManualSongVisibilityChoice(detail))
-        setForm({
-          ...emptyForm,
-          ...detail,
-          images: detail.images ?? [],
-          aboutText: detail.meta?.aboutText ?? '',
-          roles: Array.isArray(detail.meta?.roles) ? detail.meta.roles : [],
-          tags: detail.meta?.tags ?? [],
-          releaseDate: detail.meta?.releaseDate ? detail.meta.releaseDate.slice(0, 10) : '',
-          albumPlacements: buildPlacementForm(detail),
-        })
-        setValidationErrors(null)
-        setActiveTabIndex(0)
-      })
-      .finally(() => setLoading(false))
-  }, [songId, token])
+		setLoading(true);
+		setLoadError('');
+		fetch(`/api/admin/songs?id=${songId}`, { headers: { Authorization: `Bearer ${token}` } })
+			.then(async (response) => {
+				const contentType = response.headers.get('content-type') ?? '';
+				const payload = contentType.includes('application/json')
+					? await response.json().catch(() => null)
+					: await response.text().catch(() => '');
 
-  const set = (key) => (event) =>
-    setForm((current) => {
-      const nextValue = event.target.value
-      setValidationErrors((currentErrors) => currentErrors ? { ...currentErrors, [key]: '' } : currentErrors)
-      return {
-        ...current,
-        [key]: nextValue,
-        ...(key === 'title' ? { slug: slugify(nextValue) } : {}),
-      }
-    })
+				if (!response.ok) {
+					const message = payload && typeof payload === 'object'
+						? payload.error
+						: String(payload || '').trim();
+					throw new Error(message || `Failed to load song (${response.status})`);
+				}
 
-  const setReleaseDate = (value) =>
-    setForm((current) => {
-      setValidationErrors((currentErrors) => currentErrors ? { ...currentErrors, releaseDate: '' } : currentErrors)
-      return {
-        ...current,
-        releaseDate: value,
-        ...(!visibilityTouched ? defaultVisibilityForReleaseDate(value) : {}),
-      }
-    })
+				return payload;
+			})
+			.then((detail) => {
+				setVisibilityTouched(hasManualSongVisibilityChoice(detail));
+				setForm({
+					...emptyForm,
+					...detail,
+					images: detail.images ?? [],
+					aboutText: detail.meta?.aboutText ?? '',
+					roles: Array.isArray(detail.meta?.roles) ? detail.meta.roles : [],
+					tags: detail.meta?.tags ?? [],
+					bpm: detail.meta?.bpm ?? '',
+					key: detail.meta?.key ?? '',
+					releaseDate: detail.meta?.releaseDate ? detail.meta.releaseDate.slice(0, 10) : '',
+					albumPlacements: buildPlacementForm(detail),
+				});
+				setValidationErrors(null);
+				setActiveTabIndex(0);
+			})
+			.catch((error) => {
+				console.error(error);
+				setLoadError(error instanceof Error ? error.message : 'Failed to load song.');
+				setForm(null);
+			})
+			.finally(() => setLoading(false));
+	}, [songId, token]);
 
-  const addRole = () =>
-    setForm((current) => ({
-      ...current,
-      roles: [...current.roles, { role: 'Featured Artist', name: '' }],
-    }))
+	const set = (key) => (event) =>
+		setForm((current) => {
+			const nextValue = event.target.value;
+			setValidationErrors((currentErrors) => currentErrors ? { ...currentErrors, [key]: '' } : currentErrors);
+			return {
+				...current,
+				[key]: nextValue,
+				...(key === 'title' ? { slug: slugify(nextValue) } : {}),
+			};
+		});
 
-  const removeRole = (index) =>
-    setForm((current) => ({
-      ...current,
-      roles: current.roles.filter((_, i) => i !== index),
-    }))
+	const setReleaseDate = (value) =>
+		setForm((current) => {
+			setValidationErrors((currentErrors) => currentErrors ? { ...currentErrors, releaseDate: '' } : currentErrors);
+			return {
+				...current,
+				releaseDate: value,
+				...(!visibilityTouched ? defaultVisibilityForReleaseDate(value) : {}),
+			};
+		});
 
-  const updateRole = (index, key, value) =>
-    setForm((current) => ({
-      ...current,
-      roles: current.roles.map((entry, i) => (i === index ? { ...entry, [key]: value } : entry)),
-    }))
+	const setBpm = (event) =>
+		setForm((current) => {
+			const value = event.target.value;
+			if (value === '') return { ...current, bpm: '' };
+			const numericValue = Number(value);
+			if (!Number.isFinite(numericValue)) return current;
+			return {
+				...current,
+				bpm: String(Math.min(999, Math.max(0, Math.trunc(numericValue)))),
+			};
+		});
 
-  const setAlbumPlacement = (index, key) => (event) =>
-    setForm((current) => {
-      const nextValue = key === 'albumId'
-        ? event.target.value
-        : event.target.value === '' ? '' : Number(event.target.value)
+	const addRole = () =>
+		setForm((current) => ({
+			...current,
+			roles: [...current.roles, { role: 'Featured Artist', name: '' }],
+		}));
 
-      setValidationErrors((currentErrors) => {
-        if (!currentErrors?.albumPlacements?.[index]) return currentErrors
-        return {
-          ...currentErrors,
-          albumPlacementsRoot: '',
-          albumPlacements: currentErrors.albumPlacements.map((placementErrors, i) =>
-            i === index ? { ...placementErrors, [key]: '' } : placementErrors
-          ),
-        }
-      })
+	const removeRole = (index) =>
+		setForm((current) => ({
+			...current,
+			roles: current.roles.filter((_, i) => i !== index),
+		}));
 
-      return {
-        ...current,
-        albumPlacements: current.albumPlacements.map((placement, i) =>
-          i === index ? { ...placement, [key]: nextValue } : placement
-        ),
-        ...(() => {
-          if (current.releaseDate || visibilityTouched) return {}
-          const nextPlacements = current.albumPlacements.map((placement, i) =>
-            i === index ? { ...placement, [key]: nextValue } : placement
-          )
-          const primaryAlbumReleaseDate = albumById[nextPlacements[0]?.albumId]?.releaseDate?.slice?.(0, 10) ?? ''
-          return defaultVisibilityForReleaseDate(primaryAlbumReleaseDate)
-        })(),
-      }
-    })
+	const updateRole = (index, key, value) =>
+		setForm((current) => ({
+			...current,
+			roles: current.roles.map((entry, i) => (i === index ? { ...entry, [key]: value } : entry)),
+		}));
 
-  const addAlbumPlacement = () =>
-    setForm((current) => {
-      setValidationErrors((currentErrors) => currentErrors
-        ? {
-            ...currentErrors,
-            albumPlacementsRoot: '',
-            albumPlacements: [...(currentErrors.albumPlacements ?? []), { albumId: '', trackNumber: '', discNumber: '' }],
-          }
-        : currentErrors)
-      return { ...current, albumPlacements: [...current.albumPlacements, createAlbumPlacement()] }
-    })
+	const setAlbumPlacement = (index, key) => (event) =>
+		setForm((current) => {
+			const nextValue = key === 'albumId'
+				? event.target.value
+				: event.target.value === '' ? '' : Number(event.target.value);
 
-  const removeAlbumPlacement = (index) =>
-    setForm((current) => {
-      setValidationErrors((currentErrors) => currentErrors
-        ? {
-            ...currentErrors,
-            albumPlacementsRoot: '',
-            albumPlacements: (currentErrors.albumPlacements ?? []).filter((_, i) => i !== index),
-          }
-        : currentErrors)
-      return {
-        ...current,
-        albumPlacements: current.albumPlacements.filter((_, i) => i !== index),
-        ...(() => {
-          if (current.releaseDate || visibilityTouched) return {}
-          const nextPlacements = current.albumPlacements.filter((_, i) => i !== index)
-          const primaryAlbumReleaseDate = albumById[nextPlacements[0]?.albumId]?.releaseDate?.slice?.(0, 10) ?? ''
-          return defaultVisibilityForReleaseDate(primaryAlbumReleaseDate)
-        })(),
-      }
-    })
+			setValidationErrors((currentErrors) => {
+				if (!currentErrors?.albumPlacements?.[index]) return currentErrors;
+				return {
+					...currentErrors,
+					albumPlacementsRoot: '',
+					albumPlacements: currentErrors.albumPlacements.map((placementErrors, i) =>
+						i === index ? { ...placementErrors, [key]: '' } : placementErrors
+					),
+				};
+			});
 
-  const handleSave = async () => {
-    const nextErrors = validateSongForm(form, songs ?? [], albumById)
-    if (hasSongValidationErrors(nextErrors)) {
-      setValidationErrors(nextErrors)
-      if (hasAlbumErrors(nextErrors) && !hasSongInfoErrors(nextErrors)) setActiveTabIndex(2)
-      return
-    }
-    setValidationErrors(null)
+			return {
+				...current,
+				albumPlacements: current.albumPlacements.map((placement, i) =>
+					i === index ? { ...placement, [key]: nextValue } : placement
+				),
+				...(() => {
+					if (current.releaseDate || visibilityTouched) return {};
+					const nextPlacements = current.albumPlacements.map((placement, i) =>
+						i === index ? { ...placement, [key]: nextValue } : placement
+					);
+					const primaryAlbumReleaseDate = albumById[nextPlacements[0]?.albumId]?.releaseDate?.slice?.(0, 10) ?? '';
+					return defaultVisibilityForReleaseDate(primaryAlbumReleaseDate);
+				})(),
+			};
+		});
 
-    const isEdit = Boolean(form.id)
-    const url = isEdit ? `/api/admin/songs?id=${form.id}` : '/api/admin/songs'
-    const payload = {
-      ...form,
-      slug: slugify(form.title),
-      albumIds: form.albumPlacements.map((p) => p.albumId),
-      discNumbers: form.albumPlacements.map((p) => Number(p.discNumber)),
-      trackNumbers: form.albumPlacements.map((p) => Number(p.trackNumber)),
-    }
+	const addAlbumPlacement = () =>
+		setForm((current) => {
+			setValidationErrors((currentErrors) => currentErrors
+				? {
+					...currentErrors,
+					albumPlacementsRoot: '',
+					albumPlacements: [...(currentErrors.albumPlacements ?? []), { albumId: '', trackNumber: '', discNumber: '' }],
+				}
+				: currentErrors);
+			return { ...current, albumPlacements: [...current.albumPlacements, createAlbumPlacement()] };
+		});
 
-    const response = await fetch(url, {
-      method: isEdit ? 'PUT' : 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
+	const removeAlbumPlacement = (index) =>
+		setForm((current) => {
+			setValidationErrors((currentErrors) => currentErrors
+				? {
+					...currentErrors,
+					albumPlacementsRoot: '',
+					albumPlacements: (currentErrors.albumPlacements ?? []).filter((_, i) => i !== index),
+				}
+				: currentErrors);
+			return {
+				...current,
+				albumPlacements: current.albumPlacements.filter((_, i) => i !== index),
+				...(() => {
+					if (current.releaseDate || visibilityTouched) return {};
+					const nextPlacements = current.albumPlacements.filter((_, i) => i !== index);
+					const primaryAlbumReleaseDate = albumById[nextPlacements[0]?.albumId]?.releaseDate?.slice?.(0, 10) ?? '';
+					return defaultVisibilityForReleaseDate(primaryAlbumReleaseDate);
+				})(),
+			};
+		});
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Failed to save song.' }))
-      window.alert(error.error ?? 'Failed to save song.')
-      return
-    }
+	const handleSave = async () => {
+		const nextErrors = validateSongForm(form, songs ?? [], albumById);
+		if (hasSongValidationErrors(nextErrors)) {
+			setValidationErrors(nextErrors);
+			if (hasAlbumErrors(nextErrors) && !hasSongInfoErrors(nextErrors)) setActiveTabIndex(2);
+			return;
+		}
+		setValidationErrors(null);
 
-    onSaved(await response.json())
-  }
+		const isEdit = Boolean(form.id);
+		const url = isEdit ? `/api/admin/songs?id=${form.id}` : '/api/admin/songs';
+		const payload = {
+			...form,
+			slug: slugify(form.title),
+			albumIds: form.albumPlacements.map((p) => p.albumId),
+			discNumbers: form.albumPlacements.map((p) => Number(p.discNumber)),
+			trackNumbers: form.albumPlacements.map((p) => Number(p.trackNumber)),
+		};
 
-  const songFieldClassName = (fieldName) =>
-    `admin-artists-page-input${validationErrors?.[fieldName] ? ' admin-artists-page-input-invalid' : ''}`
+		const response = await fetch(url, {
+			method: isEdit ? 'PUT' : 'POST',
+			headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+			body: JSON.stringify(payload),
+		});
 
-  const placementFieldClassName = (index, fieldName) =>
-    `admin-artists-page-input${validationErrors?.albumPlacements?.[index]?.[fieldName] ? ' admin-artists-page-input-invalid' : ''}`
+		if (!response.ok) {
+			const error = await response.json().catch(() => ({ error: 'Failed to save song.' }));
+			window.alert(error.error ?? 'Failed to save song.');
+			return;
+		}
 
-  return (
-    <div className="admin-modal-overlay" onClick={(event) => { if (event.target === event.currentTarget) onClose() }}>
-      <div className="admin-modal">
-        <div className="admin-modal-header">
-          <h2 className="admin-modal-title">{form?.id ? 'Edit Song' : 'New Song'}</h2>
-          <button type="button" onClick={onClose} className="admin-modal-close" aria-label="Close">
-            <FaTimes aria-hidden="true" />
-          </button>
-        </div>
-        <div className="admin-modal-body">
-          {loading || !form ? (
-            <div className="admin-modal-loading">Loading…</div>
-          ) : (
-            <TabView activeIndex={activeTabIndex} onTabChange={(e) => setActiveTabIndex(e.index)} className="page-tabview admin-song-editor-tabs">
-              <TabPanel header="Song Info">
-                <div className="admin-modal-grid">
-                  <div className="admin-modal-field admin-modal-field-full">
-                    <div className="admin-artists-page-name-field">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setVisibilityTouched(true)
-                          setForm((current) => ({ ...current, isVisible: !current.isVisible, autoShowOnRelease: false }))
-                        }}
-                        className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
-                        aria-label={form.isVisible ? 'Song is visible to the public. Click to hide.' : 'Song is hidden from the public. Click to show.'}
-                        title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
-                      >
-                        {form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
-                      </button>
-                      <div className="admin-artists-page-name-field-main">
-                        <label className="admin-modal-label">Title <span className="admin-modal-label-required">*</span></label>
-                        <input type="text" placeholder="Title" value={form.title} onChange={set('title')} className={songFieldClassName('title')} aria-invalid={Boolean(validationErrors?.title)} />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="admin-modal-field admin-modal-field-full">
-                    <label className="admin-modal-label">Images</label>
-                    <ImageCollectionField
-                      value={form.images}
-                      onChange={(images) => setForm((current) => ({ ...current, images }))}
-                      token={token}
-                      folder="songs"
-                      entityLabel={form.title || 'Song image'}
-                    />
-                  </div>
-                  <div className="admin-modal-field">
-                    <label className="admin-modal-label">Duration</label>
-                    <input type="text" placeholder="e.g. 3:42" value={form.duration} onChange={set('duration')} className="admin-artists-page-input" />
-                  </div>
-                  <div className="admin-modal-field">
-                    <label className="admin-modal-label">Release Date</label>
-                    <AdminDateInput value={form.releaseDate} onChange={setReleaseDate} className={songFieldClassName('releaseDate')} ariaInvalid={Boolean(validationErrors?.releaseDate)} />
-                  </div>
-                  <div className="admin-modal-field admin-modal-field-full">
-                    <label className="admin-modal-label">About</label>
-                    <textarea placeholder="About this song..." value={form.aboutText} onChange={set('aboutText')} className="admin-artists-page-input admin-modal-textarea" rows={5} />
-                  </div>
-                  <div className="admin-modal-field admin-modal-field-full">
-                    <label className="admin-modal-label">Tags</label>
-                    <ChipInputField
-                      value={form.tags}
-                      onChange={(tags) => setForm((current) => ({ ...current, tags }))}
-                      placeholder="Type a tag and press Enter"
-                    />
-                  </div>
-                  <div className="admin-modal-field admin-modal-field-full">
-                    <label className="admin-modal-label">{iconLabel(<SiSoundcloud />, 'SoundCloud URL')}</label>
-                    <input type="text" placeholder="SoundCloud URL" value={form.soundcloudUrl} onChange={set('soundcloudUrl')} className="admin-artists-page-input" />
-                  </div>
-                  <div className="admin-modal-field admin-modal-field-full">
-                    <label className="admin-modal-label">{iconLabel(<SiSpotify />, 'Spotify URL')}</label>
-                    <input type="text" placeholder="Spotify URL" value={form.spotifyUrl} onChange={set('spotifyUrl')} className="admin-artists-page-input" />
-                  </div>
-                  <div className="admin-modal-field admin-modal-field-full">
-                    <label className="admin-modal-label">{iconLabel(<SiApplemusic />, 'Apple Music URL')}</label>
-                    <input type="text" placeholder="Apple Music URL" value={form.appleMusicUrl} onChange={set('appleMusicUrl')} className="admin-artists-page-input" />
-                  </div>
-                  <div className="admin-modal-field admin-modal-field-full">
-                    <label className="admin-modal-label">{iconLabel(<SiYoutube />, 'YouTube URL')}</label>
-                    <input type="text" placeholder="YouTube URL" value={form.youtubeUrl} onChange={set('youtubeUrl')} className="admin-artists-page-input" />
-                  </div>
-                </div>
-              </TabPanel>
-              <TabPanel header="Roles">
-                <div className="admin-song-roles-list">
-                  {form.roles.map((entry, index) => (
-                    <div key={index} className="admin-song-role-row">
-                      <select value={entry.role} onChange={(e) => updateRole(index, 'role', e.target.value)} className="admin-artists-page-input">
-                        {SONG_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
-                      </select>
-                      <input
-                        type="text"
-                        placeholder="Name"
-                        value={entry.name}
-                        onChange={(e) => updateRole(index, 'name', e.target.value)}
-                        className="admin-artists-page-input"
-                      />
-                      <button type="button" onClick={() => removeRole(index)} className="admin-artists-page-danger-btn" aria-label="Remove role">
-                        <FaTimes aria-hidden="true" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <button type="button" onClick={addRole} className="admin-artists-page-ghost-btn admin-song-add-role-btn">
-                  + Add Role
-                </button>
-              </TabPanel>
-              <TabPanel header="Album Info">
-                <div className="admin-song-album-cards">
-                  {form.albumPlacements.map((placement, index) => (
-                    <div key={`${index}-${placement.albumId || 'new'}`} className="admin-song-album-card">
-                      <div className="admin-song-album-card-header">
-                        <h3 className="admin-song-album-card-title">Album {index + 1}</h3>
-                        {form.albumPlacements.length > 1 && (
-                          <button type="button" onClick={() => removeAlbumPlacement(index)} className="admin-artists-page-danger-btn">Remove</button>
-                        )}
-                      </div>
-                      <div className="admin-modal-grid admin-song-album-grid">
-                        <div className="admin-modal-field admin-modal-field-full">
-                          <label className="admin-modal-label">Album <span className="admin-modal-label-required">*</span></label>
-                          <select value={placement.albumId} onChange={setAlbumPlacement(index, 'albumId')} className={placementFieldClassName(index, 'albumId')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.albumId)}>
-                            <option value="">- Album -</option>
-                            {sortedAlbums.map((album) => <option key={album.id} value={album.id}>{album.title}</option>)}
-                          </select>
-                        </div>
-                        <div className="admin-modal-field">
-                          <label className="admin-modal-label">Track # <span className="admin-modal-label-required">*</span></label>
-                          <input type="number" placeholder="Track #" value={placement.trackNumber} onChange={setAlbumPlacement(index, 'trackNumber')} className={placementFieldClassName(index, 'trackNumber')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.trackNumber)} />
-                        </div>
-                        <div className="admin-modal-field">
-                          <label className="admin-modal-label">Disc # <span className="admin-modal-label-required">*</span></label>
-                          <input type="number" placeholder="Disc #" value={placement.discNumber} onChange={setAlbumPlacement(index, 'discNumber')} className={placementFieldClassName(index, 'discNumber')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.discNumber)} />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <button type="button" onClick={addAlbumPlacement} className="admin-artists-page-ghost-btn admin-song-add-album-btn">
-                  {isArtistScoped ? 'Add Album Placement' : 'Add Album'}
-                </button>
-              </TabPanel>
-            </TabView>
-          )}
-        </div>
-        <div className="admin-modal-footer">
-          <button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
-          {!isViewer && (
-            <button type="button" onClick={handleSave} disabled={loading || !form} className="admin-artists-page-primary-btn">Save</button>
-          )}
-        </div>
-      </div>
-    </div>
-  )
+		onSaved(await response.json());
+	};
+
+	const songFieldClassName = (fieldName) =>
+		`admin-artists-page-input${validationErrors?.[fieldName] ? ' admin-artists-page-input-invalid' : ''}`;
+
+	const placementFieldClassName = (index, fieldName) =>
+		`admin-artists-page-input${validationErrors?.albumPlacements?.[index]?.[fieldName] ? ' admin-artists-page-input-invalid' : ''}`;
+
+	return (
+		<div className="admin-modal-overlay" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+			<div className="admin-modal admin-song-modal">
+				<div className="admin-modal-header">
+					<h2 className="admin-modal-title">{form?.id ? 'Edit Song' : 'New Song'}</h2>
+					<button type="button" onClick={onClose} className="admin-modal-close" aria-label="Close">
+						<FaTimes aria-hidden="true" />
+					</button>
+				</div>
+				<div className="admin-modal-body">
+					{loading ? (
+						<div className="admin-modal-loading">Loading…</div>
+					) : loadError ? (
+						<div className="admin-song-modal-error">{loadError}</div>
+					) : !form ? (
+						<div className="admin-song-modal-error">Song could not be loaded.</div>
+					) : (
+						<TabView activeIndex={activeTabIndex} onTabChange={(e) => setActiveTabIndex(e.index)} className="page-tabview admin-song-editor-tabs">
+							<TabPanel header="Song">
+								<div className="admin-modal-grid">
+									<div className="admin-modal-field admin-modal-field-full">
+										<div className="admin-artists-page-name-field">
+											<button
+												type="button"
+												onClick={() => {
+													setVisibilityTouched(true);
+													setForm((current) => ({ ...current, isVisible: !current.isVisible, autoShowOnRelease: false }));
+												}}
+												className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
+												aria-label={form.isVisible ? 'Song is visible to the public. Click to hide.' : 'Song is hidden from the public. Click to show.'}
+												title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
+											>
+												{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
+											</button>
+											<div className="admin-artists-page-name-field-main">
+												<label className="admin-modal-label">Title <span className="admin-modal-label-required">*</span></label>
+												<input type="text" placeholder="Title" value={form.title} onChange={set('title')} className={songFieldClassName('title')} aria-invalid={Boolean(validationErrors?.title)} />
+											</div>
+										</div>
+									</div>
+									<div className="admin-modal-field admin-modal-field-full">
+										<label className="admin-modal-label">Images</label>
+										<ImageCollectionField
+											value={form.images}
+											onChange={(images) => setForm((current) => ({ ...current, images }))}
+											token={token}
+											folder="songs"
+											entityLabel={form.title || 'Song image'}
+										/>
+									</div>
+									<div className="admin-song-metadata-grid admin-modal-field-full">
+										<div className="admin-modal-field admin-song-metadata-field-duration">
+											<label className="admin-modal-label">Duration</label>
+											<input type="text" placeholder="e.g. 3:42" value={form.duration} onChange={set('duration')} className="admin-artists-page-input" />
+										</div>
+										<div className="admin-modal-field">
+											<label className="admin-modal-label">Release Date</label>
+											<AdminDateInput value={form.releaseDate} onChange={setReleaseDate} className={songFieldClassName('releaseDate')} ariaInvalid={Boolean(validationErrors?.releaseDate)} />
+										</div>
+										<div className="admin-modal-field admin-song-metadata-field-bpm">
+											<label className="admin-modal-label">BPM</label>
+											<input type="number" min="0" max="999" step="1" placeholder="e.g. 120" value={form.bpm} onChange={setBpm} className="admin-artists-page-input" />
+										</div>
+										<div className="admin-modal-field">
+											<label className="admin-modal-label">Key</label>
+											<select value={form.key} onChange={set('key')} className="admin-artists-page-input">
+												<option value="">- Key -</option>
+												{SONG_KEYS.map((key) => <option key={key} value={key}>{key}</option>)}
+											</select>
+										</div>
+									</div>
+									<div className="admin-modal-field admin-modal-field-full">
+										<label className="admin-modal-label">About</label>
+										<textarea placeholder="About this song..." value={form.aboutText} onChange={set('aboutText')} className="admin-artists-page-input admin-modal-textarea" rows={5} />
+									</div>
+									<div className="admin-modal-field admin-modal-field-full">
+										<label className="admin-modal-label">Tags</label>
+										<ChipInputField
+											value={form.tags}
+											onChange={(tags) => setForm((current) => ({ ...current, tags }))}
+											placeholder="Type a tag and press Enter"
+										/>
+									</div>
+									<div className="admin-modal-field admin-modal-field-full">
+										<label className="admin-modal-label">{iconLabel(<SiSoundcloud />, 'SoundCloud URL')}</label>
+										<input type="text" placeholder="SoundCloud URL" value={form.soundcloudUrl} onChange={set('soundcloudUrl')} className="admin-artists-page-input" />
+									</div>
+									<div className="admin-modal-field admin-modal-field-full">
+										<label className="admin-modal-label">{iconLabel(<SiSpotify />, 'Spotify URL')}</label>
+										<input type="text" placeholder="Spotify URL" value={form.spotifyUrl} onChange={set('spotifyUrl')} className="admin-artists-page-input" />
+									</div>
+									<div className="admin-modal-field admin-modal-field-full">
+										<label className="admin-modal-label">{iconLabel(<SiApplemusic />, 'Apple Music URL')}</label>
+										<input type="text" placeholder="Apple Music URL" value={form.appleMusicUrl} onChange={set('appleMusicUrl')} className="admin-artists-page-input" />
+									</div>
+									<div className="admin-modal-field admin-modal-field-full">
+										<label className="admin-modal-label">{iconLabel(<SiYoutube />, 'YouTube URL')}</label>
+										<input type="text" placeholder="YouTube URL" value={form.youtubeUrl} onChange={set('youtubeUrl')} className="admin-artists-page-input" />
+									</div>
+								</div>
+							</TabPanel>
+							<TabPanel header="Albums">
+								<div className="admin-song-tab-layout">
+									<div className="admin-song-tab-scroll">
+										<div className="admin-song-album-cards">
+											{form.albumPlacements.map((placement, index) => (
+												<div key={`${index}-${placement.albumId || 'new'}`} className="admin-song-album-card">
+													<div className="admin-song-album-card-header">
+														<h3 className="admin-song-album-card-title">Album {index + 1}</h3>
+														{form.albumPlacements.length > 1 && (
+															<button type="button" onClick={() => removeAlbumPlacement(index)} className="admin-artists-page-danger-btn">Remove</button>
+														)}
+													</div>
+													<div className="admin-modal-grid admin-song-album-grid">
+														<div className="admin-modal-field admin-modal-field-full">
+															<label className="admin-modal-label">Album <span className="admin-modal-label-required">*</span></label>
+															<select value={placement.albumId} onChange={setAlbumPlacement(index, 'albumId')} className={placementFieldClassName(index, 'albumId')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.albumId)}>
+																<option value="">- Album -</option>
+																{sortedAlbums.map((album) => <option key={album.id} value={album.id}>{album.title}</option>)}
+															</select>
+														</div>
+														<div className="admin-modal-field">
+															<label className="admin-modal-label">Track # <span className="admin-modal-label-required">*</span></label>
+															<input type="number" placeholder="Track #" value={placement.trackNumber} onChange={setAlbumPlacement(index, 'trackNumber')} className={placementFieldClassName(index, 'trackNumber')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.trackNumber)} />
+														</div>
+														<div className="admin-modal-field">
+															<label className="admin-modal-label">Disc # <span className="admin-modal-label-required">*</span></label>
+															<input type="number" placeholder="Disc #" value={placement.discNumber} onChange={setAlbumPlacement(index, 'discNumber')} className={placementFieldClassName(index, 'discNumber')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.discNumber)} />
+														</div>
+													</div>
+												</div>
+											))}
+										</div>
+									</div>
+									<div className="admin-song-tab-actions">
+										<button
+											type="button"
+											onClick={addAlbumPlacement}
+											className="admin-artists-page-ghost-btn admin-song-add-album-btn"
+											aria-label={isArtistScoped ? 'Add album placement' : 'Add album'}
+											title={isArtistScoped ? 'Add album placement' : 'Add album'}
+										>
+											<FaPlus aria-hidden="true" />
+										</button>
+									</div>
+								</div>
+							</TabPanel>
+							<TabPanel header="Roles">
+								<div className="admin-song-tab-layout">
+									<div className="admin-song-tab-scroll">
+										<div className="admin-song-roles-list">
+											{form.roles.map((entry, index) => (
+												<div key={index} className="admin-song-role-row">
+													<select value={entry.role} onChange={(e) => updateRole(index, 'role', e.target.value)} className="admin-artists-page-input">
+														{SONG_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
+													</select>
+													<input
+														type="text"
+														placeholder="Name"
+														value={entry.name}
+														onChange={(e) => updateRole(index, 'name', e.target.value)}
+														className="admin-artists-page-input"
+													/>
+													<button type="button" onClick={() => removeRole(index)} className="admin-artists-page-danger-btn" aria-label="Remove role">
+														<FaTimes aria-hidden="true" />
+													</button>
+												</div>
+											))}
+										</div>
+									</div>
+									<div className="admin-song-tab-actions">
+										<button
+											type="button"
+											onClick={addRole}
+											className="admin-artists-page-ghost-btn admin-song-add-role-btn"
+											aria-label="Add role"
+											title="Add role"
+										>
+											<FaPlus aria-hidden="true" />
+										</button>
+									</div>
+								</div>
+							</TabPanel>
+						</TabView>
+					)}
+				</div>
+				<div className="admin-modal-footer">
+					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
+					{!isViewer && (
+						<button type="button" onClick={handleSave} disabled={loading || !form} className="admin-artists-page-primary-btn">Save</button>
+					)}
+				</div>
+			</div>
+		</div>
+	);
 }

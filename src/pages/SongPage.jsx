@@ -4,7 +4,6 @@ import { TabPanel, TabView } from 'primereact/tabview'
 import { useApi } from '../hooks/useApi.js'
 import SongHeader from '../components/song/SongHeader.jsx'
 import LyricsView from '../components/song/LyricsView.jsx'
-import AboutSection from '../components/song/AboutSection.jsx'
 import SongInfoLinks from '../components/song/SongInfoLinks.jsx'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 import { useAdminAuth } from '../lib/adminAuth.jsx'
@@ -25,6 +24,18 @@ export default function SongPage() {
   const lyricLineCount = song?.lyricBlocks?.filter((block) => block.text?.trim()).length ?? 0
   const defaultTabIndex = lyricLineCount < 2 ? 1 : 0
   const [activeTabIndex, setActiveTabIndex] = useState(0)
+  const hasSongInfo = Boolean(
+    song?.duration ||
+    song?.meta?.bpm ||
+    song?.meta?.key ||
+    song?.album?.type ||
+    song?.trackNumber ||
+    song?.meta?.aboutText ||
+    song?.meta?.releaseDate ||
+    song?.meta?.genre ||
+    song?.meta?.tags?.length > 0 ||
+    Object.values(song?.meta?.roleGroups ?? {}).some((group) => group?.length)
+  )
 
   useEffect(() => {
     if (!song) return
@@ -46,9 +57,8 @@ export default function SongPage() {
               </TabPanel>
               <TabPanel header="About & Info">
                 <div className="page-tab-panel-stack">
-                  <AboutSection meta={song.meta} />
                   <SongInfoLinks song={song} />
-                  {!song.meta?.aboutText && !song.meta?.producers && !song.meta?.writers && !song.meta?.featuredArtists && !(song.meta?.tags?.length > 0) && (
+                  {!hasSongInfo && (
                     <p className="page-tab-empty-state">More song information will show up here.</p>
                   )}
                 </div>

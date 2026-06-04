@@ -20,10 +20,20 @@ export default function SongHeader({ song, adminPreview = false }) {
     ? { slug: song.album.artist.slug, images: [], portrait: song.album.coverArt }
     : null
   const showArtistPageLink = song.album?.artist && !isOtherArtist(song.album.artist)
+  const albumMetaAlbum = Array.isArray(song.placements)
+    ? song.placements.find((placement) => placement.album?.type && placement.album.type !== 'SINGLE')?.album ?? song.album
+    : song.album
   const albumPagePath = buildAlbumPath({
-    album: song.album,
+    album: albumMetaAlbum,
     allowHidden: adminPreview,
   })
+  const showAlbumMeta = albumMetaAlbum?.type !== 'SINGLE'
+  const releaseDate = song.meta?.releaseDate
+    ? new Date(song.meta.releaseDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })
+    : null
+  const featuredArtists = song.meta?.featuredArtistLinks?.length
+    ? song.meta.featuredArtistLinks
+    : song.meta?.roleGroups?.['Featured Artist'] ?? []
   const streamLinks = [
     { href: song.soundcloudUrl, label: 'SoundCloud', icon: FaSoundcloud },
     { href: song.spotifyUrl, label: 'Spotify', icon: FaSpotify },
@@ -91,10 +101,10 @@ export default function SongHeader({ song, adminPreview = false }) {
           ) : (
             <span className="song-header-artist-link">{song.album.artist.name}</span>
           )}
-          {song.meta?.featuredArtistLinks?.length > 0 && (
+          {featuredArtists.length > 0 && (
             <span className="song-header-featured-artists">
               {'feat. '}
-              {song.meta.featuredArtistLinks.map((artist, i) => (
+              {featuredArtists.map((artist, i) => (
                 <span key={artist.name}>
                   {i > 0 && ', '}
                   {artist.slug
@@ -107,11 +117,16 @@ export default function SongHeader({ song, adminPreview = false }) {
           )}
         </div>
         <h1 className="song-header-title">{song.title}</h1>
-        <p className="song-header-meta">
-          {albumPagePath ? <Link to={albumPagePath}>{song.album.title}</Link> : song.album.title}
-          {song.meta?.releaseDate && ` · ${new Date(song.meta.releaseDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })}`}
-          {song.duration && ` · ${song.duration}`}
-        </p>
+        {showAlbumMeta ? (
+          <p className="song-header-meta">
+            {albumPagePath ? <Link to={albumPagePath}>{albumMetaAlbum.title}</Link> : albumMetaAlbum.title}
+            {song.meta?.releaseDate && ` · ${new Date(song.meta.releaseDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })}`}
+          </p>
+        ) : releaseDate ? (
+          <p className="song-header-meta">
+            {releaseDate}
+          </p>
+        ) : null}
         {playerUrl && (
           <div className="song-header-player">
             {song.soundcloudUrl

@@ -86,14 +86,14 @@
 }
 
 .song-header-artist-link {
-	font-size: 0.8rem;
+	font-size: 0.98rem;
 	letter-spacing: 0.12em;
 	text-transform: uppercase;
 	color: var(--text-muted);
 }
 
 .song-header-featured-artists {
-	font-size: 0.8rem;
+	font-size: 0.92rem;
 	letter-spacing: 0.08em;
 	color: var(--text-muted);
 	opacity: 0.75;
@@ -124,7 +124,7 @@
 }
 
 .song-header-meta {
-	font-size: 0.85rem;
+	font-size: 1rem;
 	color: var(--text-muted);
 }
 
@@ -214,6 +214,6 @@
 	.song-header-meta,
 	.song-header-artist-link,
 	.song-header-featured-artists {
-		font-size: 0.78rem;
+		font-size: 0.88rem;
 	}
 }

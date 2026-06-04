@@ -562,6 +562,7 @@ async function getSong(res, id, includeHidden = false) {
               id: true,
               title: true,
               slug: true,
+              type: true,
               isVisible: true,
               autoShowOnRelease: true,
               coverArt: true,
