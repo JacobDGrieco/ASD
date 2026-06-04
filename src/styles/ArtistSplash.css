@@ -33,11 +33,13 @@
 }
 
 .artist-splash-rail-window {
+	--artist-splash-rail-x-pad: clamp(34px, 7vw, 112px);
+	box-sizing: border-box;
 	width: 100%;
 	overflow-x: auto;
 	overflow-y: hidden;
-	padding: 58px 4px 84px;
-	margin: -58px -4px -84px;
+	padding: 76px var(--artist-splash-rail-x-pad) 102px;
+	margin: -76px 0 -102px;
 	scrollbar-width: none;
 	scroll-behavior: smooth;
 }
@@ -181,6 +183,7 @@
 .artist-splash-card:hover,
 .artist-splash-card:focus-visible,
 .artist-splash-card-active {
+	z-index: 6;
 	transform: translateY(-10px) scale(1.02);
 	filter: saturate(1);
 }
@@ -220,17 +223,22 @@
 
 .artist-splash-name-art {
 	position: absolute;
+	--artist-splash-name-x: -50%;
 	z-index: 3;
 	left: 50%;
 	top: -18px;
-	transform: translate(-50%, 34px) rotate(-7deg) scale(0.84);
+	transform: translate(var(--artist-splash-name-x), 34px) rotate(-7deg) scale(0.84);
 	width: max-content;
-	max-width: min(92vw, 420px);
+	max-width: min(88vw, 420px);
 	padding: 0 10px;
 	color: transparent;
-	font-size: clamp(1.8rem, 3.5vw, 3.4rem);
+	font-size: clamp(
+		var(--artist-splash-name-min, 1.8rem),
+		var(--artist-splash-name-fluid, 3.5vw),
+		var(--artist-splash-name-max, 3.4rem)
+	);
 	line-height: 0.9;
-	letter-spacing: 0.16em;
+	letter-spacing: 0.12em;
 	text-transform: uppercase;
 	font-weight: 900;
 	font-style: italic;
@@ -238,6 +246,7 @@
 	pointer-events: none;
 	text-shadow: none;
 	background: black;
+	white-space: nowrap;
 	-webkit-text-stroke: 0 transparent;
 	background-clip: text;
 	transition: opacity 0.26s ease, transform 0.26s ease;
@@ -270,7 +279,7 @@
 .artist-splash-card:focus-visible .artist-splash-name-art,
 .artist-splash-card-active .artist-splash-name-art {
 	opacity: 1;
-	transform: translate(-50%, 0) rotate(-7deg) scale(1);
+	transform: translate(var(--artist-splash-name-x), 0) rotate(-7deg) scale(1);
 }
 
 .artist-splash-card:hover .artist-splash-portrait,
@@ -286,6 +295,10 @@
 
 	.artist-splash-rail {
 		transform: translateY(12%);
+	}
+
+	.artist-splash-rail-window {
+		--artist-splash-rail-x-pad: clamp(24px, 8vw, 72px);
 	}
 
 	.artist-splash-grid {
@@ -342,9 +355,9 @@
 		align-items: flex-end;
 		justify-content: center;
 		width: 100%;
-		height: min(70dvh, 560px);
+		height: min(72dvh, 560px);
 		margin: 0 auto;
-		transform: translateY(8%);
+		transform: translateY(4%);
 		touch-action: pan-y;
 	}
 
@@ -354,7 +367,13 @@
 	}
 
 	.artist-splash-name-art {
-		letter-spacing: 0.12em;
+		max-width: 86vw;
+		font-size: clamp(
+			var(--artist-splash-name-mobile-min, 1.25rem),
+			var(--artist-splash-name-mobile-fluid, 8vw),
+			var(--artist-splash-name-mobile-max, 2.1rem)
+		);
+		letter-spacing: 0.08em;
 	}
 
 	.artist-splash-spotlight-card {
@@ -367,6 +386,7 @@
 		padding: 0;
 		border: 0;
 		background: transparent;
+		overflow: visible;
 		font: inherit;
 		text-align: inherit;
 		cursor: pointer;
@@ -385,6 +405,13 @@
 		opacity: 0.72;
 	}
 
+	.artist-splash-spotlight-card-side:hover,
+	.artist-splash-spotlight-card-side:focus-visible {
+		z-index: 7;
+		opacity: 0.94;
+		filter: saturate(0.9) brightness(0.86);
+	}
+
 	.artist-splash-spotlight-card-side .artist-splash-card-frame {
 		box-shadow: 0 18px 42px rgba(0, 0, 0, 0.5);
 	}
@@ -397,8 +424,18 @@
 		transform: translateX(-106%) scale(0.86) rotate(-2deg);
 	}
 
+	.artist-splash-spotlight-card-prev .artist-splash-name-art {
+		--artist-splash-name-x: -50%;
+		left: 72%;
+	}
+
 	.artist-splash-spotlight-card-next {
 		transform: translateX(6%) scale(0.86) rotate(2deg);
+	}
+
+	.artist-splash-spotlight-card-next .artist-splash-name-art {
+		--artist-splash-name-x: -50%;
+		left: 28%;
 	}
 
 	.artist-splash-spotlight-card-center {
@@ -426,10 +463,16 @@
 
 	.artist-splash-spotlight-card-center .artist-splash-name-art {
 		top: -12px;
-		max-width: 86vw;
-		font-size: clamp(1.55rem, 10vw, 2.55rem);
+		left: 50%;
+		--artist-splash-name-x: -50%;
+		max-width: 88vw;
+		font-size: clamp(
+			var(--artist-splash-name-center-min, 1.45rem),
+			var(--artist-splash-name-center-fluid, 8.6vw),
+			var(--artist-splash-name-center-max, 2.35rem)
+		);
 		opacity: 1;
-		transform: translate(-50%, 0) rotate(-7deg) scale(1);
+		transform: translate(var(--artist-splash-name-x), 0) rotate(-7deg) scale(1);
 	}
 
 	.artist-splash-spotlight-card-center .artist-splash-portrait {

@@ -27,6 +27,13 @@ function getArtistImages(artist) {
 	};
 }
 
+function getNameArtScale(name) {
+	const safeName = typeof name === 'string' ? name : '';
+	const weightedLength = safeName.replace(/\s+/g, '').length + (safeName.match(/\s/g)?.length ?? 0) * 0.45;
+
+	return Math.max(0.72, Math.min(1, 7.6 / Math.max(1, weightedLength)));
+}
+
 function useMediaQuery(query) {
 	const [matches, setMatches] = useState(() => (
 		typeof window !== 'undefined' ? window.matchMedia(query).matches : false
@@ -114,6 +121,7 @@ function ArtistCard({
 	const timeoutRefs = useRef([]);
 	const currentImageRef = useRef(defaultImage);
 	const cycleRunIdRef = useRef(0);
+	const nameScale = getNameArtScale(artist.name);
 
 	const clearTimers = () => {
 		timeoutRefs.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
@@ -225,7 +233,18 @@ function ArtistCard({
 		<Element
 			{...elementProps}
 			className={`artist-splash-card ${visualActive ? 'artist-splash-card-active' : ''} ${artist.isPubliclyVisible === false ? 'artist-splash-card-hidden' : ''} ${className}`.trim()}
-			style={{ '--artist-splash-enter-delay': `${enterDelayMs}ms` }}
+			style={{
+				'--artist-splash-enter-delay': `${enterDelayMs}ms`,
+				'--artist-splash-name-min': `${1.8 * nameScale}rem`,
+				'--artist-splash-name-fluid': `${3.5 * nameScale}vw`,
+				'--artist-splash-name-max': `${3.4 * nameScale}rem`,
+				'--artist-splash-name-mobile-min': `${1.25 * nameScale}rem`,
+				'--artist-splash-name-mobile-fluid': `${8 * nameScale}vw`,
+				'--artist-splash-name-mobile-max': `${2.1 * nameScale}rem`,
+				'--artist-splash-name-center-min': `${1.45 * nameScale}rem`,
+				'--artist-splash-name-center-fluid': `${8.6 * nameScale}vw`,
+				'--artist-splash-name-center-max': `${2.35 * nameScale}rem`,
+			}}
 			onMouseEnter={() => {
 				prefetchArtistPage(artist);
 				if (previewOnHover) startSequence();
