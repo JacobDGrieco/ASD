@@ -43,8 +43,8 @@
 	border-radius: 50%;
 	background:
 		radial-gradient(circle at 50% 50%, #2f2f2f 0 16%, #111 17% 58%, #060606 59% 100%);
-	top: 25%;
-	left: 18%;
+	top: 50%;
+	left: 39%;
 	transform: translate(-50%, -50%);
 	box-shadow:
 		0 0 0 10px #1a1a1a,

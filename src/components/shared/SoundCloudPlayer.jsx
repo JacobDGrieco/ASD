@@ -135,7 +135,7 @@ export default function SoundCloudPlayer({
       height={hidden ? '1' : '166'}
       scrolling="no"
       frameBorder="no"
-      allow="autoplay"
+      allow="autoplay; encrypted-media"
       src={src}
       style={
         hidden
