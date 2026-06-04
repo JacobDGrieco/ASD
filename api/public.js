@@ -62,12 +62,38 @@ function publicArtistSelect() {
   }
 }
 
-function parseCreditNames(value) {
+function splitRoleCreditNames(value) {
   if (typeof value !== 'string') return []
-  return value
-    .split(';')
-    .map((name) => name.trim())
+  const name = value.trim()
+  if (!name) return []
+
+  return name
+    .split(/\s*(?:;|,|&|\+|\band\b)\s*/i)
+    .map((part) => part.trim())
     .filter(Boolean)
+}
+
+function getRoleCreditDisplayNames(name, slugByName) {
+  if (typeof name !== 'string') return []
+  const trimmedName = name.trim()
+  if (!trimmedName) return []
+  if (slugByName[trimmedName.toLowerCase()]) return [trimmedName]
+
+  const splitNames = splitRoleCreditNames(trimmedName)
+  return splitNames.length > 1 ? splitNames : [trimmedName]
+}
+
+function collectRoleCreditNames(roles) {
+  const names = []
+
+  for (const role of roles) {
+    if (typeof role?.name !== 'string') continue
+    const trimmedName = role.name.trim()
+    if (!trimmedName) continue
+    names.push(trimmedName, ...splitRoleCreditNames(trimmedName))
+  }
+
+  return [...new Set(names)]
 }
 
 async function resolveArtistLinksByName(names, includeHidden = false) {
@@ -89,13 +115,6 @@ async function resolveArtistLinksByName(names, includeHidden = false) {
       .filter((artist) => includeHidden || isPublicArtistVisible(artist))
       .map((artist) => [artist.name.trim().toLowerCase(), artist.slug])
   )
-}
-
-function mapArtistLinks(names, slugByName) {
-  return names.map((name) => ({
-    name,
-    slug: slugByName[name.trim().toLowerCase()] ?? null,
-  }))
 }
 
 function applyPublicArtistName(album) {
@@ -614,14 +633,20 @@ async function getSong(res, id, includeHidden = false) {
 
   if (song.meta) {
     const roles = Array.isArray(song.meta.roles) ? song.meta.roles : []
-    const allNames = [...new Set(roles.map((r) => r.name).filter(Boolean))]
+    const allNames = collectRoleCreditNames(roles)
     const slugByName = await resolveArtistLinksByName(allNames, includeHidden)
 
     const roleGroups = {}
     for (const { role, name } of roles) {
-      if (!name?.trim()) continue
+      const names = getRoleCreditDisplayNames(name, slugByName)
+      if (!names.length) continue
       if (!roleGroups[role]) roleGroups[role] = []
-      roleGroups[role].push({ name, slug: slugByName[name.trim().toLowerCase()] ?? null })
+      for (const displayName of names) {
+        roleGroups[role].push({
+          name: displayName,
+          slug: slugByName[displayName.trim().toLowerCase()] ?? null,
+        })
+      }
     }
 
     song.meta = { ...song.meta, roleGroups }
