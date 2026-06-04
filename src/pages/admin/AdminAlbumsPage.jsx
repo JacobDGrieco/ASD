@@ -1,11 +1,11 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { FaApple, FaExternalLinkAlt, FaEye, FaEyeSlash, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash, FaYoutube } from 'react-icons/fa'
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
 import AdminDateInput, { isValidDateInput } from '../../components/admin/AdminDateInput.jsx'
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
-import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js'
+import { clearAdminResource, loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js'
+import AdminSongFormModal from '../../components/admin/AdminSongFormModal.jsx'
 import { defaultVisibilityForReleaseDate, isEffectivelyVisible } from '../../lib/contentVisibility.js'
 import { isOtherArtist, OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID } from '../../lib/publicVisibility.js'
 import { slugify } from '../../lib/slugify.js'
@@ -127,7 +127,6 @@ function validateAlbumForm(form, albums = []) {
 }
 
 export default function AdminAlbumsPage() {
-  const navigate = useNavigate()
   const { token, session } = useAdminAuth()
   const isArtistScoped = session?.role === 'ARTIST'
   const isViewer = session?.role === 'VIEWER'
@@ -143,6 +142,7 @@ export default function AdminAlbumsPage() {
   const [loadingEditId, setLoadingEditId] = useState(null)
   const [validationErrors, setValidationErrors] = useState({})
   const [visibilityTouched, setVisibilityTouched] = useState(false)
+  const [createSongPrefill, setCreateSongPrefill] = useState(null)
   const deferredFilterTitle = useDeferredValue(filterTitle)
 
   useEffect(() => {
@@ -260,19 +260,14 @@ export default function AdminAlbumsPage() {
     closeForm()
 
     if (!isEdit && saved.type === 'SINGLE') {
-      navigate('/admin/songs', {
-        state: {
-          createFromAlbum: {
-            albumId: saved.id,
-            artistId: saved.artistId,
-            title: saved.title ?? '',
-            releaseDate: saved.releaseDate ? String(saved.releaseDate).slice(0, 10) : '',
-            soundcloudUrl: saved.soundcloudUrl ?? '',
-            spotifyUrl: saved.spotifyUrl ?? '',
-            appleMusicUrl: saved.appleMusicUrl ?? '',
-            youtubeUrl: saved.youtubeUrl ?? '',
-          },
-        },
+      setCreateSongPrefill({
+        albumId: saved.id,
+        title: saved.title ?? '',
+        releaseDate: saved.releaseDate ? String(saved.releaseDate).slice(0, 10) : '',
+        soundcloudUrl: saved.soundcloudUrl ?? '',
+        spotifyUrl: saved.spotifyUrl ?? '',
+        appleMusicUrl: saved.appleMusicUrl ?? '',
+        youtubeUrl: saved.youtubeUrl ?? '',
       })
     }
   }
@@ -282,6 +277,11 @@ export default function AdminAlbumsPage() {
     const nextAlbums = albums.filter((album) => album.id !== id)
     setAlbums(nextAlbums)
     primeAdminResource('albums-list', token, nextAlbums)
+  }
+
+  const handleSongSaved = () => {
+    clearAdminResource('songs-list', token)
+    setCreateSongPrefill(null)
   }
 
   const set = (key) => (event) => setForm((current) => {
@@ -481,6 +481,19 @@ export default function AdminAlbumsPage() {
             Next →
           </button>
         </div>
+      )}
+
+      {createSongPrefill && (
+        <AdminSongFormModal
+          songId={null}
+          prefill={createSongPrefill}
+          songs={[]}
+          albums={albums}
+          token={token}
+          session={session}
+          onSaved={handleSongSaved}
+          onClose={() => setCreateSongPrefill(null)}
+        />
       )}
 
       {form && (
