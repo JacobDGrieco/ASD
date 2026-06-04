@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { preloadImage, preloadImages, prefetchArtistPage } from '../../lib/publicPrefetch.js';
 import { getVideoSourceType } from '../../lib/artistVideos.js';
 import '../../styles/ArtistSplash.css';
 
-const AUTO_SWAP_INTERVAL_MS = 500;
+const AUTO_SWAP_INTERVAL_MS = 1400;
 const IMAGE_TRANSITION_MS = 480;
 const CARD_WAVE_DELAY_MS = 120;
 const DEFAULT_HERO_VIDEO = 'https://yrvmwf5ltxj8zlrg.public.blob.vercel-storage.com/videos/hero-video.mov';
+const MOBILE_SPOTLIGHT_QUERY = '(max-width: 640px)';
 
 function uniqueUrls(urls) {
 	return [...new Set(urls.filter(Boolean))];
@@ -26,7 +27,85 @@ function getArtistImages(artist) {
 	};
 }
 
-function ArtistCard({ artist, imagePriority = 'auto', enterDelayMs = 0 }) {
+function useMediaQuery(query) {
+	const [matches, setMatches] = useState(() => (
+		typeof window !== 'undefined' ? window.matchMedia(query).matches : false
+	));
+
+	useEffect(() => {
+		const mediaQuery = window.matchMedia(query);
+		const updateMatches = () => setMatches(mediaQuery.matches);
+
+		updateMatches();
+		mediaQuery.addEventListener('change', updateMatches);
+
+		return () => mediaQuery.removeEventListener('change', updateMatches);
+	}, [query]);
+
+	return matches;
+}
+
+function useOverflowControls(scrollRef, enabled) {
+	const [state, setState] = useState({
+		canScroll: false,
+		atStart: true,
+		atEnd: true,
+	});
+
+	useEffect(() => {
+		const element = scrollRef.current;
+		if (!enabled || !element) {
+			setState({ canScroll: false, atStart: true, atEnd: true });
+			return undefined;
+		}
+
+		let frameId = null;
+		const updateState = () => {
+			if (frameId) window.cancelAnimationFrame(frameId);
+
+			frameId = window.requestAnimationFrame(() => {
+				const maxScrollLeft = element.scrollWidth - element.clientWidth;
+				const overflowThreshold = element.clientWidth * 0.05;
+				const canScroll = maxScrollLeft > overflowThreshold;
+
+				setState({
+					canScroll,
+					atStart: !canScroll || element.scrollLeft <= 1,
+					atEnd: !canScroll || element.scrollLeft >= maxScrollLeft - 1,
+				});
+			});
+		};
+
+		updateState();
+		element.addEventListener('scroll', updateState, { passive: true });
+
+		const resizeObserver = new ResizeObserver(updateState);
+		resizeObserver.observe(element);
+		Array.from(element.children).forEach((child) => resizeObserver.observe(child));
+		window.addEventListener('resize', updateState);
+
+		return () => {
+			if (frameId) window.cancelAnimationFrame(frameId);
+			element.removeEventListener('scroll', updateState);
+			resizeObserver.disconnect();
+			window.removeEventListener('resize', updateState);
+		};
+	}, [enabled, scrollRef]);
+
+	return state;
+}
+
+function ArtistCard({
+	artist,
+	imagePriority = 'auto',
+	enterDelayMs = 0,
+	className = '',
+	forcedActive = false,
+	autoPreview = false,
+	previewOnHover = true,
+	as = 'link',
+	onClick = null,
+}) {
 	const { images, defaultImage, sequence } = useMemo(() => getArtistImages(artist), [artist]);
 	const [currentImage, setCurrentImage] = useState(defaultImage);
 	const [previousImage, setPreviousImage] = useState(null);
@@ -69,7 +148,7 @@ function ArtistCard({ artist, imagePriority = 'auto', enterDelayMs = 0 }) {
 	const resetToDefault = () => {
 		clearTimers();
 		cycleRunIdRef.current += 1;
-		setIsActive(false);
+		setIsActive(forcedActive);
 		setCurrentImage(defaultImage);
 		currentImageRef.current = defaultImage;
 		setPreviousImage(null);
@@ -121,21 +200,46 @@ function ArtistCard({ artist, imagePriority = 'auto', enterDelayMs = 0 }) {
 		return clearTimers;
 	}, [defaultImage, sequence]);
 
+	useEffect(() => {
+		if (autoPreview && forcedActive) {
+			startSequence();
+			return clearTimers;
+		}
+
+		if (forcedActive) {
+			setIsActive(true);
+			return undefined;
+		}
+
+		resetToDefault();
+		return undefined;
+	}, [autoPreview, defaultImage, forcedActive, sequence]);
+
+	const visualActive = isActive || forcedActive;
+	const Element = as === 'button' ? 'button' : Link;
+	const elementProps = as === 'button'
+		? { type: 'button', onClick }
+		: { to: `/artists/${artist.slug}`, onClick };
+
 	return (
-		<Link
-			to={`/artists/${artist.slug}`}
-			className={`artist-splash-card ${isActive ? 'artist-splash-card-active' : ''} ${artist.isPubliclyVisible === false ? 'artist-splash-card-hidden' : ''}`.trim()}
+		<Element
+			{...elementProps}
+			className={`artist-splash-card ${visualActive ? 'artist-splash-card-active' : ''} ${artist.isPubliclyVisible === false ? 'artist-splash-card-hidden' : ''} ${className}`.trim()}
 			style={{ '--artist-splash-enter-delay': `${enterDelayMs}ms` }}
 			onMouseEnter={() => {
 				prefetchArtistPage(artist);
-				startSequence();
+				if (previewOnHover) startSequence();
 			}}
-			onMouseLeave={resetToDefault}
+			onMouseLeave={() => {
+				if (previewOnHover && !forcedActive) resetToDefault();
+			}}
 			onFocus={() => {
 				prefetchArtistPage(artist);
-				startSequence();
+				if (previewOnHover) startSequence();
 			}}
-			onBlur={resetToDefault}
+			onBlur={() => {
+				if (previewOnHover && !forcedActive) resetToDefault();
+			}}
 			onTouchStart={() => prefetchArtistPage(artist)}
 		>
 			<span className="artist-splash-name-art" data-text={artist.name}>
@@ -164,7 +268,154 @@ function ArtistCard({ artist, imagePriority = 'auto', enterDelayMs = 0 }) {
 					/>
 				)}
 			</div>
-		</Link>
+		</Element>
+	);
+}
+
+function ArtistSplashRail({ artists }) {
+	const scrollRef = useRef(null);
+	const { canScroll, atStart, atEnd } = useOverflowControls(scrollRef, true);
+	const priorityCount = 3;
+
+	const scrollByPage = (direction) => {
+		const element = scrollRef.current;
+		if (!element) return;
+
+		const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		element.scrollBy({
+			left: direction * Math.max(element.clientWidth * 0.82, 260),
+			behavior: prefersReducedMotion ? 'auto' : 'smooth',
+		});
+	};
+
+	return (
+		<div className={`artist-splash-rail ${canScroll ? 'artist-splash-rail-scrollable' : ''}`}>
+			{canScroll && (
+				<button
+					type="button"
+					className="artist-splash-rail-arrow artist-splash-rail-arrow-prev"
+					onClick={() => scrollByPage(-1)}
+					disabled={atStart}
+					aria-label="Previous artists"
+				>
+					<span aria-hidden="true" />
+				</button>
+			)}
+			<div className="artist-splash-rail-window" ref={scrollRef}>
+				<div className={`artist-splash-grid ${canScroll ? 'artist-splash-grid-scrollable' : ''}`}>
+					{artists.map((artist, index) => (
+						<ArtistCard
+							key={artist.id}
+							artist={artist}
+							imagePriority={index < priorityCount ? 'high' : 'auto'}
+							enterDelayMs={index * CARD_WAVE_DELAY_MS}
+						/>
+					))}
+				</div>
+			</div>
+			{canScroll && (
+				<button
+					type="button"
+					className="artist-splash-rail-arrow artist-splash-rail-arrow-next"
+					onClick={() => scrollByPage(1)}
+					disabled={atEnd}
+					aria-label="Next artists"
+				>
+					<span aria-hidden="true" />
+				</button>
+			)}
+		</div>
+	);
+}
+
+function ArtistSpotlightCarousel({ artists }) {
+	const [activeIndex, setActiveIndex] = useState(0);
+	const touchStartXRef = useRef(null);
+	const didSwipeRef = useRef(false);
+	const navigate = useNavigate();
+	const artistCount = artists.length;
+
+	useEffect(() => {
+		if (activeIndex < artistCount) return;
+		setActiveIndex(0);
+	}, [activeIndex, artistCount]);
+
+	const goToIndex = (index) => {
+		if (artistCount === 0) return;
+		setActiveIndex((index + artistCount) % artistCount);
+	};
+
+	const activeArtist = artists[activeIndex];
+
+	const getSpotlightPosition = (index) => {
+		if (index === activeIndex) return 'center';
+		if (artistCount <= 1) return 'hidden';
+
+		let offset = index - activeIndex;
+		if (offset > artistCount / 2) offset -= artistCount;
+		if (offset < artistCount / -2) offset += artistCount;
+
+		if (offset === -1) return 'prev';
+		if (offset === 1) return 'next';
+		return 'hidden';
+	};
+
+	const handlePointerDown = (event) => {
+		touchStartXRef.current = event.clientX;
+	};
+
+	const handlePointerUp = (event) => {
+		if (touchStartXRef.current === null) return;
+
+		const deltaX = event.clientX - touchStartXRef.current;
+		touchStartXRef.current = null;
+
+		if (Math.abs(deltaX) < 36) return;
+		didSwipeRef.current = true;
+		goToIndex(deltaX > 0 ? activeIndex - 1 : activeIndex + 1);
+		window.setTimeout(() => {
+			didSwipeRef.current = false;
+		}, 120);
+	};
+
+	if (!activeArtist) return null;
+
+	return (
+		<div
+			className="artist-splash-spotlight"
+			onPointerDown={handlePointerDown}
+			onPointerUp={handlePointerUp}
+			onPointerCancel={() => {
+				touchStartXRef.current = null;
+			}}
+		>
+			{artists.map((artist, index) => {
+				const position = getSpotlightPosition(index);
+				const isCenter = position === 'center';
+				const isSide = position === 'prev' || position === 'next';
+
+				return (
+					<ArtistCard
+						key={artist.id}
+						artist={artist}
+						as="button"
+						className={`artist-splash-spotlight-card artist-splash-spotlight-card-${position} ${isSide ? 'artist-splash-spotlight-card-side' : ''}`.trim()}
+						imagePriority={isCenter ? 'high' : 'auto'}
+						forcedActive={isCenter}
+						autoPreview={isCenter}
+						previewOnHover={false}
+						onClick={() => {
+							if (didSwipeRef.current) return;
+							if (isCenter) {
+								navigate(`/artists/${artist.slug}`);
+								return;
+							}
+							goToIndex(index);
+						}}
+					/>
+				);
+			})}
+		</div>
 	);
 }
 
@@ -174,7 +425,7 @@ export default function ArtistSplash({ artists }) {
 		DEFAULT_HERO_VIDEO,
 	]), []);
 	const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
-	const priorityCount = 3;
+	const isMobileSpotlight = useMediaQuery(MOBILE_SPOTLIGHT_QUERY);
 
 	useEffect(() => {
 		const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -219,16 +470,7 @@ export default function ArtistSplash({ artists }) {
 				</video>
 			)}
 			<div className="artist-splash-overlay" />
-			<div className="artist-splash-grid">
-				{artists.map((artist, index) => (
-					<ArtistCard
-						key={artist.id}
-						artist={artist}
-						imagePriority={index < priorityCount ? 'high' : 'auto'}
-						enterDelayMs={index * CARD_WAVE_DELAY_MS}
-					/>
-				))}
-			</div>
+			{isMobileSpotlight ? <ArtistSpotlightCarousel artists={artists} /> : <ArtistSplashRail artists={artists} />}
 		</section>
 	);
 }

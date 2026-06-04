@@ -1,6 +1,6 @@
 .artist-splash-splash {
 	position: relative;
-	min-height: 100vh;
+	min-height: 100dvh;
 	display: flex;
 	align-items: flex-end;
 	padding: 100px 40px 0;
@@ -25,18 +25,103 @@
 		radial-gradient(circle at top center, rgba(255, 255, 255, 0.08), transparent 45%);
 }
 
-.artist-splash-grid {
-	display: flex;
-	gap: 20px;
+.artist-splash-rail {
 	width: 100%;
-	max-width: 1360px;
-	margin: 0 auto;
 	position: relative;
 	z-index: 1;
+	transform: translateY(14%);
+}
+
+.artist-splash-rail-window {
+	width: 100%;
+	overflow-x: auto;
+	overflow-y: hidden;
+	padding: 58px 4px 84px;
+	margin: -58px -4px -84px;
+	scrollbar-width: none;
+	scroll-behavior: smooth;
+}
+
+.artist-splash-rail-window::-webkit-scrollbar {
+	display: none;
+}
+
+.artist-splash-grid {
+	--artist-splash-card-gap: 20px;
+	display: flex;
+	gap: var(--artist-splash-card-gap);
+	width: 100%;
 	align-items: flex-start;
 	justify-content: center;
 	padding-bottom: 0;
-	transform: translateY(14%);
+	flex-wrap: nowrap;
+}
+
+.artist-splash-grid-scrollable {
+	justify-content: flex-start;
+}
+
+.artist-splash-rail-arrow {
+	position: absolute;
+	top: 50%;
+	z-index: 4;
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	border-radius: 50%;
+	background: rgba(7, 7, 7, 0.72);
+	box-shadow:
+		0 18px 42px rgba(0, 0, 0, 0.38),
+		inset 0 1px 0 rgba(255, 255, 255, 0.08);
+	backdrop-filter: blur(12px);
+	cursor: pointer;
+	transform: translateY(-44%);
+	transition:
+		opacity 0.24s ease,
+		transform 0.24s ease,
+		border-color 0.24s ease;
+}
+
+.artist-splash-rail-arrow:hover,
+.artist-splash-rail-arrow:focus-visible {
+	border-color: rgba(247, 237, 220, 0.46);
+	transform: translateY(-44%) scale(1.04);
+}
+
+.artist-splash-rail-arrow:disabled {
+	cursor: default;
+	opacity: 0.28;
+}
+
+.artist-splash-rail-arrow span {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 11px;
+	height: 11px;
+	border-top: 2px solid rgba(247, 237, 220, 0.88);
+	border-left: 2px solid rgba(247, 237, 220, 0.88);
+}
+
+.artist-splash-rail-arrow-prev {
+	left: -22px;
+}
+
+.artist-splash-rail-arrow-prev span {
+	transform: translate(-36%, -50%) rotate(-45deg);
+}
+
+.artist-splash-rail-arrow-next {
+	right: -22px;
+}
+
+.artist-splash-rail-arrow-next span {
+	transform: translate(-64%, -50%) rotate(135deg);
+}
+
+.artist-splash-spotlight {
+	display: none;
 }
 
 .artist-splash-card {
@@ -199,17 +284,25 @@
 		padding: 88px 20px 0;
 	}
 
-	.artist-splash-grid {
-		gap: 14px;
-		justify-content: flex-start;
-		overflow-x: auto;
-		padding: 0 4px 12px;
-		scrollbar-width: none;
+	.artist-splash-rail {
 		transform: translateY(12%);
 	}
 
-	.artist-splash-grid::-webkit-scrollbar {
-		display: none;
+	.artist-splash-grid {
+		--artist-splash-card-gap: 14px;
+		gap: 14px;
+	}
+
+	.artist-splash-grid-scrollable {
+		justify-content: flex-start;
+	}
+
+	.artist-splash-rail-arrow-prev {
+		left: -10px;
+	}
+
+	.artist-splash-rail-arrow-next {
+		right: -10px;
 	}
 
 	.artist-splash-card {
@@ -233,6 +326,28 @@
 }
 
 @media (max-width: 640px) {
+	.artist-splash-splash {
+		min-height: 100dvh;
+		padding: 76px 16px 0;
+	}
+
+	.artist-splash-rail {
+		display: none;
+	}
+
+	.artist-splash-spotlight {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		align-items: flex-end;
+		justify-content: center;
+		width: 100%;
+		height: min(70dvh, 560px);
+		margin: 0 auto;
+		transform: translateY(8%);
+		touch-action: pan-y;
+	}
+
 	.artist-splash-card {
 		width: 58vw;
 		height: 32vh;
@@ -240,6 +355,85 @@
 
 	.artist-splash-name-art {
 		letter-spacing: 0.12em;
+	}
+
+	.artist-splash-spotlight-card {
+		position: absolute;
+		bottom: 0;
+		left: 50%;
+		width: min(45vw, 180px);
+		min-width: 0;
+		height: min(30dvh, 260px);
+		padding: 0;
+		border: 0;
+		background: transparent;
+		font: inherit;
+		text-align: inherit;
+		cursor: pointer;
+		opacity: 1;
+		animation: none;
+		will-change: transform, opacity, filter;
+		transition:
+			transform 0.48s cubic-bezier(0.16, 1, 0.3, 1),
+			filter 0.42s ease,
+			opacity 0.42s ease;
+	}
+
+	.artist-splash-spotlight-card-side {
+		z-index: 1;
+		filter: saturate(0.45) brightness(0.58);
+		opacity: 0.72;
+	}
+
+	.artist-splash-spotlight-card-side .artist-splash-card-frame {
+		box-shadow: 0 18px 42px rgba(0, 0, 0, 0.5);
+	}
+
+	.artist-splash-spotlight-card-side .artist-splash-portrait {
+		filter: grayscale(100%) brightness(0.54);
+	}
+
+	.artist-splash-spotlight-card-prev {
+		transform: translateX(-106%) scale(0.86) rotate(-2deg);
+	}
+
+	.artist-splash-spotlight-card-next {
+		transform: translateX(6%) scale(0.86) rotate(2deg);
+	}
+
+	.artist-splash-spotlight-card-center {
+		z-index: 3;
+		cursor: pointer;
+		filter: saturate(1);
+		transform: translateX(-50%) translateY(-22px) scale(1.34);
+	}
+
+	.artist-splash-spotlight-card-center.artist-splash-card-active {
+		transform: translateX(-50%) translateY(-22px) scale(1.34);
+	}
+
+	.artist-splash-spotlight-card-hidden {
+		z-index: 0;
+		opacity: 0;
+		pointer-events: none;
+		filter: saturate(0.25) brightness(0.38);
+		transform: translateX(-50%) translateY(18px) scale(0.68);
+	}
+
+	.artist-splash-spotlight-card-center .artist-splash-card-frame {
+		box-shadow: 0 28px 68px rgba(0, 0, 0, 0.6);
+	}
+
+	.artist-splash-spotlight-card-center .artist-splash-name-art {
+		top: -12px;
+		max-width: 86vw;
+		font-size: clamp(1.55rem, 10vw, 2.55rem);
+		opacity: 1;
+		transform: translate(-50%, 0) rotate(-7deg) scale(1);
+	}
+
+	.artist-splash-spotlight-card-center .artist-splash-portrait {
+		filter: grayscale(0%) brightness(0.96);
 	}
 }
 
