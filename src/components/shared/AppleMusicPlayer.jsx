@@ -36,23 +36,26 @@ function getEmbedHeight(url) {
   }
 }
 
-export default function AppleMusicPlayer({ url }) {
+export default function AppleMusicPlayer({ url, onPlay = null }) {
   const src = useMemo(() => buildAppleMusicEmbedUrl(url), [url])
   const height = useMemo(() => getEmbedHeight(src), [src])
 
   if (!src) return null
 
   return (
-    <iframe
-      title="Apple Music Player"
-      src={src}
-      width="100%"
-      height={String(height)}
-      frameBorder="0"
-      allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write"
-      sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation-by-user-activation"
-      loading="lazy"
-      style={{ borderRadius: '12px', background: 'transparent' }}
-    />
+    <div onClick={onPlay} style={{ cursor: 'default' }}>
+      <iframe
+        title="Apple Music Player"
+        src={src}
+        onFocus={onPlay ?? undefined}
+        width="100%"
+        height={String(height)}
+        frameBorder="0"
+        allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write"
+        sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation-by-user-activation"
+        loading="lazy"
+        style={{ borderRadius: '12px', background: 'transparent' }}
+      />
+    </div>
   )
 }

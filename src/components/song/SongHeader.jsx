@@ -1,4 +1,6 @@
+import { useCallback, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { track } from '@vercel/analytics'
 import { FaApple, FaSoundcloud, FaSpotify, FaYoutube } from 'react-icons/fa'
 import { prefetchArtistPage } from '../../lib/publicPrefetch.js'
 import { buildAlbumPath, isOtherArtist } from '../../lib/publicVisibility.js'
@@ -9,6 +11,7 @@ import ArtworkGallery from '../shared/ArtworkGallery.jsx'
 import '../../styles/SongHeader.css'
 
 export default function SongHeader({ song, adminPreview = false }) {
+  const hasTrackedPlay = useRef(false)
   const hasSongArtwork = Array.isArray(song.images) && song.images.length > 0
   const artwork = hasSongArtwork
     ? song.images[0]?.previewUrl || song.images[0]?.url || song.artwork || song.album.coverArt
@@ -28,6 +31,22 @@ export default function SongHeader({ song, adminPreview = false }) {
     { href: song.youtubeUrl, label: 'YouTube', icon: FaYoutube },
   ].filter((link) => link.href)
   const playerUrl = song.soundcloudUrl || song.spotifyUrl || song.appleMusicUrl || null
+  const handleFirstPlay = useCallback(() => {
+    if (hasTrackedPlay.current) return
+
+    hasTrackedPlay.current = true
+    track('song_played', {
+      song: song.title,
+      artist: song.album.artist.name,
+      player: song.soundcloudUrl ? 'soundcloud'
+        : song.spotifyUrl ? 'spotify'
+          : 'applemusic',
+    })
+  }, [song])
+
+  useEffect(() => {
+    hasTrackedPlay.current = false
+  }, [song.id])
 
   return (
     <section className={`song-header-header ${song.isPubliclyVisible === false ? 'song-header-hidden' : ''}`.trim()}>
@@ -96,10 +115,10 @@ export default function SongHeader({ song, adminPreview = false }) {
         {playerUrl && (
           <div className="song-header-player">
             {song.soundcloudUrl
-              ? <SoundCloudPlayer url={song.soundcloudUrl} autoPlay={false} />
+              ? <SoundCloudPlayer url={song.soundcloudUrl} autoPlay={false} onPlaybackStart={handleFirstPlay} />
               : song.spotifyUrl
-                ? <SpotifyPlayer url={song.spotifyUrl} />
-                : <AppleMusicPlayer url={song.appleMusicUrl} />
+                ? <SpotifyPlayer url={song.spotifyUrl} onPlay={handleFirstPlay} />
+                : <AppleMusicPlayer url={song.appleMusicUrl} onPlay={handleFirstPlay} />
             }
           </div>
         )}
