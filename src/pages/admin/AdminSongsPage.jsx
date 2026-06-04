@@ -677,16 +677,26 @@ export default function AdminSongsPage() {
   }
 
   const imageCell = (song) => {
-    const image = primaryImage(song.images)
-    if (!image) return <span className="admin-artists-page-empty-value">-</span>
+    const albumIds = placementAlbumIds(song)
+    const album = albumIds.length ? albumById[albumIds[0]] ?? null : null
+
+    const albumImage = album ? primaryImage(album.images) : null
+    const songImage = primaryImage(song.images)
+    const displayImage = albumImage ?? songImage
+
+    if (!displayImage) return <span className="admin-artists-page-empty-value">-</span>
+
+    const albumCount = album ? (album.imageCount ?? album.images?.length ?? 0) : 0
+    const songCount = song.imageCount ?? song.images?.length ?? 0
+    const count = albumCount + songCount
 
     return (
       <div className="admin-artists-page-image-summary">
         <div className={`admin-artists-page-thumb-frame ${isSongHidden(song) ? 'admin-artists-page-thumb-frame-hidden' : ''}`.trim()}>
-          <img src={image.previewUrl || image.url} alt={song.title} className="admin-artists-page-thumb" />
+          <img src={displayImage.previewUrl || displayImage.url} alt={song.title} className="admin-artists-page-thumb" />
         </div>
         <span className="admin-artists-page-image-count">
-          {song.imageCount ?? song.images?.length ?? 1} image{(song.imageCount ?? song.images?.length ?? 1) === 1 ? '' : 's'}
+          {count} image{count === 1 ? '' : 's'}
         </span>
       </div>
     )
