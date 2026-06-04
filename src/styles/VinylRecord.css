@@ -1,6 +1,6 @@
 .vinyl-record-record {
-  width: 114px;
-  height: 114px;
+  width: var(--vinyl-record-size, 114px);
+  height: var(--vinyl-record-size, 114px);
   flex-shrink: 0;
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
@@ -73,8 +73,8 @@
 
 @media (max-width: 900px) {
   .vinyl-record-record {
-    width: 120px;
-    height: 120px;
+    width: var(--vinyl-record-size, 120px);
+    height: var(--vinyl-record-size, 120px);
   }
 
   .vinyl-record-record:hover {
@@ -97,5 +97,11 @@
 
   .vinyl-record-artist {
     font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .vinyl-record-meta {
+    display: none;
   }
 }

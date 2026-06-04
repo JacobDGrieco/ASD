@@ -1,16 +1,29 @@
 .vinyl-rack-rack {
+	--vinyl-record-gap: 8px;
+	--vinyl-record-size: 114px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: 12px;
+	gap: 14px;
+	width: min(100%, 504px);
+}
+
+.vinyl-rack-tier {
+	width: 100%;
 }
 
 .vinyl-rack-slot-row {
 	display: flex;
-	gap: 8px;
+	gap: var(--vinyl-record-gap);
 	align-items: flex-end;
+	justify-content: flex-start;
+	width: 100%;
 	padding: 18px 12px 0;
 	flex-wrap: nowrap;
+}
+
+.vinyl-rack-slot-row-centered {
+	justify-content: center;
 }
 
 .vinyl-rack-shelf {
@@ -18,12 +31,11 @@
 	height: 14px;
 	background: linear-gradient(180deg, #575757, #1a1a1a);
 	border-radius: 999px;
-	box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+	box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 .vinyl-rack-instructions {
-
-	margin: 6px 0 0;
+	margin: 0;
 	font-family: var(--font-description);
 	font-size: 0.9rem;
 	line-height: 1.55;
@@ -31,12 +43,14 @@
 }
 
 @media (max-width: 900px) {
+	.vinyl-rack-rack {
+		--vinyl-record-gap: 8px;
+		--vinyl-record-size: clamp(58px, 18vw, 104px);
+		width: min(100%, 460px);
+	}
+
 	.vinyl-rack-slot-row {
-		gap: 12px;
-		padding: 16px 14px 0;
-		max-width: 100%;
-		flex-wrap: wrap;
-		justify-content: center;
+		padding: 16px 10px 0;
 	}
 
 	.vinyl-rack-shelf {
@@ -49,12 +63,8 @@
 		align-items: center;
 	}
 
-	.vinyl-rack-slot-row {
-		justify-content: center;
-	}
-
 	.vinyl-rack-shelf {
-		width: min(100%, 720px);
+		width: 100%;
 	}
 
 	.vinyl-rack-instructions {

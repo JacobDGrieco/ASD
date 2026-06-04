@@ -53,7 +53,7 @@ function HomeRecordPlayerPlaceholder() {
 			<div className="home-shell-record-player-inner">
 				<div className="home-shell-turntable" />
 				<div className="home-shell-rack">
-					{Array.from({ length: 6 }, (_, index) => (
+					{Array.from({ length: 8 }, (_, index) => (
 						<div key={index} className="home-shell-record" />
 					))}
 				</div>
@@ -117,11 +117,11 @@ export default function HomePage() {
 			.flatMap((artist) =>
 				(artist.albums ?? []).map((album) => ({
 					...album,
-					artist: artist,
+					artist,
 				}))
 			)
 			.sort((left, right) => new Date(right.releaseDate).getTime() - new Date(left.releaseDate).getTime())
-			.slice(0, 6);
+			.slice(0, 8);
 	}, [artists]);
 
 	if ((artistsError || tracksError) && !artists && !tracks) {
@@ -172,14 +172,12 @@ export default function HomePage() {
 					</div>
 					<div className="home-latest home-latest-inline">
 						{latestReleases.length > 0 ? (
-							<div className="home-latest-row" aria-label="Latest releases">
+							<div className="home-latest-row" aria-label="Latest albums">
 								{latestReleases.map((album) => {
-									const singleSong = album.songs?.length === 1 ? album.songs[0] : null;
-									const leadSong = singleSong ?? album.songs?.[0] ?? null;
+									const singleSong = album.type === 'SINGLE' && album.songs?.length === 1 ? album.songs[0] : null;
 									const to = singleSong
 										? buildSongPath({ song: singleSong, allowHidden: adminPreview })
-										: buildAlbumPath({ album, allowHidden: adminPreview })
-										?? buildSongPath({ song: leadSong, allowHidden: adminPreview });
+										: buildAlbumPath({ album, allowHidden: adminPreview });
 
 									return (
 										<AlbumCard
@@ -193,12 +191,12 @@ export default function HomePage() {
 							</div>
 						) : artistsLoading ? (
 							<div className="home-latest-row home-latest-row-loading" aria-hidden="true">
-								{Array.from({ length: 4 }, (_, index) => (
+								{Array.from({ length: 8 }, (_, index) => (
 									<div key={index} className="home-latest-card-placeholder" />
 								))}
 							</div>
 						) : (
-							<div className="home-latest-empty">Latest releases will appear here once public catalog data is available.</div>
+							<div className="home-latest-empty">Latest albums will appear here once public catalog data is available.</div>
 						)}
 					</div>
 				</section>

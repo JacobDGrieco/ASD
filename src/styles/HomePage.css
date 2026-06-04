@@ -88,11 +88,11 @@
 }
 
 .home-shell-rack {
-	display: flex;
+	display: grid;
+	grid-template-columns: repeat(4, minmax(82px, 108px));
 	gap: 18px;
-	flex-wrap: wrap;
-	max-width: 740px;
 	justify-content: center;
+	max-width: 486px;
 }
 
 .home-shell-record {
@@ -103,13 +103,13 @@
 }
 
 .home-about {
-	max-width: 1200px;
+	max-width: 1360px;
 	margin: 0 auto;
 	padding: 80px 60px;
 	border-top: 1px solid var(--border);
 	display: grid;
-	grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.55fr);
-	gap: 48px;
+	grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
+	gap: 56px;
 	align-items: start;
 }
 
@@ -140,15 +140,32 @@
 }
 
 .home-latest-row {
-	display: flex;
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
 	gap: 12px;
-	overflow-x: auto;
-	padding-bottom: 8px;
-	scrollbar-width: thin;
+	overflow: visible;
+	padding-bottom: 0;
 }
 
 .home-latest-row .album-card-card {
+	width: 100%;
+	min-width: 0;
 	background: rgba(10, 10, 10, 0.24);
+}
+
+.home-latest-row .album-card-primary-action {
+	width: 100%;
+}
+
+.home-latest-row .album-card-cover-wrap {
+	width: 100%;
+	height: auto;
+	aspect-ratio: 1 / 1;
+}
+
+.home-latest-row .album-card-title,
+.home-latest-row .album-card-meta {
+	max-width: 100%;
 }
 
 .home-latest-row-loading {
@@ -156,12 +173,11 @@
 }
 
 .home-latest-card-placeholder {
-	width: min(100%, 220px);
-	min-width: 200px;
-	height: 308px;
+	width: 100%;
+	min-width: 0;
+	aspect-ratio: 1 / 1.48;
 	border: 1px solid var(--border);
 	background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
-	flex: 0 0 auto;
 }
 
 .home-latest-empty {
@@ -236,13 +252,6 @@
 	}
 }
 
-@media (min-width: 1200px) {
-	.home-latest-row {
-		overflow: visible;
-		flex-wrap: wrap;
-	}
-}
-
 @media (max-width: 920px) {
 	.home-shell-hero {
 		padding: 88px 20px 0;
@@ -282,6 +291,10 @@
 
 	.home-latest {
 		padding: 48px 32px;
+	}
+
+	.home-latest-row {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 
 	.home-legal {
