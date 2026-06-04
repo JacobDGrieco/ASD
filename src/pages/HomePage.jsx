@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { prefetchApi, useApi } from '../hooks/useApi.js';
 import ArtistSplash from '../components/home/ArtistSplash.jsx';
 import RecordPlayer from '../components/home/RecordPlayer.jsx';
@@ -11,6 +12,19 @@ import '../styles/HomePage.css';
 
 void prefetchApi('/api/artists');
 void prefetchApi('/api/record-player');
+
+const LEGAL_POLICIES = [
+	// {
+	// 	key: 'terms',
+	// 	label: 'Terms of Service',
+	// 	to: '/terms-of-service',
+	// },
+	{
+		key: 'privacy',
+		label: 'Privacy Policy',
+		to: '/privacy-policy',
+	},
+];
 
 export function getHomePageApiMessage(isDev) {
 	if (isDev) {
@@ -45,6 +59,30 @@ function HomeRecordPlayerPlaceholder() {
 				</div>
 			</div>
 		</section>
+	);
+}
+
+function HomeLegalFooter() {
+	const currentYear = new Date().getFullYear();
+
+	return (
+		<>
+			<footer className="home-legal" aria-label="Site legal">
+				<nav className="home-legal-links" aria-label="Legal links">
+					<a href="#" className="home-legal-link termly-display-preferences">Consent Preferences</a>
+					{LEGAL_POLICIES.map((policy) => (
+						<Link
+							key={policy.key}
+							className="home-legal-link"
+							to={policy.to}
+						>
+							{policy.label}
+						</Link>
+					))}
+				</nav>
+				<p className="home-legal-copy">&copy; {currentYear} ASD Records. All site content © respective artists. | Built by HeadInTheCloudsHaven LLC.</p>
+			</footer>
+		</>
 	);
 }
 
@@ -141,7 +179,7 @@ export default function HomePage() {
 									const to = singleSong
 										? buildSongPath({ song: singleSong, allowHidden: adminPreview })
 										: buildAlbumPath({ album, allowHidden: adminPreview })
-											?? buildSongPath({ song: leadSong, allowHidden: adminPreview });
+										?? buildSongPath({ song: leadSong, allowHidden: adminPreview });
 
 									return (
 										<AlbumCard
@@ -164,6 +202,7 @@ export default function HomePage() {
 						)}
 					</div>
 				</section>
+				<HomeLegalFooter />
 			</div>
 		</div>
 	);

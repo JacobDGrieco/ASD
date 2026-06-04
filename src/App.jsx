@@ -7,6 +7,7 @@ import VideosPage from './pages/VideosPage.jsx';
 import SongPage from './pages/SongPage.jsx';
 import AlbumPage from './pages/AlbumPage.jsx';
 import BoardPage from './pages/BoardPage.jsx';
+import LegalPage from './pages/LegalPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 import AdminLayout from './components/admin/AdminLayout.jsx';
 import AdminRoute from './components/admin/AdminRoute.jsx';
@@ -90,6 +91,14 @@ export default function App() {
 						<Route path="/artists/:slug" element={<ArtistPage />} />
 						<Route path="/albums/:albumId" element={<AlbumPage />} />
 						<Route path="/songs/:songId" element={<SongPage />} />
+						<Route
+							path="/terms-of-service"
+							element={<LegalPage title="Terms of Service" documentSrc="/legal/terms-of-service.html" />}
+						/>
+						<Route
+							path="/privacy-policy"
+							element={<LegalPage title="Privacy Policy" documentSrc="/legal/privacy-policy.html" />}
+						/>
 						<Route path="*" element={<NotFoundPage />} />
 					</Route>
 					<Route path="/admin/login" element={<AdminLoginPage />} />
