@@ -184,12 +184,19 @@
 
 @media (max-width: 720px) {
 	.song-header-header {
+		align-items: center;
 		flex-direction: column;
-		padding: 92px 20px 28px;
+		padding: 116px 20px 28px;
 		gap: 22px;
+		text-align: center;
+	}
+
+	.song-header-album-header {
+		padding-top: 116px;
 	}
 
 	.song-header-media-column {
+		align-items: center;
 		width: 100%;
 		max-width: 240px;
 	}
@@ -198,6 +205,21 @@
 		width: 100%;
 		height: auto;
 		aspect-ratio: 1 / 1;
+	}
+
+	.song-header-info {
+		align-items: center;
+		width: 100%;
+	}
+
+	.song-header-artist-links {
+		justify-content: center;
+	}
+
+	.song-header-player {
+		width: 100%;
+		margin-left: auto;
+		margin-right: auto;
 	}
 
 	.song-header-stream-links {

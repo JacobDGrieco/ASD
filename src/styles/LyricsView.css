@@ -18,6 +18,10 @@
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 }
 
+.lyrics-view-line span {
+	text-align: left;
+}
+
 .lyrics-view-line-blank {
 	padding: 0;
 	min-height: 1.75rem;
@@ -28,16 +32,21 @@
 }
 
 .lyrics-view-annotated {
+	text-align: left;
 	background: none;
 	border: none;
 	padding: 0;
 	font: inherit;
 	color: var(--text);
-	border-bottom: 1px dashed var(--accent);
 	cursor: pointer;
 	transition: color var(--transition), background var(--transition);
 	border-radius: 2px;
 	position: relative;
+	text-decoration-line: underline;
+	text-decoration-style: dashed;
+	text-decoration-color: var(--accent);
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.18em;
 }
 
 .lyrics-view-annotated:hover,
@@ -58,6 +67,11 @@
 }
 
 @media (max-width: 900px) {
+	.lyrics-view-line {
+		font-size: 0.96rem;
+		line-height: 1.95;
+	}
+
 	.lyrics-view-popup-overlay {
 		position: static;
 		width: auto;

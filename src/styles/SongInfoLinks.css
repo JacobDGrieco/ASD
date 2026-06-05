@@ -49,17 +49,20 @@
 
 .song-info-links-label {
   color: var(--text);
+  white-space: nowrap;
 }
 
 .song-info-links-value {
   color: var(--text);
+  min-width: 0;
 }
 
 .song-info-links-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 0;
+  min-width: 0;
 }
 
 .song-info-links-tag {
@@ -80,7 +83,11 @@
   }
 
   .song-info-links-row {
-    grid-template-columns: 1fr;
-    row-gap: 2px;
+    grid-template-columns: 104px minmax(0, 1fr);
+    column-gap: 14px;
+  }
+
+  .song-info-links-label {
+    white-space: normal;
   }
 }

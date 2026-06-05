@@ -13,10 +13,11 @@
 }
 
 .vinyl-rack-slot-row {
+	box-sizing: border-box;
 	display: flex;
 	gap: var(--vinyl-record-gap);
 	align-items: flex-end;
-	justify-content: flex-start;
+	justify-content: center;
 	width: 100%;
 	padding: 18px 12px 0;
 	flex-wrap: nowrap;

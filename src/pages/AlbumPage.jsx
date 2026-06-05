@@ -58,7 +58,7 @@ function AlbumHeader({ album }) {
 	].filter((link) => link.href);
 
 	return (
-		<section className={`song-header-header ${album.isPubliclyVisible === false ? 'song-header-hidden' : ''}`.trim()}>
+		<section className={`song-header-header song-header-album-header ${album.isPubliclyVisible === false ? 'song-header-hidden' : ''}`.trim()}>
 			<div className="song-header-media-column">
 				<div className="song-header-art-wrap">
 					{album.coverArt

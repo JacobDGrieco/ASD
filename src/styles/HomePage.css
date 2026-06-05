@@ -289,6 +289,17 @@
 		gap: 32px;
 	}
 
+	.home-about-copy {
+		max-width: none;
+		text-align: center;
+	}
+
+	.home-about-title {
+		max-width: 100%;
+		margin: 0 auto;
+		text-wrap: balance;
+	}
+
 	.home-latest {
 		padding: 48px 32px;
 	}
@@ -303,8 +314,14 @@
 		flex-direction: column;
 	}
 
+	.home-legal,
+	.home-legal-links {
+		align-items: center;
+		text-align: center;
+	}
+
 	.home-legal-copy {
-		text-align: left;
+		text-align: center;
 	}
 }
 
@@ -336,6 +353,7 @@
 	}
 
 	.home-legal-links {
+		justify-content: center;
 		gap: 10px 14px;
 	}
 }

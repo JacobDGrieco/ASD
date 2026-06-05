@@ -80,7 +80,7 @@ function HomeLegalFooter() {
 						</Link>
 					))}
 				</nav>
-				<p className="home-legal-copy">&copy; {currentYear} ASD Records. All site content © respective artists. | Built by HeadInTheCloudsHaven LLC.</p>
+				<p className="home-legal-copy">&copy; {currentYear} ASD Records. All site content &copy; respective artists. | Built by HeadInTheCloudsHaven LLC.</p>
 			</footer>
 		</>
 	);

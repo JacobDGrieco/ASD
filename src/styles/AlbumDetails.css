@@ -2,7 +2,11 @@
   display: flex;
   flex-direction: column;
   gap: 32px;
-  padding: 8px 0 4px;
+  padding: 28px 24px 32px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--text);
 }
 
 .album-details-copy,
@@ -13,19 +17,17 @@
 }
 
 .album-details-heading {
-  font-size: 0.7rem;
-  letter-spacing: 0.15em;
+  font: inherit;
+  letter-spacing: 0;
   text-transform: uppercase;
-  color: var(--text-muted);
-  margin: 0;
+  color: var(--text);
+  margin: 0 0 16px;
 }
 
 .album-details-text {
-  font-family: var(--font-description);
-  font-size: 0.95rem;
-  line-height: 1.9;
-  color: var(--text-muted);
-  max-width: 620px;
+  font: inherit;
+  color: var(--text);
+  max-width: 640px;
   margin: 0;
 }
 
@@ -36,34 +38,40 @@
 }
 
 .album-details-row {
-  display: flex;
-  gap: 16px;
-  font-size: 0.9rem;
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  column-gap: 20px;
+  align-items: baseline;
+  font: inherit;
 }
 
 .album-details-label {
-  min-width: 110px;
-  color: var(--text-muted);
+  color: var(--text);
+  white-space: nowrap;
 }
 
 .album-details-value {
   color: var(--text);
+  min-width: 0;
 }
 
 .album-details-empty {
-  font-family: var(--font-description);
+  font: inherit;
   margin: 0;
-  color: var(--text-muted);
-  line-height: 1.8;
+  color: var(--text);
 }
 
 @media (max-width: 640px) {
+  .album-details-section {
+    padding: 24px 18px 28px;
+  }
+
   .album-details-row {
-    flex-direction: column;
-    gap: 4px;
+    grid-template-columns: 104px minmax(0, 1fr);
+    column-gap: 14px;
   }
 
   .album-details-label {
-    min-width: 0;
+    white-space: normal;
   }
 }

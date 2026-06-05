@@ -208,9 +208,11 @@
 
 @media (max-width: 720px) {
 	.artist-hero-hero {
+		align-items: center;
 		flex-direction: column;
 		gap: 24px;
 		padding: 96px 20px 40px;
+		text-align: center;
 	}
 
 	.artist-hero-portrait-wrap {
@@ -219,8 +221,23 @@
 	}
 
 	.artist-hero-info {
+		align-items: center;
 		max-width: none;
 		padding-top: 0;
+	}
+
+	.artist-hero-link-groups {
+		align-items: center;
+		width: 100%;
+	}
+
+	.artist-hero-link-group {
+		align-items: center;
+		width: 100%;
+	}
+
+	.artist-hero-links {
+		justify-content: center;
 	}
 
 	.artist-hero-name {
