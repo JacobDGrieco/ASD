@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { FaEye, FaEyeSlash, FaPlus, FaTimes } from 'react-icons/fa';
 import { SiApplemusic, SiSoundcloud, SiSpotify, SiYoutube } from 'react-icons/si';
@@ -79,6 +79,45 @@ function normalizeSongDuplicateValue(value) {
 function normalizeSongReleaseDate(value) {
 	if (!value) return '';
 	return String(value).slice(0, 10);
+}
+
+function compareText(left, right) {
+	return String(left ?? '').localeCompare(String(right ?? ''), undefined, { sensitivity: 'base', numeric: true });
+}
+
+function albumArtistName(album) {
+	if (!album) return '';
+	if (isOtherArtist(album.artist)) return album.otherArtistName || OTHER_ARTIST_NAME;
+	return album.artist?.name ?? '';
+}
+
+function albumSearchLabel(album) {
+	if (!album) return '';
+	const artistName = albumArtistName(album);
+	return artistName ? `${album.title} - ${artistName}` : album.title;
+}
+
+function albumMatchesSearch(album, query) {
+	if (!query) return true;
+	const searchableText = [
+		album.title,
+		albumArtistName(album),
+		normalizeSongReleaseDate(album.releaseDate),
+	].join(' ').toLowerCase();
+	return searchableText.includes(query);
+}
+
+function compareAlbumOptions(left, right) {
+	const artistCompare = compareText(albumArtistName(left), albumArtistName(right));
+	if (artistCompare !== 0) return artistCompare;
+
+	const titleCompare = compareText(left.title, right.title);
+	if (titleCompare !== 0) return titleCompare;
+
+	const releaseDateCompare = compareText(normalizeSongReleaseDate(left.releaseDate), normalizeSongReleaseDate(right.releaseDate));
+	if (releaseDateCompare !== 0) return releaseDateCompare;
+
+	return compareText(left.id, right.id);
 }
 
 function albumArtistKey(album) {
@@ -214,6 +253,121 @@ function initFormFromPrefill(prefill = {}) {
 	};
 }
 
+function AlbumPlacementSelect({ value, albums, onChange, className, invalid }) {
+	const [isOpen, setIsOpen] = useState(false);
+	const [searchText, setSearchText] = useState('');
+	const rootRef = useRef(null);
+	const selectedAlbum = albums.find((album) => album.id === value) ?? null;
+	const query = searchText.trim().toLowerCase();
+	const filteredAlbums = useMemo(
+		() => albums.filter((album) => albumMatchesSearch(album, query)),
+		[albums, query]
+	);
+
+	useEffect(() => {
+		if (!isOpen) setSearchText(albumSearchLabel(selectedAlbum));
+	}, [isOpen, selectedAlbum]);
+
+	useEffect(() => {
+		if (!isOpen) return undefined;
+
+		const handlePointerDown = (event) => {
+			if (!rootRef.current?.contains(event.target)) {
+				setSearchText(albumSearchLabel(selectedAlbum));
+				setIsOpen(false);
+			}
+		};
+		const handleEscape = (event) => {
+			if (event.key === 'Escape') {
+				setSearchText(albumSearchLabel(selectedAlbum));
+				setIsOpen(false);
+			}
+		};
+
+		document.addEventListener('mousedown', handlePointerDown);
+		document.addEventListener('keydown', handleEscape);
+		return () => {
+			document.removeEventListener('mousedown', handlePointerDown);
+			document.removeEventListener('keydown', handleEscape);
+		};
+	}, [isOpen, selectedAlbum]);
+
+	const selectValue = (nextValue) => {
+		onChange({ target: { value: nextValue } });
+		setSearchText(albumSearchLabel(albums.find((album) => album.id === nextValue) ?? null));
+		setIsOpen(false);
+	};
+
+	const renderAlbumOption = (album) => (
+		<span className="admin-song-album-select-option-content">
+			<span className="admin-song-album-select-title" title={album.title}>{album.title}</span>
+			<span className="admin-song-album-select-artist" title={albumArtistName(album)}>{albumArtistName(album)}</span>
+		</span>
+	);
+
+	return (
+		<div className="admin-song-album-select" ref={rootRef}>
+			<input
+				type="text"
+				className={`${className} admin-song-album-select-input`.trim()}
+				role="combobox"
+				aria-autocomplete="list"
+				aria-expanded={isOpen}
+				aria-invalid={invalid}
+				value={searchText}
+				placeholder="- Album -"
+				onFocus={(event) => {
+					event.currentTarget.select();
+					setIsOpen(true);
+				}}
+				onClick={() => setIsOpen(true)}
+				onChange={(event) => {
+					setSearchText(event.target.value);
+					setIsOpen(true);
+				}}
+				onKeyDown={(event) => {
+					if (event.key === 'ArrowDown') {
+						event.preventDefault();
+						setIsOpen(true);
+					}
+					if (event.key === 'Enter' && isOpen && filteredAlbums.length > 0) {
+						event.preventDefault();
+						selectValue(filteredAlbums[0].id);
+					}
+				}}
+			/>
+			{isOpen && (
+				<div className="admin-song-album-select-menu" role="listbox">
+					<button
+						type="button"
+						role="option"
+						aria-selected={!value}
+						className={`admin-song-album-select-option ${!value ? 'admin-song-album-select-option-selected' : ''}`.trim()}
+						onClick={() => selectValue('')}
+					>
+						<span className="admin-song-album-select-placeholder">- Album -</span>
+					</button>
+					{filteredAlbums.map((album) => (
+						<button
+							type="button"
+							key={album.id}
+							role="option"
+							aria-selected={value === album.id}
+							className={`admin-song-album-select-option ${value === album.id ? 'admin-song-album-select-option-selected' : ''}`.trim()}
+							onClick={() => selectValue(album.id)}
+						>
+							{renderAlbumOption(album)}
+						</button>
+					))}
+					{filteredAlbums.length === 0 && (
+						<div className="admin-song-album-select-empty">No matching albums</div>
+					)}
+				</div>
+			)}
+		</div>
+	);
+}
+
 export default function AdminSongFormModal({
 	songId,
 	prefill,
@@ -240,7 +394,7 @@ export default function AdminSongFormModal({
 	);
 
 	const sortedAlbums = useMemo(
-		() => [...albums].sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base', numeric: true })),
+		() => [...albums].sort(compareAlbumOptions),
 		[albums]
 	);
 
@@ -571,10 +725,13 @@ export default function AdminSongFormModal({
 													<div className="admin-modal-grid admin-song-album-grid">
 														<div className="admin-modal-field admin-modal-field-full">
 															<label className="admin-modal-label">Album <span className="admin-modal-label-required">*</span></label>
-															<select value={placement.albumId} onChange={setAlbumPlacement(index, 'albumId')} className={placementFieldClassName(index, 'albumId')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.albumId)}>
-																<option value="">- Album -</option>
-																{sortedAlbums.map((album) => <option key={album.id} value={album.id}>{album.title}</option>)}
-															</select>
+															<AlbumPlacementSelect
+																value={placement.albumId}
+																albums={sortedAlbums}
+																onChange={setAlbumPlacement(index, 'albumId')}
+																className={placementFieldClassName(index, 'albumId')}
+																invalid={Boolean(validationErrors?.albumPlacements?.[index]?.albumId)}
+															/>
 														</div>
 														<div className="admin-modal-field">
 															<label className="admin-modal-label">Track # <span className="admin-modal-label-required">*</span></label>
