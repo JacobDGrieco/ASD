@@ -592,6 +592,24 @@ async function getSong(res, id, includeHidden = false) {
                 select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
               },
               artist: { select: publicArtistSelect() },
+              songPlacements: {
+                include: {
+                  song: {
+                    select: {
+                      id: true,
+                      title: true,
+                      slug: true,
+                      isVisible: true,
+                      autoShowOnRelease: true,
+                      duration: true,
+                      meta: {
+                        select: { releaseDate: true },
+                      },
+                    },
+                  },
+                },
+                orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }, { placementOrder: 'asc' }],
+              },
             },
           },
         },
@@ -653,7 +671,8 @@ async function getSong(res, id, includeHidden = false) {
   }
 
   const placements = releasedPlacements.map((placement) => {
-    const album = formatAlbumSummary(placement.album)
+    const { songPlacements = [], ...albumRecord } = placement.album
+    const album = formatAlbumSummary(albumRecord)
     return {
       albumId: album.id,
       trackNumber: placement.trackNumber,
@@ -662,6 +681,12 @@ async function getSong(res, id, includeHidden = false) {
       album: {
         ...album,
         isPubliclyVisible: isPublicAlbumReleased(placement.album, now) && isPublicArtistVisible(placement.album.artist),
+        songs: formatPlacementSongs(songPlacements, album.releaseDate, now)
+          .map((placementSong) => ({
+            ...placementSong,
+            isPubliclyVisible: placementSong.isPubliclyVisible && isPublicArtistVisible(album.artist),
+          }))
+          .filter((placementSong) => includeHidden || isPublicSongReleased(placementSong, album.releaseDate, now)),
       },
     }
   })

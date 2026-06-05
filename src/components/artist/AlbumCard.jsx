@@ -11,9 +11,9 @@ function getSongIdFromPath(path) {
 	return null;
 }
 
-export default function AlbumCard({ album, isOpen, isUnreleased = false, onClick, to, subtitle }) {
+export default function AlbumCard({ album, isOpen, isUnreleased = false, isDisabled = false, onClick, to, subtitle }) {
 	const year = new Date(album.releaseDate).getFullYear();
-	const className = `album-card-card ${isOpen ? 'album-card-open' : ''} ${album.isPubliclyVisible === false ? 'album-card-hidden' : ''}`.trim();
+	const className = `album-card-card ${isOpen ? 'album-card-open' : ''} ${isDisabled ? 'album-card-disabled' : ''} ${album.isPubliclyVisible === false ? 'album-card-hidden' : ''}`.trim();
 	const streamLinks = [
 		{ href: album.soundcloudUrl, label: 'SoundCloud', icon: FaSoundcloud },
 		{ href: album.spotifyUrl, label: 'Spotify', icon: FaSpotify },

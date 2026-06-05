@@ -4,6 +4,7 @@ import { TabPanel, TabView } from 'primereact/tabview'
 import { useApi } from '../hooks/useApi.js'
 import SongHeader from '../components/song/SongHeader.jsx'
 import LyricsView from '../components/song/LyricsView.jsx'
+import SongAlbums from '../components/song/SongAlbums.jsx'
 import SongInfoLinks from '../components/song/SongInfoLinks.jsx'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 import { useAdminAuth } from '../lib/adminAuth.jsx'
@@ -22,7 +23,7 @@ export default function SongPage() {
     cacheKey: publicPreviewCacheKey(apiUrl, adminPreview),
   })
   const lyricLineCount = song?.lyricBlocks?.filter((block) => block.text?.trim()).length ?? 0
-  const defaultTabIndex = lyricLineCount < 2 ? 1 : 0
+  const defaultTabIndex = lyricLineCount < 2 ? 2 : 0
   const [activeTabIndex, setActiveTabIndex] = useState(0)
   const hasSongInfo = Boolean(
     song?.duration ||
@@ -54,6 +55,9 @@ export default function SongPage() {
             <TabView className="page-tabview song-page-tabview" activeIndex={activeTabIndex} onTabChange={(event) => setActiveTabIndex(event.index)}>
               <TabPanel header="Lyrics">
                 <LyricsView blocks={song.lyricBlocks} />
+              </TabPanel>
+              <TabPanel header="Albums">
+                <SongAlbums placements={song.placements} adminPreview={adminPreview} />
               </TabPanel>
               <TabPanel header="About & Info">
                 <div className="page-tab-panel-stack">
