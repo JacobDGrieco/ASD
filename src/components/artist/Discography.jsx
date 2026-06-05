@@ -14,9 +14,10 @@ export default function Discography({ albums, artistSlug, artist = null, adminPr
     if (!grid) return
 
     const updateColumns = () => {
-      const gap = 8
-      const cardWidth = 180
-      const nextColumns = Math.max(1, Math.floor((grid.clientWidth + gap) / (cardWidth + gap)))
+      const nextColumns = Number.parseInt(
+        getComputedStyle(grid).getPropertyValue('--discography-columns'),
+        10,
+      ) || 1
       setColumns(nextColumns)
     }
 

@@ -23,10 +23,40 @@
 }
 
 .discography-grid {
+  --discography-columns: 5;
+
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: flex-start;
+}
+
+.discography-grid > .album-card-card {
+  flex: 0 0 calc((100% - (8px * (var(--discography-columns) - 1))) / var(--discography-columns));
+  width: calc((100% - (8px * (var(--discography-columns) - 1))) / var(--discography-columns));
+  align-items: center;
+  text-align: center;
+}
+
+.discography-grid > .album-card-card .album-card-primary-action,
+.discography-grid > .album-card-card .album-card-info {
+  align-items: center;
+  width: 100%;
+  text-align: center;
+}
+
+.discography-grid > .album-card-card .album-card-cover-wrap {
+  width: min(100%, 190px);
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.discography-grid > .album-card-card .album-card-title {
+  max-width: 100%;
+}
+
+.discography-grid > .album-card-card .album-card-stream-links {
+  justify-content: center;
 }
 
 .discography-expand {
@@ -56,5 +86,29 @@
 @media (max-width: 720px) {
   .discography-section {
     padding: 44px 20px;
+  }
+}
+
+@media (max-width: 1020px) {
+  .discography-grid {
+    --discography-columns: 4;
+  }
+}
+
+@media (max-width: 800px) {
+  .discography-grid {
+    --discography-columns: 3;
+  }
+}
+
+@media (max-width: 580px) {
+  .discography-grid {
+    --discography-columns: 2;
+  }
+}
+
+@media (max-width: 380px) {
+  .discography-grid {
+    --discography-columns: 1;
   }
 }
