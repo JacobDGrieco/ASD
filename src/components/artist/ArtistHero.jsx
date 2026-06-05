@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { FaApple, FaSoundcloud, FaSpotify, FaYoutube } from 'react-icons/fa';
 import { SiFacebook, SiInstagram, SiSnapchat, SiTiktok, SiX, SiYoutube } from 'react-icons/si';
 import { preloadImage, preloadImages } from '../../lib/publicPrefetch.js';
+import ArtworkGallery from '../shared/ArtworkGallery.jsx';
 import '../../styles/ArtistHero.css';
 
 const AUTO_SWAP_INTERVAL_MS = 20000;
@@ -129,6 +130,7 @@ export default function ArtistHero({ artist }) {
 		<section className={`artist-hero-hero ${artist.isPubliclyVisible === false ? 'artist-hero-hero-hidden' : ''}`.trim()}>
 			<div className="artist-hero-portrait-wrap">
 				<div className="artist-hero-portrait-frame">
+					<ArtworkGallery images={artist.images} title={artist.name} buttonLabel={`View ${artist.name} images`} />
 					{previousImage && (
 						<img
 							key={`previous-${previousImage}`}

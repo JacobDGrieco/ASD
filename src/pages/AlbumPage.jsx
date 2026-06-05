@@ -7,6 +7,7 @@ import { useApi } from '../hooks/useApi.js';
 import AlbumDetails from '../components/album/AlbumDetails.jsx';
 import TrackList from '../components/artist/TrackList.jsx';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
+import ArtworkGallery from '../components/shared/ArtworkGallery.jsx';
 import { useAdminAuth } from '../lib/adminAuth.jsx';
 import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js';
 import '../styles/SongHeader.css';
@@ -61,6 +62,7 @@ function AlbumHeader({ album }) {
 		<section className={`song-header-header song-header-album-header ${album.isPubliclyVisible === false ? 'song-header-hidden' : ''}`.trim()}>
 			<div className="song-header-media-column">
 				<div className="song-header-art-wrap">
+					<ArtworkGallery images={album.images} title={album.title} buttonLabel={`View ${album.title} images`} />
 					{album.coverArt
 						? <img src={album.coverArt} alt={album.title} className="song-header-art" />
 						: <div className="song-header-art-blank" />

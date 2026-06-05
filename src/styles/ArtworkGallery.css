@@ -5,31 +5,29 @@
   z-index: 4;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.28);
   background: rgba(10, 10, 10, 0.9);
   color: var(--text);
   border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 0.95rem;
   cursor: pointer;
-  opacity: 0;
-  transform: translateY(-4px);
+  opacity: 0.92;
+  transform: translateY(0);
   transition: opacity 180ms ease, transform 180ms ease, border-color var(--transition), background var(--transition);
-}
-
-.artwork-gallery-trigger-label {
-  white-space: nowrap;
 }
 
 .album-card-card:hover .artwork-gallery-trigger,
 .album-card-card:focus-within .artwork-gallery-trigger,
+.artist-hero-portrait-frame:hover .artwork-gallery-trigger,
+.artist-hero-portrait-frame:focus-within .artwork-gallery-trigger,
 .song-header-art-wrap:hover .artwork-gallery-trigger,
 .song-header-art-wrap:focus-within .artwork-gallery-trigger {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(-1px);
 }
 
 .artwork-gallery-trigger:hover {

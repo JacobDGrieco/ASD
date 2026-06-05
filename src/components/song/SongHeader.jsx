@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { track } from '@vercel/analytics'
 import { FaApple, FaSoundcloud, FaSpotify, FaYoutube } from 'react-icons/fa'
@@ -10,8 +10,50 @@ import SpotifyPlayer from '../shared/SpotifyPlayer.jsx'
 import ArtworkGallery from '../shared/ArtworkGallery.jsx'
 import '../../styles/SongHeader.css'
 
+function legacyImage(url, altText, id) {
+  return url ? { id, url, previewUrl: url, altText } : null
+}
+
+function addUniqueImage(images, image, seen) {
+  if (!image?.previewUrl && !image?.url) return
+
+  const keys = [image.pathname, image.previewUrl, image.url].filter(Boolean)
+  if (keys.some((key) => seen.has(key))) return
+
+  keys.forEach((key) => seen.add(key))
+  images.push(image)
+}
+
+function albumGalleryImages(album) {
+  if (!album) return []
+  return [
+    ...(Array.isArray(album.images) ? album.images : []),
+    legacyImage(album.coverArt, album.title, `${album.id ?? album.title}-cover`),
+  ]
+}
+
+function songGalleryImages(song) {
+  const images = []
+  const seen = new Set()
+  const placementAlbums = Array.isArray(song.placements)
+    ? song.placements.map((placement) => placement.album)
+    : []
+
+  for (const image of [
+    ...(Array.isArray(song.images) ? song.images : []),
+    legacyImage(song.artwork, song.title, `${song.id}-artwork`),
+    ...albumGalleryImages(song.album),
+    ...placementAlbums.flatMap(albumGalleryImages),
+  ]) {
+    addUniqueImage(images, image, seen)
+  }
+
+  return images
+}
+
 export default function SongHeader({ song, adminPreview = false }) {
   const hasTrackedPlay = useRef(false)
+  const galleryImages = useMemo(() => songGalleryImages(song), [song])
   const hasSongArtwork = Array.isArray(song.images) && song.images.length > 0
   const artwork = hasSongArtwork
     ? song.images[0]?.previewUrl || song.images[0]?.url || song.artwork || song.album.coverArt
@@ -62,7 +104,7 @@ export default function SongHeader({ song, adminPreview = false }) {
     <section className={`song-header-header ${song.isPubliclyVisible === false ? 'song-header-hidden' : ''}`.trim()}>
       <div className="song-header-media-column">
         <div className="song-header-art-wrap">
-          {hasSongArtwork && <ArtworkGallery images={song.images} title={song.title} />}
+          <ArtworkGallery images={galleryImages} title={song.title} buttonLabel={`View ${song.title} images`} />
           {artwork
             ? <img src={artwork} alt={song.title} className="song-header-art" />
             : <div className="song-header-art-blank" />
