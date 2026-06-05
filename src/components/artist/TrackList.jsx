@@ -3,11 +3,16 @@ import { prefetchSongPage } from '../../lib/publicPrefetch.js';
 import { buildSongPath } from '../../lib/publicVisibility.js';
 import '../../styles/TrackList.css';
 
-export default function TrackList({ songs, albumHref = null, allowHidden = false }) {
+export default function TrackList({ songs, albumHref = null, albumTitle = '', allowHidden = false }) {
 	return (
 		<div className="track-list-list">
 			{albumHref && (
 				<div className="track-list-toolbar">
+					{albumTitle && (
+						<span className="track-list-album-title" title={albumTitle}>
+							{albumTitle}
+						</span>
+					)}
 					<Link to={albumHref} className="track-list-album-link">
 						Open Album Page
 					</Link>

@@ -1,110 +1,123 @@
 .track-list-list {
-  display: flex;
-  flex-direction: column;
-  padding: 22px 28px;
-  background: var(--bg);
-  border-top: 1px solid var(--border);
+	display: flex;
+	flex-direction: column;
+	padding: 22px 28px;
+	background: var(--bg);
+	border-top: 1px solid var(--border);
 }
 
 .track-list-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 10px;
+}
+
+.track-list-album-title {
+	min-width: 0;
+	overflow: hidden;
+	color: var(--text);
+	font-size: 1.5rem;
+	font-weight: 600;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	padding: 0 14px;
 }
 
 .track-list-album-link {
-  display: inline-flex;
-  align-items: center;
-  min-height: 36px;
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  color: var(--text);
-  text-decoration: none;
-  font-size: 0.8rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  background: var(--bg-raised);
-  transition: background var(--transition), border-color var(--transition), transform var(--transition);
+	display: inline-flex;
+	align-items: center;
+	flex: 0 0 auto;
+	min-height: 36px;
+	padding: 0 14px;
+	border: 1px solid var(--border);
+	border-radius: 999px;
+	color: var(--text);
+	text-decoration: none;
+	font-size: 0.8rem;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	background: var(--bg-raised);
+	transition: background var(--transition), border-color var(--transition), transform var(--transition);
 }
 
 .track-list-album-link:hover {
-  background: color-mix(in srgb, var(--bg-raised) 76%, white 24%);
-  border-color: color-mix(in srgb, var(--border) 70%, white 30%);
-  transform: translateY(-1px);
+	background: color-mix(in srgb, var(--bg-raised) 76%, white 24%);
+	border-color: color-mix(in srgb, var(--border) 70%, white 30%);
+	transform: translateY(-1px);
 }
 
 .track-list-row {
-  display: grid;
-  grid-template-columns: 40px 1fr auto;
-  align-items: center;
-  gap: 16px;
-  padding: 12px 14px;
-  position: relative;
-  border-radius: var(--radius);
-  color: var(--text);
-  text-decoration: none;
-  transition: background var(--transition);
+	display: grid;
+	grid-template-columns: 40px 1fr auto;
+	align-items: center;
+	gap: 16px;
+	padding: 12px 14px;
+	position: relative;
+	border-radius: var(--radius);
+	color: var(--text);
+	text-decoration: none;
+	transition: background var(--transition);
 }
 
 .track-list-row:hover {
-  background: var(--bg-raised);
+	background: var(--bg-raised);
 }
 
 .track-list-row-hidden::before,
 .track-list-row-hidden::after {
-  content: "";
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  top: 50%;
-  height: 1px;
-  background: rgba(228, 108, 108, 0.75);
-  pointer-events: none;
+	content: "";
+	position: absolute;
+	left: 12px;
+	right: 12px;
+	top: 50%;
+	height: 1px;
+	background: rgba(228, 108, 108, 0.75);
+	pointer-events: none;
 }
 
 .track-list-row-hidden::before {
-  transform: rotate(2deg);
+	transform: rotate(2deg);
 }
 
 .track-list-row-hidden::after {
-  transform: rotate(-2deg);
+	transform: rotate(-2deg);
 }
 
 .track-list-row-hidden .track-list-title,
 .track-list-row-hidden .track-list-duration,
 .track-list-row-hidden .track-list-num {
-  text-decoration: line-through;
-  text-decoration-color: rgba(228, 108, 108, 0.88);
-  opacity: 0.8;
+	text-decoration: line-through;
+	text-decoration-color: rgba(228, 108, 108, 0.88);
+	opacity: 0.8;
 }
 
 .track-list-num {
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  text-align: right;
+	color: var(--text-muted);
+	font-size: 0.8rem;
+	text-align: right;
 }
 
 .track-list-title {
-  font-size: 0.9rem;
+	font-size: 0.9rem;
 }
 
 .track-list-duration {
-  font-size: 0.8rem;
-  color: var(--text-muted);
+	font-size: 0.8rem;
+	color: var(--text-muted);
 }
 
 @media (max-width: 640px) {
-  .track-list-list {
-    padding: 18px 16px;
-  }
+	.track-list-list {
+		padding: 18px 16px;
+	}
 
-  .track-list-toolbar {
-    justify-content: stretch;
-  }
+	.track-list-toolbar {
+		gap: 12px;
+	}
 
-  .track-list-album-link {
-    width: 100%;
-    justify-content: center;
-  }
+	.track-list-album-link {
+		justify-content: center;
+	}
 }

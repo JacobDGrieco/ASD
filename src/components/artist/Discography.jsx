@@ -64,6 +64,7 @@ export default function Discography({ albums, artistSlug, artist = null, adminPr
                   <TrackList
                     songs={openAlbum.songs}
                     albumHref={`/albums/${openAlbum.id}`}
+                    albumTitle={openAlbum.title}
                     allowHidden={adminPreview}
                   />
                 </div>
