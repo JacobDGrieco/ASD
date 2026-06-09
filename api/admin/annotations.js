@@ -2,10 +2,10 @@ import { prisma } from '../../src/lib/prisma.js'
 import { artistScopedSongWhere, isViewer, requireAdmin } from '../../src/lib/auth.js'
 
 async function loadAnnotationForSession(session, id) {
-  return prisma.annotation.findFirst({
+  return prisma.songAnnotation.findFirst({
     where: {
       id,
-      lyricBlock: {
+      songLyric: {
         song: artistScopedSongWhere(session),
       },
     },
@@ -13,10 +13,10 @@ async function loadAnnotationForSession(session, id) {
   })
 }
 
-async function loadLyricBlockForSession(session, lyricBlockId) {
-  return prisma.lyricBlock.findFirst({
+async function loadSongLyricForSession(session, songLyricId) {
+  return prisma.songLyric.findFirst({
     where: {
-      id: lyricBlockId,
+      id: songLyricId,
       song: artistScopedSongWhere(session),
     },
     select: { id: true },
@@ -35,24 +35,48 @@ export default async function handler(req, res) {
     if (!annotation) return res.status(404).json({ error: 'Annotation not found' })
 
     if (req.method === 'PUT') {
-      const { startChar, endChar, explanation } = req.body
-      const updated = await prisma.annotation.update({ where: { id }, data: { startChar: Number(startChar), endChar: Number(endChar), explanation } })
+      const { explanation, ranges } = req.body
+
+      await prisma.$transaction([
+        prisma.songAnnotationRange.deleteMany({ where: { songAnnotationId: id } }),
+        prisma.songAnnotation.update({
+          where: { id },
+          data: {
+            explanation,
+            ranges: {
+              create: ranges.map(r => ({ startChar: Number(r.startChar), endChar: Number(r.endChar) }))
+            }
+          }
+        })
+      ])
+
+      const updated = await prisma.songAnnotation.findUnique({
+        where: { id },
+        include: { ranges: { orderBy: { startChar: 'asc' } } }
+      })
       return res.status(200).json(updated)
     }
     if (req.method === 'DELETE') {
-      await prisma.annotation.delete({ where: { id } })
+      await prisma.songAnnotation.delete({ where: { id } })
       return res.status(204).end()
     }
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   if (req.method === 'POST') {
-    const { lyricBlockId, startChar, endChar, explanation } = req.body
-    const lyricBlock = await loadLyricBlockForSession(session, lyricBlockId)
-    if (!lyricBlock) return res.status(404).json({ error: 'Lyric block not found' })
+    const { songLyricId, explanation, ranges } = req.body
+    const songLyric = await loadSongLyricForSession(session, songLyricId)
+    if (!songLyric) return res.status(404).json({ error: 'Song lyric not found' })
 
-    const annotation = await prisma.annotation.create({
-      data: { lyricBlockId, startChar: Number(startChar), endChar: Number(endChar), explanation },
+    const annotation = await prisma.songAnnotation.create({
+      data: {
+        songLyricId,
+        explanation,
+        ranges: {
+          create: ranges.map(r => ({ startChar: Number(r.startChar), endChar: Number(r.endChar) }))
+        }
+      },
+      include: { ranges: { orderBy: { startChar: 'asc' } } }
     })
     return res.status(201).json(annotation)
   }

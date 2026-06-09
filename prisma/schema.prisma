@@ -146,6 +146,7 @@ model Song {
   images        SongImage[]
   meta          SongMeta?
   lyricBlocks   LyricBlock[]
+  lyric         SongLyric?
   recordSlots   RecordPlayerTrack[]
 }
 
@@ -212,6 +213,38 @@ model Annotation {
   explanation  String
 
   @@index([lyricBlockId])
+}
+
+model SongLyric {
+  id          String           @id @default(cuid())
+  songId      String           @unique
+  song        Song             @relation(fields: [songId], references: [id], onDelete: Cascade)
+  text        String           @default("")
+  annotations SongAnnotation[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model SongAnnotation {
+  id          String                @id @default(cuid())
+  songLyricId String
+  songLyric   SongLyric             @relation(fields: [songLyricId], references: [id], onDelete: Cascade)
+  explanation String
+  ranges      SongAnnotationRange[]
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@index([songLyricId])
+}
+
+model SongAnnotationRange {
+  id               String         @id @default(cuid())
+  songAnnotationId String
+  songAnnotation   SongAnnotation @relation(fields: [songAnnotationId], references: [id], onDelete: Cascade)
+  startChar        Int
+  endChar          Int
+
+  @@index([songAnnotationId])
 }
 
 model RecordPlayerTrack {

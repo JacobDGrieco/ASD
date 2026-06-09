@@ -618,9 +618,13 @@ async function getSong(res, id, includeHidden = false) {
       images: {
         orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
       },
-      lyricBlocks: {
-        orderBy: { blockOrder: 'asc' },
-        include: { annotations: { orderBy: { startChar: 'asc' } } },
+      lyric: {
+        include: {
+          annotations: {
+            orderBy: { createdAt: 'asc' },
+            include: { ranges: { orderBy: { startChar: 'asc' } } },
+          },
+        },
       },
     },
   })

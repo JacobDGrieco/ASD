@@ -1,71 +1,62 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useParams, useLocation, Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
+import { useParams, useLocation, Link } from 'react-router-dom'
+import { FaCheck, FaPlus, FaTrash } from 'react-icons/fa'
+import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import '../../styles/AdminLyricsPage.css'
-
-function createRow(block = null) {
-  return { id: block?.id ?? null, text: block?.text ?? '' }
-}
-
-function createAnnotationRow(block = null) {
-  const firstAnnotation = block?.annotations?.[0] ?? null
-  return { id: firstAnnotation?.id ?? null, text: firstAnnotation?.explanation ?? '' }
-}
-
-function trimEdgeBlankRows(lyrics, annotations) {
-  let start = 0
-  let end = lyrics.length - 1
-
-  while (start <= end && lyrics[start]?.text.trim() === '') start += 1
-  while (end >= start && lyrics[end]?.text.trim() === '') end -= 1
-
-  if (start > end) {
-    return {
-      lyricsRows: [],
-      annotationRows: [],
-    }
-  }
-
-  return {
-    lyricsRows: lyrics.slice(start, end + 1),
-    annotationRows: annotations.slice(start, end + 1),
-  }
-}
 
 export default function AdminLyricsPage() {
   const { songId } = useParams()
   const { state } = useLocation()
-  const navigate = useNavigate()
   const { token, session } = useAdminAuth()
   const isViewer = session?.role === 'VIEWER'
+  const songTitle = state?.songTitle ?? 'Song'
   const auth = { Authorization: `Bearer ${token}` }
 
-  const [blocks, setBlocks] = useState([])
-  const [lyricsRows, setLyricsRows] = useState([createRow()])
-  const [annotationRows, setAnnotationRows] = useState([createAnnotationRow()])
-  const [selectedRows, setSelectedRows] = useState([])
-  const [editingAnnotationIndex, setEditingAnnotationIndex] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const songTitle = state?.songTitle ?? 'Song'
-  const lyricRowRefs = useRef([])
-  const annotationRowRefs = useRef([])
-  const pendingFocus = useRef(null)
-  const selectionAnchor = useRef(null)
+  const [lyricId, setLyricId] = useState(null)
+  const [lyricText, setLyricText] = useState('')
+  const [annotations, setAnnotations] = useState([])
+  const [editingAnnotationIndex, setEditingAnnotationIndex] = useState(null)
+  const [hoveredAnnotationIndex, setHoveredAnnotationIndex] = useState(null)
+  const [pendingRangeForAnnotationIndex, setPendingRangeForAnnotationIndex] = useState(null)
+
+  const preEditRef = useRef({ value: '', selectionStart: 0, selectionEnd: 0 })
+  const textareaWrapperRef = useRef(null)
+  const textareaRef = useRef(null)
+
+  const resizeLyricTextarea = useCallback((el = textareaRef.current) => {
+    if (!el) return
+    el.style.height = 'auto'
+    const borderHeight = el.offsetHeight - el.clientHeight
+    el.style.height = `${el.scrollHeight + borderHeight}px`
+  }, [])
+
+  // ── Load ──────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     let ignore = false
     setIsLoading(true)
 
     fetch(`/api/admin/lyrics?songId=${songId}`, { headers: auth })
-      .then((response) => response.json())
+      .then((res) => res.json())
       .then((data) => {
         if (ignore) return
-        setBlocks(data)
-        setLyricsRows(data.length ? data.map((block) => createRow(block)) : [createRow()])
-        setAnnotationRows(data.length ? data.map((block) => createAnnotationRow(block)) : [createAnnotationRow()])
-        setSelectedRows([])
-        setEditingAnnotationIndex(null)
+        setLyricId(data.id ?? null)
+        setLyricText(data.text ?? '')
+        setAnnotations(
+          (data.annotations ?? []).map((annotation) => ({
+            id: annotation.id ?? null,
+            explanation: annotation.explanation ?? '',
+            ranges: (annotation.ranges ?? []).map((range) => ({
+              id: range.id ?? null,
+              startChar: range.startChar,
+              endChar: range.endChar,
+              dirty: false,
+            })),
+          }))
+        )
       })
       .finally(() => {
         if (!ignore) setIsLoading(false)
@@ -74,384 +65,496 @@ export default function AdminLyricsPage() {
     return () => {
       ignore = true
     }
-  }, [songId, token])
+  }, [songId, token]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useLayoutEffect(() => {
+    if (isLoading) return
+    resizeLyricTextarea()
+  }, [isLoading, lyricText, resizeLyricTextarea])
 
   useEffect(() => {
-    if (!pendingFocus.current) return
-    const { column = 'lyrics', index, cursor = 'end' } = pendingFocus.current
-    const refs = column === 'annotations' ? annotationRowRefs.current : lyricRowRefs.current
-    const input = refs[index]
-    if (!input) return
-    input.focus()
-    const pos = cursor === 'start' ? 0 : input.value.length
-    input.setSelectionRange(pos, pos)
-    pendingFocus.current = null
-  }, [annotationRows, lyricsRows])
+    const wrapper = textareaWrapperRef.current
+    if (!wrapper) return
 
-  const annotationsByBlockId = useMemo(
-    () => new Map(blocks.map((block) => [block.id, block.annotations])),
-    [blocks]
-  )
+    const resizeObserver = new ResizeObserver(() => resizeLyricTextarea())
+    resizeObserver.observe(wrapper)
 
-  const updateLyricsRow = (index, text) => {
-    setLyricsRows((prev) => prev.map((row, rowIndex) => rowIndex === index ? { ...row, text } : row))
+    return () => resizeObserver.disconnect()
+  }, [resizeLyricTextarea])
+
+  // ── Annotation range adjustment ───────────────────────────────────────────
+
+  const adjustAnnotationRanges = useCallback((changeStart, changeEnd, netDelta) => {
+    setAnnotations((prev) =>
+      prev.map((annotation) => ({
+        ...annotation,
+        ranges: annotation.ranges.map((range) => {
+          if (changeStart >= range.endChar) return range
+          if (changeEnd <= range.startChar) {
+            return {
+              ...range,
+              startChar: range.startChar + netDelta,
+              endChar: range.endChar + netDelta,
+            }
+          }
+          return { ...range, dirty: true }
+        }),
+      }))
+    )
+  }, [])
+
+  // ── Textarea interaction capture ──────────────────────────────────────────
+
+  const handleTextareaInteraction = (e) => {
+    preEditRef.current = {
+      value: e.target.value,
+      selectionStart: e.target.selectionStart,
+      selectionEnd: e.target.selectionEnd,
+    }
   }
 
-  const updateAnnotationRow = (index, text) => {
-    setAnnotationRows((prev) => prev.map((row, rowIndex) => rowIndex === index ? { ...row, text } : row))
+  // ── Lyric text change ─────────────────────────────────────────────────────
+
+  const handleLyricChange = (e) => {
+    const newValue = e.target.value
+    const { value: oldValue, selectionStart: oldSelStart, selectionEnd: oldSelEnd } = preEditRef.current
+    const charsRemoved = oldSelEnd - oldSelStart
+    const charsAdded = newValue.length - oldValue.length + charsRemoved
+    const changeStart = oldSelStart
+    const changeEnd = oldSelStart + charsRemoved
+    const netDelta = charsAdded - charsRemoved
+
+    setLyricText(newValue)
+    adjustAnnotationRanges(changeStart, changeEnd, netDelta)
+
+    resizeLyricTextarea(e.target)
+
+    preEditRef.current = {
+      value: newValue,
+      selectionStart: e.target.selectionStart,
+      selectionEnd: e.target.selectionEnd,
+    }
   }
 
-  const insertLyricsRowAfter = (index) => {
-    setLyricsRows((prev) => {
-      const next = [...prev]
-      next.splice(index + 1, 0, createRow())
-      return next
-    })
-    setAnnotationRows((prev) => {
-      const next = [...prev]
-      next.splice(index + 1, 0, createAnnotationRow())
-      return next
-    })
-    pendingFocus.current = { column: 'lyrics', index: index + 1, cursor: 'start' }
-  }
+  // ── Range picking ─────────────────────────────────────────────────────────
 
-  const removeLyricsRowAt = (index) => {
-    setLyricsRows((prev) => {
-      if (prev.length === 1) return [createRow()]
-      const next = prev.filter((_, rowIndex) => rowIndex !== index)
-      return next.length ? next : [createRow()]
-    })
-    setAnnotationRows((prev) => {
-      if (prev.length === 1) return [createAnnotationRow()]
-      const next = prev.filter((_, rowIndex) => rowIndex !== index)
-      return next.length ? next : [createAnnotationRow()]
-    })
-    setSelectedRows([])
-    selectionAnchor.current = null
-    pendingFocus.current = { column: 'lyrics', index: Math.max(index - 1, 0), cursor: 'end' }
-  }
-
-  const deleteSelectedRows = () => {
-    if (!selectedRows.length) return
-    const selectedSet = new Set(selectedRows)
-    setLyricsRows((prev) => {
-      const next = prev.filter((_, index) => !selectedSet.has(index))
-      return next.length ? next : [createRow()]
-    })
-    setAnnotationRows((prev) => {
-      const next = prev.filter((_, index) => !selectedSet.has(index))
-      return next.length ? next : [createAnnotationRow()]
-    })
-    pendingFocus.current = { column: 'lyrics', index: Math.max(Math.min(...selectedRows) - 1, 0), cursor: 'end' }
-    setSelectedRows([])
-    selectionAnchor.current = null
-  }
-
-  const focusAdjacentRow = (column, index, direction) => {
-    const nextIndex = index + direction
-    if (nextIndex < 0 || nextIndex >= lyricsRows.length) return
-    pendingFocus.current = { column, index: nextIndex, cursor: 'end' }
-    setLyricsRows((prev) => [...prev])
-  }
-
-  const handleRowKeyDown = (column, event, index) => {
-    if ((event.key === 'Delete' || event.key === 'Backspace') && selectedRows.length > 0) {
-      event.preventDefault()
-      deleteSelectedRows()
-      return
-    }
-
-    if (event.key === 'Enter') {
-      event.preventDefault()
-      if (column === 'lyrics') insertLyricsRowAfter(index)
-      return
-    }
-
-    if (column === 'lyrics' && event.key === 'Backspace' && lyricsRows[index].text === '') {
-      event.preventDefault()
-      removeLyricsRowAt(index)
-      return
-    }
-
-    if (column === 'annotations' && event.key === 'Escape') {
-      event.preventDefault()
-      setEditingAnnotationIndex(null)
-      return
-    }
-
-    if (event.key === 'ArrowUp') {
-      event.preventDefault()
-      focusAdjacentRow(column, index, -1)
-      return
-    }
-
-    if (event.key === 'ArrowDown') {
-      event.preventDefault()
-      focusAdjacentRow(column, index, 1)
-      return
-    }
-
-    if (event.key === 'Tab') {
-      event.preventDefault()
-      const input = event.currentTarget
-      const start = input.selectionStart ?? input.value.length
-      const end = input.selectionEnd ?? input.value.length
-      const currentText = column === 'annotations' ? annotationRows[index].text : lyricsRows[index].text
-      const nextText = `${currentText.slice(0, start)}  ${currentText.slice(end)}`
-      if (column === 'annotations') {
-        updateAnnotationRow(index, nextText)
-      } else {
-        updateLyricsRow(index, nextText)
-      }
-      requestAnimationFrame(() => {
-        const refs = column === 'annotations' ? annotationRowRefs.current : lyricRowRefs.current
-        const target = refs[index]
-        if (target) {
-          target.focus()
-          const pos = start + 2
-          target.setSelectionRange(pos, pos)
+  const addRangeFromSelection = useCallback((annotationIndex, selectionStart, selectionEnd) => {
+    setAnnotations((prev) =>
+      prev.map((annotation, index) => {
+        if (index !== annotationIndex) return annotation
+        return {
+          ...annotation,
+          ranges: [
+            ...annotation.ranges,
+            { id: null, startChar: selectionStart, endChar: selectionEnd, dirty: false },
+          ],
         }
       })
-    }
+    )
+  }, [])
+
+  const handleTextareaMouseUp = (e) => {
+    if (pendingRangeForAnnotationIndex === null) return
+    const { selectionStart, selectionEnd } = e.target
+    if (selectionStart === selectionEnd) return
+    addRangeFromSelection(pendingRangeForAnnotationIndex, selectionStart, selectionEnd)
+    setPendingRangeForAnnotationIndex(null)
   }
 
-  const handleRowPaste = (column, event, index) => {
-    const pastedText = event.clipboardData.getData('text')
-    if (!pastedText.includes('\n')) return
+  const handleTextareaKeyUp = (e) => {
+    if (pendingRangeForAnnotationIndex === null) return
+    const { selectionStart, selectionEnd } = e.target
+    if (selectionStart === selectionEnd) return
+    addRangeFromSelection(pendingRangeForAnnotationIndex, selectionStart, selectionEnd)
+    setPendingRangeForAnnotationIndex(null)
+  }
 
-    event.preventDefault()
-    const lines = pastedText.replace(/\r/g, '').split('\n')
-    const input = event.currentTarget
-    const start = input.selectionStart ?? input.value.length
-    const end = input.selectionEnd ?? input.value.length
-    const currentRows = column === 'annotations' ? annotationRows : lyricsRows
-    const before = currentRows[index].text.slice(0, start)
-    const after = currentRows[index].text.slice(end)
+  // ── Annotation mutations ──────────────────────────────────────────────────
 
-    const insertedRows = lines.map((line, lineIndex) => {
-      const nextText = lineIndex === 0
-        ? `${before}${line}`
-        : lineIndex === lines.length - 1
-          ? `${line}${after}`
-          : line
-
-      return column === 'annotations'
-        ? { ...(lineIndex === 0 ? currentRows[index] : createAnnotationRow()), text: nextText }
-        : lineIndex === 0
-          ? { ...currentRows[index], text: nextText }
-          : createRow({ text: nextText })
+  const addAnnotation = () => {
+    setAnnotations((prev) => {
+      setEditingAnnotationIndex(prev.length)
+      return [...prev, { id: null, explanation: '', ranges: [] }]
     })
-
-    if (column === 'annotations') {
-      setAnnotationRows((prev) => {
-        const next = [...prev]
-        next.splice(index, 1, ...insertedRows)
-        while (next.length < lyricsRows.length) next.push(createAnnotationRow())
-        return next.slice(0, lyricsRows.length)
-      })
-    } else {
-      setLyricsRows((prev) => {
-        const next = [...prev]
-        next.splice(index, 1, ...insertedRows)
-        return next
-      })
-      setAnnotationRows((prev) => {
-        const next = [...prev]
-        next.splice(index + 1, 0, ...Array.from({ length: lines.length - 1 }, () => createAnnotationRow()))
-        return next
-      })
-    }
-
-    setSelectedRows([])
-    pendingFocus.current = { column, index: index + lines.length - 1, cursor: 'end' }
   }
 
-  const handleRowSelection = (index, event) => {
-    if (event.shiftKey && selectionAnchor.current !== null) {
-      const start = Math.min(selectionAnchor.current, index)
-      const end = Math.max(selectionAnchor.current, index)
-      setSelectedRows(Array.from({ length: end - start + 1 }, (_, offset) => start + offset))
-      return
-    }
-
-    if (event.metaKey || event.ctrlKey) {
-      setSelectedRows((prev) => prev.includes(index) ? prev.filter((value) => value !== index) : [...prev, index].sort((left, right) => left - right))
-      selectionAnchor.current = index
-      return
-    }
-
-    setSelectedRows([index])
-    selectionAnchor.current = index
+  const updateAnnotationExplanation = (annotationIndex, explanation) => {
+    setAnnotations((prev) =>
+      prev.map((annotation, index) =>
+        index === annotationIndex ? { ...annotation, explanation } : annotation
+      )
+    )
   }
 
-  const saveLyrics = async () => {
+  const removeRange = (annotationIndex, rangeIndex) => {
+    setAnnotations((prev) =>
+      prev.map((annotation, index) => {
+        if (index !== annotationIndex) return annotation
+        return {
+          ...annotation,
+          ranges: annotation.ranges.filter((_, rIndex) => rIndex !== rangeIndex),
+        }
+      })
+    )
+  }
+
+  const deleteAnnotation = async (annotationIndex) => {
+    const annotation = annotations[annotationIndex]
+    if (annotation.id !== null) {
+      const res = await fetch(`/api/admin/annotations?id=${annotation.id}`, {
+        method: 'DELETE',
+        headers: auth,
+      })
+      if (!res.ok) {
+        alert('Failed to delete annotation.')
+        return
+      }
+    }
+    setAnnotations((prev) => prev.filter((_, index) => index !== annotationIndex))
+    setEditingAnnotationIndex(null)
+  }
+
+  // ── Save ──────────────────────────────────────────────────────────────────
+
+  const saveAll = async () => {
     if (isSaving) return
+
+    const hasDirty = annotations.some((annotation) =>
+      annotation.ranges.some((range) => range.dirty)
+    )
+    if (hasDirty) {
+      alert('Fix or remove all invalid ranges before saving.')
+      return
+    }
+
     setIsSaving(true)
-
     try {
-      const { lyricsRows: trimmedLyricsRows, annotationRows: trimmedAnnotationRows } = trimEdgeBlankRows(lyricsRows, annotationRows)
-      const lyricPayload = trimmedLyricsRows.map((row, index) => ({ id: row.id, text: row.text, blockOrder: index }))
-
-      const response = await fetch(`/api/admin/lyrics?songId=${songId}`, {
+      // 1. Save lyric text
+      const lyricRes = await fetch(`/api/admin/lyrics?songId=${songId}`, {
         method: 'PUT',
         headers: { ...auth, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ blocks: lyricPayload }),
+        body: JSON.stringify({ text: lyricText }),
       })
+      if (!lyricRes.ok) throw new Error('Failed to save lyrics.')
+      const lyricData = await lyricRes.json()
+      const savedLyricId = lyricData.id
+      setLyricId(savedLyricId)
 
-      if (!response.ok) throw new Error('Failed to save lyrics.')
-      const updatedBlocks = await response.json()
+      // 2. Save each annotation
+      const updatedAnnotations = await Promise.all(
+        annotations.map(async (annotation) => {
+          const body = {
+            explanation: annotation.explanation,
+            ranges: annotation.ranges.map((range) => ({
+              startChar: range.startChar,
+              endChar: range.endChar,
+            })),
+          }
 
-      await Promise.all(updatedBlocks.map((block, index) => {
-        const annotationText = block.text.trim() === '' ? '' : (trimmedAnnotationRows[index]?.text?.trim() ?? '')
-        const existingAnnotations = block.annotations ?? []
-        const [primaryAnnotation, ...extraAnnotations] = existingAnnotations
-
-        if (!annotationText) {
-          return Promise.all(extraAnnotations.concat(primaryAnnotation ?? []).filter(Boolean).map(async (annotation) => {
-            const deleteResponse = await fetch(`/api/admin/annotations?id=${annotation.id}`, {
-              method: 'DELETE',
-              headers: auth,
-            })
-            if (!deleteResponse.ok) throw new Error('Failed to delete annotation.')
-          }))
-        }
-
-        const endChar = block.text.length
-        const saveRequest = primaryAnnotation
-          ? fetch(`/api/admin/annotations?id=${primaryAnnotation.id}`, {
-              method: 'PUT',
-              headers: { ...auth, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ startChar: 0, endChar, explanation: annotationText }),
-            })
-          : fetch('/api/admin/annotations', {
+          if (annotation.id === null) {
+            const res = await fetch('/api/admin/annotations', {
               method: 'POST',
               headers: { ...auth, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ lyricBlockId: block.id, startChar: 0, endChar, explanation: annotationText }),
+              body: JSON.stringify({ songLyricId: savedLyricId, ...body }),
             })
-
-        return Promise.all([
-          (async () => {
-            const saveAnnotationResponse = await saveRequest
-            if (!saveAnnotationResponse.ok) throw new Error('Failed to save annotation.')
-          })(),
-          ...extraAnnotations.map(async (annotation) => {
-            const deleteResponse = await fetch(`/api/admin/annotations?id=${annotation.id}`, {
-              method: 'DELETE',
-              headers: auth,
+            if (!res.ok) throw new Error('Failed to create annotation.')
+            const data = await res.json()
+            return {
+              id: data.id,
+              explanation: data.explanation,
+              ranges: (data.ranges ?? []).map((range) => ({
+                id: range.id ?? null,
+                startChar: range.startChar,
+                endChar: range.endChar,
+                dirty: false,
+              })),
+            }
+          } else {
+            const res = await fetch(`/api/admin/annotations?id=${annotation.id}`, {
+              method: 'PUT',
+              headers: { ...auth, 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
             })
-            if (!deleteResponse.ok) throw new Error('Failed to delete annotation.')
-          }),
-        ])
-      }))
+            if (!res.ok) throw new Error('Failed to update annotation.')
+            const data = await res.json()
+            return {
+              id: data.id,
+              explanation: data.explanation,
+              ranges: (data.ranges ?? []).map((range) => ({
+                id: range.id ?? null,
+                startChar: range.startChar,
+                endChar: range.endChar,
+                dirty: false,
+              })),
+            }
+          }
+        })
+      )
 
-      navigate('/admin/songs')
+      setAnnotations((prev) =>
+        prev.map((ann, i) => {
+          const saved = updatedAnnotations[i]
+          if (!saved) return ann
+          return {
+            ...ann,
+            id: saved.id,
+            ranges: ann.ranges.map((range, j) => ({
+              ...range,
+              id: saved.ranges[j]?.id ?? range.id,
+              dirty: false,
+            })),
+          }
+        })
+      )
+    } catch (err) {
+      alert(err.message ?? 'An error occurred while saving.')
     } finally {
       setIsSaving(false)
     }
   }
 
-  return (
-    <div>
-      <div className="admin-lyrics-page-header">
-        <div>
-          <Link to="/admin/songs" className="admin-lyrics-page-back-link">← Songs</Link>
-          <h1 className="admin-lyrics-page-title">{songTitle}</h1>
-        </div>
-      </div>
+  // ── Derived ───────────────────────────────────────────────────────────────
 
-      <div className="admin-lyrics-page-edit-pane">
-        <p className="admin-lyrics-page-hint">Enter creates a new lyric line. Backspace on an empty lyric line removes it. Arrow keys move between lines. Tab inserts spaces. Annotations are edited directly per matching row.</p>
-        {!isViewer && selectedRows.length > 0 && (
-          <div className="admin-lyrics-page-bulk-actions">
-            <span className="admin-lyrics-page-selection-summary">{selectedRows.length} line{selectedRows.length === 1 ? '' : 's'} selected</span>
-            <button onClick={deleteSelectedRows} className="admin-lyrics-page-ghost-btn">Delete Selected</button>
+  const hasDirtyRanges = annotations.some((annotation) =>
+    annotation.ranges.some((range) => range.dirty)
+  )
+
+  const isPicking = pendingRangeForAnnotationIndex !== null
+
+  const highlightedAnnotationIndex = hoveredAnnotationIndex ?? editingAnnotationIndex
+  const highlightedRanges = highlightedAnnotationIndex !== null
+    ? (annotations[highlightedAnnotationIndex]?.ranges ?? []).filter((r) => !r.dirty)
+    : []
+
+  const sortedAnnotationEntries = annotations
+    .map((annotation, annotationIndex) => ({
+      annotation,
+      annotationIndex,
+      firstStartChar: Math.min(
+        ...annotation.ranges
+          .filter((range) => !range.dirty)
+          .map((range) => range.startChar)
+      ),
+    }))
+    .sort((left, right) => {
+      const leftStart = Number.isFinite(left.firstStartChar) ? left.firstStartChar : Number.POSITIVE_INFINITY
+      const rightStart = Number.isFinite(right.firstStartChar) ? right.firstStartChar : Number.POSITIVE_INFINITY
+      if (leftStart !== rightStart) return leftStart - rightStart
+      return left.annotationIndex - right.annotationIndex
+    })
+
+  function renderBackdrop(text, ranges) {
+    if (ranges.length === 0) return text
+    const sorted = [...ranges].sort((a, b) => a.startChar - b.startChar)
+    const parts = []
+    let cursor = 0
+    for (const range of sorted) {
+      const start = Math.max(range.startChar, cursor)
+      if (start >= range.endChar) continue
+      if (start > cursor) parts.push(text.slice(cursor, start))
+      parts.push(<mark key={`${start}-${range.endChar}`}>{text.slice(start, range.endChar)}</mark>)
+      cursor = range.endChar
+    }
+    if (cursor < text.length) parts.push(text.slice(cursor))
+    return parts
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  return (
+    <div className="alp-page">
+      <div className="alp-header">
+        <div>
+          <Link to="/admin/songs" className="alp-back-link">← Songs</Link>
+          <h1 className="alp-title">{songTitle}</h1>
+        </div>
+        {!isViewer && !isLoading && (
+          <div className="alp-header-actions">
+            <button className="alp-save-btn" onClick={saveAll} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save All'}
+            </button>
           </div>
         )}
+      </div>
 
+      <div className="alp-edit-pane">
         {isLoading ? (
-          <div className="admin-lyrics-page-editor-surface">Loading lyrics...</div>
+          <div>Loading lyrics...</div>
         ) : (
-          <div className="admin-lyrics-page-editor-grid">
-            <section className="admin-lyrics-page-editor-panel">
-              <div className="admin-lyrics-page-editor-label">Lyrics</div>
-              <div className="admin-lyrics-page-editor-surface">
-                {lyricsRows.map((row, index) => (
-                  <div key={row.id ?? `row-${index}`} className={`admin-lyrics-page-editor-row ${selectedRows.includes(index) ? 'admin-lyrics-page-selected-row' : ''}`.trim()}>
-                    <button type="button" className={`admin-lyrics-page-row-number ${selectedRows.includes(index) ? 'admin-lyrics-page-selected-number' : ''}`.trim()} onClick={(event) => !isViewer && handleRowSelection(index, event)} aria-label={`Select lyric line ${index + 1}`}>{index + 1}</button>
-                    <textarea
-                      ref={(element) => {
-                        lyricRowRefs.current[index] = element
-                      }}
-                      value={row.text}
-                      onChange={(event) => updateLyricsRow(index, event.target.value)}
-                      onKeyDown={(event) => handleRowKeyDown('lyrics', event, index)}
-                      onPaste={(event) => handleRowPaste('lyrics', event, index)}
-                      className={`admin-lyrics-page-line-input admin-lyrics-page-lyric-input`}
-                      rows={1}
-                      spellCheck={false}
-                      disabled={isViewer}
-                      aria-label={`Lyric line ${index + 1}`}
-                    />
-                  </div>
-                ))}
+          <>
+            {hasDirtyRanges && (
+              <div className="alp-dirty-banner">
+                ⚠ Some annotation ranges were affected by your edits. Select the annotation card and re-highlight the text to fix them.
               </div>
-            </section>
+            )}
 
-            <section className="admin-lyrics-page-editor-panel">
-              <div className="admin-lyrics-page-editor-label">Annotations</div>
-              <div className="admin-lyrics-page-editor-surface">
-                {lyricsRows.map((row, index) => {
+            {isPicking && (
+              <div className="alp-picking-banner">
+                Highlight text in the lyrics to add a range to this annotation
+              </div>
+            )}
+
+            <div className="alp-editor-columns">
+              <div className="alp-lyrics-panel">
+                <div className="alp-lyrics-header">
+                  <span>Lyrics</span>
+                </div>
+
+                <div className="alp-textarea-wrapper" ref={textareaWrapperRef}>
+                  {highlightedRanges.length > 0 && (
+                    <div className="alp-textarea-backdrop" aria-hidden="true">
+                      {renderBackdrop(lyricText, highlightedRanges)}
+                    </div>
+                  )}
+                  <textarea
+                    ref={textareaRef}
+                    className={`alp-lyric-textarea${isPicking ? ' alp-lyric-textarea-picking' : ''}${highlightedRanges.length > 0 ? ' alp-lyric-textarea-highlighting' : ''}`}
+                    value={lyricText}
+                    spellCheck={false}
+                    disabled={isViewer}
+                    onChange={handleLyricChange}
+                    onSelect={handleTextareaInteraction}
+                    onKeyDown={handleTextareaInteraction}
+                    onMouseDown={handleTextareaInteraction}
+                    onMouseUp={handleTextareaMouseUp}
+                    onKeyUp={handleTextareaKeyUp}
+                  />
+                </div>
+              </div>
+
+              <div className="alp-annotations-panel">
+                <div className="alp-annotations-header">
+                  <span>Annotations</span>
+                  {!isViewer && (
+                    <button
+                      type="button"
+                      className="alp-annotation-icon-btn alp-add-annotation-btn"
+                      onClick={addAnnotation}
+                      aria-label="Add annotation"
+                      title="Add annotation"
+                    >
+                      <FaPlus aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+
+                {sortedAnnotationEntries.map(({ annotation, annotationIndex }) => {
+                  const isEditing = editingAnnotationIndex === annotationIndex
+                  const hasDirty = annotation.ranges.some((r) => r.dirty)
+
+                  if (!isEditing) {
+                    return (
+                      <button
+                        key={annotation.id ?? `unsaved-${annotationIndex}`}
+                        className={`alp-annotation-card alp-annotation-card-neutral${hasDirty ? ' alp-annotation-card-dirty' : ''}`}
+                        onClick={() => setEditingAnnotationIndex(annotationIndex)}
+                        onMouseEnter={() => setHoveredAnnotationIndex(annotationIndex)}
+                        onMouseLeave={() => setHoveredAnnotationIndex(null)}
+                      >
+                        <div className="alp-annotation-neutral-ranges">
+                          {annotation.ranges.length === 0 ? (
+                            <span className="alp-annotation-neutral-empty">No ranges</span>
+                          ) : annotation.ranges.map((range, rangeIndex) => (
+                            <span
+                              key={range.id ?? `range-${annotationIndex}-${rangeIndex}`}
+                              className={`alp-range-chip${range.dirty ? ' alp-range-chip-dirty' : ''}`}
+                            >
+                              {range.dirty
+                                ? <span className="alp-range-chip-text">⚠ Re-highlight to fix</span>
+                                : <span className="alp-range-chip-text">&ldquo;{lyricText.slice(range.startChar, range.endChar)}&rdquo;</span>
+                              }
+                            </span>
+                          ))}
+                        </div>
+                        {annotation.explanation && (
+                          <p className="alp-annotation-neutral-explanation">{annotation.explanation}</p>
+                        )}
+                      </button>
+                    )
+                  }
+
                   return (
-                    <div key={`annotation-${row.id ?? index}`} className="admin-lyrics-page-annotation-editor-row">
-                      <div className="admin-lyrics-page-row-number">{index + 1}</div>
-                      <div className="admin-lyrics-page-annotation-editor-cell">
-                        <button
-                          type="button"
-                          className={`admin-lyrics-page-line-input admin-lyrics-page-annotation-preview`}
-                          onClick={() => {
-                            if (isViewer) return
-                            setEditingAnnotationIndex(index)
-                            pendingFocus.current = { column: 'annotations', index, cursor: 'end' }
-                            setAnnotationRows((prev) => [...prev])
-                          }}
-                          title={annotationRows[index]?.text ?? ''}
-                          aria-label={`Annotation line ${index + 1}`}
-                        >
-                          {annotationRows[index]?.text ?? ''}
-                        </button>
-                        {editingAnnotationIndex === index && (
-                          <div className="admin-lyrics-page-annotation-overlay">
-                            <textarea
-                              ref={(element) => {
-                                annotationRowRefs.current[index] = element
-                              }}
-                              value={annotationRows[index]?.text ?? ''}
-                              onChange={(event) => updateAnnotationRow(index, event.target.value)}
-                              onKeyDown={(event) => handleRowKeyDown('annotations', event, index)}
-                              onBlur={() => setEditingAnnotationIndex(null)}
-                              onPaste={(event) => handleRowPaste('annotations', event, index)}
-                              placeholder="Annotation for this line..."
-                              className={`admin-lyrics-page-line-input admin-lyrics-page-annotation-textarea`}
-                              rows={4}
-                              spellCheck={false}
-                              disabled={isViewer}
-                              aria-label={`Annotation line ${index + 1}`}
-                            />
+                    <div
+                      key={annotation.id ?? `unsaved-${annotationIndex}`}
+                      className="alp-annotation-card alp-annotation-card-editing"
+                      onMouseEnter={() => setHoveredAnnotationIndex(annotationIndex)}
+                      onMouseLeave={() => setHoveredAnnotationIndex(null)}
+                    >
+                      <div className="alp-annotation-card-edit-header">
+                        <div className="alp-annotation-card-actions">
+                          <button
+                            type="button"
+                            className="alp-annotation-icon-btn alp-annotation-done-btn"
+                            onClick={() => setEditingAnnotationIndex(null)}
+                            aria-label="Done editing annotation"
+                            title="Done"
+                          >
+                            <FaCheck aria-hidden="true" />
+                          </button>
+                          {!isViewer && (
+                            <ConfirmActionButton
+                              message="Delete this annotation?"
+                              onConfirm={() => deleteAnnotation(annotationIndex)}
+                              buttonClassName="alp-annotation-icon-btn alp-annotation-delete-btn"
+                              buttonAriaLabel="Delete annotation"
+                              buttonTitle="Delete"
+                            >
+                              <FaTrash aria-hidden="true" />
+                            </ConfirmActionButton>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="alp-ranges-list">
+                        <div>Ranges:</div>
+                        {annotation.ranges.map((range, rangeIndex) => (
+                          <div
+                            key={range.id ?? `range-${annotationIndex}-${rangeIndex}`}
+                            className={`alp-range-chip${range.dirty ? ' alp-range-chip-dirty' : ''}`}
+                          >
+                            {range.dirty ? (
+                              <span className="alp-range-chip-text">⚠ Re-highlight to fix</span>
+                            ) : (
+                              <span className="alp-range-chip-text">
+                                &ldquo;{lyricText.slice(range.startChar, range.endChar)}&rdquo;
+                              </span>
+                            )}
+                            {!isViewer && (
+                              <button
+                                className="alp-range-chip-remove"
+                                onClick={() => removeRange(annotationIndex, rangeIndex)}
+                                aria-label="Remove range"
+                              >
+                                ×
+                              </button>
+                            )}
                           </div>
+                        ))}
+
+                        {!isViewer && (
+                          <button
+                            className="alp-add-range-btn"
+                            onClick={() => setPendingRangeForAnnotationIndex(annotationIndex)}
+                          >
+                            + Add range
+                          </button>
                         )}
                       </div>
+
+                      <textarea
+                        className="alp-annotation-explanation"
+                        value={annotation.explanation}
+                        disabled={isViewer}
+                        placeholder="Explanation..."
+                        onChange={(e) => updateAnnotationExplanation(annotationIndex, e.target.value)}
+                      />
+
                     </div>
                   )
                 })}
               </div>
-            </section>
-          </div>
-        )}
-
-        {!isViewer && (
-          <button onClick={saveLyrics} className="admin-lyrics-page-primary-btn" disabled={isSaving || isLoading}>
-            {isSaving ? 'Saving...' : 'Save Lyrics'}
-          </button>
+            </div>
+          </>
         )}
       </div>
     </div>

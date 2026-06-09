@@ -2,79 +2,106 @@ import { useState } from 'react'
 import AnnotationPopup from './AnnotationPopup.jsx'
 import '../../styles/LyricsView.css'
 
-function LyricLine({ block, openAnnotationId, setOpenAnnotationId }) {
-  if (block.text.trim() === '') {
+function LyricLine({ lineText, lineRanges, openAnnotationId, setOpenAnnotationId, allAnnotations }) {
+  if (lineText.trim() === '') {
     return <div className="lyrics-view-line lyrics-view-line-blank" aria-hidden="true" />
   }
 
-  const spans = block.annotations.length === 0 ? [] : buildSpans(block.text, block.annotations)
-  const openAnnotation = block.annotations.find((a) => a.id === openAnnotationId) ?? null
-
-  if (block.annotations.length === 0) {
+  if (lineRanges.length === 0) {
     return (
       <div className="lyrics-view-line">
-        <span className="lyrics-view-plain">{block.text}</span>
+        <span className="lyrics-view-plain">{lineText}</span>
       </div>
     )
   }
+
+  const spans = buildSpans(lineText, lineRanges)
 
   return (
     <div className="lyrics-view-line-wrap">
       <div className="lyrics-view-line">
         {spans.map((span, i) => {
-          if (!span.annotation) {
+          if (!span.annotationId) {
             return <span key={i} className="lyrics-view-plain">{span.text}</span>
           }
-          const isOpen = openAnnotationId === span.annotation.id
+          const annotation = allAnnotations.find(a => a.id === span.annotationId)
+          const isOpen = openAnnotationId === span.annotationId
           return (
             <button
               key={i}
               className={`lyrics-view-annotated ${isOpen ? 'lyrics-view-active' : ''}`}
-              onClick={() => setOpenAnnotationId(isOpen ? null : span.annotation.id)}
+              onClick={() => setOpenAnnotationId(isOpen ? null : span.annotationId)}
             >
               {span.text}
             </button>
           )
         })}
       </div>
-      {openAnnotation && (
-        <AnnotationPopup annotation={openAnnotation} className="lyrics-view-popup-overlay" />
-      )}
+      {openAnnotationId && spans.some(s => s.annotationId === openAnnotationId) && (() => {
+        const openAnnotation = allAnnotations.find(a => a.id === openAnnotationId)
+        return openAnnotation ? <AnnotationPopup annotation={openAnnotation} className="lyrics-view-popup-overlay" /> : null
+      })()}
     </div>
   )
 }
 
-function buildSpans(text, annotations) {
-  const sorted = [...annotations].sort((a, b) => a.startChar - b.startChar)
+function buildSpans(text, lineRanges) {
+  const sorted = [...lineRanges].sort((a, b) => a.startChar - b.startChar)
   const spans = []
   let cursor = 0
-  for (const ann of sorted) {
-    if (ann.startChar > cursor) {
-      spans.push({ text: text.slice(cursor, ann.startChar), annotation: null })
+  for (const range of sorted) {
+    const start = Math.max(range.startChar, cursor)
+    if (start >= range.endChar) continue
+    if (start > cursor) {
+      spans.push({ text: text.slice(cursor, start), annotationId: null })
     }
-    spans.push({ text: text.slice(ann.startChar, ann.endChar), annotation: ann })
-    cursor = ann.endChar
+    spans.push({ text: text.slice(start, range.endChar), annotationId: range.annotationId })
+    cursor = range.endChar
   }
   if (cursor < text.length) {
-    spans.push({ text: text.slice(cursor), annotation: null })
+    spans.push({ text: text.slice(cursor), annotationId: null })
   }
   return spans
 }
 
-export default function LyricsView({ blocks }) {
+export default function LyricsView({ lyric }) {
   const [openAnnotationId, setOpenAnnotationId] = useState(null)
+
+  if (!lyric) return null
+
+  // flatten ranges across all annotations
+  const flatRanges = (lyric.annotations ?? []).flatMap(ann =>
+    ann.ranges.map(r => ({ startChar: r.startChar, endChar: r.endChar, annotationId: ann.id }))
+  ).sort((a, b) => a.startChar - b.startChar)
+
+  const lines = lyric.text.split('\n')
+  let lineOffset = 0
 
   return (
     <section className="lyrics-view-section">
       <div className="lyrics-view-lyrics">
-        {blocks.map((block) => (
-          <LyricLine
-            key={block.id}
-            block={block}
-            openAnnotationId={openAnnotationId}
-            setOpenAnnotationId={setOpenAnnotationId}
-          />
-        ))}
+        {lines.map((line, i) => {
+          const lineEnd = lineOffset + line.length
+          const lineRanges = flatRanges
+            .filter(r => r.startChar < lineEnd && r.endChar > lineOffset)
+            .map(r => ({
+              startChar: Math.max(r.startChar - lineOffset, 0),
+              endChar: Math.min(r.endChar - lineOffset, line.length),
+              annotationId: r.annotationId,
+            }))
+          const result = (
+            <LyricLine
+              key={i}
+              lineText={line}
+              lineRanges={lineRanges}
+              openAnnotationId={openAnnotationId}
+              setOpenAnnotationId={setOpenAnnotationId}
+              allAnnotations={lyric.annotations}
+            />
+          )
+          lineOffset += line.length + 1
+          return result
+        })}
       </div>
     </section>
   )

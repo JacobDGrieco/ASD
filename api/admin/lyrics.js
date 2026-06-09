@@ -23,51 +23,36 @@ export default async function handler(req, res) {
   if (!song) return res.status(404).json({ error: 'Song not found' })
 
   if (req.method === 'GET') {
-    const blocks = await prisma.lyricBlock.findMany({
+    const lyric = await prisma.songLyric.findUnique({
       where: { songId },
-      orderBy: { blockOrder: 'asc' },
-      include: { annotations: { orderBy: { startChar: 'asc' } } },
+      include: {
+        annotations: {
+          orderBy: { createdAt: 'asc' },
+          include: { ranges: { orderBy: { startChar: 'asc' } } },
+        },
+      },
     })
-    return res.status(200).json(blocks)
+
+    if (!lyric) {
+      return res.status(200).json({ id: null, songId, text: '', annotations: [] })
+    }
+
+    return res.status(200).json(lyric)
   }
+
   if (req.method === 'PUT') {
     if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
-    const { blocks } = req.body
-    const existingBlocks = await prisma.lyricBlock.findMany({
+
+    const { text } = req.body
+
+    const upserted = await prisma.songLyric.upsert({
       where: { songId },
-      orderBy: { blockOrder: 'asc' },
+      create: { songId, text },
+      update: { text },
     })
-    const existingIds = new Set(existingBlocks.map((block) => block.id))
-    const incomingIds = new Set(blocks.filter((block) => block.id).map((block) => block.id))
-    const deletedIds = existingBlocks.filter((block) => !incomingIds.has(block.id)).map((block) => block.id)
 
-    if (deletedIds.length) {
-      await prisma.lyricBlock.deleteMany({ where: { id: { in: deletedIds } } })
-    }
-
-    await Promise.all(
-      blocks
-        .filter((block) => block.id && existingIds.has(block.id))
-        .map((block) => prisma.lyricBlock.update({
-          where: { id: block.id },
-          data: { text: block.text, blockOrder: block.blockOrder },
-        }))
-    )
-
-    const createdBlocks = blocks
-      .filter((block) => !block.id)
-      .map((block) => ({ songId, text: block.text, blockOrder: block.blockOrder }))
-
-    if (createdBlocks.length) {
-      await prisma.lyricBlock.createMany({ data: createdBlocks })
-    }
-
-    const updated = await prisma.lyricBlock.findMany({
-      where: { songId },
-      orderBy: { blockOrder: 'asc' },
-      include: { annotations: { orderBy: { startChar: 'asc' } } },
-    })
-    return res.status(200).json(updated)
+    return res.status(200).json(upserted)
   }
+
   return res.status(405).json({ error: 'Method not allowed' })
 }

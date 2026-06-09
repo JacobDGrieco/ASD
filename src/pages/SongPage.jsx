@@ -22,7 +22,7 @@ export default function SongPage() {
     headers: previewHeaders,
     cacheKey: publicPreviewCacheKey(apiUrl, adminPreview),
   })
-  const lyricLineCount = song?.lyricBlocks?.filter((block) => block.text?.trim()).length ?? 0
+  const lyricLineCount = song?.lyric?.text ? song.lyric.text.split('\n').filter((line) => line.trim()).length : 0
   const defaultTabIndex = lyricLineCount < 2 ? 2 : 0
   const [activeTabIndex, setActiveTabIndex] = useState(0)
   const hasSongInfo = Boolean(
@@ -54,7 +54,7 @@ export default function SongPage() {
           <div className="song-page-body">
             <TabView className="page-tabview song-page-tabview" activeIndex={activeTabIndex} onTabChange={(event) => setActiveTabIndex(event.index)}>
               <TabPanel header="Lyrics">
-                <LyricsView blocks={song.lyricBlocks} />
+                <LyricsView lyric={song.lyric} />
               </TabPanel>
               <TabPanel header="Albums">
                 <SongAlbums placements={song.placements} adminPreview={adminPreview} />
