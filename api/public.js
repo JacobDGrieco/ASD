@@ -3,6 +3,7 @@ import { isEffectivelyVisible } from '../src/lib/contentVisibility.js'
 import { verifyToken } from '../src/lib/auth.js'
 import { buildClientImageUrl, clientImages, mergeLegacyImages } from '../src/lib/images.js'
 import { ARTIST_VIDEO_SOURCE, buildStaticArtistVideoPath, getStaticArtistVideoExtension, getYouTubeEmbedUrl } from '../src/lib/artistVideos.js'
+import { formatCrosshairVideo } from '../src/lib/crosshairVideos.js'
 import { hasPublicBoardSource, isOtherArtist, isReservedHiddenArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js'
 import { isReleasedOnUtcDay } from '../src/lib/releaseSchedule.js'
 
@@ -517,6 +518,31 @@ async function getVideos(res) {
   )
 }
 
+async function getCrosshairVideos(res) {
+  setPublicCache(res)
+  const now = new Date()
+  const videos = await prisma.crosshairVideo.findMany({
+    where: {
+      isVisible: true,
+      OR: [
+        { publishedAt: null },
+        { publishedAt: { lte: now } },
+      ],
+    },
+    orderBy: [
+      { publishedAt: 'desc' },
+      { createdAt: 'desc' },
+    ],
+  })
+
+  return res.status(200).json(
+    videos
+      .filter((video) => video.youtubeUrl)
+      .map(formatCrosshairVideo)
+      .filter((video) => video.youtubeEmbedUrl)
+  )
+}
+
 async function getAlbum(res, id, includeHidden = false) {
   setPublicCache(res)
   const now = new Date()
@@ -846,6 +872,7 @@ export default async function handler(req, res) {
   if (resource === 'album' && id) return getAlbum(res, id, includeHidden)
   if (resource === 'song' && id) return getSong(res, id, includeHidden)
   if (resource === 'videos') return getVideos(res)
+  if (resource === 'crosshair') return getCrosshairVideos(res)
   if (resource === 'recordPlayer') return getRecordPlayer(res, includeHidden)
   if (resource === 'boardPosts') return getBoardPosts(res)
 

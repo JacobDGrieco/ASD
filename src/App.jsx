@@ -4,6 +4,7 @@ import Nav from './components/shared/Nav.jsx';
 import HomePage from './pages/HomePage.jsx';
 import ArtistPage from './pages/ArtistPage.jsx';
 import VideosPage from './pages/VideosPage.jsx';
+import CrosshairPage from './pages/CrosshairPage.jsx';
 import SongPage from './pages/SongPage.jsx';
 import AlbumPage from './pages/AlbumPage.jsx';
 import BoardPage from './pages/BoardPage.jsx';
@@ -22,6 +23,7 @@ const AdminArtistsPage = lazy(() => import('./pages/admin/AdminArtistsPage.jsx')
 const AdminAlbumsPage = lazy(() => import('./pages/admin/AdminAlbumsPage.jsx'));
 const AdminBoardPage = lazy(() => import('./pages/admin/AdminBoardPage.jsx'));
 const AdminVideosPage = lazy(() => import('./pages/admin/AdminVideosPage.jsx'));
+const AdminCrosshairPage = lazy(() => import('./pages/admin/AdminCrosshairPage.jsx'));
 const AdminSongsPage = lazy(() => import('./pages/admin/AdminSongsPage.jsx'));
 const AdminLyricsPage = lazy(() => import('./pages/admin/AdminLyricsPage.jsx'));
 const AdminRecordPlayerPage = lazy(() => import('./pages/admin/AdminRecordPlayerPage.jsx'));
@@ -79,6 +81,12 @@ function AdminVideosAccessRoute() {
 	return <AdminVideosPage />;
 }
 
+function AdminCrosshairAccessRoute() {
+	const { session } = useAdminAuth();
+	if (session?.role !== 'SUPER_ADMIN') return <Navigate to="/admin" replace />;
+	return <AdminCrosshairPage />;
+}
+
 export default function App() {
 	return (
 		<AdminProvider>
@@ -88,6 +96,7 @@ export default function App() {
 						<Route path="/" element={<HomePage />} />
 						<Route path="/board" element={<BoardPage />} />
 						<Route path="/videos" element={<VideosPage />} />
+						<Route path="/crosshair" element={<CrosshairPage />} />
 						<Route path="/artists/:slug" element={<ArtistPage />} />
 						<Route path="/albums/:albumId" element={<AlbumPage />} />
 						<Route path="/songs/:songId" element={<SongPage />} />
@@ -110,6 +119,7 @@ export default function App() {
 							<Route path="/admin/albums" element={<AdminAlbumsPage />} />
 							<Route path="/admin/board" element={<AdminBoardPage />} />
 							<Route path="/admin/videos" element={<AdminVideosAccessRoute />} />
+							<Route path="/admin/crosshair" element={<AdminCrosshairAccessRoute />} />
 							<Route path="/admin/songs" element={<AdminSongsPage />} />
 							<Route path="/admin/lyrics/:songId" element={<AdminLyricsPage />} />
 							<Route path="/admin/record-player" element={<AdminRecordPlayerPage />} />

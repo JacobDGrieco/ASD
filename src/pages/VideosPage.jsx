@@ -25,7 +25,7 @@ function VideoPlayer({ video }) {
 		return (
 			<div className="videos-page-player-frame">
 				<iframe
-					src={`${video.youtubeEmbedUrl}&autoplay=1&mute=1`}
+					src={`${video.youtubeEmbedUrl}&autoplay=1`}
 					title={playerTitle}
 					className="videos-page-iframe"
 					allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

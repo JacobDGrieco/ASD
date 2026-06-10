@@ -18,6 +18,7 @@ export default function Nav() {
 			<div className="nav-links">
 				<NavLink to="/board" className={({ isActive }) => isActive ? 'nav-link nav-link-active' : 'nav-link'}>THE BOARD</NavLink>
 				<NavLink to="/videos" className={({ isActive }) => isActive ? 'nav-link nav-link-active' : 'nav-link'}>THE STAGE</NavLink>
+				<NavLink to="/crosshair" className={({ isActive }) => isActive ? 'nav-link nav-link-active' : 'nav-link'}>THE CROSSHAIR</NavLink>
 			</div>
 		</nav>
 	);

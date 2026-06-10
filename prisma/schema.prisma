@@ -52,6 +52,30 @@ model ArtistVideo {
   updatedAt     DateTime          @updatedAt
 }
 
+model CrosshairVideo {
+  id                String             @id @default(cuid())
+  title             String
+  description       String             @default("")
+  artistName        String?
+  type              CrosshairVideoType @default(UNCUT)
+  youtubeVideoId    String?            @unique
+  youtubeUrl        String
+  thumbnailUrl      String?
+  thumbnailPathname String?
+  source            String             @default("MANUAL")
+  durationSeconds   Int?
+  privacyStatus     String?
+  sortOrder         Int                @default(0)
+  isVisible         Boolean            @default(true)
+  publishedAt       DateTime?
+  lastSyncedAt      DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([isVisible, type, sortOrder])
+  @@index([publishedAt])
+}
+
 model ArtistAdminAccess {
   id           String   @id @default(cuid())
   artistId      String   @unique
@@ -128,6 +152,12 @@ enum AlbumType {
 enum ArtistVideoSource {
   YOUTUBE
   UPLOAD
+}
+
+enum CrosshairVideoType {
+  UNCUT
+  EDITED
+  SHORT
 }
 
 model Song {

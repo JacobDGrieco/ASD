@@ -29,6 +29,10 @@
 			"destination": "/api/public?resource=videos"
 		},
 		{
+			"source": "/api/crosshair",
+			"destination": "/api/public?resource=crosshair"
+		},
+		{
 			"source": "/api/admin/board",
 			"destination": "/api/admin/artists?resource=board"
 		},
@@ -46,6 +50,10 @@
 		},
 		{
 			"source": "/videos",
+			"destination": "/index.html"
+		},
+		{
+			"source": "/crosshair",
 			"destination": "/index.html"
 		},
 		{

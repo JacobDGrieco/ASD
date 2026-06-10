@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, NavLink, Link } from 'react-router-dom';
-import { FaBullhorn, FaChevronLeft, FaChevronRight, FaCompactDisc, FaMicrophoneAlt, FaMusic, FaSignOutAlt, FaUserShield, FaVideo, FaRecordVinyl } from 'react-icons/fa';
+import { FaBullseye, FaBullhorn, FaChevronLeft, FaChevronRight, FaCompactDisc, FaMicrophoneAlt, FaMusic, FaSignOutAlt, FaUserShield, FaVideo, FaRecordVinyl } from 'react-icons/fa';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import '../../styles/AdminLayout.css';
 
@@ -10,6 +10,7 @@ export default function AdminLayout() {
 	const { logout, session } = useAdminAuth();
 	const isArtistScoped = session?.role === 'ARTIST';
 	const isViewer = session?.role === 'VIEWER';
+	const isSuperAdminSession = session?.role === 'SUPER_ADMIN';
 	const [isCollapsed, setIsCollapsed] = useState(() => {
 		if (typeof window === 'undefined') return false;
 
@@ -37,6 +38,7 @@ export default function AdminLayout() {
 		...(!isArtistScoped ? [{ to: '/admin/record-player', label: 'Record Player', icon: <FaRecordVinyl aria-hidden="true" /> }] : []),
 		{ to: '/admin/board', label: 'Board', icon: <FaBullhorn aria-hidden="true" /> },
 		...(!isViewer ? [{ to: '/admin/videos', label: 'Videos', icon: <FaVideo aria-hidden="true" /> }] : []),
+		...(isSuperAdminSession ? [{ to: '/admin/crosshair', label: 'Crosshair', icon: <FaBullseye aria-hidden="true" /> }] : []),
 	];
 
 	return (
