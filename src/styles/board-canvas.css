@@ -8,8 +8,6 @@
 }
 
 .board-viewport:active { cursor: grabbing; }
-.board-viewport-edit { cursor: default; }
-.board-viewport-edit:active { cursor: default; }
 
 .board-canvas {
   position: absolute;

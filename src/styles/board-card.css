@@ -68,16 +68,12 @@
   border-radius: 0 0 1px 1px;
 }
 
-.board-card-edit-handle {
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  background: rgba(0, 0, 0, 0.5);
-  color: #c8a96e;
-  font-size: 14px;
-  padding: 2px 4px;
-  border-radius: 3px;
+.board-card-edit {
   cursor: grab;
+}
+
+.board-card-edit:active {
+  cursor: grabbing;
 }
 
 /* -- Detail overlay -- */
