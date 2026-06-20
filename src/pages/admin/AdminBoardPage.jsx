@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FaPencilAlt, FaThumbtack, FaTrash } from 'react-icons/fa';
+import { FaArchive, FaPencilAlt, FaThumbtack, FaTrash } from 'react-icons/fa';
 import BoardMarkdownEditor from '../../components/admin/BoardMarkdownEditor.jsx';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
 import AdminDateInput from '../../components/admin/AdminDateInput.jsx';
@@ -285,12 +285,14 @@ export default function AdminBoardPage() {
 					</span>
 				</td>
 				<td className="admin-board-page-col-pos">
-					{positionLabel(post)}
-					{isSuperAdmin && post.posX != null && (
-						<button className="admin-board-page-release-btn" onClick={() => releasePosition(post)}>
-							Release
-						</button>
-					)}
+					<button
+						className={`admin-board-page-pin-btn${post.posX != null ? ' admin-board-page-pin-btn-active' : ''}`}
+						onClick={isSuperAdmin && post.posX != null ? () => releasePosition(post) : undefined}
+						title={post.posX != null ? positionLabel(post) + ' — click to release' : 'Auto-placed'}
+						disabled={!isSuperAdmin || post.posX == null}
+					>
+						<FaThumbtack />
+					</button>
 				</td>
 				<td className="admin-board-page-col-actions">
 					{canEdit && !isViewer && (
@@ -308,7 +310,7 @@ export default function AdminBoardPage() {
 							onClick={() => toggleArchive(post, true)}
 							title="Archive"
 						>
-							<FaThumbtack />
+							<FaArchive />
 						</button>
 					)}
 					{canEdit && !isViewer && (
@@ -350,7 +352,7 @@ export default function AdminBoardPage() {
 								<th className="admin-board-page-col-sm">Artist</th>
 								<th className="admin-board-page-col-sm">Published</th>
 								<th className="admin-board-page-col-sm">Status</th>
-								<th className="admin-board-page-col-pos">Position</th>
+								<th className="admin-board-page-col-pos">Pin</th>
 								<th className="admin-board-page-col-actions">Actions</th>
 							</tr>
 						</thead>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useApi } from '../hooks/useApi.js'
 import { useAdminAuth } from '../lib/adminAuth.jsx'
 import { isAdminPreviewSession } from '../lib/publicPreview.js'
-import { resolvePostPosition } from '../lib/boardPosition.js'
+import { resolveAllPositions } from '../lib/boardPosition.js'
 import BoardCanvas from '../components/board/BoardCanvas.jsx'
 import BoardCard from '../components/board/BoardCard.jsx'
 import BoardCardDetail from '../components/board/BoardCardDetail.jsx'
@@ -86,10 +86,7 @@ export default function BoardPage() {
     setContextMenu({ postId, x, y })
   }
 
-  const positionedPosts = displayPosts.map((post, i) => ({
-    post,
-    position: resolvePostPosition(post, i),
-  }))
+  const positionedPosts = resolveAllPositions(displayPosts)
 
   const handlePositionChange = async (postId, { posX, posY, rotation }) => {
     const pinChoice = window.prompt(
