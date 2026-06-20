@@ -41,8 +41,73 @@
 .board-edit-fab-active { background: #c8a96e; color: #1a1008; }
 .board-edit-fab-active:hover { background: #b89860; }
 
+/* When stacked above the "Return to Public View" button */
+.board-edit-fab-stacked { bottom: 72px; }
+
+@media (max-width: 640px) {
+  .board-edit-fab-stacked { bottom: 64px; }
+}
+
 body:has(.board-viewport) {
   background-color: #1e1208;
+}
+
+.board-instructions {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  color: #666;
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 8px 18px;
+  border-radius: 20px;
+  border: 1px solid #2a2a2a;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.board-context-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+}
+
+.board-context-menu {
+  position: fixed;
+  z-index: 301;
+  background: #1a1008;
+  border: 1px solid #3a2a14;
+  border-radius: 6px;
+  overflow: hidden;
+  min-width: 160px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+}
+
+.board-context-item {
+  display: block;
+  width: 100%;
+  padding: 9px 14px;
+  text-align: left;
+  background: none;
+  border: none;
+  border-top: 1px solid #2a1e0a;
+  color: #c8a96e;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.board-context-item:first-child {
+  border-top: none;
+}
+
+.board-context-item:hover {
+  background: #2a2010;
 }
 
 @media (max-width: 640px) {

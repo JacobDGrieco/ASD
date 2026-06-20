@@ -2,7 +2,8 @@ export const CANVAS_WIDTH = 3000
 export const CANVAS_HEIGHT = 2000
 const CANVAS_CENTER_X = CANVAS_WIDTH / 2
 const CANVAS_CENTER_Y = CANVAS_HEIGHT / 2
-const RADIUS_STEP = 120
+const RADIUS_STEP = 300
+const JITTER = 60
 const MIN_CARD_WIDTH = 180
 const MAX_CARD_WIDTH = 260
 const MAX_ROTATION_DEG = 10
@@ -25,11 +26,13 @@ function formulaPosition(id, rank) {
   const h = seededHash(id)
   const angle = ((h % 10000) / 10000) * Math.PI * 2
   const radius = rank * RADIUS_STEP
+  const jitterX = ((h >> 12) % (JITTER * 2 + 1)) - JITTER
+  const jitterY = ((h >> 16) % (JITTER * 2 + 1)) - JITTER
   const { width, height } = cardDimensions(id)
   const rotation = ((h >> 8) % (MAX_ROTATION_DEG * 2 + 1)) - MAX_ROTATION_DEG
   return {
-    posX: CANVAS_CENTER_X + radius * Math.cos(angle) - width / 2,
-    posY: CANVAS_CENTER_Y + radius * Math.sin(angle) - height / 2,
+    posX: CANVAS_CENTER_X + radius * Math.cos(angle) - width / 2 + jitterX,
+    posY: CANVAS_CENTER_Y + radius * Math.sin(angle) - height / 2 + jitterY,
     rotation,
     width,
     height,

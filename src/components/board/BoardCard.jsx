@@ -24,7 +24,7 @@ function PushPin({ color }) {
   )
 }
 
-export default function BoardCard({ post, position, editMode, onFlip, onPositionChange }) {
+export default function BoardCard({ post, position, editMode, zIndex, onFlip, onContextMenu, onPositionChange }) {
   const dragX = useMotionValue(0)
   const dragY = useMotionValue(0)
 
@@ -38,7 +38,7 @@ export default function BoardCard({ post, position, editMode, onFlip, onPosition
 
   return (
     <motion.div
-      className="board-card"
+      className={`board-card${editMode ? ' board-card-edit' : ''}`}
       style={{
         left: position.posX,
         top: position.posY,
@@ -46,18 +46,20 @@ export default function BoardCard({ post, position, editMode, onFlip, onPosition
         rotate: position.rotation,
         x: dragX,
         y: dragY,
+        zIndex,
       }}
       drag={editMode}
       dragMomentum={false}
       dragElastic={0}
       onDragEnd={handleDragEnd}
-      whileHover={!editMode ? { scale: 1.06, zIndex: 10 } : {}}
+      whileHover={!editMode ? { scale: 1.06, zIndex: 1000 } : {}}
       onClick={!editMode ? () => onFlip(post) : undefined}
+      onContextMenu={onContextMenu}
     >
       <PushPin color={post.pinColor ?? 'default'} />
       <div className="board-card-inner">
         {post.imageUrl ? (
-          <img src={post.imageUrl} alt={post.title} className="board-card-image" />
+          <img src={post.imageUrl} alt={post.title} className="board-card-image" draggable={false} />
         ) : (
           <div
             className="board-card-placeholder"
@@ -67,9 +69,6 @@ export default function BoardCard({ post, position, editMode, onFlip, onPosition
           </div>
         )}
       </div>
-      {editMode && (
-        <div className="board-card-edit-handle">⠿</div>
-      )}
     </motion.div>
   )
 }

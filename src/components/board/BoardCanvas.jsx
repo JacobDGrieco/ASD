@@ -21,11 +21,11 @@ export default function BoardCanvas({ children, editMode }) {
   return (
     <div
       ref={viewportRef}
-      className={`board-viewport${editMode ? ' board-viewport-edit' : ''}`}
+      className="board-viewport"
     >
       <motion.div
         className="board-canvas"
-        drag={!editMode}
+        drag
         dragMomentum={false}
         dragElastic={0}
         dragConstraints={{
