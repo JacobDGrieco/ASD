@@ -191,18 +191,30 @@
 
 .crosshair-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  grid-auto-flow: dense;
+  align-items: start;
   gap: 16px;
 }
 
 .crosshair-card {
-  display: grid;
-  gap: 12px;
+  position: relative;
+  display: block;
   padding: 0;
   border: 1px solid var(--border);
   background: rgba(17, 17, 17, 0.78);
+  overflow: hidden;
   text-align: left;
   transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+
+.crosshair-card-regular {
+  grid-column: span 2;
+  align-self: center;
+}
+
+.crosshair-card-short {
+  align-self: start;
 }
 
 .crosshair-card:hover,
@@ -215,13 +227,14 @@
 
 .crosshair-thumb {
   position: relative;
+  display: block;
   aspect-ratio: 16 / 9;
   overflow: hidden;
   background: #090909;
 }
 
 .crosshair-thumb-short {
-  aspect-ratio: 9 / 13;
+  aspect-ratio: 9 / 14;
 }
 
 .crosshair-thumb img {
@@ -246,15 +259,25 @@
 }
 
 .crosshair-card-body {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
   display: grid;
   gap: 5px;
-  padding: 0 14px 16px;
+  padding: 44px 14px 16px;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.88) 62%, rgba(0, 0, 0, 0.96));
+  pointer-events: none;
 }
 
 .crosshair-card-body strong {
   color: var(--text);
   font-size: 1rem;
   line-height: 1.25;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .crosshair-card-body span:last-child {
@@ -319,6 +342,10 @@
 
   .crosshair-grid {
     grid-template-columns: 1fr;
+  }
+
+  .crosshair-card-regular {
+    grid-column: span 1;
   }
 
   .crosshair-status {

@@ -132,14 +132,21 @@ export default function CrosshairPage() {
 				<section className="crosshair-grid" aria-label="Crosshair video list">
 					{filteredVideos.map((video) => {
 						const isActive = video.id === selectedVideo?.id;
+						const isShort = video.type === 'SHORT';
+						const cardClassName = [
+							'crosshair-card',
+							isShort ? 'crosshair-card-short' : 'crosshair-card-regular',
+							isActive ? 'crosshair-card-active' : '',
+						].filter(Boolean).join(' ');
+
 						return (
 							<button
 								key={video.id}
 								type="button"
-								className={isActive ? 'crosshair-card crosshair-card-active' : 'crosshair-card'}
+								className={cardClassName}
 								onClick={() => setSelectedId(video.id)}
 							>
-								<span className={video.type === 'SHORT' ? 'crosshair-thumb crosshair-thumb-short' : 'crosshair-thumb'}>
+								<span className={isShort ? 'crosshair-thumb crosshair-thumb-short' : 'crosshair-thumb'}>
 									<img src={video.thumbnailUrl || '/favicon.png'} alt="" loading="lazy" decoding="async" />
 									<span className="crosshair-card-play"><FaPlay aria-hidden="true" /></span>
 								</span>
