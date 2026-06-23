@@ -19,7 +19,7 @@
 	min-height: calc(var(--nav-height) - var(--nav-pad-block-start) - var(--nav-pad-block-end));
 }
 
-.nav-root .nav-content-layer {
+.nav-root > .nav-content-layer:not(.nav-content-layer-exiting) {
 	position: relative;
 	grid-template-columns: 1fr;
 	justify-items: center;
@@ -72,7 +72,7 @@
 	text-decoration: none;
 }
 
-.nav-root .nav-logo {
+.nav-root > .nav-content-layer:not(.nav-content-layer-exiting) .nav-logo {
 	position: absolute;
 	left: 0;
 	justify-self: start;
@@ -175,7 +175,7 @@
 		letter-spacing: 0.1em;
 	}
 
-	.nav-root .nav-logo {
+	.nav-root > .nav-content-layer:not(.nav-content-layer-exiting) .nav-logo {
 		position: static;
 	}
 
