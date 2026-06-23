@@ -56,7 +56,7 @@ export default function SideRails() {
     [rightRailState.previousIndex]
   )
 
-  if (location.pathname.startsWith('/admin')) return null
+  if (location.pathname === '/' || location.pathname.startsWith('/admin')) return null
 
   return (
     <div className="side-rails" aria-hidden="true">

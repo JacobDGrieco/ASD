@@ -32,6 +32,22 @@
 }
 
 @font-face {
+	font-family: 'Mono55';
+	src: url('../../fonts/monof55.ttf') format('truetype');
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Mono56';
+	src: url('../../fonts/monof56.ttf') format('truetype');
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+}
+
+@font-face {
 	font-family: 'Halloween';
 	src: url('../../fonts/Halloween Season.otf') format('opentype');
 	font-style: normal;
@@ -63,6 +79,8 @@
 	--font-display: 'Billo', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 	--font-description: 'Alba', Georgia, serif;
 	--font-nav-tab: 'Accessories', 'Segoe UI', sans-serif;
+	--font-readable: 'Mono55', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+	--font-slanted: 'Mono56', 'Mono55', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
 	--font-artist-name: 'Halloween', 'Disko', Georgia, serif;
 }
 
@@ -83,6 +101,12 @@ html {
 
 body {
 	min-width: 320px;
+}
+
+h2,
+p,
+span {
+	font-family: var(--font-readable);
 }
 
 .nav-logo {

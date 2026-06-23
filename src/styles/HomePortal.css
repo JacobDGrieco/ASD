@@ -93,10 +93,6 @@
 	animation: portal-panel-before-exit 0.42s ease forwards;
 }
 
-.portal-home-expanding .portal-panel-active::after {
-	animation: portal-panel-chrome-exit 0.42s ease forwards;
-}
-
 @keyframes portal-panel-expand {
 	0% {
 		top: var(--portal-start-top);
@@ -145,16 +141,6 @@
 @keyframes portal-panel-before-exit {
 	from {
 		opacity: 0.46;
-	}
-
-	to {
-		opacity: 0;
-	}
-}
-
-@keyframes portal-panel-chrome-exit {
-	from {
-		opacity: 1;
 	}
 
 	to {
@@ -255,6 +241,10 @@
 	gap: 14px;
 }
 
+.portal-panel-music .portal-panel-content {
+	justify-content: flex-start;
+}
+
 .portal-panel-label {
 	font-family: var(--font-display);
 	font-size: clamp(4.8rem, 12vw, 14rem);
@@ -301,66 +291,6 @@
 	border-color: rgba(242, 234, 220, 0.54);
 	background: rgba(200, 169, 110, 0.18);
 	transform: translateY(-2px);
-}
-
-/* Portal ring - oval window into the destination world (Portal/Sonic ring influence) */
-.portal-panel::after {
-	content: "";
-	position: absolute;
-	left: 50%;
-	top: 42%;
-	transform: translate(-50%, -50%) scale(0.86);
-	width: clamp(110px, 18vw, 260px);
-	height: clamp(190px, 44vh, 500px);
-	border: 1.5px solid rgba(200, 169, 110, 0.14);
-	border-radius: 50%;
-	box-shadow:
-		0 0 28px rgba(200, 169, 110, 0.05),
-		inset 0 0 20px rgba(200, 169, 110, 0.03);
-	opacity: 0.55;
-	transition:
-		transform 0.52s cubic-bezier(0.16, 0.84, 0.26, 1),
-		border-color 0.52s ease,
-		box-shadow 0.52s ease,
-		opacity 0.4s ease;
-	pointer-events: none;
-	z-index: 3;
-}
-
-.portal-panel-active::after {
-	transform: translate(-50%, -50%) scale(1.06);
-	border-color: rgba(200, 169, 110, 0.56);
-	box-shadow:
-		0 0 0 1px rgba(200, 169, 110, 0.07),
-		0 0 50px rgba(200, 169, 110, 0.22),
-		0 0 96px rgba(200, 169, 110, 0.11),
-		inset 0 0 38px rgba(200, 169, 110, 0.08);
-	opacity: 1;
-	animation: portal-ring-breathe 2.6s ease-in-out infinite;
-}
-
-.portal-panel-compressed::after {
-	transform: translate(-50%, -50%) scale(0.72);
-	border-color: rgba(200, 169, 110, 0.04);
-	opacity: 0.25;
-}
-
-@keyframes portal-ring-breathe {
-	0%, 100% {
-		box-shadow:
-			0 0 0 1px rgba(200, 169, 110, 0.07),
-			0 0 50px rgba(200, 169, 110, 0.22),
-			0 0 96px rgba(200, 169, 110, 0.11),
-			inset 0 0 38px rgba(200, 169, 110, 0.08);
-	}
-
-	50% {
-		box-shadow:
-			0 0 0 2px rgba(200, 169, 110, 0.1),
-			0 0 72px rgba(200, 169, 110, 0.34),
-			0 0 134px rgba(200, 169, 110, 0.17),
-			inset 0 0 52px rgba(200, 169, 110, 0.13);
-	}
 }
 
 /* Divider between panels takes on a portal-energy glow when either panel is active */
@@ -528,10 +458,6 @@
 }
 
 @media (max-width: 860px) {
-	.portal-panel::after {
-		display: none;
-	}
-
 	.portal-home {
 		flex-direction: column;
 	}
@@ -608,7 +534,6 @@
 
 @media (prefers-reduced-motion: reduce) {
 	.portal-panel,
-	.portal-panel::after,
 	.portal-preview,
 	.portal-panel-content,
 	.portal-panel-shade,

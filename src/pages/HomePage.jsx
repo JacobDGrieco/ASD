@@ -173,7 +173,6 @@ export default function HomePage() {
 						<span className="portal-panel-content" aria-hidden="true">
 							<span className="portal-panel-label">{section.label}</span>
 							<span className="portal-panel-description">{section.description}</span>
-							<span className="portal-panel-action">Enter {section.label}</span>
 						</span>
 						<button
 							type="button"
