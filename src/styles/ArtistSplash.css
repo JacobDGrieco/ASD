@@ -1,11 +1,12 @@
 .artist-splash-splash {
 	position: relative;
-	min-height: 100dvh;
+	min-height: calc(100dvh - var(--nav-height));
 	display: flex;
 	align-items: flex-end;
-	padding: 100px 40px 0;
+	padding: 24px 40px 0;
 	background: #050505;
 	overflow: hidden;
+	view-transition-name: music-splash;
 }
 
 .artist-splash-video {
@@ -23,6 +24,54 @@
 	background:
 		linear-gradient(180deg, rgba(3, 3, 3, 0.3) 0%, rgba(3, 3, 3, 0.5) 48%, rgba(3, 3, 3, 0.92) 100%),
 		radial-gradient(circle at top center, rgba(255, 255, 255, 0.08), transparent 45%);
+}
+
+.artist-splash-tagline {
+	position: absolute;
+	top: 38%;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 2;
+	margin: 0;
+	padding: 0 20px;
+	color: rgba(232, 218, 190, 0.52);
+	font-family: var(--font-nav-tab);
+	font-size: clamp(0.68rem, 1.1vw, 0.88rem);
+	font-weight: 400;
+	letter-spacing: 0.28em;
+	line-height: 1;
+	text-align: center;
+	text-transform: uppercase;
+	white-space: nowrap;
+	pointer-events: none;
+	opacity: 0;
+	animation: artist-splash-tagline-in 1.2s 0.6s cubic-bezier(0.16, 0.84, 0.26, 1) forwards;
+}
+
+@keyframes artist-splash-tagline-in {
+	from {
+		opacity: 0;
+		transform: translateX(-50%) translateY(8px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateX(-50%) translateY(0);
+	}
+}
+
+/* Already saw this content in the portal preview — skip re-animating it */
+.artist-splash-from-portal .artist-splash-tagline,
+.artist-splash-from-portal .artist-splash-card {
+	opacity: 1;
+	animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.artist-splash-tagline {
+		opacity: 1;
+		animation: none;
+	}
 }
 
 .artist-splash-rail {
@@ -290,7 +339,7 @@
 
 @media (max-width: 900px) {
 	.artist-splash-splash {
-		padding: 88px 20px 0;
+		padding: 20px 20px 0;
 	}
 
 	.artist-splash-rail {
@@ -340,8 +389,8 @@
 
 @media (max-width: 640px) {
 	.artist-splash-splash {
-		min-height: 100dvh;
-		padding: 76px 16px 0;
+		min-height: calc(100dvh - var(--nav-height));
+		padding: 18px 16px 0;
 	}
 
 	.artist-splash-rail {

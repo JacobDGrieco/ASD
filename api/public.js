@@ -820,6 +820,167 @@ async function getRecordPlayer(res, includeHidden = false) {
   }
 }
 
+function publicFashionTalentSelect() {
+  return {
+    id: true,
+    name: true,
+    slug: true,
+    role: true,
+    isVisible: true,
+    order: true,
+    bio: true,
+    instagramProfile: true,
+    email: true,
+    website: true,
+    agencyName: true,
+    agencyContact: true,
+    images: {
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+      select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+    },
+  }
+}
+
+function formatFashionTalent(talent) {
+  return { ...talent, images: clientImages(talent.images ?? []) }
+}
+
+function formatFashionCredit(credit) {
+  return {
+    id: credit.id,
+    roleLabel: credit.roleLabel,
+    talent: credit.talent ? { id: credit.talent.id, name: credit.talent.name, slug: credit.talent.slug, role: credit.talent.role } : null,
+  }
+}
+
+function formatFashionPiece(piece, lookCredits) {
+  const credits = (piece.credits ?? []).length ? piece.credits.map(formatFashionCredit) : lookCredits
+  return {
+    id: piece.id,
+    name: piece.name,
+    buyUrl: piece.buyUrl,
+    image: piece.imageUrl ? clientImages([{ id: `${piece.id}-image`, url: piece.imageUrl, pathname: piece.pathname, usage: 'piece', altText: piece.name, sortOrder: 0, isPrimary: true }])[0] : null,
+    credits,
+  }
+}
+
+function formatFashionLook(look) {
+  const lookCredits = (look.credits ?? []).map(formatFashionCredit)
+  return {
+    id: look.id,
+    title: look.title,
+    slug: look.slug,
+    description: look.description,
+    isVisible: look.isVisible,
+    order: look.order,
+    images: clientImages(look.images ?? []),
+    credits: lookCredits,
+    pieces: (look.pieces ?? []).map((piece) => formatFashionPiece(piece, lookCredits)),
+  }
+}
+
+async function getFashionTalentList(res, includeHidden) {
+  setPublicCache(res)
+  const talent = await prisma.fashionTalent.findMany({
+    where: includeHidden ? undefined : { isVisible: true },
+    orderBy: { order: 'asc' },
+    select: publicFashionTalentSelect(),
+  })
+  return res.status(200).json(talent.map(formatFashionTalent))
+}
+
+async function getFashionTalent(res, slug, includeHidden) {
+  setPublicCache(res)
+  const talent = await prisma.fashionTalent.findUnique({
+    where: { slug },
+    select: {
+      ...publicFashionTalentSelect(),
+      lookCredits: {
+        orderBy: { sortOrder: 'asc' },
+        select: {
+          roleLabel: true,
+          look: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              isVisible: true,
+              images: {
+                take: 1,
+                orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+                select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  if (!talent) return res.status(404).json({ error: 'Talent not found' })
+  if (!includeHidden && !talent.isVisible) return res.status(404).json({ error: 'Talent not found' })
+
+  const featuredIn = (talent.lookCredits ?? [])
+    .filter((credit) => includeHidden || credit.look?.isVisible)
+    .map((credit) => ({
+      roleLabel: credit.roleLabel,
+      look: credit.look
+        ? {
+            id: credit.look.id,
+            title: credit.look.title,
+            slug: credit.look.slug,
+            images: clientImages(credit.look.images ?? []),
+          }
+        : null,
+    }))
+
+  const rest = { ...talent }
+  delete rest.lookCredits
+  return res.status(200).json({ ...formatFashionTalent(rest), featuredIn })
+}
+
+function includePublicLook() {
+  return {
+    images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
+    pieces: {
+      orderBy: { sortOrder: 'asc' },
+      include: {
+        credits: {
+          orderBy: { sortOrder: 'asc' },
+          include: { talent: { select: { id: true, name: true, slug: true, role: true } } },
+        },
+      },
+    },
+    credits: {
+      orderBy: { sortOrder: 'asc' },
+      include: { talent: { select: { id: true, name: true, slug: true, role: true } } },
+    },
+  }
+}
+
+async function getFashionLooksList(res, includeHidden) {
+  setPublicCache(res)
+  const looks = await prisma.fashionLook.findMany({
+    where: includeHidden ? undefined : { isVisible: true },
+    orderBy: { order: 'asc' },
+    include: includePublicLook(),
+  })
+  return res.status(200).json(looks.map(formatFashionLook))
+}
+
+async function getFashionLook(res, slug, includeHidden) {
+  setPublicCache(res)
+  const look = await prisma.fashionLook.findUnique({
+    where: { slug },
+    include: includePublicLook(),
+  })
+
+  if (!look) return res.status(404).json({ error: 'Look not found' })
+  if (!includeHidden && !look.isVisible) return res.status(404).json({ error: 'Look not found' })
+
+  return res.status(200).json(formatFashionLook(look))
+}
+
 async function getBoardPosts(res) {
   setPublicCache(res)
   const now = new Date()
@@ -875,6 +1036,10 @@ export default async function handler(req, res) {
   if (resource === 'crosshair') return getCrosshairVideos(res)
   if (resource === 'recordPlayer') return getRecordPlayer(res, includeHidden)
   if (resource === 'boardPosts') return getBoardPosts(res)
+  if (resource === 'fashionTalentList') return getFashionTalentList(res, includeHidden)
+  if (resource === 'fashionTalent' && slug) return getFashionTalent(res, slug, includeHidden)
+  if (resource === 'fashionLooksList') return getFashionLooksList(res, includeHidden)
+  if (resource === 'fashionLook' && slug) return getFashionLook(res, slug, includeHidden)
 
   return res.status(404).json({ error: 'Not found' })
 }

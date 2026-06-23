@@ -1,207 +1,193 @@
-import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { prefetchApi, useApi } from '../hooks/useApi.js';
-import ArtistSplash from '../components/home/ArtistSplash.jsx';
-import RecordPlayer from '../components/home/RecordPlayer.jsx';
-import AlbumCard from '../components/artist/AlbumCard.jsx';
-import AuroraBackground from '../components/shared/AuroraBackground.jsx';
-import { buildAlbumPath, buildSongPath } from '../lib/publicVisibility.js';
-import { useAdminAuth } from '../lib/adminAuth.jsx';
-import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js';
-import '../styles/HomePage.css';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import MusicHomePreview, { portalMusicVideoRef } from '../components/home/MusicHomePreview.jsx';
+import FashionHomePreview from '../components/home/FashionHomePreview.jsx';
+import { storePortalVideoTime, storePortalVideoElement } from '../lib/portalVideoTime.js';
+import '../styles/HomePortal.css';
 
-void prefetchApi('/api/artists');
-void prefetchApi('/api/record-player');
+const EXPAND_MS = 820;
 
-const LEGAL_POLICIES = [
-	// {
-	// 	key: 'terms',
-	// 	label: 'Terms of Service',
-	// 	to: '/terms-of-service',
-	// },
+const SECTIONS = [
 	{
-		key: 'privacy',
-		label: 'Privacy Policy',
-		to: '/privacy-policy',
+		key: 'music',
+		label: 'Music',
+		path: '/music',
+		description: 'Artists, releases, videos, and the living record-player catalog.',
+		Preview: MusicHomePreview,
+	},
+	{
+		key: 'fashion',
+		label: 'Fashion',
+		path: '/fashion',
+		description: 'Talent profiles, editorial looks, and shoppable catalogue pieces.',
+		Preview: FashionHomePreview,
 	},
 ];
 
-export function getHomePageApiMessage(isDev) {
-	if (isDev) {
-		return 'The frontend dev server is up, but the API is not reachable. Start `npm run dev:vercel` in another terminal so `/api` can proxy to the local Vercel functions on port 3000, or use `npm run dev:vercel` by itself.';
-	}
+function useMediaQuery(query) {
+	const [matches, setMatches] = useState(() => (
+		typeof window !== 'undefined' ? window.matchMedia(query).matches : false
+	));
 
-	return 'The frontend loaded, but the site could not reach its API routes. This usually means the deployment is missing environment variables, database access, or a failing serverless function.';
+	useEffect(() => {
+		const mediaQuery = window.matchMedia(query);
+		const updateMatches = () => setMatches(mediaQuery.matches);
+
+		updateMatches();
+		mediaQuery.addEventListener('change', updateMatches);
+
+		return () => mediaQuery.removeEventListener('change', updateMatches);
+	}, [query]);
+
+	return matches;
 }
 
-function HomeHeroPlaceholder() {
-	return (
-		<section className="home-shell home-shell-hero" aria-hidden="true">
-			<div className="home-shell-overlay" />
-			<div className="home-shell-artist-row">
-				{Array.from({ length: 5 }, (_, index) => (
-					<div key={index} className="home-shell-artist-card" />
-				))}
-			</div>
-		</section>
-	);
-}
+function getScrollbarWidth() {
+	const measuredWidth = window.innerWidth - document.documentElement.clientWidth;
+	if (measuredWidth > 0) return measuredWidth;
 
-function HomeRecordPlayerPlaceholder() {
-	return (
-		<section className="home-shell home-shell-record-player" aria-hidden="true">
-			<div className="home-shell-record-player-inner">
-				<div className="home-shell-turntable" />
-				<div className="home-shell-rack">
-					{Array.from({ length: 8 }, (_, index) => (
-						<div key={index} className="home-shell-record" />
-					))}
-				</div>
-			</div>
-		</section>
-	);
-}
+	const probe = document.createElement('div');
+	probe.style.position = 'absolute';
+	probe.style.top = '-9999px';
+	probe.style.width = '100px';
+	probe.style.height = '100px';
+	probe.style.overflow = 'scroll';
+	document.body.appendChild(probe);
+	const scrollbarWidth = probe.offsetWidth - probe.clientWidth;
+	probe.remove();
 
-function HomeLegalFooter() {
-	const currentYear = new Date().getFullYear();
-
-	return (
-		<>
-			<footer className="home-legal" aria-label="Site legal">
-				<nav className="home-legal-links" aria-label="Legal links">
-					<a href="#" className="home-legal-link termly-display-preferences">Consent Preferences</a>
-					{LEGAL_POLICIES.map((policy) => (
-						<Link
-							key={policy.key}
-							className="home-legal-link"
-							to={policy.to}
-						>
-							{policy.label}
-						</Link>
-					))}
-				</nav>
-				<p className="home-legal-copy">&copy; {currentYear} ASD Records. All site content &copy; respective artists. | Built by HeadInTheCloudsHaven LLC.</p>
-			</footer>
-		</>
-	);
+	return Math.max(scrollbarWidth, 0);
 }
 
 export default function HomePage() {
-	const { session, token } = useAdminAuth();
-	const adminPreview = isAdminPreviewSession(session, token);
-	const artistHeaders = useMemo(() => publicPreviewHeaders(adminPreview ? token : null), [adminPreview, token]);
-	const artistApiUrl = '/api/artists';
-	const recordApiUrl = '/api/record-player';
-	const {
-		data: artists,
-		loading: artistsLoading,
-		error: artistsError,
-	} = useApi(artistApiUrl, {
-		refreshAtUtcMidnight: true,
-		headers: artistHeaders,
-		cacheKey: publicPreviewCacheKey(artistApiUrl, adminPreview),
-	});
-	const {
-		data: tracks,
-		loading: tracksLoading,
-		error: tracksError,
-	} = useApi(recordApiUrl, {
-		refreshAtUtcMidnight: true,
-		headers: artistHeaders,
-		cacheKey: publicPreviewCacheKey(recordApiUrl, adminPreview),
-	});
-	const apiMessage = getHomePageApiMessage(import.meta.env.DEV);
+	const navigate = useNavigate();
+	const [hoveredKey, setHoveredKey] = useState(null);
+	const [expandingKey, setExpandingKey] = useState(null);
+	const [expandingFrame, setExpandingFrame] = useState(null);
+	const panelRefs = useRef({});
+	const hasHover = useMediaQuery('(hover: hover)');
+	const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+	const activeKey = expandingKey || hoveredKey;
 
-	const latestReleases = useMemo(() => {
-		return (artists ?? [])
-			.flatMap((artist) =>
-				(artist.albums ?? []).map((album) => ({
-					...album,
-					artist,
-				}))
-			)
-			.sort((left, right) => new Date(right.releaseDate).getTime() - new Date(left.releaseDate).getTime())
-			.slice(0, 8);
-	}, [artists]);
+	const sections = useMemo(() => SECTIONS, []);
 
-	if ((artistsError || tracksError) && !artists && !tracks) {
-		return (
-			<div className="page aurora-page">
-				<AuroraBackground />
-				<div className="aurora-page-content home-status">
-					<div className="home-status__panel">
-						<p className="home-status__eyebrow">Content unavailable</p>
-						<h1>Local API requests failed.</h1>
-						<p>{apiMessage}</p>
-						<p className="home-status__detail">
-							Artists request: {artistsError ?? 'ok'}
-							<br />
-							Record player request: {tracksError ?? 'ok'}
-						</p>
-					</div>
-				</div>
-			</div>
-		);
-	}
+	const getExpansionFrame = (section) => {
+		const panel = panelRefs.current[section.key];
+		if (!panel) return null;
+
+		const rect = panel.getBoundingClientRect();
+		const navRect = document.querySelector('.nav-nav')?.getBoundingClientRect();
+		const targetTop = Math.max(0, navRect?.bottom ?? 0);
+		const targetWidth = Math.max(window.innerWidth - getScrollbarWidth(), 1);
+		const targetHeight = Math.max(window.innerHeight - targetTop, 1);
+		const isStacked = window.matchMedia('(max-width: 860px)').matches;
+		const bounceDistance = isStacked ? 14 : 20;
+		let bounceLeft = rect.left;
+		let bounceTop = rect.top;
+		let bounceWidth = rect.width;
+		let bounceHeight = rect.height;
+
+		if (isStacked) {
+			if (section.key === 'music') {
+				bounceHeight = Math.max(rect.height - bounceDistance, 1);
+			} else {
+				bounceTop = rect.top + bounceDistance;
+				bounceHeight = Math.max(rect.height - bounceDistance, 1);
+			}
+		} else if (section.key === 'music') {
+			bounceWidth = Math.max(rect.width - bounceDistance, 1);
+		} else {
+			bounceLeft = rect.left + bounceDistance;
+			bounceWidth = Math.max(rect.width - bounceDistance, 1);
+		}
+
+		return {
+			'--portal-start-left': `${rect.left}px`,
+			'--portal-start-top': `${rect.top}px`,
+			'--portal-start-width': `${rect.width}px`,
+			'--portal-start-height': `${rect.height}px`,
+			'--portal-bounce-left': `${bounceLeft}px`,
+			'--portal-bounce-top': `${bounceTop}px`,
+			'--portal-bounce-width': `${bounceWidth}px`,
+			'--portal-bounce-height': `${bounceHeight}px`,
+			'--portal-target-left': '0px',
+			'--portal-target-top': `${targetTop}px`,
+			'--portal-target-width': `${targetWidth}px`,
+			'--portal-target-height': `${targetHeight}px`,
+			'--portal-preview-width': `${targetWidth}px`,
+		};
+	};
+
+	const enterSection = (section) => {
+		if (section.key === 'music' && portalMusicVideoRef.current) {
+			storePortalVideoTime(portalMusicVideoRef.current.currentTime);
+			storePortalVideoElement(portalMusicVideoRef.current);
+		}
+
+		if (prefersReducedMotion) {
+			navigate(section.path);
+			return;
+		}
+
+		const nextExpansionFrame = getExpansionFrame(section);
+		if (!nextExpansionFrame) {
+			navigate(section.path);
+			return;
+		}
+
+		setExpandingFrame(nextExpansionFrame);
+		setExpandingKey(section.key);
+		window.setTimeout(() => {
+			if (document.startViewTransition) {
+				document.startViewTransition(() => {
+					flushSync(() => navigate(section.path));
+				});
+			} else {
+				navigate(section.path);
+			}
+		}, EXPAND_MS);
+	};
 
 	return (
-		<div className="page aurora-page">
-			<AuroraBackground />
-			<div className="aurora-page-content home-page-content">
-				<div className="home-stage">
-					{artists?.length ? <ArtistSplash artists={artists} /> : artistsLoading ? <HomeHeroPlaceholder /> : null}
-					{tracksLoading ? (
-						<HomeRecordPlayerPlaceholder />
-					) : (
-						<RecordPlayer
-							tracks={tracks ?? []}
-							message={tracksError ? 'The home page could not load record-player tracks from the API.' : null}
-						/>
-					)}
-				</div>
-				<section className="home-about">
-					<div className="home-about-copy">
-						<h2 className="home-about-title">Independent music from the underground.</h2>
-						<p>
-							ASD Records is an independent collective built around artists who move outside the expected lane.
-							Each release is shaped with a hands-on approach, from early demos to the final visual world around it.
-						</p>
-						<p>
-							The catalog spans intimate singles, sharper experimental projects, and collaborative drops that keep the label rooted in its own scene instead of chasing a template.
-						</p>
-					</div>
-					<div className="home-latest home-latest-inline">
-						{latestReleases.length > 0 ? (
-							<div className="home-latest-row" aria-label="Latest albums">
-								{latestReleases.map((album) => {
-									const singleSong = album.type === 'SINGLE' && album.songs?.length === 1 ? album.songs[0] : null;
-									const to = singleSong
-										? buildSongPath({ song: singleSong, allowHidden: adminPreview })
-										: buildAlbumPath({ album, allowHidden: adminPreview });
+		<main className={`portal-home ${expandingKey ? 'portal-home-expanding' : ''}`}>
+			{sections.map((section) => {
+				const Preview = section.Preview;
+				const isActive = activeKey === section.key;
+				const isCompressed = activeKey && activeKey !== section.key;
 
-									return (
-										<AlbumCard
-											key={album.id}
-											album={album}
-											subtitle={album.artist?.name}
-											to={to}
-										/>
-									);
-								})}
-							</div>
-						) : artistsLoading ? (
-							<div className="home-latest-row home-latest-row-loading" aria-hidden="true">
-								{Array.from({ length: 8 }, (_, index) => (
-									<div key={index} className="home-latest-card-placeholder" />
-								))}
-							</div>
-						) : (
-							<div className="home-latest-empty">Latest albums will appear here once public catalog data is available.</div>
-						)}
-					</div>
-				</section>
-				<HomeLegalFooter />
-			</div>
-		</div>
+				return (
+					<motion.div
+						key={section.key}
+						className={`portal-panel portal-panel-${section.key} ${isActive ? 'portal-panel-active' : ''} ${isCompressed ? 'portal-panel-compressed' : ''}`.trim()}
+						ref={(element) => {
+							panelRefs.current[section.key] = element;
+						}}
+						style={expandingKey === section.key && expandingFrame ? expandingFrame : undefined}
+						animate={{ flex: isActive ? 1.38 : isCompressed ? 0.62 : 1 }}
+						transition={{ duration: 0.46, ease: [0.16, 0.84, 0.26, 1] }}
+					>
+						<Preview />
+						<span className="portal-panel-shade" aria-hidden="true" />
+						<span className="portal-panel-content" aria-hidden="true">
+							<span className="portal-panel-label">{section.label}</span>
+							<span className="portal-panel-description">{section.description}</span>
+							<span className="portal-panel-action">Enter {section.label}</span>
+						</span>
+						<button
+							type="button"
+							className="portal-panel-overlay"
+							aria-label={`Enter ${section.label}`}
+							onMouseEnter={() => hasHover && !expandingKey && setHoveredKey(section.key)}
+							onMouseLeave={() => hasHover && !expandingKey && setHoveredKey(null)}
+							onFocus={() => hasHover && !expandingKey && setHoveredKey(section.key)}
+							onBlur={() => hasHover && !expandingKey && setHoveredKey(null)}
+							onClick={() => enterSection(section)}
+						/>
+					</motion.div>
+				);
+			})}
+		</main>
 	);
 }

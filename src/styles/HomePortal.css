@@ -1,0 +1,620 @@
+.portal-home {
+	min-height: calc(100dvh - var(--nav-height));
+	display: flex;
+	background: #050505;
+	color: #f2eadc;
+	overflow: hidden;
+	isolation: isolate;
+}
+
+.portal-panel {
+	position: relative;
+	min-width: 0;
+	min-height: calc(100dvh - var(--nav-height));
+	padding: clamp(28px, 4vw, 64px);
+	border: 0;
+	border-right: 1px solid rgba(255, 255, 255, 0.12);
+	background: #050505;
+	color: inherit;
+	text-align: left;
+	overflow: hidden;
+	cursor: pointer;
+	isolation: isolate;
+}
+
+.portal-panel:last-child {
+	border-right: 0;
+}
+
+.portal-panel::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	background:
+		radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.12), transparent 38%),
+		linear-gradient(180deg, rgba(5, 5, 5, 0.14), rgba(5, 5, 5, 0.84));
+	opacity: 0.72;
+	transition: opacity 0.36s ease;
+}
+
+.portal-panel-music {
+	background:
+		linear-gradient(160deg, rgba(12, 9, 6, 0.92), rgba(5, 5, 5, 1) 66%),
+		#050505;
+}
+
+.portal-panel-fashion {
+	background:
+		linear-gradient(155deg, rgba(26, 20, 18, 0.98), rgba(7, 7, 7, 1) 64%),
+		#070707;
+}
+
+.portal-panel-active::before {
+	opacity: 0.46;
+}
+
+.portal-panel-compressed .portal-preview {
+	filter: grayscale(1) brightness(0.58);
+	transform: scale(0.96);
+}
+
+.portal-home-expanding .portal-panel-active {
+	position: fixed;
+	top: var(--portal-start-top);
+	left: var(--portal-start-left);
+	z-index: 90;
+	width: var(--portal-start-width);
+	height: var(--portal-start-height);
+	min-height: 0;
+	animation: portal-panel-expand 0.82s cubic-bezier(0.16, 0.84, 0.22, 1) forwards;
+	will-change: top, left, width, height;
+}
+
+.portal-home-expanding .portal-panel-compressed {
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.22s ease;
+}
+
+.portal-home-expanding .portal-panel-overlay {
+	pointer-events: none;
+}
+
+.portal-home-expanding .portal-panel-active .portal-panel-content {
+	animation: portal-panel-content-exit 0.34s ease forwards;
+}
+
+.portal-home-expanding .portal-panel-active .portal-panel-shade {
+	animation: portal-panel-shade-exit 0.54s ease forwards;
+}
+
+.portal-home-expanding .portal-panel-active::before {
+	animation: portal-panel-before-exit 0.42s ease forwards;
+}
+
+.portal-home-expanding .portal-panel-active::after {
+	animation: portal-panel-chrome-exit 0.42s ease forwards;
+}
+
+@keyframes portal-panel-expand {
+	0% {
+		top: var(--portal-start-top);
+		left: var(--portal-start-left);
+		width: var(--portal-start-width);
+		height: var(--portal-start-height);
+	}
+
+	16% {
+		top: var(--portal-bounce-top);
+		left: var(--portal-bounce-left);
+		width: var(--portal-bounce-width);
+		height: var(--portal-bounce-height);
+	}
+
+	to {
+		top: var(--portal-target-top);
+		left: var(--portal-target-left);
+		width: var(--portal-target-width);
+		height: var(--portal-target-height);
+	}
+}
+
+@keyframes portal-panel-content-exit {
+	from {
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	to {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+}
+
+@keyframes portal-panel-shade-exit {
+	from {
+		opacity: 1;
+	}
+
+	to {
+		opacity: 0;
+	}
+}
+
+@keyframes portal-panel-before-exit {
+	from {
+		opacity: 0.46;
+	}
+
+	to {
+		opacity: 0;
+	}
+}
+
+@keyframes portal-panel-chrome-exit {
+	from {
+		opacity: 1;
+	}
+
+	to {
+		opacity: 0;
+	}
+}
+
+.portal-preview {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	transition:
+		filter 0.42s ease,
+		transform 0.42s ease;
+}
+
+/* Live full-size preview — renders the destination page content at 100vw,
+   centered in the panel via left:50%+translateX(-50%). As the panel expands
+   from ~50vw to 100vw during click, the inner naturally fills the panel. */
+.portal-live-preview {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	pointer-events: none;
+	z-index: 0;
+}
+
+.portal-live-preview-inner {
+	position: absolute;
+	top: 0;
+	left: 50%;
+	width: var(--portal-preview-width, 100vw);
+	height: 100%;
+	transform: translateX(-50%);
+}
+
+.portal-preview-music .portal-live-preview-inner {
+	view-transition-name: music-splash;
+}
+
+/* Keep view transition snappy — the 640ms expansion already provided visual context */
+@media (prefers-reduced-motion: no-preference) {
+	::view-transition-group(music-splash) {
+		animation-duration: 1ms;
+	}
+
+	::view-transition-old(root),
+	::view-transition-new(root) {
+		animation-duration: 1ms;
+	}
+}
+
+/* Override nav-height padding since there's no nav in the portal preview */
+.portal-live-preview-inner .fashion-page-content {
+	padding-top: 40px;
+}
+
+/* Keep rail from scrolling inside the portal preview */
+.portal-rail-window {
+	overflow-x: hidden;
+}
+
+/* Transparent full-panel click target sits above the live preview */
+.portal-panel-overlay {
+	position: absolute;
+	inset: 0;
+	z-index: 10;
+	border: 0;
+	background: transparent;
+	cursor: pointer;
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.portal-panel-overlay:focus-visible {
+	outline: 2px solid rgba(200, 169, 110, 0.78);
+	outline-offset: -8px;
+}
+
+.portal-panel-shade {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	background:
+		linear-gradient(180deg, rgba(0, 0, 0, 0.0) 40%, rgba(0, 0, 0, 0.72) 100%),
+		linear-gradient(90deg, rgba(0, 0, 0, 0.12), transparent 42%, rgba(0, 0, 0, 0.08));
+	pointer-events: none;
+}
+
+.portal-panel-content {
+	position: relative;
+	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	min-height: calc(100dvh - var(--nav-height) - clamp(56px, 8vw, 128px));
+	max-width: 520px;
+	gap: 14px;
+}
+
+.portal-panel-label {
+	font-family: var(--font-display);
+	font-size: clamp(4.8rem, 12vw, 14rem);
+	line-height: 0.78;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	text-shadow: 0 24px 64px rgba(0, 0, 0, 0.62);
+	transition: transform 0.36s ease;
+}
+
+.portal-panel-active .portal-panel-label {
+	transform: translateY(-6px);
+}
+
+.portal-panel-description {
+	max-width: 34rem;
+	color: rgba(242, 234, 220, 0.72);
+	font-family: var(--font-description);
+	font-size: clamp(0.98rem, 1.35vw, 1.35rem);
+	line-height: 1.65;
+}
+
+.portal-panel-action {
+	width: max-content;
+	margin-top: 8px;
+	padding: 12px 18px;
+	border: 1px solid rgba(242, 234, 220, 0.28);
+	color: #f7eddc;
+	font-family: var(--font-nav-tab);
+	font-size: 0.78rem;
+	letter-spacing: 0.14em;
+	line-height: 1;
+	text-transform: uppercase;
+	background: rgba(5, 5, 5, 0.38);
+	backdrop-filter: blur(10px);
+	transition:
+		background 0.24s ease,
+		border-color 0.24s ease,
+		transform 0.24s ease;
+}
+
+.portal-panel:hover .portal-panel-action,
+.portal-panel:has(.portal-panel-overlay:focus-visible) .portal-panel-action {
+	border-color: rgba(242, 234, 220, 0.54);
+	background: rgba(200, 169, 110, 0.18);
+	transform: translateY(-2px);
+}
+
+/* Portal ring - oval window into the destination world (Portal/Sonic ring influence) */
+.portal-panel::after {
+	content: "";
+	position: absolute;
+	left: 50%;
+	top: 42%;
+	transform: translate(-50%, -50%) scale(0.86);
+	width: clamp(110px, 18vw, 260px);
+	height: clamp(190px, 44vh, 500px);
+	border: 1.5px solid rgba(200, 169, 110, 0.14);
+	border-radius: 50%;
+	box-shadow:
+		0 0 28px rgba(200, 169, 110, 0.05),
+		inset 0 0 20px rgba(200, 169, 110, 0.03);
+	opacity: 0.55;
+	transition:
+		transform 0.52s cubic-bezier(0.16, 0.84, 0.26, 1),
+		border-color 0.52s ease,
+		box-shadow 0.52s ease,
+		opacity 0.4s ease;
+	pointer-events: none;
+	z-index: 3;
+}
+
+.portal-panel-active::after {
+	transform: translate(-50%, -50%) scale(1.06);
+	border-color: rgba(200, 169, 110, 0.56);
+	box-shadow:
+		0 0 0 1px rgba(200, 169, 110, 0.07),
+		0 0 50px rgba(200, 169, 110, 0.22),
+		0 0 96px rgba(200, 169, 110, 0.11),
+		inset 0 0 38px rgba(200, 169, 110, 0.08);
+	opacity: 1;
+	animation: portal-ring-breathe 2.6s ease-in-out infinite;
+}
+
+.portal-panel-compressed::after {
+	transform: translate(-50%, -50%) scale(0.72);
+	border-color: rgba(200, 169, 110, 0.04);
+	opacity: 0.25;
+}
+
+@keyframes portal-ring-breathe {
+	0%, 100% {
+		box-shadow:
+			0 0 0 1px rgba(200, 169, 110, 0.07),
+			0 0 50px rgba(200, 169, 110, 0.22),
+			0 0 96px rgba(200, 169, 110, 0.11),
+			inset 0 0 38px rgba(200, 169, 110, 0.08);
+	}
+
+	50% {
+		box-shadow:
+			0 0 0 2px rgba(200, 169, 110, 0.1),
+			0 0 72px rgba(200, 169, 110, 0.34),
+			0 0 134px rgba(200, 169, 110, 0.17),
+			inset 0 0 52px rgba(200, 169, 110, 0.13);
+	}
+}
+
+/* Divider between panels takes on a portal-energy glow when either panel is active */
+.portal-home:has(.portal-panel-active) .portal-panel-music {
+	border-right-color: rgba(200, 169, 110, 0.24);
+	box-shadow: 2px 0 22px rgba(200, 169, 110, 0.1);
+}
+
+.portal-music-stage {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	padding: 18vh 6vw 28vh;
+	background:
+		linear-gradient(180deg, rgba(3, 3, 3, 0.1), rgba(3, 3, 3, 0.88)),
+		radial-gradient(circle at 50% 32%, rgba(200, 169, 110, 0.16), transparent 36%);
+}
+
+.portal-music-tagline {
+	position: absolute;
+	top: 36%;
+	left: 50%;
+	transform: translateX(-50%);
+	width: max-content;
+	color: rgba(232, 218, 190, 0.38);
+	font-family: var(--font-nav-tab);
+	font-size: clamp(0.54rem, 0.9vw, 0.8rem);
+	letter-spacing: 0.28em;
+	text-transform: uppercase;
+}
+
+.portal-music-video {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	opacity: 0.48;
+	filter: grayscale(0.42) brightness(0.66);
+}
+
+.portal-music-artists {
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	gap: clamp(8px, 1.3vw, 18px);
+	width: min(100%, 760px);
+}
+
+.portal-music-artist-card {
+	width: clamp(78px, 10vw, 168px);
+	height: clamp(170px, 28vh, 340px);
+	border-radius: 18px;
+	background:
+		linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.02)),
+		url('https://picsum.photos/seed/asd-portal-music/420/620') center / cover;
+	box-shadow: 0 26px 70px rgba(0, 0, 0, 0.52);
+	transform: translateY(calc(var(--portal-preview-index) * -10px));
+	filter: grayscale(0.76) brightness(0.72);
+	overflow: hidden;
+}
+
+.portal-music-artist-card span {
+	display: block;
+	padding: 12px;
+	color: transparent;
+	font-family: var(--font-artist-name);
+	font-size: clamp(1.2rem, 3vw, 3rem);
+	text-shadow: 0 0 0 rgba(247, 237, 220, 0.82);
+	transform: rotate(-7deg) translateY(12px);
+}
+
+.portal-record-preview {
+	position: absolute;
+	right: clamp(28px, 6vw, 120px);
+	bottom: clamp(48px, 10vh, 120px);
+	display: flex;
+	align-items: flex-end;
+	gap: 22px;
+	opacity: 0.54;
+}
+
+.portal-turntable-preview {
+	position: relative;
+	width: clamp(130px, 16vw, 230px);
+	aspect-ratio: 1 / 1;
+	border-radius: 24px;
+	background: rgba(255, 255, 255, 0.06);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.portal-record-disc {
+	position: absolute;
+	inset: 17%;
+	border-radius: 50%;
+	background:
+		radial-gradient(circle, #c8a96e 0 8%, #111 9% 58%, #080808 59%),
+		#111;
+}
+
+.portal-tonearm {
+	position: absolute;
+	right: 18%;
+	top: 18%;
+	width: 9px;
+	height: 52%;
+	border-radius: 999px;
+	background: rgba(242, 234, 220, 0.34);
+	transform: rotate(32deg);
+	transform-origin: top;
+}
+
+.portal-record-stack {
+	display: grid;
+	gap: 7px;
+}
+
+.portal-record-stack span {
+	width: clamp(52px, 6vw, 84px);
+	aspect-ratio: 1 / 1.18;
+	border-radius: 10px;
+	background: rgba(242, 234, 220, 0.12);
+}
+
+.portal-fashion-runway {
+	position: absolute;
+	inset: 8vh 6vw 18vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: clamp(12px, 2vw, 28px);
+}
+
+.portal-fashion-frame {
+	width: clamp(118px, 16vw, 260px);
+	aspect-ratio: 3 / 4.35;
+	border-radius: 2px;
+	overflow: hidden;
+	box-shadow: 0 34px 80px rgba(0, 0, 0, 0.5);
+	transform:
+		translateY(calc((var(--portal-preview-index) - 1) * 34px))
+		rotate(calc((var(--portal-preview-index) - 1) * 4deg));
+}
+
+.portal-fashion-frame img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	filter: grayscale(0.18) contrast(1.05) brightness(0.86);
+}
+
+.portal-fashion-copy {
+	position: absolute;
+	left: clamp(28px, 5vw, 90px);
+	top: clamp(88px, 12vh, 160px);
+	display: grid;
+	gap: 10px;
+	color: rgba(242, 234, 220, 0.42);
+	font-family: var(--font-nav-tab);
+	font-size: clamp(0.62rem, 0.86vw, 0.82rem);
+	letter-spacing: 0.22em;
+	text-transform: uppercase;
+}
+
+@media (max-width: 860px) {
+	.portal-panel::after {
+		display: none;
+	}
+
+	.portal-home {
+		flex-direction: column;
+	}
+
+	.portal-panel {
+		min-height: calc((100dvh - var(--nav-height)) * 0.5);
+		border-right: 0;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+	}
+
+	.portal-panel:last-child {
+		border-bottom: 0;
+	}
+
+	.portal-panel-content {
+		min-height: calc((100dvh - var(--nav-height)) * 0.5 - 56px);
+	}
+
+	.portal-panel-label {
+		font-size: clamp(4rem, 18vw, 8rem);
+	}
+
+	.portal-panel-description {
+		max-width: 28rem;
+		font-size: 0.98rem;
+	}
+
+	.portal-music-stage {
+		padding-bottom: 12vh;
+	}
+
+	.portal-record-preview {
+		display: none;
+	}
+
+	.portal-fashion-runway {
+		inset: 4vh 8vw 9vh;
+		justify-content: flex-end;
+	}
+
+	.portal-fashion-copy {
+		display: none;
+	}
+}
+
+@media (max-width: 560px) {
+	.portal-panel {
+		padding: 24px 20px;
+	}
+
+	.portal-panel-description {
+		display: none;
+	}
+
+	.portal-panel-action {
+		font-size: 0.68rem;
+	}
+
+	.portal-music-artist-card {
+		width: 22vw;
+		height: 23vh;
+	}
+
+	.portal-fashion-frame {
+		width: 30vw;
+	}
+}
+
+@media (max-width: 860px) {
+	.portal-live-preview {
+		display: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.portal-panel,
+	.portal-panel::after,
+	.portal-preview,
+	.portal-panel-content,
+	.portal-panel-shade,
+	.portal-panel-label,
+	.portal-panel-action {
+		transition: none;
+		animation: none;
+	}
+}

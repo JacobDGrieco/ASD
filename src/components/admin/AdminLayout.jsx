@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, NavLink, Link } from 'react-router-dom';
-import { FaBullseye, FaBullhorn, FaChevronLeft, FaChevronRight, FaCompactDisc, FaMicrophoneAlt, FaMusic, FaSignOutAlt, FaUserShield, FaVideo, FaRecordVinyl } from 'react-icons/fa';
+import { FaBullseye, FaBullhorn, FaChevronLeft, FaChevronRight, FaCompactDisc, FaMicrophoneAlt, FaMusic, FaSignOutAlt, FaUserShield, FaVideo, FaRecordVinyl, FaTshirt, FaUsers } from 'react-icons/fa';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import '../../styles/AdminLayout.css';
 
@@ -39,6 +39,10 @@ export default function AdminLayout() {
 		{ to: '/admin/board', label: 'Board', icon: <FaBullhorn aria-hidden="true" /> },
 		...(!isViewer ? [{ to: '/admin/videos', label: 'Videos', icon: <FaVideo aria-hidden="true" /> }] : []),
 		...(isSuperAdminSession ? [{ to: '/admin/crosshair', label: 'Crosshair', icon: <FaBullseye aria-hidden="true" /> }] : []),
+		...(isSuperAdminSession ? [
+			{ to: '/admin/fashion/talent', label: 'Fashion Talent', icon: <FaUsers aria-hidden="true" /> },
+			{ to: '/admin/fashion/looks', label: 'Fashion Looks', icon: <FaTshirt aria-hidden="true" /> },
+		] : []),
 	];
 
 	return (

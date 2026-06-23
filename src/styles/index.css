@@ -58,7 +58,7 @@
 	--border: rgba(255, 255, 255, 0.07);
 	--radius: 4px;
 	--transition: 0.2s ease;
-	--nav-height: 94px;
+	--nav-height: 76px;
 	--font-body: 'Disko', Georgia, serif;
 	--font-display: 'Billo', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 	--font-description: 'Alba', Georgia, serif;
@@ -75,6 +75,10 @@ body {
 	line-height: 1.6;
 	min-height: 100vh;
 	overflow-x: hidden;
+}
+
+html {
+	scrollbar-gutter: stable;
 }
 
 body {
@@ -176,7 +180,7 @@ button {
 
 @media (max-width: 640px) {
 	:root {
-		--nav-height: 122px;
+		--nav-height: 132px;
 	}
 
 	html,

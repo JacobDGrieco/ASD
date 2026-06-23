@@ -5,7 +5,7 @@ import { isViewer, requireAdmin } from '../../src/lib/auth.js'
 
 const ALLOWED_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024
-const ALLOWED_FOLDERS = new Set(['artists', 'albums', 'songs', 'videos', 'board'])
+const ALLOWED_FOLDERS = new Set(['artists', 'albums', 'songs', 'videos', 'board', 'fashion-talent', 'fashion-looks', 'fashion-pieces'])
 const CONTENT_TYPE_EXTENSIONS = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
@@ -125,7 +125,11 @@ async function importImageFromUrl(body) {
         ? 'artwork'
         : folder === 'videos'
           ? 'poster'
-          : 'portrait',
+          : folder === 'fashion-looks'
+            ? 'lookbook'
+            : folder === 'fashion-pieces'
+              ? 'piece'
+              : 'portrait',
     altText,
     isPrimary: false,
   }

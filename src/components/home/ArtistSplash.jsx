@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { preloadImage, preloadImages, prefetchArtistPage } from '../../lib/publicPrefetch.js';
 import { getVideoSourceType } from '../../lib/artistVideos.js';
+import { consumePortalVideoTime, consumePortalVideoElement } from '../../lib/portalVideoTime.js';
 import '../../styles/ArtistSplash.css';
 
 const AUTO_SWAP_INTERVAL_MS = 1400;
@@ -443,15 +444,40 @@ export default function ArtistSplash({ artists }) {
 		import.meta.env.VITE_HOME_HERO_VIDEO,
 		DEFAULT_HERO_VIDEO,
 	]), []);
-	const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
+	const portalVideoElement = useRef(consumePortalVideoElement());
+	const portalTime = useRef(consumePortalVideoTime());
+	const cameFromPortal = useRef(portalVideoElement.current !== null || portalTime.current !== null);
+	const [shouldLoadVideo, setShouldLoadVideo] = useState(
+		portalVideoElement.current !== null || portalTime.current !== null,
+	);
 	const isMobileSpotlight = useMediaQuery(MOBILE_SPOTLIGHT_QUERY);
+	const videoRef = useRef(null);
+	const videoContainerRef = useRef(null);
+
+	// Move the portal's live video element into this section synchronously so it's
+	// in the DOM when the view-transition snapshot is taken (useLayoutEffect fires
+	// inside flushSync before startViewTransition captures the new state).
+	useLayoutEffect(() => {
+		const video = portalVideoElement.current;
+		const container = videoContainerRef.current;
+		if (!video || !container) return;
+		container.appendChild(video);
+		videoRef.current = video;
+		return () => {
+			portalVideoElement.current = null;
+		};
+	}, []);
 
 	useEffect(() => {
+		if (portalVideoElement.current !== null || portalTime.current !== null) {
+			return undefined;
+		}
+
 		const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		const connection = navigator.connection;
 		const shouldSkipVideo = prefersReducedMotion || connection?.saveData;
 
-		if (shouldSkipVideo) return;
+		if (shouldSkipVideo) return undefined;
 
 		const callback = () => setShouldLoadVideo(true);
 		const handle = window.requestIdleCallback
@@ -465,12 +491,24 @@ export default function ArtistSplash({ artists }) {
 			}
 			window.clearTimeout(handle);
 		};
-	}, [heroVideos]);
+	}, []);
+
+	// Seek fallback: only needed when we created a new video element (no element transfer).
+	useEffect(() => {
+		if (portalVideoElement.current !== null) return;
+		if (portalTime.current === null || !videoRef.current) return;
+		videoRef.current.currentTime = portalTime.current;
+		portalTime.current = null;
+	}, [shouldLoadVideo]);
 
 	return (
-		<section className="artist-splash-splash">
-			{shouldLoadVideo && (
+		<section className={`artist-splash-splash${cameFromPortal.current ? ' artist-splash-from-portal' : ''}`}>
+			{shouldLoadVideo && portalVideoElement.current && (
+				<div ref={videoContainerRef} aria-hidden="true" />
+			)}
+			{shouldLoadVideo && !portalVideoElement.current && (
 				<video
+					ref={videoRef}
 					className="artist-splash-video"
 					autoPlay
 					muted

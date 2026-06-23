@@ -2,7 +2,7 @@
 	display: flex;
 	gap: 40px;
 	align-items: flex-start;
-	padding: 100px 60px 40px;
+	padding: 44px 60px 40px;
 	max-width: 900px;
 	margin: 0 auto;
 }
@@ -168,7 +168,7 @@
 
 @media (max-width: 900px) {
 	.song-header-header {
-		padding: 88px 32px 32px;
+		padding: 38px 32px 32px;
 		gap: 28px;
 	}
 
@@ -186,13 +186,13 @@
 	.song-header-header {
 		align-items: center;
 		flex-direction: column;
-		padding: 116px 20px 28px;
+		padding: 32px 20px 28px;
 		gap: 22px;
 		text-align: center;
 	}
 
 	.song-header-album-header {
-		padding-top: 116px;
+		padding-top: 32px;
 	}
 
 	.song-header-media-column {

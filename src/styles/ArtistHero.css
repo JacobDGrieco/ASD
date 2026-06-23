@@ -2,7 +2,7 @@
 	display: flex;
 	gap: 60px;
 	align-items: flex-start;
-	padding: 120px 60px 60px;
+	padding: 48px 60px 60px;
 	max-width: 1200px;
 	margin: 0 auto;
 	position: relative;
@@ -189,7 +189,7 @@
 @media (max-width: 960px) {
 	.artist-hero-hero {
 		gap: 36px;
-		padding: 108px 32px 52px;
+		padding: 42px 32px 52px;
 	}
 
 	.artist-hero-portrait-wrap {
@@ -211,7 +211,7 @@
 		align-items: center;
 		flex-direction: column;
 		gap: 24px;
-		padding: 96px 20px 40px;
+		padding: 34px 20px 40px;
 		text-align: center;
 	}
 

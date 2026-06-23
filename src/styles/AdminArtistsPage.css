@@ -982,3 +982,78 @@
 		min-width: 0;
 	}
 }
+.admin-credits-field {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.admin-credits-field-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.admin-credits-field-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr auto;
+	gap: 8px;
+	align-items: center;
+}
+
+@media (max-width: 720px) {
+	.admin-credits-field-row {
+		grid-template-columns: 1fr;
+	}
+}
+
+.admin-fashion-pieces-field {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.admin-fashion-piece-card {
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	background: var(--bg-surface);
+	padding: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.admin-fashion-piece-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.admin-fashion-piece-card-title {
+	font-family: var(--font-display);
+	color: var(--text-muted);
+	font-size: 0.85rem;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.admin-fashion-piece-card-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+}
+
+@media (max-width: 720px) {
+	.admin-fashion-piece-card-row {
+		grid-template-columns: 1fr;
+	}
+}
+
+.admin-fashion-piece-card-credits-label {
+	font-size: 0.8rem;
+	color: var(--text-muted);
+	margin-top: 4px;
+}

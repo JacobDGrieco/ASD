@@ -33,8 +33,32 @@
 			"destination": "/api/public?resource=crosshair"
 		},
 		{
+			"source": "/api/fashion/talent",
+			"destination": "/api/public?resource=fashionTalentList"
+		},
+		{
+			"source": "/api/fashion/talent/:slug",
+			"destination": "/api/public?resource=fashionTalent&slug=:slug"
+		},
+		{
+			"source": "/api/fashion/looks",
+			"destination": "/api/public?resource=fashionLooksList"
+		},
+		{
+			"source": "/api/fashion/looks/:slug",
+			"destination": "/api/public?resource=fashionLook&slug=:slug"
+		},
+		{
 			"source": "/api/admin/board",
 			"destination": "/api/admin/artists?resource=board"
+		},
+		{
+			"source": "/api/admin/fashion/talent",
+			"destination": "/api/admin/fashion?resource=talent"
+		},
+		{
+			"source": "/api/admin/fashion/looks",
+			"destination": "/api/admin/fashion?resource=looks"
 		},
 		{
 			"source": "/admin",
@@ -66,6 +90,22 @@
 		},
 		{
 			"source": "/albums/:path*",
+			"destination": "/index.html"
+		},
+		{
+			"source": "/music",
+			"destination": "/index.html"
+		},
+		{
+			"source": "/music/:path*",
+			"destination": "/index.html"
+		},
+		{
+			"source": "/fashion",
+			"destination": "/index.html"
+		},
+		{
+			"source": "/fashion/:path*",
 			"destination": "/index.html"
 		},
 		{

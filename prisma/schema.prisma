@@ -310,3 +310,126 @@ model BoardPost {
   @@index([artistId])
   @@index([publishedAt])
 }
+
+model FashionTalent {
+  id               String              @id @default(cuid())
+  name             String
+  slug             String              @unique
+  role             FashionTalentRole
+  bio              String              @default("")
+  isVisible        Boolean             @default(true)
+  order            Int                 @default(0)
+  instagramProfile String?
+  email            String?
+  website          String?
+  agencyName       String?
+  agencyContact    String?
+  images           FashionTalentImage[]
+  lookCredits      FashionLookCredit[]
+  pieceCredits     FashionPieceCredit[]
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([isVisible, order])
+}
+
+model FashionTalentImage {
+  id        String        @id @default(cuid())
+  talentId  String
+  talent    FashionTalent @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  url       String
+  pathname  String?
+  usage     String        @default("portrait")
+  altText   String        @default("")
+  sortOrder Int           @default(0)
+  isPrimary Boolean       @default(false)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([talentId, sortOrder])
+}
+
+model FashionLook {
+  id          String              @id @default(cuid())
+  title       String
+  slug        String              @unique
+  description String              @default("")
+  isVisible   Boolean             @default(true)
+  order       Int                 @default(0)
+  images      FashionLookImage[]
+  pieces      FashionPiece[]
+  credits     FashionLookCredit[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([isVisible, order])
+}
+
+model FashionLookImage {
+  id        String      @id @default(cuid())
+  lookId    String
+  look      FashionLook @relation(fields: [lookId], references: [id], onDelete: Cascade)
+  url       String
+  pathname  String?
+  usage     String      @default("lookbook")
+  altText   String      @default("")
+  sortOrder Int         @default(0)
+  isPrimary Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([lookId, sortOrder])
+}
+
+model FashionPiece {
+  id        String                @id @default(cuid())
+  lookId    String
+  look      FashionLook           @relation(fields: [lookId], references: [id], onDelete: Cascade)
+  name      String
+  buyUrl    String?
+  imageUrl  String                @default("")
+  pathname  String?
+  sortOrder Int                   @default(0)
+  credits   FashionPieceCredit[]
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  @@index([lookId, sortOrder])
+}
+
+model FashionLookCredit {
+  id        String        @id @default(cuid())
+  lookId    String
+  look      FashionLook   @relation(fields: [lookId], references: [id], onDelete: Cascade)
+  talentId  String
+  talent    FashionTalent @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  roleLabel String        @default("")
+  sortOrder Int           @default(0)
+
+  @@unique([lookId, talentId, roleLabel])
+  @@index([lookId, sortOrder])
+  @@index([talentId])
+}
+
+model FashionPieceCredit {
+  id        String        @id @default(cuid())
+  pieceId   String
+  piece     FashionPiece  @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  talentId  String
+  talent    FashionTalent @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  roleLabel String        @default("")
+  sortOrder Int           @default(0)
+
+  @@unique([pieceId, talentId, roleLabel])
+  @@index([pieceId, sortOrder])
+  @@index([talentId])
+}
+
+enum FashionTalentRole {
+  MODEL
+  DESIGNER
+  PHOTOGRAPHER
+  EDITOR
+  STYLIST
+  OTHER
+}

@@ -1,0 +1,447 @@
+.fashion-page {
+	background: #060606;
+}
+
+.fashion-page-content {
+	position: relative;
+	z-index: 1;
+	width: min(1440px, 100%);
+	margin: 0 auto;
+	padding: 40px clamp(18px, 5vw, 72px) 88px;
+}
+
+.fashion-page-header {
+	max-width: 760px;
+	margin: 0 auto 46px;
+	text-align: center;
+}
+
+.fashion-page-title {
+	font-family: var(--font-display);
+	font-size: clamp(4rem, 11vw, 9rem);
+	font-weight: 400;
+	letter-spacing: 0.02em;
+	line-height: 0.82;
+	text-transform: uppercase;
+}
+
+.fashion-page-subtitle,
+.fashion-page-empty {
+	margin-top: 18px;
+	color: rgba(232, 232, 232, 0.68);
+	font-family: var(--font-description);
+	font-size: clamp(1rem, 1.4vw, 1.25rem);
+	line-height: 1.75;
+}
+
+.fashion-page-empty {
+	max-width: 680px;
+	margin: 80px auto 0;
+	padding: 28px 24px;
+	border: 1px solid var(--border);
+	background: rgba(10, 10, 10, 0.42);
+	text-align: center;
+}
+
+.fashion-talent-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 16px;
+}
+
+.fashion-home-hero {
+	min-height: min(820px, calc(100dvh - var(--nav-height)));
+	display: grid;
+	grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+	gap: clamp(28px, 5vw, 80px);
+	align-items: center;
+	padding: 28px 0 72px;
+}
+
+.fashion-home-hero-media {
+	position: relative;
+	min-height: clamp(420px, 62vh, 720px);
+	overflow: hidden;
+	border-radius: 2px;
+	box-shadow: 0 36px 90px rgba(0, 0, 0, 0.48);
+	background: rgba(255, 255, 255, 0.04);
+}
+
+.fashion-home-hero-image,
+.fashion-home-hero-image-blank {
+	width: 100%;
+	height: 100%;
+	min-height: inherit;
+	object-fit: cover;
+}
+
+.fashion-home-hero-image {
+	filter: grayscale(0.16) contrast(1.04) brightness(0.9);
+}
+
+.fashion-home-hero-image-blank {
+	background:
+		linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.015)),
+		#111;
+}
+
+.fashion-home-hero-copy {
+	max-width: 560px;
+}
+
+.fashion-home-hero-eyebrow,
+.fashion-talent-hero-role,
+.fashion-look-credit-role {
+	display: inline-block;
+	color: rgba(200, 169, 110, 0.88);
+	font-family: var(--font-nav-tab);
+	font-size: 0.76rem;
+	letter-spacing: 0.18em;
+	line-height: 1.2;
+	text-transform: uppercase;
+}
+
+.fashion-home-hero-title,
+.fashion-look-title,
+.fashion-talent-hero-name {
+	margin-top: 12px;
+	font-family: var(--font-display);
+	font-size: clamp(4.2rem, 9vw, 8.6rem);
+	font-weight: 400;
+	letter-spacing: 0.01em;
+	line-height: 0.82;
+	text-transform: uppercase;
+}
+
+.fashion-home-hero-description,
+.fashion-look-description,
+.fashion-talent-hero-bio {
+	margin-top: 24px;
+	color: rgba(232, 232, 232, 0.72);
+	font-family: var(--font-description);
+	font-size: clamp(1rem, 1.35vw, 1.25rem);
+	line-height: 1.85;
+}
+
+.fashion-home-hero-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-top: 30px;
+}
+
+.fashion-home-hero-link,
+.fashion-piece-card-buy-link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 42px;
+	padding: 12px 18px;
+	border: 1px solid rgba(200, 169, 110, 0.5);
+	background: rgba(200, 169, 110, 0.16);
+	color: #f7eddc;
+	font-family: var(--font-nav-tab);
+	font-size: 0.78rem;
+	letter-spacing: 0.12em;
+	line-height: 1;
+	text-transform: uppercase;
+	text-decoration: none;
+	transition:
+		background var(--transition),
+		border-color var(--transition),
+		transform var(--transition);
+}
+
+.fashion-home-hero-link:hover,
+.fashion-home-hero-link:focus-visible,
+.fashion-piece-card-buy-link:hover,
+.fashion-piece-card-buy-link:focus-visible {
+	border-color: rgba(247, 237, 220, 0.72);
+	background: rgba(200, 169, 110, 0.26);
+	text-decoration: none;
+	transform: translateY(-2px);
+}
+
+.fashion-home-hero-link-ghost {
+	border-color: rgba(255, 255, 255, 0.18);
+	background: rgba(10, 10, 10, 0.42);
+}
+
+.fashion-home-view-all {
+	margin-top: 22px;
+}
+
+.fashion-talent-hero,
+.fashion-look-hero {
+	display: grid;
+	grid-template-columns: minmax(280px, 0.82fr) minmax(0, 1fr);
+	gap: clamp(28px, 5vw, 76px);
+	align-items: center;
+	padding: 28px 0 72px;
+}
+
+.fashion-talent-hero-portrait-wrap {
+	display: grid;
+	gap: 16px;
+	justify-items: center;
+}
+
+.fashion-talent-hero-portrait-frame {
+	position: relative;
+	width: min(100%, 460px);
+	aspect-ratio: 3 / 4;
+	overflow: hidden;
+	border-radius: 2px;
+	background: rgba(255, 255, 255, 0.04);
+	box-shadow: 0 36px 86px rgba(0, 0, 0, 0.48);
+}
+
+.fashion-talent-hero-portrait {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: top;
+}
+
+.fashion-talent-hero-links {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+}
+
+.fashion-talent-hero-links a {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 42px;
+	height: 42px;
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	border-radius: 50%;
+	color: #f7eddc;
+	background: rgba(10, 10, 10, 0.5);
+	transition:
+		border-color var(--transition),
+		color var(--transition),
+		transform var(--transition);
+}
+
+.fashion-talent-hero-links a:hover,
+.fashion-talent-hero-links a:focus-visible {
+	border-color: rgba(200, 169, 110, 0.62);
+	color: var(--accent);
+	transform: translateY(-2px);
+}
+
+.fashion-talent-hero-info {
+	max-width: 680px;
+}
+
+.fashion-talent-hero-agency {
+	margin-top: 18px;
+	color: rgba(232, 232, 232, 0.56);
+	font-family: var(--font-nav-tab);
+	font-size: 0.84rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.fashion-look-gallery {
+	display: grid;
+	gap: 14px;
+}
+
+.fashion-look-gallery-main {
+	min-height: clamp(420px, 62vh, 720px);
+	overflow: hidden;
+	border-radius: 2px;
+	background: rgba(255, 255, 255, 0.04);
+	box-shadow: 0 34px 86px rgba(0, 0, 0, 0.48);
+}
+
+.fashion-look-gallery-image,
+.fashion-look-gallery-blank {
+	width: 100%;
+	height: 100%;
+	min-height: inherit;
+	object-fit: cover;
+}
+
+.fashion-look-gallery-blank,
+.fashion-piece-card-image-blank {
+	background:
+		linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.018)),
+		#101010;
+}
+
+.fashion-look-gallery-thumbs {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));
+	gap: 8px;
+}
+
+.fashion-look-gallery-thumb {
+	position: relative;
+	aspect-ratio: 1;
+	padding: 0;
+	overflow: hidden;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: rgba(255, 255, 255, 0.04);
+	opacity: 0.62;
+	transition:
+		border-color var(--transition),
+		opacity var(--transition);
+}
+
+.fashion-look-gallery-thumb img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.fashion-look-gallery-thumb-active,
+.fashion-look-gallery-thumb:hover,
+.fashion-look-gallery-thumb:focus-visible {
+	border-color: rgba(200, 169, 110, 0.72);
+	opacity: 1;
+}
+
+.fashion-look-info {
+	align-self: center;
+}
+
+.fashion-look-credits-row {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 18px;
+}
+
+.fashion-look-credit-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 10px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: rgba(10, 10, 10, 0.38);
+	color: #f2eadc;
+	text-decoration: none;
+}
+
+.fashion-look-credit-chip:hover {
+	border-color: rgba(200, 169, 110, 0.5);
+	text-decoration: none;
+}
+
+.fashion-look-credit-role {
+	font-size: 0.62rem;
+	letter-spacing: 0.12em;
+}
+
+.fashion-look-credit-name {
+	font-family: var(--font-description);
+	font-size: 0.92rem;
+}
+
+.fashion-look-pieces-section {
+	padding-top: 26px;
+}
+
+.fashion-pieces-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: 18px;
+	margin-top: 24px;
+}
+
+.fashion-piece-card {
+	border: 1px solid var(--border);
+	background: rgba(10, 10, 10, 0.42);
+}
+
+.fashion-piece-card-image-wrap {
+	aspect-ratio: 4 / 5;
+	overflow: hidden;
+	background: rgba(255, 255, 255, 0.04);
+}
+
+.fashion-piece-card-image,
+.fashion-piece-card-image-blank {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.fashion-piece-card-info {
+	display: grid;
+	gap: 12px;
+	padding: 16px;
+}
+
+.fashion-piece-card-name {
+	font-family: var(--font-display);
+	font-size: 1.28rem;
+	letter-spacing: 0.04em;
+	line-height: 1.1;
+	text-transform: uppercase;
+}
+
+.fashion-piece-card-info .fashion-look-credits-row {
+	margin-top: 0;
+}
+
+.fashion-piece-card-buy-link {
+	width: max-content;
+	min-height: 36px;
+	padding: 10px 13px;
+	font-size: 0.68rem;
+}
+
+@media (max-width: 980px) {
+	.fashion-home-hero,
+	.fashion-talent-hero,
+	.fashion-look-hero {
+		grid-template-columns: 1fr;
+	}
+
+	.fashion-home-hero-copy,
+	.fashion-talent-hero-info,
+	.fashion-look-info {
+		max-width: none;
+	}
+
+	.fashion-home-hero {
+		min-height: 0;
+	}
+}
+
+@media (max-width: 640px) {
+	.fashion-page-content {
+		padding: 22px 16px 64px;
+	}
+
+	.fashion-page-header {
+		margin-bottom: 32px;
+	}
+
+	.fashion-home-hero,
+	.fashion-talent-hero,
+	.fashion-look-hero {
+		padding-bottom: 48px;
+	}
+
+	.fashion-home-hero-media,
+	.fashion-look-gallery-main {
+		min-height: 420px;
+	}
+
+	.fashion-talent-grid,
+	.fashion-pieces-grid {
+		grid-template-columns: 1fr;
+	}
+}
