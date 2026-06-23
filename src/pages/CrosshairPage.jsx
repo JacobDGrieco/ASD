@@ -27,10 +27,10 @@ function CrosshairPlayer({ video }) {
 	return (
 		<div className={video.type === 'SHORT' ? 'crosshair-player-frame crosshair-player-frame-short' : 'crosshair-player-frame'}>
 			<iframe
-				src={`${video.youtubeEmbedUrl}&autoplay=1`}
+				src={video.youtubeEmbedUrl}
 				title={video.title}
 				className="crosshair-iframe"
-				allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+				allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
 				referrerPolicy="strict-origin-when-cross-origin"
 				allowFullScreen
 			/>
