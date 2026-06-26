@@ -9,8 +9,8 @@ const SECTION_TABS = {
 		{ to: '/crosshair', label: 'The Crosshair' },
 	],
 	fashion: [
-		{ to: '/fashion/talent', label: 'The Talent' },
 		{ to: '/fashion/catalogue', label: 'The Catalogue' },
+		{ to: '/fashion/talent', label: 'The Talent' },
 	],
 };
 

@@ -838,6 +838,8 @@ function publicFashionTalentSelect() {
     website: true,
     agencyName: true,
     agencyContact: true,
+    createdAt: true,
+    updatedAt: true,
     images: {
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
       select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
@@ -878,6 +880,8 @@ function formatFashionLook(look) {
     description: look.description,
     isVisible: look.isVisible,
     order: look.order,
+    createdAt: look.createdAt,
+    updatedAt: look.updatedAt,
     images: clientImages(look.images ?? []),
     credits: lookCredits,
     pieces: (look.pieces ?? []).map((piece) => formatFashionPiece(piece, lookCredits)),

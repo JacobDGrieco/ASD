@@ -548,6 +548,111 @@
 	margin-top: 22px;
 }
 
+.fashion-home-showcase {
+	display: grid;
+	grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
+	gap: 56px;
+	align-items: start;
+	max-width: 1360px;
+	margin: 0 auto;
+	padding: 76px 60px;
+	border-top: 1px solid var(--border);
+}
+
+.fashion-home-showcase-copy {
+	max-width: 520px;
+}
+
+.fashion-home-showcase-eyebrow {
+	color: rgba(200, 169, 110, 0.84);
+	font-family: var(--font-nav-tab);
+	font-size: 0.74rem;
+	letter-spacing: 0.16em;
+	line-height: 1.2;
+	text-transform: uppercase;
+}
+
+.fashion-home-showcase-title {
+	max-width: 12ch;
+	margin-top: 12px;
+	font-size: clamp(2.2rem, 4vw, 3.55rem);
+	letter-spacing: 0.08rem;
+	line-height: 1.02;
+	text-wrap: balance;
+}
+
+.fashion-home-showcase-description {
+	margin-top: 18px;
+	color: rgba(232, 232, 232, 0.7);
+	font-family: var(--font-description);
+	line-height: 1.85;
+}
+
+.fashion-home-showcase-link {
+	margin-top: 24px;
+}
+
+.fashion-home-showcase-grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 12px;
+	min-width: 0;
+	padding-top: 8px;
+}
+
+.fashion-home-showcase-grid .album-card-card {
+	width: 100%;
+	min-width: 0;
+	background: rgba(10, 10, 10, 0.24);
+}
+
+.fashion-home-showcase-grid .album-card-primary-action {
+	width: 100%;
+}
+
+.fashion-home-showcase-grid .album-card-cover-wrap {
+	width: 100%;
+	height: auto;
+	aspect-ratio: 1 / 1;
+}
+
+.fashion-home-showcase-grid .album-card-title,
+.fashion-home-showcase-grid .album-card-meta {
+	max-width: 100%;
+}
+
+.fashion-home-card-placeholder {
+	width: 100%;
+	min-width: 0;
+	aspect-ratio: 1 / 1.48;
+	border: 1px solid var(--border);
+	background:
+		linear-gradient(110deg, transparent 18%, rgba(255, 255, 255, 0.055) 38%, transparent 58%),
+		linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+	background-size: 240% 100%, 100% 100%;
+	animation: fashion-home-card-placeholder 2.8s ease-in-out infinite;
+}
+
+.fashion-home-showcase-empty {
+	grid-column: 1 / -1;
+	padding: 28px 24px;
+	border: 1px solid var(--border);
+	background: rgba(10, 10, 10, 0.35);
+	color: var(--text-muted);
+	font-family: var(--font-description);
+	line-height: 1.6;
+}
+
+@keyframes fashion-home-card-placeholder {
+	from {
+		background-position: 120% 0, 0 0;
+	}
+
+	to {
+		background-position: -120% 0, 0 0;
+	}
+}
+
 @keyframes fashion-runway-sweep-left {
 	0% {
 		transform: translateX(-50%) rotate(7deg);
@@ -881,6 +986,27 @@ a.fashion-look-credit-chip:hover {
 		min-height: 0;
 	}
 
+	.fashion-home-showcase {
+		grid-template-columns: 1fr;
+		gap: 32px;
+		padding: 64px 32px;
+	}
+
+	.fashion-home-showcase-copy {
+		max-width: none;
+		text-align: center;
+	}
+
+	.fashion-home-showcase-title {
+		max-width: 100%;
+		margin-right: auto;
+		margin-left: auto;
+	}
+
+	.fashion-home-showcase-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
 	.fashion-home-runway {
 		min-height: calc(100dvh - var(--nav-height));
 		padding-top: 104px;
@@ -927,6 +1053,10 @@ a.fashion-look-credit-chip:hover {
 		margin-top: -22px;
 		margin-bottom: 52px;
 		padding: 108px 16px 30px;
+	}
+
+	.fashion-home-showcase {
+		padding: 48px 20px;
 	}
 
 	.fashion-runway-backdrop {
@@ -1007,5 +1137,9 @@ a.fashion-look-credit-chip:hover {
 	.fashion-runway-look-empty::before {
 		animation: none;
 		transition: none;
+	}
+
+	.fashion-home-card-placeholder {
+		animation: none;
 	}
 }

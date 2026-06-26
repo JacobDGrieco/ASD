@@ -6,7 +6,6 @@ import LookCard from '../components/fashion/LookCard.jsx';
 import TalentCard from '../components/fashion/TalentCard.jsx';
 import { useAdminAuth } from '../lib/adminAuth.jsx';
 import runwayBackdrop from '../assets/fashion-runway-backdrop.png';
-import '../styles/Discography.css';
 import '../styles/FashionPages.css';
 
 const CAMERA_FLASHES = [
@@ -43,6 +42,44 @@ function buildLookPayloadWithImageUsage(look, imageKey, usage) {
 			getImageKey(image) === imageKey ? { ...image, usage } : image
 		)),
 	};
+}
+
+function getRecentTimestamp(item) {
+	const timestamp = Date.parse(item?.createdAt ?? item?.updatedAt ?? '');
+	return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function getRecentItems(items, limit = 8) {
+	return (items ?? [])
+		.slice()
+		.sort((left, right) => getRecentTimestamp(right) - getRecentTimestamp(left))
+		.slice(0, limit);
+}
+
+function FashionHomeSection({ eyebrow, title, description, to, linkLabel, children }) {
+	const sectionId = `fashion-home-${eyebrow.toLowerCase().replace(/\s+/g, '-')}`;
+
+	return (
+		<section className="fashion-home-showcase" aria-labelledby={sectionId}>
+			<div className="fashion-home-showcase-copy">
+				<p className="fashion-home-showcase-eyebrow">{eyebrow}</p>
+				<h2 id={sectionId} className="fashion-home-showcase-title">{title}</h2>
+				<p className="fashion-home-showcase-description">{description}</p>
+				<Link to={to} className="fashion-home-hero-link fashion-home-hero-link-ghost fashion-home-showcase-link">
+					{linkLabel}
+				</Link>
+			</div>
+			<div className="fashion-home-showcase-grid">
+				{children}
+			</div>
+		</section>
+	);
+}
+
+function FashionHomeCardPlaceholders() {
+	return Array.from({ length: 8 }, (_, index) => (
+		<div key={index} className="fashion-home-card-placeholder" />
+	));
 }
 
 function FashionRunwayFeature({ featuredLook, featuredImage, canSwapPresentation, onSwapPresentation, saving }) {
@@ -91,8 +128,8 @@ export default function FashionHomePage() {
 	const featuredImage = rawFeaturedImage
 		? { ...rawFeaturedImage, usage: imageUsageOverrides[featuredImageKey] ?? rawFeaturedImage.usage }
 		: null;
-	const otherLooks = useMemo(() => (looks ?? []).slice(1, 5), [looks]);
-	const featuredTalent = useMemo(() => (talent ?? []).slice(0, 6), [talent]);
+	const recentLooks = useMemo(() => getRecentItems(looks, 8), [looks]);
+	const recentTalent = useMemo(() => getRecentItems(talent, 8), [talent]);
 	const canSwapPresentation = Boolean(session?.role === 'SUPER_ADMIN' && token && featuredLook && featuredImage);
 
 	const handleSwapPresentation = async () => {
@@ -174,25 +211,52 @@ export default function FashionHomePage() {
 					</div>
 				</section>
 
-				{otherLooks.length > 0 && (
-					<section className="discography-section">
-						<h2 className="discography-heading">More Looks</h2>
-						<div className="discography-grid">
-							{otherLooks.map((look) => <LookCard key={look.id} look={look} />)}
-						</div>
-					</section>
+				{recentLooks.length > 0 || looksLoading ? (
+					<FashionHomeSection
+						eyebrow="Latest looks"
+						title="Recent silhouettes from the ASD runway."
+						description="The newest lookbook entries, pulled straight from the fashion archive as they are published."
+						to="/fashion/catalogue"
+						linkLabel="View all looks"
+					>
+						{recentLooks.length > 0
+							? recentLooks.map((look) => <LookCard key={look.id} look={look} />)
+							: <FashionHomeCardPlaceholders />}
+					</FashionHomeSection>
+				) : (
+					<FashionHomeSection
+						eyebrow="Latest looks"
+						title="Recent silhouettes from the ASD runway."
+						description="New looks will appear here once public catalogue data is available."
+						to="/fashion/catalogue"
+						linkLabel="View catalogue"
+					>
+						<div className="fashion-home-showcase-empty">Looks will appear here once they are published.</div>
+					</FashionHomeSection>
 				)}
 
-				{featuredTalent.length > 0 && (
-					<section className="discography-section">
-						<h2 className="discography-heading">Talent</h2>
-						<div className="discography-grid">
-							{featuredTalent.map((person) => <TalentCard key={person.id} talent={person} />)}
-						</div>
-						<Link to="/fashion/talent" className="fashion-home-hero-link fashion-home-hero-link-ghost fashion-home-view-all">
-							View all talent
-						</Link>
-					</section>
+				{recentTalent.length > 0 || talentLoading ? (
+					<FashionHomeSection
+						eyebrow="Latest talent"
+						title="Faces and makers behind the newest work."
+						description="Models, stylists, photographers, designers, and editors recently added to the fashion roster."
+						to="/fashion/talent"
+						linkLabel="View all talent"
+					>
+						{recentTalent.length > 0
+							? recentTalent.map((person) => <TalentCard key={person.id} talent={person} />)
+							: <FashionHomeCardPlaceholders />}
+					</FashionHomeSection>
+				) : (
+					<FashionHomeSection
+						eyebrow="Latest talent"
+						title="Faces and makers behind the newest work."
+						description="New talent will appear here once public roster data is available."
+						to="/fashion/talent"
+						linkLabel="View talent"
+					>
+						<div className="fashion-home-showcase-empty">Talent will appear here once profiles are published.</div>
+					</FashionHomeSection>
 				)}
 
 				{!looksLoading && !talentLoading && !looks?.length && !talent?.length && (
