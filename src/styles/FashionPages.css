@@ -49,6 +49,381 @@
 	gap: 16px;
 }
 
+.fashion-home-runway {
+	position: relative;
+	min-height: calc(100dvh - var(--nav-height));
+	margin: -40px calc(50% - 50vw) 76px;
+	padding: clamp(92px, 11vh, 132px) clamp(18px, 5vw, 76px) clamp(34px, 6vh, 72px);
+	overflow: hidden;
+	isolation: isolate;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	background: #020202;
+}
+
+.fashion-runway-backdrop,
+.fashion-runway-vignette,
+.fashion-runway-stage-glow,
+.fashion-runway-spotlight,
+.fashion-runway-flashes,
+.fashion-runway-light-rig {
+	position: absolute;
+	pointer-events: none;
+}
+
+.fashion-runway-backdrop {
+	inset: 0;
+	z-index: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+	filter: contrast(1.08) saturate(0.9) brightness(0.82);
+	transform: scale(1.02);
+}
+
+.fashion-runway-vignette {
+	inset: 0;
+	z-index: 1;
+	background:
+		linear-gradient(90deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.3) 28%, rgba(0, 0, 0, 0.16) 52%, rgba(0, 0, 0, 0.56) 100%),
+		linear-gradient(180deg, rgba(0, 0, 0, 0.34) 0%, rgba(0, 0, 0, 0.08) 38%, rgba(0, 0, 0, 0.88) 100%);
+}
+
+.fashion-runway-light-rig {
+	opacity: 0;
+	top: clamp(72px, 9vh, 104px);
+	left: 50%;
+	z-index: 3;
+	display: flex;
+	gap: clamp(12px, 1.7vw, 26px);
+	transform: translateX(-50%);
+}
+
+.fashion-runway-light-rig span {
+	width: clamp(18px, 2vw, 28px);
+	aspect-ratio: 1 / 1.28;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	background:
+		linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(0, 0, 0, 0.62)),
+		#111;
+	box-shadow:
+		0 10px 22px rgba(0, 0, 0, 0.48),
+		0 22px 38px rgba(255, 246, 220, 0.12);
+}
+
+.fashion-runway-spotlight {
+	top: -18vh;
+	z-index: 2;
+	width: min(38vw, 580px);
+	height: 92vh;
+	opacity: 0.44;
+	transform-origin: 50% 0;
+	mix-blend-mode: screen;
+	background: radial-gradient(ellipse at 50% 12%, rgba(255, 248, 224, 0.44) 0%, rgba(255, 248, 224, 0.2) 34%, rgba(255, 248, 224, 0) 74%);
+	clip-path: polygon(48% 0, 52% 0, 100% 100%, 0 100%);
+}
+
+.fashion-runway-spotlight-left {
+	left: 38%;
+	transform: translateX(-50%) rotate(9deg);
+	animation: fashion-runway-sweep-left 7.5s ease-in-out infinite alternate;
+}
+
+.fashion-runway-spotlight-right {
+	left: 62%;
+	transform: translateX(-50%) rotate(-9deg);
+	animation: fashion-runway-sweep-right 8.2s ease-in-out infinite alternate;
+}
+
+.fashion-runway-stage-glow {
+	left: 50%;
+	top: 47%;
+	z-index: 2;
+	width: min(36vw, 520px);
+	aspect-ratio: 1 / 0.72;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(255, 238, 198, 0.4), rgba(255, 238, 198, 0.12) 42%, rgba(255, 238, 198, 0) 68%);
+	filter: blur(8px);
+	transform: translate(-50%, -50%);
+	animation: fashion-runway-breathe 4s ease-in-out infinite;
+}
+
+.fashion-runway-flashes {
+	inset: 0;
+	z-index: 5;
+	-webkit-mask-image: linear-gradient(90deg, #000 0%, #000 32%, transparent 38%, transparent 62%, #000 68%, #000 100%);
+	mask-image: linear-gradient(90deg, #000 0%, #000 32%, transparent 38%, transparent 62%, #000 68%, #000 100%);
+}
+
+.fashion-runway-flash {
+	position: absolute;
+	left: var(--flash-x);
+	top: var(--flash-y);
+	width: var(--flash-size);
+	aspect-ratio: 1;
+	border-radius: 50%;
+	background: rgba(255, 250, 230, 0.92);
+	box-shadow:
+		0 0 10px 3px rgba(255, 255, 255, 0.36),
+		0 0 26px 9px rgba(255, 234, 184, 0.16);
+	opacity: 0;
+	transform: translate(-50%, -50%) scale(0.75);
+	animation: fashion-camera-flash var(--flash-duration) ease-out infinite;
+	animation-delay: var(--flash-delay);
+}
+
+.fashion-runway-flash::after {
+	content: '';
+	position: absolute;
+	inset: -9px;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(255, 255, 255, 0.34), rgba(255, 234, 184, 0.12) 42%, transparent 70%);
+	opacity: 0;
+	animation: fashion-camera-flash-halo var(--flash-duration) ease-out infinite;
+	animation-delay: var(--flash-delay);
+}
+
+.fashion-runway-feature {
+	position: absolute;
+	top: 45%;
+	left: 50%;
+	z-index: 4;
+	width: clamp(210px, 24vw, 380px);
+	transform: translate(-50%, -50%);
+}
+
+.fashion-runway-swap-btn {
+	position: absolute;
+	top: -14px;
+	right: -14px;
+	z-index: 8;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 58px;
+	min-height: 32px;
+	padding: 8px 10px;
+	border: 1px solid rgba(255, 248, 232, 0.62);
+	background: rgba(8, 8, 8, 0.82);
+	box-shadow:
+		0 12px 30px rgba(0, 0, 0, 0.44),
+		inset 0 1px 0 rgba(255, 255, 255, 0.12);
+	color: #fff4da;
+	font-family: var(--font-readable);
+	font-size: 0.68rem;
+	letter-spacing: 0.08em;
+	line-height: 1;
+	text-transform: uppercase;
+	transition:
+		background var(--transition),
+		border-color var(--transition),
+		color var(--transition),
+		transform var(--transition);
+}
+
+.fashion-runway-swap-btn:hover,
+.fashion-runway-swap-btn:focus-visible {
+	border-color: rgba(255, 248, 232, 0.92);
+	background: rgba(20, 18, 14, 0.92);
+	color: #fff;
+	transform: translateY(-1px);
+}
+
+.fashion-runway-swap-btn:disabled {
+	cursor: progress;
+	opacity: 0.62;
+	transform: none;
+}
+
+.fashion-runway-feature::after {
+	content: '';
+	position: absolute;
+	left: 16%;
+	right: 16%;
+	bottom: -28px;
+	height: 38px;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.58);
+	filter: blur(12px);
+	z-index: -1;
+}
+
+.fashion-runway-feature-model {
+	top: 52%;
+	width: clamp(230px, 23vw, 390px);
+}
+
+.fashion-runway-feature-model::after {
+	left: 28%;
+	right: 28%;
+	bottom: -6px;
+	height: 24px;
+	background: rgba(0, 0, 0, 0.62);
+	filter: blur(10px);
+}
+
+.fashion-runway-look-link,
+.fashion-runway-look-empty {
+	display: block;
+	width: 100%;
+	aspect-ratio: 4 / 5;
+	overflow: hidden;
+	border: 1px solid rgba(255, 244, 214, 0.46);
+	background:
+		linear-gradient(155deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.02)),
+		rgba(8, 8, 8, 0.68);
+	box-shadow:
+		0 30px 90px rgba(0, 0, 0, 0.72),
+		0 0 0 8px rgba(255, 255, 255, 0.035),
+		0 0 70px rgba(255, 239, 202, 0.22);
+	backdrop-filter: blur(10px);
+	transition:
+		border-color var(--transition),
+		box-shadow var(--transition),
+		transform var(--transition);
+}
+
+.fashion-runway-feature-model .fashion-runway-look-link {
+	width: 100%;
+	aspect-ratio: auto;
+	overflow: visible;
+	border: 0;
+	background: transparent;
+	box-shadow: none;
+	backdrop-filter: none;
+}
+
+.fashion-runway-feature-model .fashion-runway-look-link:hover,
+.fashion-runway-feature-model .fashion-runway-look-link:focus-visible {
+	border-color: transparent;
+	box-shadow: none;
+	transform: translateY(-2px);
+}
+
+.fashion-runway-feature-model .fashion-runway-look-link:focus-visible {
+	outline: 1px solid rgba(255, 248, 232, 0.72);
+	outline-offset: 8px;
+}
+
+.fashion-runway-look-link:hover,
+.fashion-runway-look-link:focus-visible {
+	border-color: rgba(255, 248, 232, 0.82);
+	box-shadow:
+		0 32px 96px rgba(0, 0, 0, 0.78),
+		0 0 0 8px rgba(255, 255, 255, 0.05),
+		0 0 92px rgba(255, 239, 202, 0.34);
+	transform: translateY(-4px);
+}
+
+.fashion-runway-look-link:focus-visible {
+	outline: 1px solid rgba(255, 248, 232, 0.82);
+	outline-offset: 8px;
+}
+
+.fashion-runway-look-image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: top center;
+	filter: saturate(0.94) contrast(1.05);
+}
+
+.fashion-runway-feature-model .fashion-runway-look-image {
+	width: 100%;
+	height: auto;
+	max-height: min(66vh, 720px);
+	object-fit: contain;
+	object-position: center bottom;
+	filter:
+		saturate(0.98)
+		contrast(1.04)
+		drop-shadow(0 28px 26px rgba(0, 0, 0, 0.46))
+		drop-shadow(0 0 30px rgba(255, 239, 202, 0.18));
+}
+
+.fashion-runway-look-empty::before {
+	content: '';
+	display: block;
+	width: 100%;
+	height: 100%;
+	background:
+		linear-gradient(120deg, transparent 18%, rgba(255, 255, 255, 0.14) 50%, transparent 82%),
+		linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
+	animation: fashion-runway-empty-shimmer 2.8s ease-in-out infinite;
+}
+
+.fashion-runway-copy {
+	position: relative;
+	z-index: 6;
+	display: flex;
+	min-height: calc(100dvh - var(--nav-height) - clamp(126px, 17vh, 204px));
+	flex-direction: column;
+	justify-content: flex-end;
+	max-width: min(480px, 36vw);
+	margin-left: clamp(28px, 8vw, 160px);
+	text-shadow: 0 4px 28px rgba(0, 0, 0, 0.7);
+}
+
+.fashion-runway-copy .fashion-home-hero-title {
+	margin-top: 0;
+	max-width: 10ch;
+	font-size: clamp(3.4rem, 6.4vw, 7.2rem);
+}
+
+.fashion-runway-copy .fashion-home-hero-description {
+	max-width: 48ch;
+	color: rgba(248, 242, 232, 0.78);
+}
+
+.fashion-home-hero-link.fashion-runway-primary-link {
+	position: relative;
+	min-height: 48px;
+	padding: 15px 22px 14px;
+	overflow: hidden;
+	border-color: rgba(255, 239, 202, 0.68);
+	background:
+		linear-gradient(135deg, rgba(255, 239, 202, 0.22), rgba(255, 255, 255, 0.04)),
+		rgba(8, 8, 8, 0.58);
+	box-shadow:
+		0 12px 34px rgba(0, 0, 0, 0.34),
+		inset 0 1px 0 rgba(255, 255, 255, 0.16);
+	color: #fff4da;
+	font-family: var(--font-readable);
+	font-size: 0.8rem;
+	font-weight: 400;
+	letter-spacing: 0.08em;
+}
+
+.fashion-home-hero-link.fashion-runway-primary-link::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(110deg, transparent 10%, rgba(255, 255, 255, 0.18) 46%, transparent 68%);
+	opacity: 0;
+	transform: translateX(-120%);
+	transition:
+		opacity var(--transition),
+		transform 0.45s ease;
+}
+
+.fashion-home-hero-link.fashion-runway-primary-link:hover,
+.fashion-home-hero-link.fashion-runway-primary-link:focus-visible {
+	border-color: rgba(255, 248, 232, 0.92);
+	background:
+		linear-gradient(135deg, rgba(255, 239, 202, 0.3), rgba(255, 255, 255, 0.07)),
+		rgba(8, 8, 8, 0.7);
+	box-shadow:
+		0 16px 42px rgba(0, 0, 0, 0.42),
+		0 0 40px rgba(255, 239, 202, 0.16),
+		inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.fashion-home-hero-link.fashion-runway-primary-link:hover::before,
+.fashion-home-hero-link.fashion-runway-primary-link:focus-visible::before {
+	opacity: 1;
+	transform: translateX(120%);
+}
+
 .fashion-home-hero {
 	min-height: min(820px, calc(100dvh - var(--nav-height)));
 	display: grid;
@@ -171,6 +546,92 @@
 
 .fashion-home-view-all {
 	margin-top: 22px;
+}
+
+@keyframes fashion-runway-sweep-left {
+	0% {
+		transform: translateX(-50%) rotate(7deg);
+	}
+
+	100% {
+		transform: translateX(-50%) rotate(13deg);
+	}
+}
+
+@keyframes fashion-runway-sweep-right {
+	0% {
+		transform: translateX(-50%) rotate(-7deg);
+	}
+
+	100% {
+		transform: translateX(-50%) rotate(-13deg);
+	}
+}
+
+@keyframes fashion-runway-breathe {
+
+	0%,
+	100% {
+		opacity: 0.58;
+		transform: translate(-50%, -50%) scale(0.96);
+	}
+
+	50% {
+		opacity: 0.9;
+		transform: translate(-50%, -50%) scale(1.04);
+	}
+}
+
+@keyframes fashion-camera-flash {
+
+	0%,
+	11%,
+	13%,
+	100% {
+		opacity: 0;
+		transform: translate(-50%, -50%) scale(0.72);
+	}
+
+	11.7% {
+		opacity: 0.82;
+		transform: translate(-50%, -50%) scale(1.45);
+	}
+
+	12.4% {
+		opacity: 0.24;
+		transform: translate(-50%, -50%) scale(1);
+	}
+}
+
+@keyframes fashion-camera-flash-halo {
+
+	0%,
+	10.8%,
+	13.8%,
+	100% {
+		opacity: 0;
+		transform: scale(0.45);
+	}
+
+	11.8% {
+		opacity: 0.72;
+		transform: scale(1);
+	}
+
+	13.2% {
+		opacity: 0;
+		transform: scale(1.8);
+	}
+}
+
+@keyframes fashion-runway-empty-shimmer {
+	from {
+		transform: translateX(-100%);
+	}
+
+	to {
+		transform: translateX(100%);
+	}
 }
 
 .fashion-talent-hero,
@@ -403,6 +864,7 @@ a.fashion-look-credit-chip:hover {
 }
 
 @media (max-width: 980px) {
+
 	.fashion-home-hero,
 	.fashion-talent-hero,
 	.fashion-look-hero {
@@ -417,6 +879,32 @@ a.fashion-look-credit-chip:hover {
 
 	.fashion-home-hero {
 		min-height: 0;
+	}
+
+	.fashion-home-runway {
+		min-height: calc(100dvh - var(--nav-height));
+		padding-top: 104px;
+	}
+
+	.fashion-runway-feature {
+		top: 43%;
+		width: clamp(210px, 42vw, 380px);
+	}
+
+	.fashion-runway-feature-model {
+		top: 49%;
+		width: clamp(200px, 34vw, 340px);
+	}
+
+	.fashion-runway-copy {
+		min-height: calc(100dvh - var(--nav-height) - 156px);
+		max-width: min(620px, 88vw);
+		margin-left: clamp(8px, 4vw, 44px);
+	}
+
+	.fashion-runway-copy .fashion-home-hero-title {
+		max-width: 10ch;
+		font-size: clamp(3.2rem, 10vw, 5.8rem);
 	}
 }
 
@@ -435,6 +923,70 @@ a.fashion-look-credit-chip:hover {
 		padding-bottom: 48px;
 	}
 
+	.fashion-home-runway {
+		margin-top: -22px;
+		margin-bottom: 52px;
+		padding: 108px 16px 30px;
+	}
+
+	.fashion-runway-backdrop {
+		object-position: center;
+	}
+
+	.fashion-runway-vignette {
+		background:
+			linear-gradient(90deg, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0.16) 50%, rgba(0, 0, 0, 0.62) 100%),
+			linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.08) 38%, rgba(0, 0, 0, 0.92) 100%);
+	}
+
+	.fashion-runway-light-rig {
+		top: 90px;
+	}
+
+	.fashion-runway-spotlight {
+		top: -14vh;
+		width: 62vw;
+		height: 72vh;
+		opacity: 0.34;
+	}
+
+	.fashion-runway-spotlight-left {
+		left: 40%;
+	}
+
+	.fashion-runway-spotlight-right {
+		left: 60%;
+	}
+
+	.fashion-runway-feature {
+		top: 38%;
+		width: min(58vw, 260px);
+	}
+
+	.fashion-runway-feature-model {
+		top: 40%;
+		width: min(52vw, 230px);
+	}
+
+	.fashion-runway-feature-model .fashion-runway-look-image {
+		max-height: 46vh;
+	}
+
+	.fashion-runway-copy {
+		min-height: calc(100dvh - var(--nav-height) - 138px);
+		max-width: 94vw;
+		margin-left: 0;
+	}
+
+	.fashion-runway-copy .fashion-home-hero-title {
+		max-width: 10ch;
+		font-size: clamp(2.7rem, 12vw, 4.2rem);
+	}
+
+	.fashion-runway-copy .fashion-home-hero-description {
+		max-width: 36ch;
+	}
+
 	.fashion-home-hero-media,
 	.fashion-look-gallery-main {
 		min-height: 420px;
@@ -443,5 +995,17 @@ a.fashion-look-credit-chip:hover {
 	.fashion-talent-grid,
 	.fashion-pieces-grid {
 		grid-template-columns: 1fr;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	.fashion-runway-spotlight,
+	.fashion-runway-stage-glow,
+	.fashion-runway-flashes span,
+	.fashion-runway-look-link,
+	.fashion-runway-look-empty::before {
+		animation: none;
+		transition: none;
 	}
 }
