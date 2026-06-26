@@ -64,6 +64,7 @@
 .album-card-primary-action {
 	display: flex;
 	flex-direction: column;
+	align-items: center;
 	gap: 10px;
 	background: none;
 	border: none;
@@ -127,6 +128,7 @@
 .album-card-info {
 	display: flex;
 	flex-direction: column;
+	align-items: center;
 	gap: 1px;
 }
 
