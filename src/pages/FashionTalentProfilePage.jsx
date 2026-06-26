@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { useMemo } from 'react'
 import { FaEnvelope, FaGlobe } from 'react-icons/fa'
-import { SiInstagram } from 'react-icons/si'
+import { SiFacebook, SiInstagram, SiTiktok, SiX, SiYoutube } from 'react-icons/si'
 import { useApi } from '../hooks/useApi.js'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 import ArtworkGallery from '../components/shared/ArtworkGallery.jsx'
@@ -37,6 +37,10 @@ export default function FashionTalentProfilePage() {
   const image = talent.images?.[0]
   const contactLinks = [
     talent.instagramProfile ? { href: talent.instagramProfile, label: 'Instagram', icon: <SiInstagram /> } : null,
+    talent.tiktokProfile ? { href: talent.tiktokProfile, label: 'TikTok', icon: <SiTiktok /> } : null,
+    talent.twitterProfile ? { href: talent.twitterProfile, label: 'Twitter', icon: <SiX /> } : null,
+    talent.youtubeProfile ? { href: talent.youtubeProfile, label: 'YouTube', icon: <SiYoutube /> } : null,
+    talent.facebookProfile ? { href: talent.facebookProfile, label: 'Facebook', icon: <SiFacebook /> } : null,
     talent.website ? { href: talent.website, label: 'Website', icon: <FaGlobe /> } : null,
     talent.email ? { href: `mailto:${talent.email}`, label: 'Email', icon: <FaEnvelope /> } : null,
   ].filter(Boolean)

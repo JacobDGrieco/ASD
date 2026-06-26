@@ -23,6 +23,10 @@ function selectTalentList() {
     isVisible: true,
     order: true,
     instagramProfile: true,
+    tiktokProfile: true,
+    twitterProfile: true,
+    youtubeProfile: true,
+    facebookProfile: true,
     email: true,
     website: true,
     agencyName: true,
@@ -57,7 +61,7 @@ async function handleTalent(req, res) {
     }
 
     if (req.method === 'PUT') {
-      const { name, slug, role, bio, order, isVisible, instagramProfile, email, website, agencyName, agencyContact, images } = req.body
+      const { name, slug, role, bio, order, isVisible, instagramProfile, tiktokProfile, twitterProfile, youtubeProfile, facebookProfile, email, website, agencyName, agencyContact, images } = req.body
       const normalizedImages = images === undefined ? null : normalizeImageInput(images, 'portrait')
       const talent = await prisma.fashionTalent.update({
         where: { id },
@@ -69,6 +73,10 @@ async function handleTalent(req, res) {
           order,
           isVisible,
           instagramProfile: instagramProfile || null,
+          tiktokProfile: tiktokProfile || null,
+          twitterProfile: twitterProfile || null,
+          youtubeProfile: youtubeProfile || null,
+          facebookProfile: facebookProfile || null,
           email: email || null,
           website: website || null,
           agencyName: agencyName || null,
@@ -102,7 +110,7 @@ async function handleTalent(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { name, slug, role, bio, order, isVisible, instagramProfile, email, website, agencyName, agencyContact, images } = req.body
+    const { name, slug, role, bio, order, isVisible, instagramProfile, tiktokProfile, twitterProfile, youtubeProfile, facebookProfile, email, website, agencyName, agencyContact, images } = req.body
     if (!name) return res.status(400).json({ error: 'Name is required.' })
     if (!role) return res.status(400).json({ error: 'Role is required.' })
     const normalizedImages = normalizeImageInput(images, 'portrait')
@@ -115,6 +123,10 @@ async function handleTalent(req, res) {
         order: order ?? 0,
         isVisible: isVisible ?? true,
         instagramProfile: instagramProfile || null,
+        tiktokProfile: tiktokProfile || null,
+        twitterProfile: twitterProfile || null,
+        youtubeProfile: youtubeProfile || null,
+        facebookProfile: facebookProfile || null,
         email: email || null,
         website: website || null,
         agencyName: agencyName || null,
@@ -190,31 +202,33 @@ function withLookListImages(look) {
   }
 }
 
-// credits: [{ talentId, roleLabel }]
+// credits: [{ talentId?, creditName, roleLabel }]
 function creditsCreateManyData(credits) {
   const normalized = Array.isArray(credits) ? credits : []
   return normalized
-    .filter((credit) => credit?.talentId)
+    .filter((credit) => credit?.talentId || credit?.creditName?.trim())
     .map((credit, index) => ({
-      talentId: credit.talentId,
+      talentId: credit.talentId || null,
+      creditName: credit.creditName?.trim() ?? '',
       roleLabel: credit.roleLabel ?? '',
       sortOrder: index,
     }))
 }
 
-// pieces: [{ id?, name, buyUrl, image: {...}, credits: [{ talentId, roleLabel }] }]
+// pieces: [{ id?, name, buyUrl, image: {...}, credits: [{ talentId?, creditName, roleLabel }] }]
 function piecesCreateData(pieces) {
   const normalized = Array.isArray(pieces) ? pieces : []
   return normalized.map((piece, index) => {
     const normalizedImage = normalizeImageInput(piece?.image ? [piece.image] : [], 'piece')
+    const credits = creditsCreateManyData(piece?.credits)
     return {
       name: piece?.name ?? '',
       buyUrl: piece?.buyUrl || null,
       imageUrl: primaryImageReference(normalizedImage),
       pathname: normalizedImage[0]?.pathname ?? null,
       sortOrder: index,
-      credits: creditsCreateManyData(piece?.credits).length
-        ? { createMany: { data: creditsCreateManyData(piece.credits) } }
+      credits: credits.length
+        ? { createMany: { data: credits } }
         : undefined,
     }
   })
@@ -235,6 +249,8 @@ async function handleLooks(req, res) {
     if (req.method === 'PUT') {
       const { title, slug, description, order, isVisible, images, pieces, credits } = req.body
       const normalizedImages = images === undefined ? null : normalizeImageInput(images, 'lookbook')
+      const lookCredits = creditsCreateManyData(credits)
+      const lookPieces = piecesCreateData(pieces)
 
       // Replace child collections (pieces, piece credits, look credits) wholesale to keep
       // the form-driven CMS simple, matching the same pattern used for Album/Artist image
@@ -256,11 +272,11 @@ async function handleLooks(req, res) {
             images: normalizedImages === null
               ? undefined
               : { deleteMany: {}, createMany: { data: toImageCreateManyData(normalizedImages) } },
-            credits: creditsCreateManyData(credits).length
-              ? { createMany: { data: creditsCreateManyData(credits) } }
+            credits: lookCredits.length
+              ? { createMany: { data: lookCredits } }
               : undefined,
-            pieces: piecesCreateData(pieces).length
-              ? { create: piecesCreateData(pieces) }
+            pieces: lookPieces.length
+              ? { create: lookPieces }
               : undefined,
           },
           include: includeLook(),
@@ -289,6 +305,8 @@ async function handleLooks(req, res) {
     const { title, slug, description, order, isVisible, images, pieces, credits } = req.body
     if (!title) return res.status(400).json({ error: 'Title is required.' })
     const normalizedImages = normalizeImageInput(images, 'lookbook')
+    const lookCredits = creditsCreateManyData(credits)
+    const lookPieces = piecesCreateData(pieces)
     const look = await prisma.fashionLook.create({
       data: {
         title,
@@ -299,11 +317,11 @@ async function handleLooks(req, res) {
         images: normalizedImages.length
           ? { createMany: { data: toImageCreateManyData(normalizedImages) } }
           : undefined,
-        credits: creditsCreateManyData(credits).length
-          ? { createMany: { data: creditsCreateManyData(credits) } }
+        credits: lookCredits.length
+          ? { createMany: { data: lookCredits } }
           : undefined,
-        pieces: piecesCreateData(pieces).length
-          ? { create: piecesCreateData(pieces) }
+        pieces: lookPieces.length
+          ? { create: lookPieces }
           : undefined,
       },
       include: includeLook(),

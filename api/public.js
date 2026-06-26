@@ -830,6 +830,10 @@ function publicFashionTalentSelect() {
     order: true,
     bio: true,
     instagramProfile: true,
+    tiktokProfile: true,
+    twitterProfile: true,
+    youtubeProfile: true,
+    facebookProfile: true,
     email: true,
     website: true,
     agencyName: true,
@@ -848,6 +852,7 @@ function formatFashionTalent(talent) {
 function formatFashionCredit(credit) {
   return {
     id: credit.id,
+    creditName: credit.creditName || credit.talent?.name || '',
     roleLabel: credit.roleLabel,
     talent: credit.talent ? { id: credit.talent.id, name: credit.talent.name, slug: credit.talent.slug, role: credit.talent.role } : null,
   }

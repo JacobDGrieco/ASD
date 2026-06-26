@@ -1,13 +1,40 @@
 import { useEffect, useState } from 'react';
-import { Outlet, NavLink, Link } from 'react-router-dom';
-import { FaBullseye, FaBullhorn, FaChevronLeft, FaChevronRight, FaCompactDisc, FaMicrophoneAlt, FaMusic, FaSignOutAlt, FaUserShield, FaVideo, FaRecordVinyl, FaTshirt, FaUsers } from 'react-icons/fa';
+import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
+import { FaBullseye, FaBullhorn, FaChevronDown, FaChevronLeft, FaChevronRight, FaCompactDisc, FaMicrophoneAlt, FaMusic, FaSignOutAlt, FaUserShield, FaVideo, FaRecordVinyl, FaTshirt, FaUsers } from 'react-icons/fa';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import '../../styles/AdminLayout.css';
 
 const ADMIN_SIDEBAR_STATE_KEY = 'admin-sidebar-collapsed';
+const ADMIN_SECTION_STATE_KEY = 'admin-sidebar-sections';
+const DEFAULT_SECTION_STATE = {
+	admin: true,
+	music: true,
+	fashion: true,
+};
+
+function readStoredSectionState() {
+	if (typeof window === 'undefined') return DEFAULT_SECTION_STATE;
+
+	try {
+		const parsed = JSON.parse(window.localStorage.getItem(ADMIN_SECTION_STATE_KEY) || '{}');
+		return Object.fromEntries(
+			Object.entries(DEFAULT_SECTION_STATE).map(([key, fallback]) => [
+				key,
+				typeof parsed[key] === 'boolean' ? parsed[key] : fallback,
+			]),
+		);
+	} catch {
+		return DEFAULT_SECTION_STATE;
+	}
+}
+
+function isLinkActive(link, pathname) {
+	return pathname === link.to || pathname.startsWith(`${link.to}/`) || link.matchPaths?.some((path) => pathname === path || (path !== '/admin' && pathname.startsWith(`${path}/`)));
+}
 
 export default function AdminLayout() {
 	const { logout, session } = useAdminAuth();
+	const location = useLocation();
 	const isArtistScoped = session?.role === 'ARTIST';
 	const isViewer = session?.role === 'VIEWER';
 	const isSuperAdminSession = session?.role === 'SUPER_ADMIN';
@@ -20,30 +47,55 @@ export default function AdminLayout() {
 			return false;
 		}
 	});
+	const [openSections, setOpenSections] = useState(readStoredSectionState);
 
 	useEffect(() => {
 		if (typeof window === 'undefined') return;
 		window.localStorage.setItem(ADMIN_SIDEBAR_STATE_KEY, String(isCollapsed));
 	}, [isCollapsed]);
 
-	const links = [
+	useEffect(() => {
+		if (typeof window === 'undefined') return;
+		window.localStorage.setItem(ADMIN_SECTION_STATE_KEY, JSON.stringify(openSections));
+	}, [openSections]);
+
+	const adminLinks = [
 		...(!isArtistScoped && !isViewer ? [
 			{ to: '/admin/accounts', label: 'Accounts', icon: <FaUserShield aria-hidden="true" /> },
 		] : []),
+	];
+
+	const musicLinks = [
 		...(!isArtistScoped ? [
-			{ to: '/admin/artists', label: 'Artists', icon: <FaMicrophoneAlt aria-hidden="true" /> },
+			{ to: '/admin/artists', label: 'Artists', icon: <FaMicrophoneAlt aria-hidden="true" />, matchPaths: ['/admin'] },
 		] : []),
-		{ to: '/admin/albums', label: 'Albums', icon: <FaCompactDisc aria-hidden="true" /> },
-		{ to: '/admin/songs', label: 'Songs', icon: <FaMusic aria-hidden="true" /> },
+		{ to: '/admin/albums', label: 'Albums', icon: <FaCompactDisc aria-hidden="true" />, matchPaths: isArtistScoped ? ['/admin'] : undefined },
+		{ to: '/admin/songs', label: 'Songs', icon: <FaMusic aria-hidden="true" />, matchPaths: ['/admin/lyrics'] },
 		...(!isArtistScoped ? [{ to: '/admin/record-player', label: 'Record Player', icon: <FaRecordVinyl aria-hidden="true" /> }] : []),
 		{ to: '/admin/board', label: 'Board', icon: <FaBullhorn aria-hidden="true" /> },
 		...(!isViewer ? [{ to: '/admin/videos', label: 'Videos', icon: <FaVideo aria-hidden="true" /> }] : []),
 		...(isSuperAdminSession ? [{ to: '/admin/crosshair', label: 'Crosshair', icon: <FaBullseye aria-hidden="true" /> }] : []),
+	];
+
+	const fashionLinks = [
 		...(isSuperAdminSession ? [
-			{ to: '/admin/fashion/talent', label: 'Fashion Talent', icon: <FaUsers aria-hidden="true" /> },
-			{ to: '/admin/fashion/looks', label: 'Fashion Looks', icon: <FaTshirt aria-hidden="true" /> },
+			{ to: '/admin/fashion/talent', label: 'Talent', icon: <FaUsers aria-hidden="true" /> },
+			{ to: '/admin/fashion/looks', label: 'Looks', icon: <FaTshirt aria-hidden="true" /> },
 		] : []),
 	];
+
+	const navSections = [
+		...(adminLinks.length > 0 ? [{ key: 'admin', label: 'Admin', icon: <FaUserShield aria-hidden="true" />, links: adminLinks }] : []),
+		{ key: 'music', label: 'Music', icon: <FaMusic aria-hidden="true" />, links: musicLinks },
+		...(fashionLinks.length > 0 ? [{ key: 'fashion', label: 'Fashion', icon: <FaTshirt aria-hidden="true" />, links: fashionLinks }] : []),
+	];
+
+	const toggleSection = (sectionKey) => {
+		setOpenSections((current) => ({
+			...current,
+			[sectionKey]: !(current[sectionKey] ?? true),
+		}));
+	};
 
 	return (
 		<div className="admin-layout-layout">
@@ -64,18 +116,46 @@ export default function AdminLayout() {
 					</button>
 				</div>
 				<div className="admin-layout-nav">
-					{links.map((link) => (
-						<NavLink
-							key={link.to}
-							to={link.to}
-							title={link.label}
-							aria-label={link.label}
-							className={({ isActive }) => isActive ? 'admin-layout-link admin-layout-active' : 'admin-layout-link'}
-						>
-							<span className="admin-layout-link-icon">{link.icon}</span>
-							<span className="admin-layout-label">{link.label}</span>
-						</NavLink>
-					))}
+					{navSections.map((section) => {
+						const isOpen = openSections[section.key] ?? true;
+						const hasActiveLink = section.links.some((link) => isLinkActive(link, location.pathname));
+
+						return (
+							<div
+								key={section.key}
+								className={`admin-layout-nav-section ${isOpen ? 'admin-layout-nav-section-open' : 'admin-layout-nav-section-closed'} ${hasActiveLink ? 'admin-layout-nav-section-active' : ''}`.trim()}
+							>
+								<button
+									type="button"
+									className="admin-layout-section-toggle"
+									onClick={() => toggleSection(section.key)}
+									aria-expanded={isOpen}
+									aria-controls={`admin-layout-section-${section.key}`}
+									title={`${isOpen ? 'Close' : 'Open'} ${section.label}`}
+								>
+									<span className="admin-layout-link-icon">{section.icon}</span>
+									<span className="admin-layout-label">{section.label}</span>
+									<span className="admin-layout-section-chevron"><FaChevronDown aria-hidden="true" /></span>
+								</button>
+								{isOpen && (
+									<div id={`admin-layout-section-${section.key}`} className="admin-layout-nav-section-links">
+										{section.links.map((link) => (
+											<NavLink
+												key={link.to}
+												to={link.to}
+												title={link.label}
+												aria-label={link.label}
+												className={({ isActive }) => (isActive || isLinkActive(link, location.pathname)) ? 'admin-layout-link admin-layout-active' : 'admin-layout-link'}
+											>
+												<span className="admin-layout-link-icon">{link.icon}</span>
+												<span className="admin-layout-label">{link.label}</span>
+											</NavLink>
+										))}
+									</div>
+								)}
+							</div>
+						);
+					})}
 				</div>
 				<button onClick={logout} className="admin-layout-logout" aria-label="Log out" title="Log out">
 					<span className="admin-layout-link-icon"><FaSignOutAlt aria-hidden="true" /></span>

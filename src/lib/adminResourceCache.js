@@ -4,6 +4,19 @@ function cacheId(cacheKey, token) {
   return `${cacheKey}::${token ?? ''}`
 }
 
+function expireAdminSession() {
+  resourceCache.clear()
+
+  if (typeof window === 'undefined') return
+
+  window.sessionStorage.removeItem('admin_token')
+  window.sessionStorage.removeItem('admin_session')
+
+  if (window.location.pathname !== '/admin/login') {
+    window.location.assign('/admin/login')
+  }
+}
+
 export function loadAdminResource({ cacheKey, url, token }) {
   const id = cacheId(cacheKey, token)
   const existing = resourceCache.get(id)
@@ -15,6 +28,11 @@ export function loadAdminResource({ cacheKey, url, token }) {
     headers: { Authorization: `Bearer ${token}` },
   })
     .then(async (response) => {
+      if (response.status === 401) {
+        expireAdminSession()
+        return new Promise(() => {})
+      }
+
       if (!response.ok) {
         throw new Error(`Failed to load ${cacheKey} (${response.status})`)
       }

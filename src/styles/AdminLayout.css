@@ -105,6 +105,57 @@
   padding: 0 12px;
 }
 
+.admin-layout-nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-layout-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 10px;
+}
+
+.admin-layout-section-toggle:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.admin-layout-nav-section-active > .admin-layout-section-toggle {
+  color: var(--text);
+}
+
+.admin-layout-section-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  font-size: 0.72rem;
+  transition: transform 0.18s ease;
+}
+
+.admin-layout-nav-section-closed .admin-layout-section-chevron {
+  transform: rotate(-90deg);
+}
+
+.admin-layout-nav-section-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 8px;
+}
+
 .admin-layout-link {
   display: flex;
   align-items: center;
@@ -183,12 +234,22 @@
 }
 
 .admin-layout-sidebar-collapsed .admin-layout-brand,
-.admin-layout-sidebar-collapsed .admin-layout-link {
+.admin-layout-sidebar-collapsed .admin-layout-link,
+.admin-layout-sidebar-collapsed .admin-layout-section-toggle {
   justify-content: center;
   width: 100%;
   gap: 0;
   padding-left: 0;
   padding-right: 0;
+}
+
+.admin-layout-sidebar-collapsed .admin-layout-nav-section,
+.admin-layout-sidebar-collapsed .admin-layout-nav-section-links {
+  width: 100%;
+}
+
+.admin-layout-sidebar-collapsed .admin-layout-nav-section-links {
+  padding-left: 0;
 }
 
 .admin-layout-sidebar-collapsed .admin-layout-logout {
@@ -205,6 +266,10 @@
 .admin-layout-sidebar-collapsed .admin-layout-link-icon,
 .admin-layout-sidebar-collapsed .admin-layout-brand-icon {
   margin: 0 auto;
+}
+
+.admin-layout-sidebar-collapsed .admin-layout-section-chevron {
+  display: none;
 }
 
 .admin-layout-sidebar-collapsed .admin-layout-label {
@@ -258,15 +323,43 @@
 
   .admin-layout-nav,
   .admin-layout-sidebar-collapsed .admin-layout-nav {
-    flex-direction: row;
+    flex-direction: column;
     align-items: stretch;
-    gap: 8px;
+    gap: 10px;
     padding: 0;
-    overflow-x: auto;
+    overflow: visible;
     scrollbar-width: none;
   }
 
   .admin-layout-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .admin-layout-nav-section,
+  .admin-layout-sidebar-collapsed .admin-layout-nav-section {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .admin-layout-section-toggle,
+  .admin-layout-sidebar-collapsed .admin-layout-section-toggle {
+    min-height: 40px;
+    padding: 10px 14px;
+    gap: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .admin-layout-nav-section-links,
+  .admin-layout-sidebar-collapsed .admin-layout-nav-section-links {
+    flex-direction: row;
+    gap: 8px;
+    padding-left: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .admin-layout-nav-section-links::-webkit-scrollbar {
     display: none;
   }
 
@@ -282,6 +375,10 @@
   .admin-layout-label {
     width: auto;
     opacity: 1;
+  }
+
+  .admin-layout-sidebar-collapsed .admin-layout-section-chevron {
+    display: inline-flex;
   }
 
   .admin-layout-sidebar-collapsed .admin-layout-link-icon,

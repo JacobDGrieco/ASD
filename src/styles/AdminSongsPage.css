@@ -1,7 +1,7 @@
 /* Songs page reuses AdminArtistsPage.css styles via shared import */
 
 .admin-song-modal {
-	height: min(72rem, calc(100vh - 48px));
+	min-height: min(48rem, calc(100vh - 48px));
 }
 
 .admin-song-modal .admin-modal-body {

@@ -503,6 +503,16 @@
 	font-size: 1rem;
 }
 
+.admin-full-width-icon-btn {
+	width: 100%;
+	min-height: 34px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1rem;
+	line-height: 1;
+}
+
 .admin-artists-page-action-cell {
 	width: 56px;
 	text-align: center;
@@ -552,6 +562,10 @@
 }
 
 .admin-artists-page-center-cell {
+	text-align: center;
+}
+
+.admin-artists-page-table th.admin-artists-page-center-cell {
 	text-align: center;
 }
 
@@ -762,7 +776,8 @@
 	border: 1px solid var(--border);
 	width: 100%;
 	max-width: 640px;
-	max-height: 90vh;
+	min-height: min(48rem, calc(100vh - 48px));
+	max-height: 80vh;
 	display: flex;
 	flex-direction: column;
 }
@@ -803,6 +818,38 @@
 	padding: 0px 20px;
 	overflow-y: auto;
 	flex: 1;
+}
+
+.admin-modal-tabs.page-tabview.p-tabview {
+	padding: 0;
+}
+
+.admin-modal-tabs.page-tabview .p-tabview-nav {
+	margin-bottom: 16px;
+}
+
+.admin-modal-tabs.page-tabview .p-tabview-panel {
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+	overflow: visible;
+}
+
+.admin-modal-tabs.page-tabview .p-tabview-panels {
+	padding-bottom: 16px;
+}
+
+.admin-modal-field.admin-fashion-talent-meta-row {
+	display: grid;
+	grid-template-columns: minmax(120px, 0.7fr) minmax(0, 1fr) minmax(0, 1fr);
+	gap: 12px;
+	align-items: end;
+}
+
+.admin-fashion-talent-meta-row .admin-artists-page-input,
+.admin-fashion-talent-meta-row select {
+	height: 44px;
 }
 
 .admin-modal-grid {
@@ -939,6 +986,10 @@
 		grid-template-columns: 1fr;
 	}
 
+	.admin-fashion-talent-meta-row {
+		grid-template-columns: 1fr;
+	}
+
 	.admin-artists-page-form-actions,
 	.admin-modal-footer {
 		flex-direction: column;
@@ -982,6 +1033,7 @@
 		min-width: 0;
 	}
 }
+
 .admin-credits-field {
 	width: 100%;
 	display: flex;
@@ -997,7 +1049,7 @@
 
 .admin-credits-field-row {
 	display: grid;
-	grid-template-columns: 1fr 1fr auto;
+	grid-template-columns: minmax(160px, 0.75fr) minmax(0, 1fr) auto;
 	gap: 8px;
 	align-items: center;
 }
@@ -1033,11 +1085,11 @@
 }
 
 .admin-fashion-piece-card-title {
-	font-family: var(--font-display);
+	font-family: inherit;
 	color: var(--text-muted);
 	font-size: 0.85rem;
-	letter-spacing: 0.04em;
-	text-transform: uppercase;
+	letter-spacing: 0;
+	text-transform: none;
 }
 
 .admin-fashion-piece-card-row {

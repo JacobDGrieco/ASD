@@ -12,14 +12,22 @@ function CreditsRow({ credits }) {
 
   return (
     <div className="fashion-look-credits-row">
-      {credits.map((credit, index) => (
-        credit.talent ? (
-          <Link key={`${credit.talent.id}-${index}`} to={`/fashion/talent/${credit.talent.slug}`} className="fashion-look-credit-chip">
+      {credits.map((credit, index) => {
+        const creditName = credit.creditName || credit.talent?.name || ''
+        if (!creditName) return null
+
+        return credit.talent ? (
+          <Link key={`${credit.id ?? credit.talent.id}-${index}`} to={`/fashion/talent/${credit.talent.slug}`} className="fashion-look-credit-chip">
             <span className="fashion-look-credit-role">{credit.roleLabel || 'Credit'}</span>
-            <span className="fashion-look-credit-name">{credit.talent.name}</span>
+            <span className="fashion-look-credit-name">{creditName}</span>
           </Link>
-        ) : null
-      ))}
+        ) : (
+          <span key={`${credit.id ?? creditName}-${index}`} className="fashion-look-credit-chip">
+            <span className="fashion-look-credit-role">{credit.roleLabel || 'Credit'}</span>
+            <span className="fashion-look-credit-name">{creditName}</span>
+          </span>
+        )
+      })}
     </div>
   )
 }

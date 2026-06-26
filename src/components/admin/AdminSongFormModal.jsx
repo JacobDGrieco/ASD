@@ -692,6 +692,10 @@ export default function AdminSongFormModal({
 											placeholder="Type a tag and press Enter"
 										/>
 									</div>
+								</div>
+							</TabPanel>
+							<TabPanel header="Links">
+								<div className="admin-modal-grid">
 									<div className="admin-modal-field admin-modal-field-full">
 										<label className="admin-modal-label">{iconLabel(<SiSoundcloud />, 'SoundCloud URL')}</label>
 										<input type="text" placeholder="SoundCloud URL" value={form.soundcloudUrl} onChange={set('soundcloudUrl')} className="admin-artists-page-input" />

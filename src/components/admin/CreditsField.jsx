@@ -1,13 +1,37 @@
 import { useId } from 'react'
 
-// value: [{ talentId, roleLabel }]
-// talentOptions: [{ id, name, role }]
-export default function CreditsField({ value, onChange, talentOptions, placeholder = 'Add a credit' }) {
+const fashionCreditRoles = [
+  'Model',
+  'Designer',
+  'Stylist',
+  'Wardrobe Stylist',
+  'Creative Director',
+  'Art Director',
+  'Photographer',
+  'Photo Assistant',
+  'Digital Tech',
+  'Retoucher',
+  'Makeup Artist',
+  'Hair Stylist',
+  'Nail Artist',
+  'Set Designer',
+  'Tailor',
+  'Seamstress',
+  'Producer',
+  'Casting Director',
+  'Location Scout',
+  'Brand',
+  'Agency',
+  'Other',
+]
+
+// value: [{ talentId?, creditName, roleLabel }]
+export default function CreditsField({ value, onChange, placeholder = 'Add a credit' }) {
   const selectId = useId()
   const credits = Array.isArray(value) ? value : []
 
   const addCredit = () => {
-    onChange([...credits, { talentId: '', roleLabel: '' }])
+    onChange([...credits, { talentId: '', creditName: '', roleLabel: '' }])
   }
 
   const updateCredit = (index, patch) => {
@@ -26,20 +50,20 @@ export default function CreditsField({ value, onChange, talentOptions, placehold
             <div key={index} className="admin-credits-field-row">
               <select
                 id={index === 0 ? selectId : undefined}
-                value={credit.talentId}
-                onChange={(event) => updateCredit(index, { talentId: event.target.value })}
+                value={credit.roleLabel ?? ''}
+                onChange={(event) => updateCredit(index, { roleLabel: event.target.value })}
                 className="admin-artists-page-input"
               >
-                <option value="">- Select person -</option>
-                {talentOptions.map((person) => (
-                  <option key={person.id} value={person.id}>{person.name}</option>
+                <option value="">- Role -</option>
+                {fashionCreditRoles.map((role) => (
+                  <option key={role} value={role}>{role}</option>
                 ))}
               </select>
               <input
                 type="text"
-                placeholder="Role label (e.g. Photographer)"
-                value={credit.roleLabel}
-                onChange={(event) => updateCredit(index, { roleLabel: event.target.value })}
+                placeholder="Credit name"
+                value={credit.creditName ?? ''}
+                onChange={(event) => updateCredit(index, { creditName: event.target.value })}
                 className="admin-artists-page-input"
               />
               <button
@@ -49,14 +73,20 @@ export default function CreditsField({ value, onChange, talentOptions, placehold
                 aria-label="Remove credit"
                 title="Remove credit"
               >
-                ✕
+                &times;
               </button>
             </div>
           ))}
         </div>
       )}
-      <button type="button" onClick={addCredit} className="admin-artists-page-ghost-btn">
-        {placeholder}
+      <button
+        type="button"
+        onClick={addCredit}
+        className="admin-artists-page-ghost-btn admin-full-width-icon-btn"
+        aria-label={placeholder}
+        title={placeholder}
+      >
+        <span aria-hidden="true">+</span>
       </button>
     </div>
   )
