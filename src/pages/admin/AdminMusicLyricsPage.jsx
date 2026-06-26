@@ -5,7 +5,7 @@ import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import '../../styles/AdminLyricsPage.css'
 
-export default function AdminLyricsPage() {
+export default function AdminMusicLyricsPage() {
   const { songId } = useParams()
   const { state } = useLocation()
   const { token, session } = useAdminAuth()
@@ -366,7 +366,8 @@ export default function AdminLyricsPage() {
       <div className="alp-header">
         <div>
           <Link to="/admin/songs" className="alp-back-link">← Songs</Link>
-          <h1 className="alp-title">{songTitle}</h1>
+          <h1 className="alp-title">Music — Lyrics</h1>
+          <p className="alp-subtitle">{songTitle}</p>
         </div>
         {!isViewer && !isLoading && (
           <div className="alp-header-actions">

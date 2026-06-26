@@ -50,7 +50,7 @@ function makeSlots(tracks) {
 	return base;
 }
 
-export default function AdminRecordPlayerPage() {
+export default function AdminMusicRecordPlayerPage() {
 	const { token, session } = useAdminAuth();
 	const isViewer = session?.role === 'VIEWER';
 	const authHeaders = { Authorization: `Bearer ${token}` };
@@ -182,7 +182,7 @@ export default function AdminRecordPlayerPage() {
 	return (
 		<div>
 			<div className="admin-record-player-page-header">
-				<h1 className="admin-record-player-page-title">Record Player</h1>
+				<h1 className="admin-record-player-page-title">Music — Record Player</h1>
 				{!isViewer && (
 					<button type="button" onClick={handleSave} className="admin-record-player-page-primary-btn">
 						Save Rack

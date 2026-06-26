@@ -25,14 +25,14 @@ import './styles/PublicAdminPreview.css';
 
 const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage.jsx'));
 const AdminAccountsPage = lazy(() => import('./pages/admin/AdminAccountsPage.jsx'));
-const AdminArtistsPage = lazy(() => import('./pages/admin/AdminArtistsPage.jsx'));
-const AdminAlbumsPage = lazy(() => import('./pages/admin/AdminAlbumsPage.jsx'));
-const AdminBoardPage = lazy(() => import('./pages/admin/AdminBoardPage.jsx'));
-const AdminVideosPage = lazy(() => import('./pages/admin/AdminVideosPage.jsx'));
-const AdminCrosshairPage = lazy(() => import('./pages/admin/AdminCrosshairPage.jsx'));
-const AdminSongsPage = lazy(() => import('./pages/admin/AdminSongsPage.jsx'));
-const AdminLyricsPage = lazy(() => import('./pages/admin/AdminLyricsPage.jsx'));
-const AdminRecordPlayerPage = lazy(() => import('./pages/admin/AdminRecordPlayerPage.jsx'));
+const AdminMusicArtistsPage = lazy(() => import('./pages/admin/AdminMusicArtistsPage.jsx'));
+const AdminMusicAlbumsPage = lazy(() => import('./pages/admin/AdminMusicAlbumsPage.jsx'));
+const AdminMusicBoardPage = lazy(() => import('./pages/admin/AdminMusicBoardPage.jsx'));
+const AdminMusicVideosPage = lazy(() => import('./pages/admin/AdminMusicVideosPage.jsx'));
+const AdminMusicCrosshairPage = lazy(() => import('./pages/admin/AdminMusicCrosshairPage.jsx'));
+const AdminMusicSongsPage = lazy(() => import('./pages/admin/AdminMusicSongsPage.jsx'));
+const AdminMusicLyricsPage = lazy(() => import('./pages/admin/AdminMusicLyricsPage.jsx'));
+const AdminMusicRecordPlayerPage = lazy(() => import('./pages/admin/AdminMusicRecordPlayerPage.jsx'));
 const AdminFashionTalentPage = lazy(() => import('./pages/admin/AdminFashionTalentPage.jsx'));
 const AdminFashionLooksPage = lazy(() => import('./pages/admin/AdminFashionLooksPage.jsx'));
 
@@ -103,20 +103,20 @@ function PublicLayout() {
 
 function AdminHomeRedirect() {
 	const { session } = useAdminAuth();
-	if (session?.role === 'ARTIST') return <AdminAlbumsPage />;
-	return <AdminArtistsPage />;
+	if (session?.role === 'ARTIST') return <AdminMusicAlbumsPage />;
+	return <AdminMusicArtistsPage />;
 }
 
 function AdminVideosAccessRoute() {
 	const { session } = useAdminAuth();
 	if (session?.role === 'VIEWER') return <Navigate to="/admin" replace />;
-	return <AdminVideosPage />;
+	return <AdminMusicVideosPage />;
 }
 
 function AdminCrosshairAccessRoute() {
 	const { session } = useAdminAuth();
 	if (session?.role !== 'SUPER_ADMIN') return <Navigate to="/admin" replace />;
-	return <AdminCrosshairPage />;
+	return <AdminMusicCrosshairPage />;
 }
 
 function AdminFashionAccessRoute({ children }) {
@@ -159,14 +159,14 @@ export default function App() {
 						<Route element={<AdminLayout />}>
 							<Route path="/admin" element={<AdminHomeRedirect />} />
 							<Route path="/admin/accounts" element={<AdminAccountsPage />} />
-							<Route path="/admin/artists" element={<AdminArtistsPage />} />
-							<Route path="/admin/albums" element={<AdminAlbumsPage />} />
-							<Route path="/admin/board" element={<AdminBoardPage />} />
+							<Route path="/admin/artists" element={<AdminMusicArtistsPage />} />
+							<Route path="/admin/albums" element={<AdminMusicAlbumsPage />} />
+							<Route path="/admin/board" element={<AdminMusicBoardPage />} />
 							<Route path="/admin/videos" element={<AdminVideosAccessRoute />} />
 							<Route path="/admin/crosshair" element={<AdminCrosshairAccessRoute />} />
-							<Route path="/admin/songs" element={<AdminSongsPage />} />
-							<Route path="/admin/lyrics/:songId" element={<AdminLyricsPage />} />
-							<Route path="/admin/record-player" element={<AdminRecordPlayerPage />} />
+							<Route path="/admin/songs" element={<AdminMusicSongsPage />} />
+							<Route path="/admin/lyrics/:songId" element={<AdminMusicLyricsPage />} />
+							<Route path="/admin/record-player" element={<AdminMusicRecordPlayerPage />} />
 							<Route path="/admin/fashion/talent" element={<AdminFashionAccessRoute><AdminFashionTalentPage /></AdminFashionAccessRoute>} />
 							<Route path="/admin/fashion/looks" element={<AdminFashionAccessRoute><AdminFashionLooksPage /></AdminFashionAccessRoute>} />
 						</Route>

@@ -127,7 +127,7 @@ function validateAlbumForm(form, albums = []) {
   return errors
 }
 
-export default function AdminAlbumsPage() {
+export default function AdminMusicAlbumsPage() {
   const { token, session } = useAdminAuth()
   const isArtistScoped = session?.role === 'ARTIST'
   const isViewer = session?.role === 'VIEWER'
@@ -383,7 +383,7 @@ export default function AdminAlbumsPage() {
     <div>
       <div className="admin-artists-page-sticky-top">
         <div className="admin-artists-page-header">
-          <h1 className="admin-artists-page-title">Albums</h1>
+          <h1 className="admin-artists-page-title">Music — Albums</h1>
           {!isViewer && <button onClick={openCreate} className="admin-artists-page-primary-btn">New Album</button>}
         </div>
 

@@ -42,7 +42,7 @@ function placementAlbumIds(song) {
   return song.albumId ? [song.albumId] : []
 }
 
-export default function AdminSongsPage() {
+export default function AdminMusicSongsPage() {
   const { token, session } = useAdminAuth()
   const isViewer = session?.role === 'VIEWER'
   const auth = { Authorization: `Bearer ${token}` }
@@ -281,7 +281,7 @@ export default function AdminSongsPage() {
     <div>
       <div className="admin-artists-page-sticky-top">
         <div className="admin-artists-page-header">
-          <h1 className="admin-artists-page-title">Songs</h1>
+          <h1 className="admin-artists-page-title">Music — Songs</h1>
           {!isViewer && (
             <button onClick={openCreate} className="admin-artists-page-primary-btn">New Song</button>
           )}

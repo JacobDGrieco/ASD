@@ -73,7 +73,7 @@ function buildArtistStaticVideoUrl(rows, artistId, currentVideoUrl = '', baseUrl
 	return buildStaticArtistVideoPath(artist?.slug, baseUrl, extension);
 }
 
-export default function AdminVideosPage() {
+export default function AdminMusicVideosPage() {
 	const { token, session } = useAdminAuth();
 	const isViewer = session?.role === 'VIEWER';
 	const auth = { Authorization: `Bearer ${token}` };
@@ -136,7 +136,7 @@ export default function AdminVideosPage() {
 		<div>
 			<div className="admin-artists-page-sticky-top">
 				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">The Stage</h1>
+					<h1 className="admin-artists-page-title">Music — Videos</h1>
 				</div>
 			</div>
 

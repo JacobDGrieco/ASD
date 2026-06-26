@@ -244,7 +244,7 @@ export default function AdminFashionLooksPage() {
 		<div>
 			<div className="admin-artists-page-sticky-top">
 				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Fashion Looks</h1>
+					<h1 className="admin-artists-page-title">Fashion — Looks</h1>
 					<button onClick={openCreate} className="admin-artists-page-primary-btn">New Look</button>
 				</div>
 			</div>

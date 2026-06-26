@@ -67,7 +67,7 @@ function isArtistHidden(artist) {
 	return artist?.isVisible === false;
 }
 
-export default function AdminArtistsPage() {
+export default function AdminMusicArtistsPage() {
 	const { token, session } = useAdminAuth();
 	const isSuperAdmin = session?.role !== 'ARTIST';
 	const isViewer = session?.role === 'VIEWER';
@@ -252,7 +252,7 @@ export default function AdminArtistsPage() {
 		<div>
 			<div className="admin-artists-page-sticky-top">
 				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Artists</h1>
+					<h1 className="admin-artists-page-title">Music — Artists</h1>
 					{isSuperAdmin && !isViewer && <button onClick={openCreate} className="admin-artists-page-primary-btn">New Artist</button>}
 				</div>
 			</div>

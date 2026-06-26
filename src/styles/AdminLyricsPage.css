@@ -24,6 +24,12 @@
   font-size: 1.5rem;
 }
 
+.alp-subtitle {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
 .alp-edit-pane {
   max-width: 1400px;
 }

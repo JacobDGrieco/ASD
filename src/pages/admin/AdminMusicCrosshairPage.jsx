@@ -70,7 +70,7 @@ function buildPayload(form) {
 	};
 }
 
-export default function AdminCrosshairPage() {
+export default function AdminMusicCrosshairPage() {
 	const { token, session } = useAdminAuth();
 	const auth = { Authorization: `Bearer ${token}` };
 	const isSuperAdmin = session?.role === 'SUPER_ADMIN';
@@ -233,7 +233,7 @@ export default function AdminCrosshairPage() {
 	if (!isSuperAdmin) {
 		return (
 			<div className="admin-crosshair-page">
-				<h1 className="admin-artists-page-title">The Crosshair</h1>
+				<h1 className="admin-artists-page-title">Music — Crosshair</h1>
 				<p className="admin-crosshair-page-note">Only super admins can manage Crosshair videos.</p>
 			</div>
 		);
@@ -243,7 +243,7 @@ export default function AdminCrosshairPage() {
 		<div className="admin-crosshair-page">
 			<div className="admin-artists-page-sticky-top">
 				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">The Crosshair</h1>
+					<h1 className="admin-artists-page-title">Music — Crosshair</h1>
 					<div className="admin-crosshair-page-header-actions">
 						<button
 							type="button"

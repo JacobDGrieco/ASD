@@ -8,6 +8,7 @@ import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
 import { extractBoardBodyImagePathnames, validateBoardBodyMarkdown } from '../../lib/boardMarkdown.js';
 import { ASD_RECORDS_ARTIST_NAME, ASD_RECORDS_ARTIST_OPTION_ID, isAsdRecordsArtist } from '../../lib/publicVisibility.js';
+import '../../styles/AdminArtistsPage.css';
 import '../../styles/admin-board-page.css';
 
 function todayDateInputValue() {
@@ -37,7 +38,7 @@ function positionLabel(post) {
 	return `Pinned until ${new Date(post.positionPinnedUntil).toLocaleDateString()}`;
 }
 
-export default function AdminBoardPage() {
+export default function AdminMusicBoardPage() {
 	const { token, session } = useAdminAuth();
 	const isSuperAdmin = session?.role === 'SUPER_ADMIN';
 	const isArtist = session?.role === 'ARTIST';
@@ -331,10 +332,10 @@ export default function AdminBoardPage() {
 
 	return (
 		<div className="admin-board-page">
-			<div className="admin-board-page-header">
-				<h1 className="admin-board-page-title">The Board</h1>
+			<div className="admin-artists-page-header">
+				<h1 className="admin-artists-page-title">Music &mdash; Board</h1>
 				{(isArtist || isSuperAdmin) && (
-					<button className="admin-board-page-new-btn" onClick={openCreate}>
+					<button className="admin-artists-page-primary-btn" onClick={openCreate}>
 						+ New Post
 					</button>
 				)}

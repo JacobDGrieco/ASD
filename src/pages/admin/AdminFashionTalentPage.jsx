@@ -270,7 +270,7 @@ export default function AdminFashionTalentPage() {
     <div>
       <div className="admin-artists-page-sticky-top">
         <div className="admin-artists-page-header">
-          <h1 className="admin-artists-page-title">Fashion Talent</h1>
+          <h1 className="admin-artists-page-title">Fashion — Talent</h1>
           <button onClick={openCreate} className="admin-artists-page-primary-btn">New Talent</button>
         </div>
       </div>
