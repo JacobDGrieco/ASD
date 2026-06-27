@@ -1049,9 +1049,30 @@
 
 .admin-credits-field-row {
 	display: grid;
-	grid-template-columns: minmax(160px, 0.75fr) minmax(0, 1fr) auto;
+	grid-template-columns: 34px minmax(0, 1fr) 170px auto;
 	gap: 8px;
 	align-items: center;
+}
+
+.admin-credits-person-thumb {
+	width: 34px;
+	height: 34px;
+	border: 1px solid var(--border);
+	border-radius: 50%;
+	background: var(--bg-raised);
+	overflow: hidden;
+}
+
+.admin-credits-person-thumb-img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.admin-credits-role-select {
+	flex-shrink: 0;
+	width: 170px;
 }
 
 @media (max-width: 720px) {
@@ -1092,6 +1113,19 @@
 	text-transform: none;
 }
 
+.admin-fashion-piece-order-controls {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+}
+
+.admin-fashion-piece-order-btn:disabled {
+	opacity: 0.35;
+	cursor: default;
+	pointer-events: none;
+}
+
 .admin-fashion-piece-card-row {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
@@ -1108,4 +1142,95 @@
 	font-size: 0.8rem;
 	color: var(--text-muted);
 	margin-top: 4px;
+}
+
+.crew-picker-field {
+	position: relative;
+	flex: 1;
+	min-width: 0;
+}
+
+.crew-picker-input-row {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.crew-picker-input {
+	flex: 1;
+	min-width: 0;
+}
+
+.crew-picker-dropdown {
+	position: fixed;
+	z-index: 1000;
+	background: #1a1a1a;
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	border-radius: 4px;
+	overflow-y: auto;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.crew-picker-group-label {
+	padding: 6px 10px 4px;
+	font-size: 0.68rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: rgba(255, 255, 255, 0.35);
+	border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.crew-picker-group-label:first-child {
+	border-top: none;
+}
+
+.crew-picker-option {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	padding: 6px 10px;
+	background: transparent;
+	border: none;
+	text-align: left;
+	cursor: pointer;
+	color: rgba(255, 255, 255, 0.85);
+}
+
+.crew-picker-option:hover {
+	background: rgba(255, 255, 255, 0.06);
+}
+
+.crew-picker-option-img,
+.crew-picker-option-img-blank {
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	object-fit: cover;
+	flex-shrink: 0;
+}
+
+.crew-picker-option-img-blank {
+	background: rgba(255, 255, 255, 0.08);
+}
+
+.crew-picker-option-name {
+	flex: 1;
+	font-size: 0.875rem;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.crew-picker-option-role {
+	font-size: 0.72rem;
+	color: rgba(255, 255, 255, 0.4);
+	white-space: nowrap;
+}
+
+.crew-picker-empty {
+	padding: 10px;
+	font-size: 0.82rem;
+	color: rgba(255, 255, 255, 0.3);
+	text-align: center;
 }

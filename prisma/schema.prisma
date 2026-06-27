@@ -407,6 +407,8 @@ model FashionLookCredit {
   look       FashionLook    @relation(fields: [lookId], references: [id], onDelete: Cascade)
   talentId   String?
   talent     FashionTalent? @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  crewId     String?
+  crew       FashionCrew?   @relation("LookCreditCrew", fields: [crewId], references: [id], onDelete: SetNull)
   creditName String         @default("")
   roleLabel  String         @default("")
   sortOrder  Int            @default(0)
@@ -414,6 +416,7 @@ model FashionLookCredit {
   @@index([lookId, sortOrder])
   @@index([lookId, talentId])
   @@index([talentId])
+  @@index([crewId])
 }
 
 model FashionPieceCredit {
@@ -422,6 +425,8 @@ model FashionPieceCredit {
   piece      FashionPiece   @relation(fields: [pieceId], references: [id], onDelete: Cascade)
   talentId   String?
   talent     FashionTalent? @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  crewId     String?
+  crew       FashionCrew?   @relation("PieceCreditCrew", fields: [crewId], references: [id], onDelete: SetNull)
   creditName String         @default("")
   roleLabel  String         @default("")
   sortOrder  Int            @default(0)
@@ -429,6 +434,20 @@ model FashionPieceCredit {
   @@index([pieceId, sortOrder])
   @@index([pieceId, talentId])
   @@index([talentId])
+  @@index([crewId])
+}
+
+model FashionCrew {
+  id           String               @id @default(cuid())
+  name         String
+  role         String               @default("")
+  externalUrl  String               @default("")
+  imageUrl     String               @default("")
+  pathname     String?
+  lookCredits  FashionLookCredit[]  @relation("LookCreditCrew")
+  pieceCredits FashionPieceCredit[] @relation("PieceCreditCrew")
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
 }
 
 enum FashionTalentRole {

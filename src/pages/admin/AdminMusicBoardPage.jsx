@@ -336,7 +336,7 @@ export default function AdminMusicBoardPage() {
 				<h1 className="admin-artists-page-title">Music — The Board</h1>
 				{(isArtist || isSuperAdmin) && (
 					<button className="admin-artists-page-primary-btn" onClick={openCreate}>
-						+ New Post
+						New Post
 					</button>
 				)}
 			</div>

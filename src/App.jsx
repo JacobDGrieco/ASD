@@ -35,6 +35,7 @@ const AdminMusicSongsPage = lazy(() => import('./pages/admin/AdminMusicSongsPage
 const AdminMusicLyricsPage = lazy(() => import('./pages/admin/AdminMusicLyricsPage.jsx'));
 const AdminMusicRecordPlayerPage = lazy(() => import('./pages/admin/AdminMusicRecordPlayerPage.jsx'));
 const AdminFashionTalentPage = lazy(() => import('./pages/admin/AdminFashionTalentPage.jsx'));
+const AdminFashionOutsideTalentPage = lazy(() => import('./pages/admin/AdminFashionOutsideTalentPage.jsx'));
 const AdminFashionLooksPage = lazy(() => import('./pages/admin/AdminFashionLooksPage.jsx'));
 
 function RouteFallback() {
@@ -70,7 +71,7 @@ function PublicLayout() {
 
 			event.intercept({
 				handler: async () => {
-					await document.startViewTransition(() => {}).finished;
+					await document.startViewTransition(() => { }).finished;
 				},
 			});
 		};
@@ -169,6 +170,7 @@ export default function App() {
 							<Route path="/admin/lyrics/:songId" element={<AdminMusicLyricsPage />} />
 							<Route path="/admin/record-player" element={<AdminMusicRecordPlayerPage />} />
 							<Route path="/admin/fashion/talent" element={<AdminFashionAccessRoute><AdminFashionTalentPage /></AdminFashionAccessRoute>} />
+							<Route path="/admin/fashion/outside_talent" element={<AdminFashionAccessRoute><AdminFashionOutsideTalentPage /></AdminFashionAccessRoute>} />
 							<Route path="/admin/fashion/looks" element={<AdminFashionAccessRoute><AdminFashionLooksPage /></AdminFashionAccessRoute>} />
 						</Route>
 					</Route>

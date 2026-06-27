@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom'
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useRef, useState, useEffect } from 'react'
 import { FaExternalLinkAlt, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 import { useApi } from '../hooks/useApi.js'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
@@ -7,20 +7,78 @@ import { useAdminAuth } from '../lib/adminAuth.jsx'
 import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js'
 import '../styles/FashionPages.css'
 
+const CREDIT_ROLE_PRIORITY = new Map([
+  ['MODEL', 0],
+  ['PHOTOGRAPHER', 10],
+  ['AGENCY', 20],
+  ['BRAND', 30],
+  ['STYLIST', 40],
+  ['WARDROBE STYLIST', 41],
+  ['DESIGNER', 50],
+  ['CREATIVE DIRECTOR', 60],
+  ['ART DIRECTOR', 70],
+  ['MAKEUP ARTIST', 80],
+  ['HAIR STYLIST', 90],
+  ['NAIL ARTIST', 100],
+  ['CASTING DIRECTOR', 110],
+  ['PRODUCER', 120],
+  ['SET DESIGNER', 130],
+  ['PHOTO ASSISTANT', 140],
+  ['DIGITAL TECH', 150],
+  ['RETOUCHER', 160],
+  ['TAILOR', 170],
+  ['SEAMSTRESS', 180],
+  ['LOCATION SCOUT', 190],
+  ['EDITOR', 200],
+  ['OTHER', 900],
+])
+
+function normalizeCreditRole(role) {
+  return String(role ?? '').trim().replace(/_/g, ' ').replace(/\s+/g, ' ').toUpperCase()
+}
+
+function creditRolePriority(credit) {
+  const candidates = [credit?.roleLabel, credit?.talent?.role]
+  for (const candidate of candidates) {
+    const priority = CREDIT_ROLE_PRIORITY.get(normalizeCreditRole(candidate))
+    if (priority !== undefined) return priority
+  }
+  return 999
+}
+
+function isModelCredit(credit) {
+  return creditRolePriority(credit) === CREDIT_ROLE_PRIORITY.get('MODEL')
+}
+
+function sortCreditsByImportance(credits) {
+  return (Array.isArray(credits) ? credits : [])
+    .map((credit, index) => ({ credit, index }))
+    .sort((a, b) => creditRolePriority(a.credit) - creditRolePriority(b.credit) || a.index - b.index)
+    .map(({ credit }) => credit)
+}
+
 function CreditsRow({ credits }) {
-  if (!credits?.length) return null
+  const sortedCredits = sortCreditsByImportance(credits)
+  if (!sortedCredits.length) return null
 
   return (
     <div className="fashion-look-credits-row">
-      {credits.map((credit, index) => {
+      {sortedCredits.map((credit, index) => {
         const creditName = credit.creditName || credit.talent?.name || ''
         if (!creditName) return null
 
-        return credit.talent ? (
+        if (credit.talent) return (
           <Link key={`${credit.id ?? credit.talent.id}-${index}`} to={`/fashion/talent/${credit.talent.slug}`} className="fashion-look-credit-chip">
             <span className="fashion-look-credit-role">{credit.roleLabel || 'Credit'}</span>
             <span className="fashion-look-credit-name">{creditName}</span>
           </Link>
+        )
+
+        return credit.externalUrl ? (
+          <a key={`${credit.id ?? creditName}-${index}`} href={credit.externalUrl} target="_blank" rel="noreferrer" className="fashion-look-credit-chip">
+            <span className="fashion-look-credit-role">{credit.roleLabel || 'Credit'}</span>
+            <span className="fashion-look-credit-name">{creditName}</span>
+          </a>
         ) : (
           <span key={`${credit.id ?? creditName}-${index}`} className="fashion-look-credit-chip">
             <span className="fashion-look-credit-role">{credit.roleLabel || 'Credit'}</span>
@@ -32,10 +90,105 @@ function CreditsRow({ credits }) {
   )
 }
 
-function CreditCard({ credit }) {
+function ModelCreditCard({ credit, index }) {
   const name = credit.creditName || credit.talent?.name || ''
-  const image = credit.talent?.image
+  if (!name) return null
+
+  const image = credit.image
   const slug = credit.talent?.slug
+  const externalUrl = credit.externalUrl
+  const inner = (
+    <>
+      <span className="fashion-look-model-image-wrap">
+        {image ? (
+          <img src={image.previewUrl || image.url} alt={name} className="fashion-look-model-image" />
+        ) : (
+          <span className="fashion-look-model-image-blank" />
+        )}
+      </span>
+      <span className="fashion-look-model-name">{name}</span>
+    </>
+  )
+
+  if (slug) {
+    return (
+      <Link key={`${credit.id ?? slug}-${index}`} to={`/fashion/talent/${slug}`} className="fashion-look-model-card">
+        {inner}
+      </Link>
+    )
+  }
+
+  if (externalUrl) {
+    return (
+      <a key={`${credit.id ?? name}-${index}`} href={externalUrl} target="_blank" rel="noreferrer" className="fashion-look-model-card">
+        {inner}
+      </a>
+    )
+  }
+
+  return (
+    <span key={`${credit.id ?? name}-${index}`} className="fashion-look-model-card">
+      {inner}
+    </span>
+  )
+}
+
+function ModelsRow({ credits }) {
+  const sortedCredits = sortCreditsByImportance(credits)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const hasControls = sortedCredits.length > 3
+  const maxIndex = Math.max(0, sortedCredits.length - 3)
+  const visibleCredits = hasControls
+    ? sortedCredits.slice(activeIndex, activeIndex + 3)
+    : sortedCredits
+
+  useEffect(() => {
+    setActiveIndex((index) => Math.min(index, maxIndex))
+  }, [maxIndex])
+
+  if (!sortedCredits.length) return null
+
+  return (
+    <div className="fashion-look-models">
+      <span className="fashion-look-models-label">Models</span>
+      <div className="fashion-look-models-controls">
+        {hasControls && (
+          <button
+            type="button"
+            className="fashion-look-gallery-arrow"
+            onClick={() => setActiveIndex((index) => Math.max(0, index - 1))}
+            disabled={activeIndex === 0}
+            aria-label="Previous models"
+          >
+            <FaChevronLeft />
+          </button>
+        )}
+        <div className="fashion-look-models-row">
+          {visibleCredits.map((credit, index) => (
+            <ModelCreditCard key={credit.id ?? index} credit={credit} index={activeIndex + index} />
+          ))}
+        </div>
+        {hasControls && (
+          <button
+            type="button"
+            className="fashion-look-gallery-arrow"
+            onClick={() => setActiveIndex((index) => Math.min(maxIndex, index + 1))}
+            disabled={activeIndex === maxIndex}
+            aria-label="Next models"
+          >
+            <FaChevronRight />
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function CreditCard({ credit }) {
+  const name = credit.creditName || ''
+  const image = credit.image
+  const slug = credit.talent?.slug
+  const externalUrl = credit.externalUrl
 
   const inner = (
     <>
@@ -54,20 +207,177 @@ function CreditCard({ credit }) {
 
   return slug
     ? <Link to={`/fashion/talent/${slug}`} className="fashion-credit-card">{inner}</Link>
+    : externalUrl
+      ? <a href={externalUrl} target="_blank" rel="noreferrer" className="fashion-credit-card">{inner}</a>
     : <div className="fashion-credit-card">{inner}</div>
 }
 
 function CreditsCarousel({ credits }) {
-  if (!credits?.length) return null
+  const sortedCredits = sortCreditsByImportance(credits)
+  if (!sortedCredits.length) return null
   return (
     <section className="fashion-look-credits-section">
       <h2 className="discography-heading">Credits</h2>
       <div className="fashion-credits-carousel">
-        {credits.map((credit, index) => (
+        {sortedCredits.map((credit, index) => (
           <CreditCard key={credit.id ?? index} credit={credit} />
         ))}
       </div>
     </section>
+  )
+}
+
+function PieceCreditMiniCard({ credit }) {
+  const name = credit.creditName || credit.talent?.name || ''
+  if (!name) return null
+
+  const image = credit.image
+  const slug = credit.talent?.slug
+  const externalUrl = credit.externalUrl
+  const inner = (
+    <>
+      <div className="fashion-piece-credit-mini-image-wrap">
+        {image
+          ? <img src={image.previewUrl || image.url} alt={name} className="fashion-piece-credit-mini-image" />
+          : <div className="fashion-piece-credit-mini-image-blank" />
+        }
+      </div>
+      <div className="fashion-piece-credit-mini-info">
+        <span className="fashion-piece-credit-mini-role">{credit.roleLabel || 'Credit'}</span>
+        <span className="fashion-piece-credit-mini-name">{name}</span>
+      </div>
+    </>
+  )
+
+  if (slug) {
+    return <Link to={`/fashion/talent/${slug}`} className="fashion-piece-credit-mini-card">{inner}</Link>
+  }
+
+  if (externalUrl) {
+    return <a href={externalUrl} target="_blank" rel="noreferrer" className="fashion-piece-credit-mini-card">{inner}</a>
+  }
+
+  return <div className="fashion-piece-credit-mini-card">{inner}</div>
+}
+
+function PieceCreditsPopover({ credits }) {
+  const sortedCredits = sortCreditsByImportance(credits).filter((credit) => credit.creditName || credit.talent?.name)
+  const [open, setOpen] = useState(false)
+  const [page, setPage] = useState(0)
+  const [popoverStyle, setPopoverStyle] = useState(null)
+  const containerRef = useRef(null)
+  const popoverRef = useRef(null)
+  const pageSize = 4
+  const pageCount = Math.max(1, Math.ceil(sortedCredits.length / pageSize))
+  const maxPage = pageCount - 1
+  const visibleCredits = sortedCredits.slice(page * pageSize, page * pageSize + pageSize)
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, maxPage))
+  }, [maxPage])
+
+  useEffect(() => {
+    if (!open) return undefined
+
+    const updatePopoverPosition = () => {
+      const containerRect = containerRef.current?.getBoundingClientRect()
+      if (!containerRect) return
+
+      const viewportPadding = 12
+      const gap = 8
+      const popoverHeight = popoverRef.current?.offsetHeight ?? 360
+      const spaceAbove = containerRect.top - viewportPadding
+      const spaceBelow = window.innerHeight - containerRect.bottom - viewportPadding
+      const placement = spaceBelow >= popoverHeight || spaceBelow >= spaceAbove ? 'below' : 'above'
+      const desiredViewportTop = placement === 'below'
+        ? containerRect.bottom + gap
+        : containerRect.top - popoverHeight - gap
+      const clampedViewportTop = Math.max(
+        viewportPadding,
+        Math.min(desiredViewportTop, window.innerHeight - popoverHeight - viewportPadding)
+      )
+
+      setPopoverStyle({
+        top: `${clampedViewportTop - containerRect.top}px`,
+        '--popover-max-height': `${Math.max(180, window.innerHeight - (viewportPadding * 2))}px`,
+        placement,
+      })
+    }
+
+    const handleOutside = (event) => {
+      if (!containerRef.current?.contains(event.target)) setOpen(false)
+    }
+
+    updatePopoverPosition()
+    document.addEventListener('mousedown', handleOutside)
+    window.addEventListener('resize', updatePopoverPosition)
+    window.addEventListener('scroll', updatePopoverPosition, true)
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+      window.removeEventListener('resize', updatePopoverPosition)
+      window.removeEventListener('scroll', updatePopoverPosition, true)
+    }
+  }, [open, page, visibleCredits.length])
+
+  useEffect(() => {
+    if (!open) setPopoverStyle(null)
+  }, [open])
+
+  if (!sortedCredits.length) return null
+
+  return (
+    <div className="fashion-piece-credits-popover-wrap" ref={containerRef}>
+      <button
+        type="button"
+        className="fashion-piece-credits-toggle"
+        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+      >
+        Extra Credits
+      </button>
+      {open && (
+        <div
+          className={`fashion-piece-credits-popover${popoverStyle ? ' fashion-piece-credits-popover--ready' : ''}`}
+          ref={popoverRef}
+          style={popoverStyle ?? undefined}
+          data-placement={popoverStyle?.placement ?? 'below'}
+        >
+          <div className="fashion-piece-credits-popover-header">
+            <div className="fashion-piece-credits-popover-heading">
+              <span>Extra Credits</span>
+              {pageCount > 1 && <span>{page + 1}/{pageCount}</span>}
+            </div>
+            {pageCount > 1 && (
+              <div className="fashion-piece-credits-popover-controls">
+                <button
+                  type="button"
+                  className="fashion-look-gallery-arrow"
+                  onClick={() => setPage((current) => Math.max(0, current - 1))}
+                  disabled={page === 0}
+                  aria-label="Previous piece credits"
+                >
+                  <FaChevronLeft />
+                </button>
+                <button
+                  type="button"
+                  className="fashion-look-gallery-arrow"
+                  onClick={() => setPage((current) => Math.min(maxPage, current + 1))}
+                  disabled={page === maxPage}
+                  aria-label="Next piece credits"
+                >
+                  <FaChevronRight />
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="fashion-piece-credits-popover-grid">
+            {visibleCredits.map((credit, index) => (
+              <PieceCreditMiniCard key={credit.id ?? `${credit.creditName}-${page}-${index}`} credit={credit} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -99,9 +409,9 @@ export default function FashionLookPage() {
   if (!look) return null
 
   const images = look.images ?? []
-  const allCredits = look.credits ?? []
-  const modelCredits = allCredits.filter(c => c.talent?.role === 'MODEL')
-  const crewCredits = allCredits.filter(c => c.talent?.role !== 'MODEL')
+  const allCredits = sortCreditsByImportance(look.credits ?? [])
+  const modelCredits = allCredits.filter(isModelCredit)
+  const crewCredits = allCredits.filter(c => !isModelCredit(c))
   const activeImage = images[activeImageIndex] ?? images[0]
   const prevImage = () => setActiveImageIndex(i => Math.max(0, i - 1))
   const nextImage = () => setActiveImageIndex(i => Math.min(images.length - 1, i + 1))
@@ -167,7 +477,7 @@ export default function FashionLookPage() {
 
           <div className="fashion-look-info">
             <h1 className="fashion-look-title">{look.title}</h1>
-            <CreditsRow credits={modelCredits} />
+            <ModelsRow credits={modelCredits} />
             {look.description && <p className="fashion-look-description">{look.description}</p>}
           </div>
         </section>
@@ -187,7 +497,7 @@ export default function FashionLookPage() {
                   </div>
                   <div className="fashion-piece-card-info">
                     <span className="fashion-piece-card-name">{piece.name}</span>
-                    <CreditsRow credits={piece.credits} />
+                    <PieceCreditsPopover credits={piece.credits} />
                     {piece.buyUrl && (
                       <a href={piece.buyUrl} target="_blank" rel="noreferrer" className="fashion-piece-card-buy-link">
                         Shop <FaExternalLinkAlt aria-hidden="true" />

@@ -7,6 +7,7 @@ import CreditsField from '../../components/admin/CreditsField.jsx';
 import FashionPiecesField from '../../components/admin/FashionPiecesField.jsx';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
+import { clientImage } from '../../lib/images.js';
 import { slugify } from '../../lib/slugify.js';
 import '../../styles/AdminArtistsPage.css';
 
@@ -42,17 +43,34 @@ function isLookHidden(look) {
 }
 
 function hasCreditValue(credit) {
-	return Boolean(credit?.creditName?.trim() || credit?.talentId);
+	return Boolean(credit?.creditName?.trim() || credit?.talentId || credit?.crewId);
 }
 
-// Older credits may still have a linked talent. Keep that id while making the
+// Older credits may still have a linked person. Keep that id while making the
 // visible credit name editable as plain text.
 function toFormCredits(credits) {
 	return (Array.isArray(credits) ? credits : []).map((credit) => ({
 		talentId: credit.talentId ?? credit.talent?.id ?? '',
-		creditName: credit.creditName ?? credit.talent?.name ?? '',
+		crewId: credit.crewId ?? credit.crew?.id ?? '',
+		creditName: credit.creditName ?? credit.talent?.name ?? credit.crew?.name ?? '',
 		roleLabel: credit.roleLabel ?? '',
 	}));
+}
+
+function toFormPieceImage(piece) {
+	if (piece?.image) return piece.image;
+	const imageReference = piece?.imageUrl || piece?.pathname;
+	if (!imageReference) return null;
+
+	return clientImage({
+		id: `${piece.id ?? piece.name ?? 'piece'}-image`,
+		url: piece.imageUrl || imageReference,
+		pathname: piece.pathname || imageReference,
+		usage: 'piece',
+		altText: piece.name ?? '',
+		sortOrder: 0,
+		isPrimary: true,
+	});
 }
 
 function toFormPieces(pieces) {
@@ -60,15 +78,35 @@ function toFormPieces(pieces) {
 		id: piece.id,
 		name: piece.name ?? '',
 		buyUrl: piece.buyUrl ?? '',
-		image: piece.image ?? null,
+		image: toFormPieceImage(piece),
 		credits: toFormCredits(piece.credits),
 	}));
+}
+
+function toTalentOption(person) {
+	return {
+		id: person.id,
+		name: person.name,
+		role: person.role,
+		image: person.images?.[0] ?? null,
+	};
+}
+
+function toCrewOption(person) {
+	return {
+		id: person.id,
+		name: person.name,
+		role: person.role,
+		image: person.image ?? null,
+	};
 }
 
 export default function AdminFashionLooksPage() {
 	const { token } = useAdminAuth();
 	const auth = { Authorization: `Bearer ${token}` };
 	const [looks, setLooks] = useState([]);
+	const [talentOptions, setTalentOptions] = useState([]);
+	const [crewOptions, setCrewOptions] = useState([]);
 	const [form, setForm] = useState(null);
 	const [draggedId, setDraggedId] = useState(null);
 	const [dropTargetId, setDropTargetId] = useState(null);
@@ -81,6 +119,23 @@ export default function AdminFashionLooksPage() {
 			.then((list) => {
 				if (!ignore) setLooks(list);
 			});
+
+		return () => {
+			ignore = true;
+		};
+	}, [token]);
+
+	useEffect(() => {
+		let ignore = false;
+
+		Promise.all([
+			loadAdminResource({ cacheKey: 'fashion-talent-list', url: '/api/admin/fashion?resource=talent', token }),
+			loadAdminResource({ cacheKey: 'fashion-crew-list', url: '/api/admin/fashion?resource=crew', token }),
+		]).then(([talent, crew]) => {
+			if (ignore) return;
+			setTalentOptions(talent.map(toTalentOption));
+			setCrewOptions(crew.map(toCrewOption));
+		});
 
 		return () => {
 			ignore = true;
@@ -139,6 +194,14 @@ export default function AdminFashionLooksPage() {
 		const nextLooks = isEdit ? looks.map((look) => (look.id === saved.id ? saved : look)) : [...looks, saved];
 		setLooks(nextLooks);
 		primeAdminResource('fashion-looks-list', token, nextLooks);
+		fetch('/api/admin/fashion?resource=crew', { headers: auth })
+			.then((response) => (response.ok ? response.json() : null))
+			.then((crew) => {
+				if (!crew) return;
+				setCrewOptions(crew.map(toCrewOption));
+				primeAdminResource('fashion-crew-list', token, crew);
+			})
+			.catch(() => {});
 		closeForm();
 	};
 
@@ -378,6 +441,8 @@ export default function AdminFashionLooksPage() {
 											<CreditsField
 												value={form.credits}
 												onChange={(credits) => setForm((current) => ({ ...current, credits }))}
+												talentOptions={talentOptions}
+												crewOptions={crewOptions}
 												placeholder="Add credit"
 											/>
 										</div>
@@ -393,6 +458,8 @@ export default function AdminFashionLooksPage() {
 												onChange={(pieces) => setForm((current) => ({ ...current, pieces }))}
 												token={token}
 												lookTitle={form.title}
+												talentOptions={talentOptions}
+												crewOptions={crewOptions}
 											/>
 										</div>
 									</div>

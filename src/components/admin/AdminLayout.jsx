@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
-import { FaBullseye, FaBullhorn, FaChevronDown, FaChevronLeft, FaChevronRight, FaCompactDisc, FaMicrophoneAlt, FaMusic, FaSignOutAlt, FaUserShield, FaVideo, FaRecordVinyl, FaTshirt, FaUsers } from 'react-icons/fa';
+import { FaBullseye, FaBullhorn, FaChevronDown, FaChevronLeft, FaChevronRight, FaCompactDisc, FaMicrophoneAlt, FaMusic, FaSignOutAlt, FaUserFriends, FaUserShield, FaVideo, FaRecordVinyl, FaTshirt, FaUsers } from 'react-icons/fa';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import '../../styles/AdminLayout.css';
 
@@ -80,6 +80,7 @@ export default function AdminLayout() {
 	const fashionLinks = [
 		...(isSuperAdminSession ? [
 			{ to: '/admin/fashion/talent', label: 'Talent', icon: <FaUsers aria-hidden="true" /> },
+			{ to: '/admin/fashion/outside_talent', label: 'Outside Talent', icon: <FaUserFriends aria-hidden="true" /> },
 			{ to: '/admin/fashion/looks', label: 'Looks', icon: <FaTshirt aria-hidden="true" /> },
 		] : []),
 	];

@@ -29,6 +29,7 @@ export function buildClientImageUrl(image) {
         return url
       }
     } catch {
+      if (pathname) return buildBlobProxyUrl(pathname)
       return url
     }
   }

@@ -1,7 +1,7 @@
 import { prisma } from '../src/lib/prisma.js'
 import { isEffectivelyVisible } from '../src/lib/contentVisibility.js'
 import { verifyToken } from '../src/lib/auth.js'
-import { buildClientImageUrl, clientImages, mergeLegacyImages } from '../src/lib/images.js'
+import { buildClientImageUrl, clientImage, clientImages, mergeLegacyImages } from '../src/lib/images.js'
 import { ARTIST_VIDEO_SOURCE, buildStaticArtistVideoPath, getStaticArtistVideoExtension, getYouTubeEmbedUrl } from '../src/lib/artistVideos.js'
 import { formatCrosshairVideo } from '../src/lib/crosshairVideos.js'
 import { hasPublicBoardSource, isOtherArtist, isReservedHiddenArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js'
@@ -853,22 +853,26 @@ function formatFashionTalent(talent) {
 
 function formatFashionCredit(credit) {
   const talentImages = clientImages(credit.talent?.images ?? [])
+  const crewImage = credit.crew?.imageUrl
+    ? clientImage({ url: credit.crew.imageUrl, pathname: credit.crew.pathname })
+    : null
   return {
     id: credit.id,
-    creditName: credit.creditName || credit.talent?.name || '',
+    creditName: credit.creditName || credit.talent?.name || credit.crew?.name || '',
     roleLabel: credit.roleLabel,
+    image: talentImages[0] ?? crewImage ?? null,
+    externalUrl: credit.crew?.externalUrl || '',
     talent: credit.talent ? {
       id: credit.talent.id,
       name: credit.talent.name,
       slug: credit.talent.slug,
       role: credit.talent.role,
-      image: talentImages[0] ?? null,
     } : null,
   }
 }
 
-function formatFashionPiece(piece, lookCredits) {
-  const credits = (piece.credits ?? []).length ? piece.credits.map(formatFashionCredit) : lookCredits
+function formatFashionPiece(piece) {
+  const credits = (piece.credits ?? []).map(formatFashionCredit)
   return {
     id: piece.id,
     name: piece.name,
@@ -891,7 +895,7 @@ function formatFashionLook(look) {
     updatedAt: look.updatedAt,
     images: clientImages(look.images ?? []),
     credits: lookCredits,
-    pieces: (look.pieces ?? []).map((piece) => formatFashionPiece(piece, lookCredits)),
+    pieces: (look.pieces ?? []).map(formatFashionPiece),
   }
 }
 
@@ -963,13 +967,19 @@ function includePublicLook() {
       include: {
         credits: {
           orderBy: { sortOrder: 'asc' },
-          include: { talent: { select: { id: true, name: true, slug: true, role: true, images: { take: 1, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }], select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true } } } } },
+          include: {
+            talent: { select: { id: true, name: true, slug: true, role: true, images: { take: 1, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }], select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true } } } },
+            crew: { select: { id: true, name: true, role: true, externalUrl: true, imageUrl: true, pathname: true } },
+          },
         },
       },
     },
     credits: {
       orderBy: { sortOrder: 'asc' },
-      include: { talent: { select: { id: true, name: true, slug: true, role: true, images: { take: 1, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }], select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true } } } } },
+      include: {
+        talent: { select: { id: true, name: true, slug: true, role: true, images: { take: 1, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }], select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true } } } },
+        crew: { select: { id: true, name: true, role: true, externalUrl: true, imageUrl: true, pathname: true } },
+      },
     },
   }
 }

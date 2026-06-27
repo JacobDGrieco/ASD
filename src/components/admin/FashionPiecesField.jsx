@@ -1,8 +1,9 @@
+import { FaArrowDown, FaArrowUp } from 'react-icons/fa';
 import ImageCollectionField from './ImageCollectionField.jsx';
 import CreditsField from './CreditsField.jsx';
 
 // value: [{ id?, name, buyUrl, image, credits }]
-export default function FashionPiecesField({ value, onChange, token, lookTitle }) {
+export default function FashionPiecesField({ value, onChange, token, lookTitle, talentOptions = [], crewOptions = [] }) {
 	const pieces = Array.isArray(value) ? value : [];
 
 	const addPiece = () => {
@@ -17,12 +18,43 @@ export default function FashionPiecesField({ value, onChange, token, lookTitle }
 		onChange(pieces.filter((_, i) => i !== index));
 	};
 
+	const movePiece = (index, direction) => {
+		const nextIndex = index + direction;
+		if (nextIndex < 0 || nextIndex >= pieces.length) return;
+
+		const nextPieces = [...pieces];
+		[nextPieces[index], nextPieces[nextIndex]] = [nextPieces[nextIndex], nextPieces[index]];
+		onChange(nextPieces);
+	};
+
 	return (
 		<div className="admin-fashion-pieces-field">
 			{pieces.map((piece, index) => (
 				<div key={index} className="admin-fashion-piece-card">
 					<div className="admin-fashion-piece-card-header">
 						<span className="admin-fashion-piece-card-title">Piece {index + 1}</span>
+						<div className="admin-fashion-piece-order-controls" aria-label={`Reorder piece ${index + 1}`}>
+							<button
+								type="button"
+								onClick={() => movePiece(index, -1)}
+								className="admin-artists-page-ghost-btn admin-artists-page-icon-btn admin-fashion-piece-order-btn"
+								aria-label={`Move piece ${index + 1} up`}
+								title="Move piece up"
+								disabled={index === 0}
+							>
+								<FaArrowUp aria-hidden="true" />
+							</button>
+							<button
+								type="button"
+								onClick={() => movePiece(index, 1)}
+								className="admin-artists-page-ghost-btn admin-artists-page-icon-btn admin-fashion-piece-order-btn"
+								aria-label={`Move piece ${index + 1} down`}
+								title="Move piece down"
+								disabled={index === pieces.length - 1}
+							>
+								<FaArrowDown aria-hidden="true" />
+							</button>
+						</div>
 						<button
 							type="button"
 							onClick={() => removePiece(index)}
@@ -73,6 +105,8 @@ export default function FashionPiecesField({ value, onChange, token, lookTitle }
 						<CreditsField
 							value={piece.credits}
 							onChange={(credits) => updatePiece(index, { credits })}
+							talentOptions={talentOptions}
+							crewOptions={crewOptions}
 							placeholder="Add credit override"
 						/>
 					</div>
