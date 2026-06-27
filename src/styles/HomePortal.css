@@ -181,16 +181,30 @@
 	view-transition-name: music-splash;
 }
 
-/* Keep view transition snappy — the 640ms expansion already provided visual context */
-@media (prefers-reduced-motion: no-preference) {
-	::view-transition-group(music-splash) {
-		animation-duration: 1ms;
-	}
+.portal-preview-fashion .portal-live-preview-inner {
+	view-transition-name: fashion-splash;
+}
 
-	::view-transition-old(root),
-	::view-transition-new(root) {
+.portal-live-preview .artist-splash-splash,
+.portal-live-preview .fashion-home-runway {
+	view-transition-name: none;
+}
+
+/* Keep hero morphs snappy — the expansion animation already provided visual context */
+@media (prefers-reduced-motion: no-preference) {
+
+	::view-transition-group(music-splash),
+	::view-transition-group(fashion-splash) {
 		animation-duration: 1ms;
 	}
+}
+
+/* Runway renders directly in the portal inner (already full-width), cancel out the
+   negative side margins that are only needed when inside .aurora-page-content */
+.portal-live-preview-inner .fashion-home-runway {
+	margin-top: 0;
+	margin-left: 0;
+	margin-right: 0;
 }
 
 /* Override nav-height padding since there's no nav in the portal preview */
@@ -433,8 +447,7 @@
 	overflow: hidden;
 	box-shadow: 0 34px 80px rgba(0, 0, 0, 0.5);
 	transform:
-		translateY(calc((var(--portal-preview-index) - 1) * 34px))
-		rotate(calc((var(--portal-preview-index) - 1) * 4deg));
+		translateY(calc((var(--portal-preview-index) - 1) * 34px)) rotate(calc((var(--portal-preview-index) - 1) * 4deg));
 }
 
 .portal-fashion-frame img {
@@ -533,6 +546,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
 	.portal-panel,
 	.portal-preview,
 	.portal-panel-content,

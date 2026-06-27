@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi.js'
 import '../../styles/SideRails.css'
@@ -43,13 +43,44 @@ function getDisplayNames(rows, fallbackNames) {
 export default function SideRails() {
   const location = useLocation()
   const section = getPublicSection(location.pathname)
-  const railApiUrl = section === 'fashion'
-    ? '/api/fashion/talent'
-    : section === 'music'
-      ? '/api/artists'
-      : null
-  const fallbackNames = section === 'fashion' ? FASHION_FALLBACK_NAMES : MUSIC_FALLBACK_NAMES
-  const { data: railRows } = useApi(railApiUrl)
+
+  const prevSectionRef = useRef(section)
+  const [displaySection, setDisplaySection] = useState(section)
+  const [isHiding, setIsHiding] = useState(false)
+
+  useEffect(() => {
+    const prev = prevSectionRef.current
+
+    // Only animate section-to-section (both must be non-null and different)
+    if (!section || !prev || section === prev) return undefined
+
+    // Fade out immediately
+    setIsHiding(true)
+
+    // Swap content after old rails are fully gone (t=0.5s)
+    const switchTimer = setTimeout(() => {
+      prevSectionRef.current = section
+      setDisplaySection(section)
+    }, 500)
+
+    // Fade in with new content (t=1.0s)
+    const showTimer = setTimeout(() => {
+      setIsHiding(false)
+    }, 1000)
+
+    return () => {
+      clearTimeout(switchTimer)
+      clearTimeout(showTimer)
+    }
+  }, [section])
+
+  // Prefetch both sections simultaneously so data is in cache before any transition swap
+  const { data: musicRailRows } = useApi(section !== null ? '/api/artists' : null)
+  const { data: fashionRailRows } = useApi(section !== null ? '/api/fashion/talent' : null)
+
+  // All content derives from displaySection so it only changes mid-transition
+  const fallbackNames = displaySection === 'fashion' ? FASHION_FALLBACK_NAMES : MUSIC_FALLBACK_NAMES
+  const railRows = displaySection === 'music' ? musicRailRows : displaySection === 'fashion' ? fashionRailRows : null
   const rightRailSourceNames = useMemo(
     () => getDisplayNames(railRows, fallbackNames),
     [fallbackNames, railRows]
@@ -66,7 +97,7 @@ export default function SideRails() {
       previousIndex: null,
       transitionKey: 0,
     })
-  }, [section, rightRailSourceNames.length])
+  }, [displaySection, rightRailSourceNames.length])
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -107,7 +138,7 @@ export default function SideRails() {
   if (!section || location.pathname.startsWith('/admin')) return null
 
   return (
-    <div className="side-rails" aria-hidden="true">
+    <div className={`side-rails${isHiding ? ' side-rails-hiding' : ''}`} aria-hidden="true">
       <div className="side-rails-rail side-rails-rail-left">
         <div className="side-rails-column side-rails-column-left">
           {LEFT_RAIL_TEXT.map((key) => (

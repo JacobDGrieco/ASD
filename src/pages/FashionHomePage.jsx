@@ -203,10 +203,10 @@ export default function FashionHomePage() {
 
 					<div className="fashion-home-hero-copy fashion-runway-copy">
 						<h1 id="fashion-home-runway-title" className="fashion-home-hero-title">
-							{featuredLook ? featuredLook.title : (looksLoading ? 'ASD Fashion' : 'New looks, new ideas.')}
+							{featuredLook ? featuredLook.title : (looksLoading ? '' : '')}
 						</h1>
 						<p className="fashion-home-hero-description">
-							{featuredLook?.description || 'A live catalogue of looks, talent, and the pieces shaping the next ASD Fashion story.'}
+							{featuredLook?.description || ''}
 						</p>
 					</div>
 				</section>

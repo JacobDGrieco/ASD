@@ -59,6 +59,7 @@
 	isolation: isolate;
 	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 	background: #020202;
+	view-transition-name: fashion-splash;
 }
 
 .fashion-runway-backdrop,

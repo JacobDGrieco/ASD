@@ -1,28 +1,15 @@
 @media (prefers-reduced-motion: no-preference) {
-	/* Suppress default root crossfade - we control transitions explicitly */
+
+	/* Old root (dark portal panel background) disappears instantly */
 	::view-transition-old(root),
 	::view-transition-new(root) {
 		animation: none;
 		mix-blend-mode: normal;
 	}
 
-	/* Bounding-box morph: portal panel expands to fill the destination hero */
-	::view-transition-group(music-portal-panel),
-	::view-transition-group(fashion-portal-panel) {
-		animation-duration: 0.62s;
-		animation-timing-function: cubic-bezier(0.16, 0.84, 0.26, 1);
-	}
-
-	/* Portal preview fades out in the first ~180ms */
-	::view-transition-old(music-portal-panel),
-	::view-transition-old(fashion-portal-panel) {
-		animation: vt-portal-out 0.18s ease forwards;
-	}
-
-	/* Destination content fades in as the bounding box expands */
-	::view-transition-new(music-portal-panel),
-	::view-transition-new(fashion-portal-panel) {
-		animation: vt-portal-in 0.44s ease 0.18s both;
+	/* Side rails only exist on destination pages — fade in after the hero snaps */
+	::view-transition-new(side-rails) {
+		animation: vt-portal-in 0.5s ease 0.5s both;
 	}
 }
 

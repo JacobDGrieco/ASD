@@ -22,6 +22,7 @@ import SideRails from './components/shared/SideRails.jsx';
 import { AdminProvider, useAdminAuth } from './lib/adminAuth.jsx';
 import { isAdminPreviewSession } from './lib/publicPreview.js';
 import './styles/PublicAdminPreview.css';
+import './styles/ViewTransitions.css';
 
 const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage.jsx'));
 const AdminAccountsPage = lazy(() => import('./pages/admin/AdminAccountsPage.jsx'));

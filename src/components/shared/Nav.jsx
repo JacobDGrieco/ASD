@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import '../../styles/Nav.css';
 
@@ -73,31 +73,42 @@ function NavContent({ section }) {
 export default function Nav() {
 	const { pathname } = useLocation();
 	const section = getSection(pathname);
-	const [renderedSection, setRenderedSection] = useState(section);
+
+	// Ref instead of state so updating it doesn't re-trigger this effect and cancel the timers
+	const renderedSectionRef = useRef(section);
 	const [exitingSection, setExitingSection] = useState(null);
+	const [isTransitioning, setIsTransitioning] = useState(false);
+	const [transitionKey, setTransitionKey] = useState(0);
 
 	useEffect(() => {
-		if (section === renderedSection) return undefined;
+		if (section === renderedSectionRef.current) return undefined;
 
-		setExitingSection(renderedSection);
-		setRenderedSection(section);
+		setExitingSection(renderedSectionRef.current);
+		renderedSectionRef.current = section;
+		setIsTransitioning(true);
+		setTransitionKey((k) => k + 1); // Force remount so CSS animation restarts every time
 
-		const timeoutId = window.setTimeout(() => {
-			setExitingSection(null);
-		}, 280);
+		const exitTimer = window.setTimeout(() => setExitingSection(null), 500);
+		const enterTimer = window.setTimeout(() => setIsTransitioning(false), 1600);
 
-		return () => window.clearTimeout(timeoutId);
-	}, [renderedSection, section]);
+		return () => {
+			window.clearTimeout(exitTimer);
+			window.clearTimeout(enterTimer);
+		};
+	}, [section]);
 
 	return (
-		<nav className={`nav-nav nav-${renderedSection}`}>
+		<nav className={`nav-nav nav-${renderedSectionRef.current}`}>
 			{exitingSection && (
 				<div className="nav-content-layer nav-content-layer-exiting" aria-hidden="true">
 					<NavContent section={exitingSection} />
 				</div>
 			)}
-			<div className={exitingSection ? 'nav-content-layer nav-content-layer-entering' : 'nav-content-layer'}>
-				<NavContent section={renderedSection} />
+			<div
+				key={transitionKey}
+				className={isTransitioning ? 'nav-content-layer nav-content-layer-entering' : 'nav-content-layer'}
+			>
+				<NavContent section={renderedSectionRef.current} />
 			</div>
 		</nav>
 	);
