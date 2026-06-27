@@ -243,7 +243,7 @@ export default function AdminMusicCrosshairPage() {
 		<div className="admin-crosshair-page">
 			<div className="admin-artists-page-sticky-top">
 				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Music — Crosshair</h1>
+					<h1 className="admin-artists-page-title">Music — The Crosshair</h1>
 					<div className="admin-crosshair-page-header-actions">
 						<button
 							type="button"

@@ -852,11 +852,18 @@ function formatFashionTalent(talent) {
 }
 
 function formatFashionCredit(credit) {
+  const talentImages = clientImages(credit.talent?.images ?? [])
   return {
     id: credit.id,
     creditName: credit.creditName || credit.talent?.name || '',
     roleLabel: credit.roleLabel,
-    talent: credit.talent ? { id: credit.talent.id, name: credit.talent.name, slug: credit.talent.slug, role: credit.talent.role } : null,
+    talent: credit.talent ? {
+      id: credit.talent.id,
+      name: credit.talent.name,
+      slug: credit.talent.slug,
+      role: credit.talent.role,
+      image: talentImages[0] ?? null,
+    } : null,
   }
 }
 
@@ -956,13 +963,13 @@ function includePublicLook() {
       include: {
         credits: {
           orderBy: { sortOrder: 'asc' },
-          include: { talent: { select: { id: true, name: true, slug: true, role: true } } },
+          include: { talent: { select: { id: true, name: true, slug: true, role: true, images: { take: 1, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }], select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true } } } } },
         },
       },
     },
     credits: {
       orderBy: { sortOrder: 'asc' },
-      include: { talent: { select: { id: true, name: true, slug: true, role: true } } },
+      include: { talent: { select: { id: true, name: true, slug: true, role: true, images: { take: 1, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }], select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true } } } } },
     },
   }
 }

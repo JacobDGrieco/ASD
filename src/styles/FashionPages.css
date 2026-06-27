@@ -821,7 +821,7 @@
 }
 
 .fashion-look-gallery-main {
-	min-height: clamp(420px, 62vh, 720px);
+	height: clamp(420px, 62vh, 720px);
 	overflow: hidden;
 	border-radius: 2px;
 	background: rgba(255, 255, 255, 0.04);
@@ -832,7 +832,6 @@
 .fashion-look-gallery-blank {
 	width: 100%;
 	height: 100%;
-	min-height: inherit;
 	object-fit: cover;
 }
 
@@ -843,15 +842,59 @@
 		#101010;
 }
 
-.fashion-look-gallery-thumbs {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));
+.fashion-look-gallery-controls {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	gap: 8px;
 }
 
+.fashion-look-gallery-arrow {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	background: transparent;
+	color: rgba(255, 255, 255, 0.55);
+	cursor: pointer;
+	transition:
+		border-color var(--transition),
+		color var(--transition),
+		opacity var(--transition);
+}
+
+.fashion-look-gallery-arrow:hover {
+	border-color: rgba(200, 169, 110, 0.72);
+	color: rgba(200, 169, 110, 1);
+}
+
+.fashion-look-gallery-arrow:disabled {
+	opacity: 0.2;
+	cursor: default;
+	pointer-events: none;
+}
+
+.fashion-look-gallery-thumbs {
+	overflow: hidden;
+	width: calc(7 * 68px + 6 * 8px);
+	flex-shrink: 0;
+}
+
+.fashion-look-gallery-thumbs-track {
+	display: flex;
+	gap: 8px;
+	transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+	will-change: transform;
+}
+
 .fashion-look-gallery-thumb {
-	position: relative;
-	aspect-ratio: 1;
+	flex-shrink: 0;
+	width: 68px;
+	height: 68px;
 	padding: 0;
 	overflow: hidden;
 	border: 1px solid rgba(255, 255, 255, 0.12);
@@ -877,6 +920,79 @@
 
 .fashion-look-info {
 	align-self: center;
+	padding-left: clamp(16px, 3vw, 48px);
+}
+
+.fashion-look-credits-section {
+	margin-top: clamp(48px, 6vw, 80px);
+}
+
+.fashion-credits-carousel {
+	display: flex;
+	gap: 16px;
+	overflow-x: auto;
+	padding-bottom: 8px;
+	scrollbar-width: none;
+}
+
+.fashion-credits-carousel::-webkit-scrollbar {
+	display: none;
+}
+
+.fashion-credit-card {
+	flex-shrink: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 140px;
+	text-decoration: none;
+	color: inherit;
+}
+
+.fashion-credit-card-image-wrap {
+	width: 140px;
+	height: 180px;
+	overflow: hidden;
+	border-radius: 2px;
+	background: rgba(255, 255, 255, 0.04);
+	margin-bottom: 10px;
+}
+
+.fashion-credit-card-image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	transition: transform 0.3s ease;
+}
+
+a.fashion-credit-card:hover .fashion-credit-card-image {
+	transform: scale(1.04);
+}
+
+.fashion-credit-card-image-blank {
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.018)), #101010;
+}
+
+.fashion-credit-card-info {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: 2px;
+}
+
+.fashion-credit-card-role {
+	font-size: 0.68rem;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: rgba(200, 169, 110, 0.8);
+}
+
+.fashion-credit-card-name {
+	font-size: 0.88rem;
+	color: rgba(255, 255, 255, 0.9);
 }
 
 .fashion-look-credits-row {
@@ -975,6 +1091,10 @@ a.fashion-look-credit-chip:hover {
 		grid-template-columns: 1fr;
 	}
 
+	.fashion-look-gallery-thumbs {
+		width: calc(5 * 68px + 4 * 8px);
+	}
+
 	.fashion-home-hero-copy,
 	.fashion-talent-hero-info,
 	.fashion-look-info {
@@ -1036,6 +1156,10 @@ a.fashion-look-credit-chip:hover {
 @media (max-width: 640px) {
 	.fashion-page-content {
 		padding: 22px 16px 64px;
+	}
+
+	.fashion-look-gallery-thumbs {
+		width: calc(3 * 68px + 2 * 8px);
 	}
 
 	.fashion-page-header {
@@ -1119,7 +1243,7 @@ a.fashion-look-credit-chip:hover {
 
 	.fashion-home-hero-media,
 	.fashion-look-gallery-main {
-		min-height: 420px;
+		height: 420px;
 	}
 
 	.fashion-talent-grid,
