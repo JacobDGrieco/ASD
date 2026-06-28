@@ -45,9 +45,22 @@
 
 .fashion-talent-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
 	justify-items: center;
 	gap: 16px;
+}
+
+.fashion-talent-grid .album-card-card {
+	width: 240px;
+}
+
+.fashion-talent-grid .album-card-cover-wrap {
+	width: 220px;
+	height: 220px;
+}
+
+.fashion-talent-grid .album-card-title {
+	max-width: 220px;
 }
 
 .fashion-home-runway {
@@ -1179,6 +1192,19 @@ a.fashion-look-credit-chip:hover {
 	margin-top: 0;
 }
 
+.fashion-piece-card-actions {
+	display: flex;
+	gap: 8px;
+	align-items: stretch;
+	margin-top: auto;
+}
+
+.fashion-piece-card-actions .fashion-piece-credits-popover-wrap,
+.fashion-piece-card-actions .fashion-piece-card-buy-link {
+	flex: 1 1 0;
+	min-width: 0;
+}
+
 .fashion-piece-credits-popover-wrap {
 	position: relative;
 	z-index: 3;
@@ -1189,13 +1215,13 @@ a.fashion-look-credit-chip:hover {
 	align-items: center;
 	justify-content: center;
 	width: 100%;
-	min-height: 34px;
-	padding: 9px 12px;
-	border: 1px solid rgba(255, 255, 255, 0.14);
+	min-height: 36px;
+	padding: 10px;
+	border: 1px solid rgba(200, 169, 110, 0.5);
 	background: rgba(10, 10, 10, 0.35);
-	color: rgba(247, 237, 220, 0.88);
+	color: #f7eddc;
 	font-family: var(--font-nav-tab);
-	font-size: 0.66rem;
+	font-size: 0.9rem;
 	letter-spacing: 0.12em;
 	line-height: 1;
 	text-transform: uppercase;
@@ -1203,15 +1229,20 @@ a.fashion-look-credit-chip:hover {
 	transition:
 		background var(--transition),
 		border-color var(--transition),
-		color var(--transition);
+		transform var(--transition);
 }
 
 .fashion-piece-credits-toggle:hover,
-.fashion-piece-credits-toggle:focus-visible,
+.fashion-piece-credits-toggle:focus-visible {
+	border-color: rgba(247, 237, 220, 0.72);
+	background: rgba(200, 169, 110, 0.26);
+	text-decoration: none;
+	transform: translateY(-2px);
+}
+
 .fashion-piece-credits-toggle[aria-expanded="true"] {
-	border-color: rgba(200, 169, 110, 0.5);
-	background: rgba(200, 169, 110, 0.14);
-	color: #f7eddc;
+	border-color: rgba(247, 237, 220, 0.72);
+	background: rgba(200, 169, 110, 0.26);
 }
 
 .fashion-piece-credits-popover {
@@ -1362,11 +1393,9 @@ a.fashion-piece-credit-mini-card:focus-visible .fashion-piece-credit-mini-image 
 }
 
 .fashion-piece-card-buy-link {
-	width: 100%;
-	margin-top: auto;
 	min-height: 36px;
-	padding: 10px 13px;
-	font-size: 0.68rem;
+	padding: 10px;
+	font-size: 0.9rem;
 }
 
 @media (max-width: 980px) {

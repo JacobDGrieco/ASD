@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom'
 import { useMemo, useRef, useState, useEffect } from 'react'
-import { FaExternalLinkAlt, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
+import { FaShoppingBag, FaUsers, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 import { useApi } from '../hooks/useApi.js'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 import { useAdminAuth } from '../lib/adminAuth.jsx'
@@ -332,8 +332,9 @@ function PieceCreditsPopover({ credits }) {
         className="fashion-piece-credits-toggle"
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
+        aria-label="Extra Credits"
       >
-        Extra Credits
+        <FaUsers aria-hidden="true" />
       </button>
       {open && (
         <div
@@ -497,12 +498,14 @@ export default function FashionLookPage() {
                   </div>
                   <div className="fashion-piece-card-info">
                     <span className="fashion-piece-card-name">{piece.name}</span>
-                    <PieceCreditsPopover credits={piece.credits} />
-                    {piece.buyUrl && (
-                      <a href={piece.buyUrl} target="_blank" rel="noreferrer" className="fashion-piece-card-buy-link">
-                        Shop <FaExternalLinkAlt aria-hidden="true" />
-                      </a>
-                    )}
+                    <div className="fashion-piece-card-actions">
+                      {piece.buyUrl && (
+                        <a href={piece.buyUrl} target="_blank" rel="noreferrer" className="fashion-piece-card-buy-link" aria-label="Shop">
+                          <FaShoppingBag aria-hidden="true" />
+                        </a>
+                      )}
+                      <PieceCreditsPopover credits={piece.credits} />
+                    </div>
                   </div>
                 </div>
               ))}
