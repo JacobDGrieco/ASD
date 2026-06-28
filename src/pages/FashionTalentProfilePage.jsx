@@ -2,6 +2,8 @@ import { useParams } from 'react-router-dom'
 import { useMemo } from 'react'
 import { FaEnvelope, FaGlobe } from 'react-icons/fa'
 import { SiFacebook, SiInstagram, SiTiktok, SiX, SiYoutube } from 'react-icons/si'
+import { Image } from 'primereact/image'
+import { TabPanel, TabView } from 'primereact/tabview'
 import { useApi } from '../hooks/useApi.js'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 import ArtworkGallery from '../components/shared/ArtworkGallery.jsx'
@@ -30,6 +32,19 @@ export default function FashionTalentProfilePage() {
     headers: previewHeaders,
     cacheKey: publicPreviewCacheKey(apiUrl, adminPreview),
   })
+  const photos = useMemo(() => {
+    if (!talent) return []
+    const seen = new Set()
+    return [
+      ...(talent.images ?? []),
+      ...(talent.featuredIn ?? []).flatMap((credit) => credit.look?.images ?? []),
+    ].filter((photo) => {
+      const key = photo.pathname || photo.url
+      if (seen.has(key)) return false
+      seen.add(key)
+      return !!(photo.previewUrl || photo.url)
+    })
+  }, [talent])
 
   if (!loading && (error || !talent)) return <div className="page not-found"><h1>Not found</h1></div>
   if (!talent) return null
@@ -44,6 +59,10 @@ export default function FashionTalentProfilePage() {
     talent.website ? { href: talent.website, label: 'Website', icon: <FaGlobe /> } : null,
     talent.email ? { href: `mailto:${talent.email}`, label: 'Email', icon: <FaEnvelope /> } : null,
   ].filter(Boolean)
+
+  const hasFeatured = talent.featuredIn?.length > 0
+  const hasPhotos = photos.length > 0
+  const showTabs = hasFeatured || hasPhotos
 
   return (
     <div className="page aurora-page fashion-page">
@@ -78,14 +97,35 @@ export default function FashionTalentProfilePage() {
           </div>
         </section>
 
-        {talent.featuredIn?.length > 0 && (
-          <section className="discography-section">
-            <h2 className="discography-heading">Featured In</h2>
-            <div className="discography-grid">
-              {talent.featuredIn.map((credit, index) => (
-                credit.look ? <LookCard key={`${credit.look.id}-${index}`} look={credit.look} /> : null
-              ))}
-            </div>
+        {showTabs && (
+          <section className="fashion-talent-tabs-section">
+            <TabView className="page-tabview fashion-talent-tabview">
+              {hasFeatured && (
+                <TabPanel header="Featured In">
+                  <div className="discography-grid">
+                    {talent.featuredIn.map((credit, index) => (
+                      credit.look ? <LookCard key={`${credit.look.id}-${index}`} look={credit.look} /> : null
+                    ))}
+                  </div>
+                </TabPanel>
+              )}
+              {hasPhotos && (
+                <TabPanel header="Photos">
+                  <div className="fashion-talent-photos-masonry">
+                    {photos.map((photo, index) => (
+                      <div key={photo.pathname || photo.url || index} className="fashion-talent-photo-item">
+                        <Image
+                          src={photo.previewUrl || photo.url}
+                          alt={photo.altText || talent.name}
+                          preview
+                          imageClassName="fashion-talent-photo-img"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </TabPanel>
+              )}
+            </TabView>
           </section>
         )}
       </div>

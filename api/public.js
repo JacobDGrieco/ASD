@@ -926,10 +926,10 @@ async function getFashionTalent(res, slug, includeHidden) {
               slug: true,
               isVisible: true,
               images: {
-                take: 1,
                 orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
                 select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
               },
+              _count: { select: { pieces: true } },
             },
           },
         },
@@ -950,6 +950,7 @@ async function getFashionTalent(res, slug, includeHidden) {
             title: credit.look.title,
             slug: credit.look.slug,
             images: clientImages(credit.look.images ?? []),
+            pieces: new Array(credit.look._count?.pieces ?? 0),
           }
         : null,
     }))

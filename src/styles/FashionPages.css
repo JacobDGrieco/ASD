@@ -500,6 +500,11 @@
 	text-transform: uppercase;
 }
 
+.fashion-look-title,
+.fashion-talent-hero-name {
+	font-family: var(--font-body);
+}
+
 .fashion-home-hero-description,
 .fashion-look-description,
 .fashion-talent-hero-bio {
@@ -816,7 +821,21 @@
 }
 
 .fashion-talent-hero-info {
+	display: flex;
+	flex-direction: column;
+	gap: 22px;
 	max-width: 680px;
+}
+
+.fashion-talent-hero-info .fashion-talent-hero-role {
+	font-size: 1rem;
+	letter-spacing: 0.14em;
+}
+
+.fashion-talent-hero-info .fashion-talent-hero-name,
+.fashion-talent-hero-info .fashion-talent-hero-bio,
+.fashion-talent-hero-info .fashion-talent-hero-agency {
+	margin-top: 0;
 }
 
 .fashion-talent-hero-agency {
@@ -826,6 +845,63 @@
 	font-size: 0.84rem;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
+}
+
+.fashion-talent-tabs-section {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0 40px 60px;
+}
+
+.fashion-talent-tabview .p-tabview-panels,
+.fashion-talent-tabview .p-tabview-panel {
+	overflow: visible;
+}
+
+.fashion-talent-tabview .p-tabview-panel .discography-grid {
+	padding: 28px;
+}
+
+.fashion-talent-tabview .p-tabview-panel .fashion-talent-photos-masonry {
+	padding: 20px;
+}
+
+.fashion-talent-photos-masonry {
+	columns: 4;
+	column-gap: 10px;
+}
+
+.fashion-talent-photo-item {
+	break-inside: avoid;
+	margin-bottom: 10px;
+}
+
+.fashion-talent-photo-item .p-image {
+	display: block;
+	width: 100%;
+	cursor: zoom-in;
+}
+
+.fashion-talent-photo-img {
+	width: 100%;
+	display: block;
+	border-radius: 2px;
+}
+
+@media (max-width: 980px) {
+	.fashion-talent-photos-masonry {
+		columns: 3;
+	}
+}
+
+@media (max-width: 640px) {
+	.fashion-talent-tabs-section {
+		padding: 0 20px 44px;
+	}
+
+	.fashion-talent-photos-masonry {
+		columns: 2;
+	}
 }
 
 .fashion-look-gallery {
