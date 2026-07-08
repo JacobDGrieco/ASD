@@ -267,28 +267,30 @@ function ArtistCard({
 				<span className="artist-splash-name-outline">{artist.name}</span>
 			</span>
 			<div className="artist-splash-card-frame">
-				{previousImage && (
-					<img
-						key={`previous-${previousImage}`}
-						src={previousImage}
-						alt=""
-						aria-hidden="true"
-						className={`artist-splash-portrait artist-splash-portrait-prev ${isTransitioning ? 'artist-splash-exit-left' : ''}`.trim()}
-						decoding="async"
-					/>
-				)}
-				{currentImage && (
-					<img
-						key={`current-${currentImage}`}
-						src={currentImage}
-						alt=""
-						aria-hidden="true"
-						className={`artist-splash-portrait artist-splash-portrait-current ${isTransitioning ? 'artist-splash-enter-right' : ''}`.trim()}
-						loading="eager"
-						fetchPriority={imagePriority}
-						decoding="async"
-					/>
-				)}
+				<div className="artist-splash-card-image-window">
+					{previousImage && (
+						<img
+							key={`previous-${previousImage}`}
+							src={previousImage}
+							alt=""
+							aria-hidden="true"
+							className={`artist-splash-portrait artist-splash-portrait-prev ${isTransitioning ? 'artist-splash-exit-left' : ''}`.trim()}
+							decoding="async"
+						/>
+					)}
+					{currentImage && (
+						<img
+							key={`current-${currentImage}`}
+							src={currentImage}
+							alt=""
+							aria-hidden="true"
+							className={`artist-splash-portrait artist-splash-portrait-current ${isTransitioning ? 'artist-splash-enter-right' : ''}`.trim()}
+							loading="eager"
+							fetchPriority={imagePriority}
+							decoding="async"
+						/>
+					)}
+				</div>
 			</div>
 		</Element>
 	);

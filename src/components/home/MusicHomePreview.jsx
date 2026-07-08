@@ -53,15 +53,17 @@ export default function MusicHomePreview() {
 												<span className="artist-splash-name-outline">{artist.name}</span>
 											</span>
 											<div className="artist-splash-card-frame">
-												{artist.portrait && (
-													<img
-														src={artist.portrait}
-														alt={artist.name}
-														className="artist-splash-portrait artist-splash-portrait-current"
-														loading={index < 3 ? 'eager' : 'lazy'}
-														decoding="async"
-													/>
-												)}
+												<div className="artist-splash-card-image-window">
+													{artist.portrait && (
+														<img
+															src={artist.portrait}
+															alt={artist.name}
+															className="artist-splash-portrait artist-splash-portrait-current"
+															loading={index < 3 ? 'eager' : 'lazy'}
+															decoding="async"
+														/>
+													)}
+												</div>
 											</div>
 										</div>
 									))}
