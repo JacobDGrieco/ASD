@@ -2,7 +2,8 @@
 	--nav-pad-block-start: 14px;
 	--nav-pad-block-end: 14px;
 	--nav-pad-inline: clamp(18px, 4vw, 40px);
-	position: relative;
+	position: sticky;
+	top: 0;
 	z-index: 100;
 	min-height: var(--nav-height);
 	padding: var(--nav-pad-block-start) var(--nav-pad-inline) var(--nav-pad-block-end);
