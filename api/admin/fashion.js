@@ -287,6 +287,7 @@ function selectLookList() {
     description: true,
     isVisible: true,
     order: true,
+    collectionId: true,
     images: {
       take: 1,
       orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
@@ -441,7 +442,7 @@ async function handleLooks(req, res) {
     }
 
     if (req.method === 'PUT') {
-      const { title, slug, description, order, isVisible, images, pieces, credits } = req.body
+      const { title, slug, description, order, isVisible, images, pieces, credits, collectionId } = req.body
       const normalizedImages = images === undefined ? null : normalizeImageInput(images, 'lookbook')
 
       // Replace child collections (pieces, piece credits, look credits) wholesale to keep
@@ -449,22 +450,33 @@ async function handleLooks(req, res) {
       // collections. Done as one interactive transaction so a failed update can't strand
       // the Look with its children deleted but not replaced.
       const look = await prisma.$transaction(async (tx) => {
-        const resolved = await resolveTypedOutsideTalentCredits(tx, credits, pieces)
-        const lookCredits = creditsCreateManyData(resolved.credits)
-        const lookPieces = piecesCreateData(resolved.pieces)
+        const shouldReplaceCredits = credits !== undefined
+        const shouldReplacePieces = pieces !== undefined
+        const resolved = await resolveTypedOutsideTalentCredits(
+          tx,
+          shouldReplaceCredits ? credits : undefined,
+          shouldReplacePieces ? pieces : undefined,
+        )
+        const lookCredits = shouldReplaceCredits ? creditsCreateManyData(resolved.credits) : []
+        const lookPieces = shouldReplacePieces ? piecesCreateData(resolved.pieces) : []
 
-        await tx.fashionPieceCredit.deleteMany({ where: { piece: { lookId: id } } })
-        await tx.fashionPiece.deleteMany({ where: { lookId: id } })
-        await tx.fashionLookCredit.deleteMany({ where: { lookId: id } })
+        if (shouldReplacePieces) {
+          await tx.fashionPieceCredit.deleteMany({ where: { piece: { lookId: id } } })
+          await tx.fashionPiece.deleteMany({ where: { lookId: id } })
+        }
+        if (shouldReplaceCredits) {
+          await tx.fashionLookCredit.deleteMany({ where: { lookId: id } })
+        }
 
         return tx.fashionLook.update({
           where: { id },
           data: {
             title,
             slug: slug !== undefined ? (slug || slugify(title)) : undefined,
-            description: description ?? '',
+            description: description !== undefined ? description ?? '' : undefined,
             order,
             isVisible,
+            collectionId: collectionId !== undefined ? (collectionId || null) : undefined,
             images: normalizedImages === null
               ? undefined
               : { deleteMany: {}, createMany: { data: toImageCreateManyData(normalizedImages) } },
@@ -498,7 +510,7 @@ async function handleLooks(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { title, slug, description, order, isVisible, images, pieces, credits } = req.body
+    const { title, slug, description, order, isVisible, images, pieces, credits, collectionId } = req.body
     if (!title) return res.status(400).json({ error: 'Title is required.' })
     const normalizedImages = normalizeImageInput(images, 'lookbook')
     const look = await prisma.$transaction(async (tx) => {
@@ -513,6 +525,7 @@ async function handleLooks(req, res) {
           description: description ?? '',
           order: order ?? 0,
           isVisible: isVisible ?? true,
+          collectionId: collectionId || null,
           images: normalizedImages.length
             ? { createMany: { data: toImageCreateManyData(normalizedImages) } }
             : undefined,

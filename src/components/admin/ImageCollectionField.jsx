@@ -24,6 +24,7 @@ function normalizePrimary(images) {
 function getDefaultUsage(folder) {
 	if (folder === 'albums') return 'cover';
 	if (folder === 'songs') return 'artwork';
+	if (folder === 'fashion-collections') return 'cover';
 	if (folder === 'fashion-looks') return 'lookbook';
 	if (folder === 'fashion-pieces') return 'piece';
 	return 'portrait';

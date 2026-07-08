@@ -1095,7 +1095,7 @@ a.fashion-look-model-card:focus-visible {
 }
 
 .fashion-look-credits-section {
-	margin-top: clamp(48px, 6vw, 80px);
+	padding: 25px;
 }
 
 .fashion-credits-carousel {
@@ -1454,18 +1454,25 @@ a.fashion-piece-credit-mini-card:focus-visible .fashion-piece-credit-mini-image 
 		clip-path: inset(0 100% calc(100% - 10px) 0);
 		animation-timing-function: cubic-bezier(0.2, 0, 0.4, 1);
 	}
+
 	40% {
 		clip-path: inset(0 0% calc(100% - 10px) 0);
 		animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 	}
+
 	100% {
 		clip-path: inset(0 0% 0% 0);
 	}
 }
 
 @keyframes popover-card-fade {
-	from { opacity: 0; }
-	to { opacity: 1; }
+	from {
+		opacity: 0;
+	}
+
+	to {
+		opacity: 1;
+	}
 }
 
 .fashion-piece-card-buy-link {
@@ -1671,5 +1678,268 @@ a.fashion-piece-credit-mini-card:focus-visible .fashion-piece-credit-mini-image 
 	.fashion-piece-credits-popover--ready .fashion-piece-credit-mini-card {
 		animation: none;
 		opacity: 1;
+	}
+}
+
+/* ---- Catalogue grid (collections + loose looks) ---- */
+.fashion-catalogue-grid {
+	--catalogue-columns: 1;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	justify-items: center;
+	gap: 16px;
+}
+
+.fashion-catalogue-grid .album-card-card {
+	width: 240px;
+}
+
+.fashion-catalogue-grid .album-card-cover-wrap {
+	width: 220px;
+	height: 220px;
+}
+
+@media (min-width: 560px) {
+	.fashion-catalogue-grid {
+		--catalogue-columns: 2;
+	}
+}
+
+@media (min-width: 800px) {
+	.fashion-catalogue-grid {
+		--catalogue-columns: 3;
+	}
+}
+
+@media (min-width: 1040px) {
+	.fashion-catalogue-grid {
+		--catalogue-columns: 4;
+	}
+}
+
+@media (min-width: 1280px) {
+	.fashion-catalogue-grid {
+		--catalogue-columns: 5;
+	}
+}
+
+/* ---- Catalogue inline expand panel ---- */
+.fashion-catalogue-expand {
+	grid-column: 1 / -1;
+	width: 100%;
+	padding: 24px;
+	background: rgba(20, 20, 20, 0.72);
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	animation: fashion-catalogue-expand-in 220ms ease;
+}
+
+@keyframes fashion-catalogue-expand-in {
+	from {
+		opacity: 0;
+		transform: translateY(-8px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.fashion-catalogue-expand-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 20px;
+	gap: 16px;
+}
+
+.fashion-catalogue-expand-title {
+	min-width: 0;
+	overflow: hidden;
+	padding: 0 14px;
+	color: var(--text);
+	font-family: var(--font-readable);
+	font-size: 1.5rem;
+	font-weight: 600;
+	letter-spacing: 0;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.fashion-catalogue-expand-link {
+	display: inline-flex;
+	align-items: center;
+	flex: 0 0 auto;
+	min-height: 36px;
+	padding: 0 14px;
+	border: 1px solid var(--border);
+	border-radius: 999px;
+	background: var(--bg-raised);
+	color: var(--text);
+	font-family: var(--font-body);
+	font-size: 0.8rem;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	text-decoration: none;
+	transition: background var(--transition), border-color var(--transition), transform var(--transition);
+}
+
+.fashion-catalogue-expand-link:hover {
+	background: color-mix(in srgb, var(--bg-raised) 76%, white 24%);
+	border-color: color-mix(in srgb, var(--border) 70%, white 30%);
+	transform: translateY(-1px);
+}
+
+.fashion-catalogue-expand-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	justify-items: center;
+	gap: 16px;
+}
+
+.fashion-catalogue-expand-grid .album-card-card {
+	width: 200px;
+}
+
+.fashion-catalogue-expand-grid .album-card-cover-wrap {
+	width: 180px;
+	height: 180px;
+}
+
+/* ---- Collection detail page header ---- */
+.fashion-page .fashion-collection-header {
+	flex-direction: row;
+	max-width: 900px;
+	margin: 0 auto 40px;
+}
+
+.fashion-page .fashion-collection-cover-wrap {
+	border: 1px solid var(--border);
+	background: rgba(255, 255, 255, 0.04);
+}
+
+.fashion-collection-cover {
+	display: block;
+	object-fit: cover;
+}
+
+.fashion-page .fashion-collection-info {
+	padding-top: 2px;
+}
+
+.fashion-collection-title {
+	margin: 0;
+	font-family: var(--font-body);
+	font-size: 2.2rem;
+	font-weight: 400;
+	letter-spacing: 0;
+	line-height: 1.2;
+	text-transform: none;
+}
+
+.fashion-page .fashion-collection-meta {
+	margin: 0;
+	color: var(--text-muted);
+	font-family: var(--font-body);
+	font-size: 1rem;
+	letter-spacing: 0;
+	text-transform: none;
+}
+
+.fashion-collection-description {
+	max-width: 58ch;
+	margin: 0;
+	color: var(--text-muted);
+	font-family: var(--font-body);
+	font-size: 1rem;
+	line-height: 1.6;
+}
+
+.fashion-collection-about {
+	max-width: 680px;
+	color: rgba(232, 232, 232, 0.8);
+	font-family: var(--font-description);
+	font-size: clamp(0.95rem, 1.3vw, 1.1rem);
+	line-height: 1.85;
+	white-space: pre-wrap;
+}
+
+.fashion-collection-tabs-body {
+	max-width: 1280px;
+	padding-right: clamp(18px, 3vw, 40px);
+	padding-left: clamp(18px, 3vw, 40px);
+}
+
+.fashion-collection-tabview .p-tabview-panel {
+	overflow: visible;
+}
+
+.fashion-collection-looks-panel {
+	padding: 28px clamp(24px, 3vw, 36px) 34px;
+}
+
+.fashion-collection-credits-grid-wrap .fashion-credits-carousel {
+	display: grid;
+	grid-template-columns: repeat(5, minmax(0, 140px));
+	justify-content: start;
+	gap: 20px 16px;
+	overflow: visible;
+	padding-bottom: 0;
+	scrollbar-width: auto;
+}
+
+.fashion-collection-credits-grid-wrap .fashion-credit-card {
+	width: 140px;
+	min-width: 0;
+}
+
+@media (max-width: 900px) {
+	.fashion-collection-credits-grid-wrap .fashion-credits-carousel {
+		grid-template-columns: repeat(4, minmax(0, 140px));
+	}
+}
+
+@media (max-width: 720px) {
+	.fashion-collection-credits-grid-wrap .fashion-credits-carousel {
+		grid-template-columns: repeat(3, minmax(0, 140px));
+	}
+}
+
+@media (max-width: 520px) {
+	.fashion-collection-credits-grid-wrap .fashion-credits-carousel {
+		grid-template-columns: repeat(2, minmax(0, 140px));
+	}
+}
+
+@media (max-width: 720px) {
+	.fashion-page .fashion-collection-header {
+		flex-direction: column;
+	}
+}
+
+@media (max-width: 640px) {
+	.fashion-collection-tabs-body {
+		padding-right: 16px;
+		padding-left: 16px;
+	}
+
+	.fashion-collection-looks-panel {
+		padding: 20px 16px 24px;
+	}
+
+	.fashion-collection-title {
+		font-size: 1.8rem;
+	}
+
+	.fashion-page .fashion-collection-meta,
+	.fashion-collection-description {
+		font-size: 0.88rem;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.fashion-catalogue-expand {
+		animation: none;
 	}
 }

@@ -1,0 +1,237 @@
+import { prisma } from '../../src/lib/prisma.js'
+import { requireSuperAdmin } from '../../src/lib/auth.js'
+import { clientImages, normalizeImageInput, primaryImageReference } from '../../src/lib/images.js'
+import { slugify } from '../../src/lib/slugify.js'
+
+function selectCollectionList() {
+  return {
+    id: true,
+    title: true,
+    slug: true,
+    description: true,
+    season: true,
+    location: true,
+    coverImage: true,
+    coverPathname: true,
+    isVisible: true,
+    order: true,
+    _count: { select: { looks: true } },
+  }
+}
+
+function withCollectionCover(collection) {
+  const coverImage = collection.coverImage
+    ? clientImages([{
+        id: `${collection.id}-cover`,
+        url: collection.coverImage,
+        pathname: collection.coverPathname,
+        usage: 'cover',
+        altText: collection.title,
+        sortOrder: 0,
+        isPrimary: true,
+      }])[0]
+    : null
+  return { ...collection, coverImage, lookCount: collection._count?.looks ?? 0 }
+}
+
+function creditsCreateManyData(credits) {
+  return (Array.isArray(credits) ? credits : [])
+    .filter((credit) => credit?.talentId || credit?.crewId || credit?.creditName?.trim())
+    .map((credit, index) => ({
+      talentId: credit.talentId || null,
+      crewId: credit.crewId || null,
+      creditName: credit.creditName?.trim() ?? '',
+      roleLabel: credit.roleLabel ?? '',
+      sortOrder: index,
+    }))
+}
+
+function normalizedCreditName(value) {
+  return String(value ?? '').trim().replace(/\s+/g, ' ').toLowerCase()
+}
+
+function collectUnlinkedCreditNames(credits, namesByKey) {
+  for (const credit of Array.isArray(credits) ? credits : []) {
+    if (credit?.talentId || credit?.crewId) continue
+    const name = normalizedCreditName(credit?.creditName)
+    if (!name || namesByKey.has(name)) continue
+    namesByKey.set(name, {
+      name: String(credit.creditName).trim().replace(/\s+/g, ' '),
+      role: credit.roleLabel ?? '',
+    })
+  }
+}
+
+async function resolveTypedOutsideTalentCredits(tx, credits) {
+  const namesByKey = new Map()
+  collectUnlinkedCreditNames(credits, namesByKey)
+
+  if (!namesByKey.size) return credits
+
+  const [talent, crew] = await Promise.all([
+    tx.fashionTalent.findMany({ select: { id: true, name: true } }),
+    tx.fashionCrew.findMany({ select: { id: true, name: true } }),
+  ])
+  const talentByName = new Map(talent.map((person) => [normalizedCreditName(person.name), person.id]))
+  const crewByName = new Map(crew.map((person) => [normalizedCreditName(person.name), person.id]))
+
+  for (const [nameKey, entry] of namesByKey) {
+    if (talentByName.has(nameKey) || crewByName.has(nameKey)) continue
+    const created = await tx.fashionCrew.create({
+      data: {
+        name: entry.name,
+        role: entry.role,
+        externalUrl: '',
+        imageUrl: '',
+        pathname: null,
+      },
+      select: { id: true, name: true },
+    })
+    crewByName.set(normalizedCreditName(created.name), created.id)
+  }
+
+  return (Array.isArray(credits) ? credits : []).map((credit) => {
+    if (credit?.talentId || credit?.crewId) return credit
+    const nameKey = normalizedCreditName(credit?.creditName)
+    if (!nameKey) return credit
+    const talentId = talentByName.get(nameKey)
+    if (talentId) return { ...credit, talentId, crewId: '' }
+    const crewId = crewByName.get(nameKey)
+    if (crewId) return { ...credit, talentId: '', crewId }
+    return credit
+  })
+}
+
+function includeCollectionDetail() {
+  return {
+    _count: { select: { looks: true } },
+    credits: {
+      orderBy: { sortOrder: 'asc' },
+      include: {
+        talent: { select: { id: true, name: true, slug: true, role: true } },
+        crew: { select: { id: true, name: true, role: true } },
+      },
+    },
+  }
+}
+
+function normalizeCoverInput(coverInput) {
+  if (coverInput === undefined) return null
+  const normalized = normalizeImageInput(coverInput ? [coverInput] : [], 'cover')
+  const coverImage = primaryImageReference(normalized)
+  const coverPathname = normalized[0]?.pathname ?? null
+  return { coverImage: coverImage || '', coverPathname: coverPathname || null }
+}
+
+function collectionUpdateData(body, cover) {
+  const { title, slug, description, about, season, location, isVisible, order } = body
+  return {
+    title,
+    slug: slug !== undefined ? (slug || slugify(title)) : undefined,
+    description: description !== undefined ? description ?? '' : undefined,
+    about: about !== undefined ? about ?? '' : undefined,
+    season: season !== undefined ? season ?? '' : undefined,
+    location: location !== undefined ? location ?? '' : undefined,
+    isVisible,
+    order,
+    ...(cover ? { coverImage: cover.coverImage, coverPathname: cover.coverPathname } : {}),
+  }
+}
+
+export default async function handler(req, res) {
+  const session = requireSuperAdmin(req, res)
+  if (!session) return
+
+  const { id } = req.query
+
+  if (id) {
+    const existing = await prisma.fashionCollection.findUnique({ where: { id }, select: { id: true } })
+    if (!existing) return res.status(404).json({ error: 'Collection not found' })
+
+    if (req.method === 'GET') {
+      const collection = await prisma.fashionCollection.findUnique({
+        where: { id },
+        include: includeCollectionDetail(),
+      })
+      return res.status(200).json(withCollectionCover(collection))
+    }
+
+    if (req.method === 'PUT') {
+      const { credits, coverImage: coverInput } = req.body
+      const cover = normalizeCoverInput(coverInput)
+
+      const collection = await prisma.$transaction(async (tx) => {
+        const data = collectionUpdateData(req.body, cover)
+
+        if (credits !== undefined) {
+          const resolvedCredits = await resolveTypedOutsideTalentCredits(tx, credits)
+          const creditData = creditsCreateManyData(resolvedCredits)
+          await tx.fashionCollectionCredit.deleteMany({ where: { collectionId: id } })
+          return tx.fashionCollection.update({
+            where: { id },
+            data: {
+              ...data,
+              credits: creditData.length ? { createMany: { data: creditData } } : undefined,
+            },
+            include: includeCollectionDetail(),
+          })
+        }
+
+        return tx.fashionCollection.update({
+          where: { id },
+          data,
+          include: includeCollectionDetail(),
+        })
+      })
+
+      return res.status(200).json(withCollectionCover(collection))
+    }
+
+    if (req.method === 'DELETE') {
+      await prisma.fashionCollection.delete({ where: { id } })
+      return res.status(204).end()
+    }
+
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  if (req.method === 'GET') {
+    const collections = await prisma.fashionCollection.findMany({
+      orderBy: { order: 'asc' },
+      select: selectCollectionList(),
+    })
+    return res.status(200).json(collections.map(withCollectionCover))
+  }
+
+  if (req.method === 'POST') {
+    const { title, slug, description, about, season, location, isVisible, order, coverImage: coverInput, credits } = req.body
+    if (!title) return res.status(400).json({ error: 'Title is required.' })
+    const cover = normalizeCoverInput(coverInput) ?? { coverImage: '', coverPathname: null }
+
+    const collection = await prisma.$transaction(async (tx) => {
+      const resolvedCredits = await resolveTypedOutsideTalentCredits(tx, credits)
+      const creditData = creditsCreateManyData(resolvedCredits)
+
+      return tx.fashionCollection.create({
+        data: {
+          title,
+          slug: slug || slugify(title),
+          description: description ?? '',
+          about: about ?? '',
+          season: season ?? '',
+          location: location ?? '',
+          isVisible: isVisible ?? true,
+          order: order ?? 0,
+          coverImage: cover.coverImage,
+          coverPathname: cover.coverPathname,
+          credits: creditData.length ? { createMany: { data: creditData } } : undefined,
+        },
+        select: selectCollectionList(),
+      })
+    })
+
+    return res.status(201).json(withCollectionCover(collection))
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' })
+}

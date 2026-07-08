@@ -18,6 +18,7 @@ const empty = {
 	isVisible: true,
 	images: [],
 	order: 0,
+	collectionId: '',
 	credits: [],
 	pieces: [],
 };
@@ -107,6 +108,7 @@ export default function AdminFashionLooksPage() {
 	const [looks, setLooks] = useState([]);
 	const [talentOptions, setTalentOptions] = useState([]);
 	const [crewOptions, setCrewOptions] = useState([]);
+	const [collections, setCollections] = useState([]);
 	const [form, setForm] = useState(null);
 	const [draggedId, setDraggedId] = useState(null);
 	const [dropTargetId, setDropTargetId] = useState(null);
@@ -131,10 +133,12 @@ export default function AdminFashionLooksPage() {
 		Promise.all([
 			loadAdminResource({ cacheKey: 'fashion-talent-list', url: '/api/admin/fashion?resource=talent', token }),
 			loadAdminResource({ cacheKey: 'fashion-crew-list', url: '/api/admin/fashion?resource=crew', token }),
-		]).then(([talent, crew]) => {
+			loadAdminResource({ cacheKey: 'fashion-collections-list', url: '/api/admin/fashion/collections', token }),
+		]).then(([talent, crew, collectionList]) => {
 			if (ignore) return;
 			setTalentOptions(talent.map(toTalentOption));
 			setCrewOptions(crew.map(toCrewOption));
+			setCollections(collectionList);
 		});
 
 		return () => {
@@ -151,6 +155,7 @@ export default function AdminFashionLooksPage() {
 				...empty,
 				...detail,
 				images: detail.images ?? [],
+				collectionId: detail.collectionId ?? '',
 				credits: toFormCredits(detail.credits),
 				pieces: toFormPieces(detail.pieces),
 			});
@@ -408,6 +413,22 @@ export default function AdminFashionLooksPage() {
 													/>
 												</div>
 											</div>
+										</div>
+
+										<div className="admin-modal-field admin-modal-field-full">
+											<label className="admin-modal-label">Collection</label>
+											<select
+												value={form.collectionId ?? ''}
+												onChange={(event) => setForm((current) => ({ ...current, collectionId: event.target.value || null }))}
+												className="admin-artists-page-input"
+											>
+												<option value="">No collection (loose look)</option>
+												{collections.map((collection) => (
+													<option key={collection.id} value={collection.id}>
+														{collection.title}{collection.season ? ` (${collection.season})` : ''}
+													</option>
+												))}
+											</select>
 										</div>
 
 										<div className="admin-modal-field admin-modal-field-full">

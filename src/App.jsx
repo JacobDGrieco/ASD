@@ -16,6 +16,7 @@ import FashionTalentPage from './pages/FashionTalentPage.jsx';
 import FashionTalentProfilePage from './pages/FashionTalentProfilePage.jsx';
 import FashionCataloguePage from './pages/FashionCataloguePage.jsx';
 import FashionLookPage from './pages/FashionLookPage.jsx';
+import FashionCollectionPage from './pages/FashionCollectionPage.jsx';
 import AdminLayout from './components/admin/AdminLayout.jsx';
 import AdminRoute from './components/admin/AdminRoute.jsx';
 import SideRails from './components/shared/SideRails.jsx';
@@ -37,6 +38,7 @@ const AdminMusicRecordPlayerPage = lazy(() => import('./pages/admin/AdminMusicRe
 const AdminFashionTalentPage = lazy(() => import('./pages/admin/AdminFashionTalentPage.jsx'));
 const AdminFashionOutsideTalentPage = lazy(() => import('./pages/admin/AdminFashionOutsideTalentPage.jsx'));
 const AdminFashionLooksPage = lazy(() => import('./pages/admin/AdminFashionLooksPage.jsx'));
+const AdminFashionCollectionsPage = lazy(() => import('./pages/admin/AdminFashionCollectionsPage.jsx'));
 
 function RouteFallback() {
 	return <div className="page" style={{ minHeight: '100vh' }} />;
@@ -146,6 +148,7 @@ export default function App() {
 						<Route path="/fashion/talent/:slug" element={<FashionTalentProfilePage />} />
 						<Route path="/fashion/catalogue" element={<FashionCataloguePage />} />
 						<Route path="/fashion/looks/:slug" element={<FashionLookPage />} />
+						<Route path="/fashion/collections/:slug" element={<FashionCollectionPage />} />
 						<Route
 							path="/terms-of-service"
 							element={<LegalPage title="Terms of Service" documentSrc="/legal/terms-of-service.html" />}
@@ -172,6 +175,7 @@ export default function App() {
 							<Route path="/admin/fashion/talent" element={<AdminFashionAccessRoute><AdminFashionTalentPage /></AdminFashionAccessRoute>} />
 							<Route path="/admin/fashion/outside_talent" element={<AdminFashionAccessRoute><AdminFashionOutsideTalentPage /></AdminFashionAccessRoute>} />
 							<Route path="/admin/fashion/looks" element={<AdminFashionAccessRoute><AdminFashionLooksPage /></AdminFashionAccessRoute>} />
+							<Route path="/admin/fashion/collections" element={<AdminFashionAccessRoute><AdminFashionCollectionsPage /></AdminFashionAccessRoute>} />
 						</Route>
 					</Route>
 				</Routes>

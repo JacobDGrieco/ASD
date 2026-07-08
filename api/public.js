@@ -985,6 +985,151 @@ function includePublicLook() {
   }
 }
 
+function includePublicLookSummary() {
+  return {
+    images: {
+      take: 1,
+      orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+    },
+    _count: { select: { pieces: true } },
+  }
+}
+
+function formatLookSummary(look) {
+  const primary = (look.images ?? [])[0]
+  return {
+    id: look.id,
+    title: look.title,
+    slug: look.slug,
+    order: look.order,
+    isVisible: look.isVisible,
+    images: primary ? clientImages([primary]) : [],
+    pieces: new Array(look._count?.pieces ?? 0),
+  }
+}
+
+function includePublicCollectionCredits() {
+  return {
+    orderBy: { sortOrder: 'asc' },
+    include: {
+      talent: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          role: true,
+          images: {
+            take: 1,
+            orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+            select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+          },
+        },
+      },
+      crew: { select: { id: true, name: true, role: true, externalUrl: true, imageUrl: true, pathname: true } },
+    },
+  }
+}
+
+async function getFashionCatalogue(res, includeHidden) {
+  setPublicCache(res)
+
+  const [collections, looseLooks] = await Promise.all([
+    prisma.fashionCollection.findMany({
+      where: includeHidden ? undefined : { isVisible: true },
+      orderBy: { order: 'asc' },
+      include: {
+        looks: {
+          where: includeHidden ? undefined : { isVisible: true },
+          orderBy: { order: 'asc' },
+          include: includePublicLookSummary(),
+        },
+      },
+    }),
+    prisma.fashionLook.findMany({
+      where: { collectionId: null, ...(includeHidden ? {} : { isVisible: true }) },
+      orderBy: { order: 'asc' },
+      include: includePublicLookSummary(),
+    }),
+  ])
+
+  const collectionItems = collections.map((collection) => ({
+    type: 'collection',
+    id: collection.id,
+    title: collection.title,
+    slug: collection.slug,
+    description: collection.description,
+    season: collection.season,
+    location: collection.location,
+    coverImage: collection.coverImage
+      ? clientImage({ url: collection.coverImage, pathname: collection.coverPathname })
+      : null,
+    isVisible: collection.isVisible,
+    order: collection.order,
+    looks: collection.looks.map(formatLookSummary),
+  }))
+
+  const looseLookItems = looseLooks.map((look) => ({
+    type: 'look',
+    ...formatLookSummary(look),
+  }))
+
+  const all = [...collectionItems, ...looseLookItems].sort((left, right) => left.order - right.order)
+  return res.status(200).json(all)
+}
+
+async function getFashionCollection(res, slug, includeHidden) {
+  setPublicCache(res)
+
+  const collection = await prisma.fashionCollection.findUnique({
+    where: { slug },
+    include: {
+      looks: {
+        where: includeHidden ? undefined : { isVisible: true },
+        orderBy: { order: 'asc' },
+        include: includePublicLook(),
+      },
+      credits: includePublicCollectionCredits(),
+    },
+  })
+
+  if (!collection) return res.status(404).json({ error: 'Collection not found' })
+  if (!includeHidden && !collection.isVisible) return res.status(404).json({ error: 'Collection not found' })
+
+  const seenKeys = new Set()
+  const mergedCredits = []
+
+  function addCredit(credit) {
+    const key = credit.talentId
+      || (credit.crew ? `crew:${credit.crew.id}` : null)
+      || `name:${(credit.creditName || '').toLowerCase().trim()}`
+    if (!key || seenKeys.has(key)) return
+    seenKeys.add(key)
+    mergedCredits.push(formatFashionCredit(credit))
+  }
+
+  for (const credit of (collection.credits ?? [])) addCredit(credit)
+  for (const look of (collection.looks ?? [])) {
+    for (const credit of (look.credits ?? [])) addCredit(credit)
+  }
+
+  return res.status(200).json({
+    id: collection.id,
+    title: collection.title,
+    slug: collection.slug,
+    description: collection.description,
+    about: collection.about,
+    season: collection.season,
+    location: collection.location,
+    coverImage: collection.coverImage
+      ? clientImage({ url: collection.coverImage, pathname: collection.coverPathname })
+      : null,
+    isVisible: collection.isVisible,
+    order: collection.order,
+    looks: collection.looks.map(formatFashionLook),
+    credits: mergedCredits,
+  })
+}
+
 async function getFashionLooksList(res, includeHidden) {
   setPublicCache(res)
   const looks = await prisma.fashionLook.findMany({
@@ -1067,6 +1212,8 @@ export default async function handler(req, res) {
   if (resource === 'fashionTalent' && slug) return getFashionTalent(res, slug, includeHidden)
   if (resource === 'fashionLooksList') return getFashionLooksList(res, includeHidden)
   if (resource === 'fashionLook' && slug) return getFashionLook(res, slug, includeHidden)
+  if (resource === 'fashionCatalogue') return getFashionCatalogue(res, includeHidden)
+  if (resource === 'fashionCollection' && slug) return getFashionCollection(res, slug, includeHidden)
 
   return res.status(404).json({ error: 'Not found' })
 }

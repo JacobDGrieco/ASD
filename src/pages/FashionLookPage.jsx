@@ -212,7 +212,7 @@ function CreditCard({ credit }) {
     : <div className="fashion-credit-card">{inner}</div>
 }
 
-function CreditsCarousel({ credits }) {
+export function CreditsCarousel({ credits }) {
   const sortedCredits = sortCreditsByImportance(credits)
   if (!sortedCredits.length) return null
   return (

@@ -49,6 +49,14 @@
 			"destination": "/api/public?resource=fashionLook&slug=:slug"
 		},
 		{
+			"source": "/api/fashion/catalogue",
+			"destination": "/api/public?resource=fashionCatalogue"
+		},
+		{
+			"source": "/api/fashion/collections/:slug",
+			"destination": "/api/public?resource=fashionCollection&slug=:slug"
+		},
+		{
 			"source": "/api/admin/board",
 			"destination": "/api/admin/artists?resource=board"
 		},
@@ -59,6 +67,14 @@
 		{
 			"source": "/api/admin/fashion/looks",
 			"destination": "/api/admin/fashion?resource=looks"
+		},
+		{
+			"source": "/api/admin/fashion/collections",
+			"destination": "/api/admin/fashionCollections"
+		},
+		{
+			"source": "/api/admin/fashion/collections/:id",
+			"destination": "/api/admin/fashionCollections?id=:id"
 		},
 		{
 			"source": "/admin",

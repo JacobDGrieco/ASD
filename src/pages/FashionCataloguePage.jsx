@@ -1,10 +1,10 @@
 import { useApi } from '../hooks/useApi.js'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
-import LookCard from '../components/fashion/LookCard.jsx'
+import FashionCatalogueGrid from '../components/fashion/FashionCatalogueGrid.jsx'
 import '../styles/FashionPages.css'
 
 export default function FashionCataloguePage() {
-  const { data: looks, loading } = useApi('/api/fashion/looks')
+  const { data: items, loading } = useApi('/api/fashion/catalogue')
 
   if (loading) return null
 
@@ -17,10 +17,8 @@ export default function FashionCataloguePage() {
           <p className="fashion-page-subtitle">Lookbooks, shoppable pieces, and the people behind each shoot.</p>
         </header>
 
-        {looks?.length ? (
-          <div className="fashion-talent-grid">
-            {looks.map((look) => <LookCard key={look.id} look={look} />)}
-          </div>
+        {items?.length ? (
+          <FashionCatalogueGrid items={items} />
         ) : (
           <p className="fashion-page-empty">No looks published yet.</p>
         )}

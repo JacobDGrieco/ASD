@@ -81,6 +81,7 @@ export default function AdminLayout() {
 		...(isSuperAdminSession ? [
 			{ to: '/admin/fashion/talent', label: 'Talent', icon: <FaUsers aria-hidden="true" /> },
 			{ to: '/admin/fashion/outside_talent', label: 'Outside Talent', icon: <FaUserFriends aria-hidden="true" /> },
+			{ to: '/admin/fashion/collections', label: 'Collections', icon: <FaCompactDisc aria-hidden="true" /> },
 			{ to: '/admin/fashion/looks', label: 'Looks', icon: <FaTshirt aria-hidden="true" /> },
 		] : []),
 	];
