@@ -37,6 +37,27 @@
   white-space: nowrap;
 }
 
+.side-rails-text {
+  position: relative;
+  isolation: isolate;
+}
+
+.side-rails-text::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  color: rgba(206, 178, 132, 0.92);
+  font-family: 'DiskoFill', 'Disko', Georgia, serif;
+  -webkit-text-fill-color: rgba(206, 178, 132, 0.92);
+}
+
+.side-rails-text-outline {
+  position: relative;
+  z-index: 1;
+  color: inherit;
+}
+
 .side-rails-column-left {
   justify-content: flex-start;
   writing-mode: vertical-rl;
@@ -46,7 +67,7 @@
 .side-rails-column-left span {
   font-size: 5rem;
   letter-spacing: 0.2em;
-  color: rgba(200, 169, 110, 0.18);
+  color: rgba(176, 136, 78, 0.94);
 }
 
 .side-rails-right-stack {
@@ -70,7 +91,7 @@
 .side-rails-column-right span {
   font-size: 3.5rem;
   letter-spacing: 0.12em;
-  color: rgba(200, 169, 110, 0.24);
+  color: rgba(162, 122, 66, 0.95);
 }
 
 .side-rails-column-right-enter {

@@ -7,7 +7,7 @@ import '../../styles/ArtistSplash.css';
 
 const AUTO_SWAP_INTERVAL_MS = 1400;
 const IMAGE_TRANSITION_MS = 480;
-const CARD_WAVE_DELAY_MS = 120;
+const CARD_WAVE_DELAY_MS = 260;
 const DEFAULT_HERO_VIDEO = 'https://yrvmwf5ltxj8zlrg.public.blob.vercel-storage.com/videos/hero-video.mov';
 const MOBILE_SPOTLIGHT_QUERY = '(max-width: 640px)';
 
@@ -233,18 +233,19 @@ function ArtistCard({
 	return (
 		<Element
 			{...elementProps}
+			aria-label={`View ${artist.name}`}
 			className={`artist-splash-card ${visualActive ? 'artist-splash-card-active' : ''} ${artist.isPubliclyVisible === false ? 'artist-splash-card-hidden' : ''} ${className}`.trim()}
 			style={{
 				'--artist-splash-enter-delay': `${enterDelayMs}ms`,
-				'--artist-splash-name-min': `${1.8 * nameScale}rem`,
-				'--artist-splash-name-fluid': `${3.5 * nameScale}vw`,
-				'--artist-splash-name-max': `${3.4 * nameScale}rem`,
+				'--artist-splash-name-min': `${1.75 * nameScale}rem`,
+				'--artist-splash-name-fluid': `${3.8 * nameScale}vw`,
+				'--artist-splash-name-max': `${3.65 * nameScale}rem`,
 				'--artist-splash-name-mobile-min': `${1.25 * nameScale}rem`,
-				'--artist-splash-name-mobile-fluid': `${8 * nameScale}vw`,
-				'--artist-splash-name-mobile-max': `${2.1 * nameScale}rem`,
+				'--artist-splash-name-mobile-fluid': `${7.8 * nameScale}vw`,
+				'--artist-splash-name-mobile-max': `${2.45 * nameScale}rem`,
 				'--artist-splash-name-center-min': `${1.45 * nameScale}rem`,
-				'--artist-splash-name-center-fluid': `${8.6 * nameScale}vw`,
-				'--artist-splash-name-center-max': `${2.35 * nameScale}rem`,
+				'--artist-splash-name-center-fluid': `${8.4 * nameScale}vw`,
+				'--artist-splash-name-center-max': `${2.9 * nameScale}rem`,
 			}}
 			onMouseEnter={() => {
 				prefetchArtistPage(artist);
@@ -263,7 +264,7 @@ function ArtistCard({
 			onTouchStart={() => prefetchArtistPage(artist)}
 		>
 			<span className="artist-splash-name-art" data-text={artist.name}>
-				{artist.name}
+				<span className="artist-splash-name-outline">{artist.name}</span>
 			</span>
 			<div className="artist-splash-card-frame">
 				{previousImage && (
@@ -280,7 +281,8 @@ function ArtistCard({
 					<img
 						key={`current-${currentImage}`}
 						src={currentImage}
-						alt={artist.name}
+						alt=""
+						aria-hidden="true"
 						className={`artist-splash-portrait artist-splash-portrait-current ${isTransitioning ? 'artist-splash-enter-right' : ''}`.trim()}
 						loading="eager"
 						fetchPriority={imagePriority}

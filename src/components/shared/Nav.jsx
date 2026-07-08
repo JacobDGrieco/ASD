@@ -4,7 +4,6 @@ import '../../styles/Nav.css';
 
 const SECTION_TABS = {
 	music: [
-		{ to: '/board', label: 'The Board' },
 		{ to: '/videos', label: 'The Stage' },
 		{ to: '/crosshair', label: 'The Crosshair' },
 	],
@@ -20,7 +19,7 @@ const SITE_SECTIONS = [
 ];
 
 function getSection(pathname) {
-	if (pathname === '/music' || pathname.startsWith('/music/') || ['/board', '/videos', '/crosshair'].some((p) => pathname === p || pathname.startsWith(`${p}/`)) || pathname.startsWith('/artists/') || pathname.startsWith('/albums/') || pathname.startsWith('/songs/')) {
+	if (pathname === '/music' || pathname.startsWith('/music/') || ['/videos', '/crosshair'].some((p) => pathname === p || pathname.startsWith(`${p}/`)) || pathname.startsWith('/artists/') || pathname.startsWith('/albums/') || pathname.startsWith('/songs/')) {
 		return 'music';
 	}
 	if (pathname === '/fashion' || pathname.startsWith('/fashion/')) return 'fashion';
@@ -29,6 +28,30 @@ function getSection(pathname) {
 
 function NavContent({ section }) {
 	const sectionTabs = SECTION_TABS[section] ?? [];
+	const globalActions = (
+		<div className="nav-global-actions" aria-label="Global navigation">
+			<NavLink
+				to="/board"
+				className={({ isActive }) => isActive ? 'nav-board-link nav-board-link-active' : 'nav-board-link'}
+			>
+				The Board
+			</NavLink>
+			{section !== 'root' && (
+				<div className="nav-section-switch" aria-label="Site sections">
+					{SITE_SECTIONS.map((siteSection) => (
+						<Link
+							key={siteSection.key}
+							to={siteSection.to}
+							className={section === siteSection.key ? 'nav-section-link nav-section-link-active' : 'nav-section-link'}
+							aria-current={section === siteSection.key ? 'page' : undefined}
+						>
+							{siteSection.label}
+						</Link>
+					))}
+				</div>
+			)}
+		</div>
+	);
 
 	return (
 		<>
@@ -38,7 +61,10 @@ function NavContent({ section }) {
 			</Link>
 
 			{section === 'root' ? (
-				<p className="nav-home-tagline">by the underground, for the unheard.</p>
+				<>
+					<p className="nav-home-tagline">by the underground, for the unheard.</p>
+					{globalActions}
+				</>
 			) : (
 				<>
 					<div className="nav-links" aria-label={`${section} navigation`}>
@@ -52,18 +78,7 @@ function NavContent({ section }) {
 							</NavLink>
 						))}
 					</div>
-					<div className="nav-section-switch" aria-label="Site sections">
-						{SITE_SECTIONS.map((siteSection) => (
-							<Link
-								key={siteSection.key}
-								to={siteSection.to}
-								className={section === siteSection.key ? 'nav-section-link nav-section-link-active' : 'nav-section-link'}
-								aria-current={section === siteSection.key ? 'page' : undefined}
-							>
-								{siteSection.label}
-							</Link>
-						))}
-					</div>
+					{globalActions}
 				</>
 			)}
 		</>

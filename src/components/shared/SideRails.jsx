@@ -142,7 +142,9 @@ export default function SideRails() {
       <div className="side-rails-rail side-rails-rail-left">
         <div className="side-rails-column side-rails-column-left">
           {LEFT_RAIL_TEXT.map((key) => (
-            <span key={key}>ASD RECORDS</span>
+            <span key={key} className="side-rails-text" data-text="ASD RECORDS">
+              <span className="side-rails-text-outline">ASD RECORDS</span>
+            </span>
           ))}
         </div>
       </div>
@@ -154,7 +156,9 @@ export default function SideRails() {
               className="side-rails-column side-rails-column-right side-rails-column-right-exit"
             >
               {previousRightRailNames.map((name, index) => (
-                <span key={`right-prev-${rightRailState.transitionKey}-${index}`}>{name}</span>
+                <span key={`right-prev-${rightRailState.transitionKey}-${index}`} className="side-rails-text" data-text={name}>
+                  <span className="side-rails-text-outline">{name}</span>
+                </span>
               ))}
             </div>
           )}
@@ -163,7 +167,9 @@ export default function SideRails() {
             className={`side-rails-column side-rails-column-right ${rightRailState.previousIndex !== null ? 'side-rails-column-right-enter' : ''}`.trim()}
           >
             {currentRightRailNames.map((name, index) => (
-              <span key={`right-current-${rightRailState.currentIndex}-${index}`}>{name}</span>
+              <span key={`right-current-${rightRailState.currentIndex}-${index}`} className="side-rails-text" data-text={name}>
+                <span className="side-rails-text-outline">{name}</span>
+              </span>
             ))}
           </div>
         </div>

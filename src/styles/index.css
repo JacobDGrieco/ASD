@@ -32,6 +32,14 @@
 }
 
 @font-face {
+	font-family: 'DiskoFill';
+	src: url('../../fonts/Disko-Fill.ttf') format('truetype');
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+}
+
+@font-face {
 	font-family: 'Mono55';
 	src: url('../../fonts/monof55.ttf') format('truetype');
 	font-style: normal;
@@ -127,6 +135,64 @@ span {
 
 .font-description {
 	font-family: var(--font-description);
+}
+
+.disko-layered-text {
+	--disko-fill-color: #fff;
+	--disko-outline-color: currentColor;
+	--disko-font-size: inherit;
+	--disko-line-height: inherit;
+	--disko-letter-spacing: inherit;
+	--disko-text-transform: inherit;
+	position: relative;
+	display: inline-block;
+	color: var(--disko-outline-color);
+	font-family: 'Disko', Georgia, serif;
+	font-size: var(--disko-font-size);
+	font-style: normal;
+	font-weight: 400;
+	letter-spacing: var(--disko-letter-spacing);
+	line-height: var(--disko-line-height);
+	text-transform: var(--disko-text-transform);
+	white-space: inherit;
+}
+
+.disko-layered-text::before {
+	content: attr(data-text);
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	background: var(--disko-fill-color);
+	background-clip: text;
+	color: transparent;
+	font-family: 'DiskoFill', 'Disko', Georgia, serif;
+	font-size: inherit;
+	font-style: inherit;
+	font-weight: inherit;
+	letter-spacing: inherit;
+	line-height: inherit;
+	text-align: inherit;
+	text-transform: inherit;
+	white-space: inherit;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	pointer-events: none;
+	user-select: none;
+}
+
+.disko-layered-text__outline {
+	position: relative;
+	z-index: 1;
+	color: var(--disko-outline-color);
+	font-family: 'Disko', Georgia, serif;
+	font-size: inherit;
+	font-style: inherit;
+	font-weight: inherit;
+	letter-spacing: inherit;
+	line-height: inherit;
+	text-align: inherit;
+	text-transform: inherit;
+	white-space: inherit;
 }
 
 a {

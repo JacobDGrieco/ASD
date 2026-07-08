@@ -28,7 +28,7 @@
 
 .home-shell-hero {
 	min-height: calc(100dvh - var(--nav-height));
-	padding: 24px 40px 0;
+	padding: 24px 40px;
 	border-top: 0;
 }
 
@@ -49,9 +49,9 @@
 	max-width: 1360px;
 	min-height: calc(100dvh - var(--nav-height) - 24px);
 	margin: 0 auto;
-	align-items: flex-end;
+	align-items: center;
 	justify-content: center;
-	padding-bottom: 4vh;
+	padding-block: 4vh;
 }
 
 .home-shell-artist-card {
@@ -254,14 +254,14 @@
 
 @media (max-width: 920px) {
 	.home-shell-hero {
-		padding: 20px 20px 0;
+		padding: 20px;
 	}
 
 	.home-shell-artist-row {
 		gap: 14px;
 		justify-content: flex-start;
 		overflow-x: auto;
-		padding: 0 4px 12px;
+		padding: 4vh 4px;
 		scrollbar-width: none;
 	}
 

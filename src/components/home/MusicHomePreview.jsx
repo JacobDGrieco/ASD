@@ -50,7 +50,7 @@ export default function MusicHomePreview() {
 											style={{ '--artist-splash-enter-delay': `${index * 120}ms` }}
 										>
 											<span className="artist-splash-name-art" data-text={artist.name}>
-												{artist.name}
+												<span className="artist-splash-name-outline">{artist.name}</span>
 											</span>
 											<div className="artist-splash-card-frame">
 												{artist.portrait && (

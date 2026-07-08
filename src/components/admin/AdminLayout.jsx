@@ -8,6 +8,7 @@ const ADMIN_SIDEBAR_STATE_KEY = 'admin-sidebar-collapsed';
 const ADMIN_SECTION_STATE_KEY = 'admin-sidebar-sections';
 const DEFAULT_SECTION_STATE = {
 	admin: true,
+	board: true,
 	music: true,
 	fashion: true,
 };
@@ -72,9 +73,12 @@ export default function AdminLayout() {
 		{ to: '/admin/albums', label: 'Albums', icon: <FaCompactDisc aria-hidden="true" />, matchPaths: isArtistScoped ? ['/admin'] : undefined },
 		{ to: '/admin/songs', label: 'Songs', icon: <FaMusic aria-hidden="true" />, matchPaths: ['/admin/lyrics'] },
 		...(!isArtistScoped ? [{ to: '/admin/record-player', label: 'Record Player', icon: <FaRecordVinyl aria-hidden="true" /> }] : []),
-		{ to: '/admin/board', label: 'Board', icon: <FaBullhorn aria-hidden="true" /> },
 		...(!isViewer ? [{ to: '/admin/videos', label: 'Videos', icon: <FaVideo aria-hidden="true" /> }] : []),
 		...(isSuperAdminSession ? [{ to: '/admin/crosshair', label: 'Crosshair', icon: <FaBullseye aria-hidden="true" /> }] : []),
+	];
+
+	const boardLinks = [
+		{ to: '/admin/board', label: 'Posts', icon: <FaBullhorn aria-hidden="true" /> },
 	];
 
 	const fashionLinks = [
@@ -88,6 +92,7 @@ export default function AdminLayout() {
 
 	const navSections = [
 		...(adminLinks.length > 0 ? [{ key: 'admin', label: 'Admin', icon: <FaUserShield aria-hidden="true" />, links: adminLinks }] : []),
+		{ key: 'board', label: 'The Board', icon: <FaBullhorn aria-hidden="true" />, links: boardLinks },
 		{ key: 'music', label: 'Music', icon: <FaMusic aria-hidden="true" />, links: musicLinks },
 		...(fashionLinks.length > 0 ? [{ key: 'fashion', label: 'Fashion', icon: <FaTshirt aria-hidden="true" />, links: fashionLinks }] : []),
 	];
