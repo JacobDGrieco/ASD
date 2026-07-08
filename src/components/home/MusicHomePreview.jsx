@@ -1,25 +1,12 @@
-import { useRef, useEffect } from 'react';
+import { lazy, Suspense } from 'react';
 import { useApi } from '../../hooks/useApi.js';
-import { getVideoSourceType } from '../../lib/artistVideos.js';
 import '../../styles/ArtistSplash.css';
 import '../../styles/HomePortal.css';
 
-const DEFAULT_HERO_VIDEO = 'https://yrvmwf5ltxj8zlrg.public.blob.vercel-storage.com/videos/hero-video.mov';
-
-export const portalMusicVideoRef = { current: null };
+const SilkBackground = lazy(() => import('../shared/SilkBackground.jsx'));
 
 export default function MusicHomePreview() {
-	const videoRef = useRef(null);
 	const { data: artists } = useApi('/api/artists');
-
-	useEffect(() => {
-		portalMusicVideoRef.current = videoRef.current;
-		return () => {
-			portalMusicVideoRef.current = null;
-		};
-	}, []);
-
-	const heroVideo = import.meta.env.VITE_HOME_HERO_VIDEO || DEFAULT_HERO_VIDEO;
 	const visibleArtists = (artists ?? []).filter((a) => a.isPubliclyVisible !== false);
 
 	return (
@@ -27,18 +14,9 @@ export default function MusicHomePreview() {
 			<div className="portal-live-preview">
 				<div className="portal-live-preview-inner">
 					<section className="artist-splash-splash">
-						<video
-							ref={videoRef}
-							className="artist-splash-video"
-							autoPlay
-							muted
-							loop
-							playsInline
-							preload="auto"
-							aria-hidden="true"
-						>
-							<source src={heroVideo} type={getVideoSourceType(heroVideo)} />
-						</video>
+						<Suspense fallback={<div className="artist-splash-silk" aria-hidden="true" />}>
+							<SilkBackground />
+						</Suspense>
 						<div className="artist-splash-overlay" />
 						<div className="artist-splash-rail">
 							<div className="artist-splash-rail-window portal-rail-window">

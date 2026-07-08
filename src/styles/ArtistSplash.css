@@ -9,13 +9,17 @@
 	view-transition-name: music-splash;
 }
 
-.artist-splash-video {
+.artist-splash-silk {
 	position: absolute;
 	inset: 0;
 	width: 100%;
 	height: 100%;
-	object-fit: cover;
-	object-position: center;
+	background: rgb(8, 7, 6);
+	pointer-events: none;
+}
+
+.artist-splash-silk canvas {
+	display: block;
 }
 
 .artist-splash-overlay {

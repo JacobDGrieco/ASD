@@ -1,14 +1,12 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { preloadImage, preloadImages, prefetchArtistPage } from '../../lib/publicPrefetch.js';
-import { getVideoSourceType } from '../../lib/artistVideos.js';
-import { consumePortalVideoTime, consumePortalVideoElement } from '../../lib/portalVideoTime.js';
 import '../../styles/ArtistSplash.css';
 
+const SilkBackground = lazy(() => import('../shared/SilkBackground.jsx'));
 const AUTO_SWAP_INTERVAL_MS = 1400;
 const IMAGE_TRANSITION_MS = 480;
 const CARD_WAVE_DELAY_MS = 260;
-const DEFAULT_HERO_VIDEO = 'https://yrvmwf5ltxj8zlrg.public.blob.vercel-storage.com/videos/hero-video.mov';
 const MOBILE_SPOTLIGHT_QUERY = '(max-width: 640px)';
 
 function uniqueUrls(urls) {
@@ -444,92 +442,13 @@ function ArtistSpotlightCarousel({ artists }) {
 }
 
 export default function ArtistSplash({ artists }) {
-	const heroVideos = useMemo(() => uniqueUrls([
-		import.meta.env.VITE_HOME_HERO_VIDEO,
-		DEFAULT_HERO_VIDEO,
-	]), []);
-	const portalVideoElement = useRef(consumePortalVideoElement());
-	const portalTime = useRef(consumePortalVideoTime());
-	const cameFromPortal = useRef(portalVideoElement.current !== null || portalTime.current !== null);
-	const [shouldLoadVideo, setShouldLoadVideo] = useState(
-		portalVideoElement.current !== null || portalTime.current !== null,
-	);
 	const isMobileSpotlight = useMediaQuery(MOBILE_SPOTLIGHT_QUERY);
-	const videoRef = useRef(null);
-	const videoContainerRef = useRef(null);
-
-	// Move the portal's live video element into this section synchronously so it's
-	// in the DOM when the view-transition snapshot is taken (useLayoutEffect fires
-	// inside flushSync before startViewTransition captures the new state).
-	useLayoutEffect(() => {
-		const video = portalVideoElement.current;
-		const container = videoContainerRef.current;
-		if (!video || !container) return;
-		container.appendChild(video);
-		videoRef.current = video;
-		return () => {
-			portalVideoElement.current = null;
-		};
-	}, []);
-
-	useEffect(() => {
-		if (portalVideoElement.current !== null || portalTime.current !== null) {
-			return undefined;
-		}
-
-		const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-		const connection = navigator.connection;
-		const shouldSkipVideo = prefersReducedMotion || connection?.saveData;
-
-		if (shouldSkipVideo) return undefined;
-
-		const callback = () => setShouldLoadVideo(true);
-		const handle = window.requestIdleCallback
-			? window.requestIdleCallback(callback, { timeout: 1200 })
-			: window.setTimeout(callback, 250);
-
-		return () => {
-			if (window.requestIdleCallback && window.cancelIdleCallback) {
-				window.cancelIdleCallback(handle);
-				return;
-			}
-			window.clearTimeout(handle);
-		};
-	}, []);
-
-	// Seek fallback: only needed when we created a new video element (no element transfer).
-	useEffect(() => {
-		if (portalVideoElement.current !== null) return;
-		if (portalTime.current === null || !videoRef.current) return;
-		videoRef.current.currentTime = portalTime.current;
-		portalTime.current = null;
-	}, [shouldLoadVideo]);
 
 	return (
-		<section className={`artist-splash-splash${cameFromPortal.current ? ' artist-splash-from-portal' : ''}`}>
-			{shouldLoadVideo && portalVideoElement.current && (
-				<div ref={videoContainerRef} aria-hidden="true" />
-			)}
-			{shouldLoadVideo && !portalVideoElement.current && (
-				<video
-					ref={videoRef}
-					className="artist-splash-video"
-					autoPlay
-					muted
-					loop
-					playsInline
-					preload="metadata"
-					aria-hidden="true"
-				>
-					{heroVideos.map((heroVideo) => (
-						<source
-							key={heroVideo}
-							src={heroVideo}
-							type={getVideoSourceType(heroVideo)}
-						/>
-					))}
-				</video>
-			)}
+		<section className="artist-splash-splash">
+			<Suspense fallback={<div className="artist-splash-silk" aria-hidden="true" />}>
+				<SilkBackground />
+			</Suspense>
 			<div className="artist-splash-overlay" />
 			{isMobileSpotlight ? <ArtistSpotlightCarousel artists={artists} /> : <ArtistSplashRail artists={artists} />}
 		</section>

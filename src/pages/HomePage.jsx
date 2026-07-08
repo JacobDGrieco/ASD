@@ -2,9 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import MusicHomePreview, { portalMusicVideoRef } from '../components/home/MusicHomePreview.jsx';
+import MusicHomePreview from '../components/home/MusicHomePreview.jsx';
 import FashionHomePreview from '../components/home/FashionHomePreview.jsx';
-import { storePortalVideoTime, storePortalVideoElement } from '../lib/portalVideoTime.js';
 import '../styles/HomePortal.css';
 
 const EXPAND_MS = 820;
@@ -121,11 +120,6 @@ export default function HomePage() {
 	};
 
 	const enterSection = (section) => {
-		if (section.key === 'music' && portalMusicVideoRef.current) {
-			storePortalVideoTime(portalMusicVideoRef.current.currentTime);
-			storePortalVideoElement(portalMusicVideoRef.current);
-		}
-
 		if (prefersReducedMotion) {
 			navigate(section.path);
 			return;
