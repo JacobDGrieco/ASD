@@ -86,13 +86,13 @@
 }
 
 .artist-splash-rail-window {
-	--artist-splash-rail-x-pad: clamp(34px, 7vw, 112px);
+	--artist-splash-rail-x-pad: clamp(24px, 4vw, 72px);
 	box-sizing: border-box;
 	width: 100%;
 	overflow-x: auto;
 	overflow-y: hidden;
-	padding: 56px var(--artist-splash-rail-x-pad);
-	margin: -56px 0;
+	padding: 40px var(--artist-splash-rail-x-pad);
+	margin: -40px 0;
 	scrollbar-width: none;
 	scroll-behavior: smooth;
 }
@@ -104,18 +104,19 @@
 .artist-splash-grid {
 	--artist-splash-card-gap: 20px;
 	display: flex;
+	flex-wrap: wrap;
 	gap: var(--artist-splash-card-gap);
-	width: 100%;
+	width: min(100%, var(--artist-splash-grid-max, 100%));
+	margin: 0 auto;
 	align-items: flex-start;
 	justify-content: center;
 	padding-bottom: 0;
-	flex-wrap: nowrap;
 	perspective: 1100px;
 	perspective-origin: center center;
 }
 
 .artist-splash-grid-scrollable {
-	justify-content: flex-start;
+	margin-inline: 0;
 }
 
 .artist-splash-rail-arrow {
@@ -182,9 +183,11 @@
 }
 
 .artist-splash-card {
-	width: min(22vw, 260px);
-	min-width: 180px;
-	height: min(44vh, 400px);
+	flex: 0 0 var(--artist-splash-card-basis, min(22vw, 260px));
+	width: var(--artist-splash-card-basis, min(22vw, 260px));
+	min-width: 0;
+	height: auto;
+	aspect-ratio: 5 / 7;
 	position: relative;
 	isolation: isolate;
 	overflow: visible;
@@ -447,6 +450,56 @@
 	filter: grayscale(0%) brightness(0.96);
 }
 
+@media (min-width: 1800px) {
+	.artist-splash-rail-window {
+		--artist-splash-rail-x-pad: clamp(72px, 5vw, 112px);
+		--artist-splash-rail-y-pad: clamp(96px, 13dvh, 144px);
+		padding-block: var(--artist-splash-rail-y-pad);
+		margin-block: calc(var(--artist-splash-rail-y-pad) * -1);
+	}
+
+	.artist-splash-grid {
+		flex-wrap: nowrap;
+		gap: 24px;
+		width: min(100%, var(--artist-splash-wide-grid-max));
+	}
+
+	.artist-splash-card {
+		flex-basis: var(--artist-splash-wide-card-basis);
+		width: var(--artist-splash-wide-card-basis);
+	}
+
+	.artist-splash-card:nth-child(6n + 1) {
+		translate: 0 -10dvh;
+		rotate: -3deg;
+	}
+
+	.artist-splash-card:nth-child(6n + 2) {
+		translate: 0 8dvh;
+		rotate: 2deg;
+	}
+
+	.artist-splash-card:nth-child(6n + 3) {
+		translate: 0 -4dvh;
+		rotate: -1deg;
+	}
+
+	.artist-splash-card:nth-child(6n + 4) {
+		translate: 0 10dvh;
+		rotate: 3deg;
+	}
+
+	.artist-splash-card:nth-child(6n + 5) {
+		translate: 0 -8dvh;
+		rotate: -2deg;
+	}
+
+	.artist-splash-card:nth-child(6n + 6) {
+		translate: 0 5dvh;
+		rotate: 2deg;
+	}
+}
+
 @media (max-width: 900px) {
 	.artist-splash-splash {
 		padding: 20px;
@@ -463,10 +516,11 @@
 	.artist-splash-grid {
 		--artist-splash-card-gap: 14px;
 		gap: 14px;
+		width: min(100%, 620px);
 	}
 
 	.artist-splash-grid-scrollable {
-		justify-content: flex-start;
+		margin-inline: auto;
 	}
 
 	.artist-splash-rail-arrow-prev {
@@ -478,9 +532,8 @@
 	}
 
 	.artist-splash-card {
-		width: 44vw;
-		min-width: 180px;
-		height: 34vh;
+		flex-basis: min(190px, calc((100% - 28px) / 3));
+		width: min(190px, calc((100% - 28px) / 3));
 	}
 
 	.artist-splash-name-art {

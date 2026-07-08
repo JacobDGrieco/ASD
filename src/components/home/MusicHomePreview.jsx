@@ -8,6 +8,21 @@ const SilkBackground = lazy(() => import('../shared/SilkBackground.jsx'));
 export default function MusicHomePreview() {
 	const { data: artists } = useApi('/api/artists');
 	const visibleArtists = (artists ?? []).filter((a) => a.isPubliclyVisible !== false);
+	const previewArtists = visibleArtists.slice(0, 8);
+	const rowCount = previewArtists.length >= 5 ? 2 : 1;
+	const columnCount = Math.max(1, Math.ceil(previewArtists.length / rowCount));
+	const cardMaxWidth = rowCount === 2 ? 280 : 320;
+	const cardHeightLimit = rowCount === 2 ? '27dvh' : '48dvh';
+	const totalGap = Math.max(0, columnCount - 1) * 20;
+	const wideColumnCount = Math.max(1, previewArtists.length);
+	const wideTotalGap = Math.max(0, wideColumnCount - 1) * 24;
+	const gridStyle = {
+		'--artist-splash-grid-columns': columnCount,
+		'--artist-splash-grid-max': `${columnCount * cardMaxWidth + totalGap}px`,
+		'--artist-splash-card-basis': `min(${cardMaxWidth}px, ${cardHeightLimit}, calc((100% - ${totalGap}px) / ${columnCount}))`,
+		'--artist-splash-wide-grid-max': `${wideColumnCount * 340 + wideTotalGap}px`,
+		'--artist-splash-wide-card-basis': `min(340px, 43dvh, calc((100% - ${wideTotalGap}px) / ${wideColumnCount}))`,
+	};
 
 	return (
 		<div className="portal-preview portal-preview-music" aria-hidden="true">
@@ -20,8 +35,11 @@ export default function MusicHomePreview() {
 						<div className="artist-splash-overlay" />
 						<div className="artist-splash-rail">
 							<div className="artist-splash-rail-window portal-rail-window">
-								<div className="artist-splash-grid">
-									{visibleArtists.slice(0, 8).map((artist, index) => (
+								<div
+									className="artist-splash-grid"
+									style={gridStyle}
+								>
+									{previewArtists.map((artist, index) => (
 										<div
 											key={artist.id}
 											className="artist-splash-card"
