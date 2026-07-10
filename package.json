@@ -18,7 +18,8 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "doctor": "npx react-doctor@latest"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

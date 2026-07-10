@@ -1003,6 +1003,8 @@ function formatLookSummary(look) {
     slug: look.slug,
     order: look.order,
     isVisible: look.isVisible,
+    createdAt: look.createdAt,
+    updatedAt: look.updatedAt,
     images: primary ? clientImages([primary]) : [],
     pieces: new Array(look._count?.pieces ?? 0),
   }
@@ -1065,6 +1067,8 @@ async function getFashionCatalogue(res, includeHidden) {
       : null,
     isVisible: collection.isVisible,
     order: collection.order,
+    createdAt: collection.createdAt,
+    updatedAt: collection.updatedAt,
     looks: collection.looks.map(formatLookSummary),
   }))
 

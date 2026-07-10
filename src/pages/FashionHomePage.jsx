@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { useApi } from '../hooks/useApi.js';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
+import CollectionCard from '../components/fashion/CollectionCard.jsx';
 import LookCard from '../components/fashion/LookCard.jsx';
 import TalentCard from '../components/fashion/TalentCard.jsx';
 import { useAdminAuth } from '../lib/adminAuth.jsx';
@@ -82,6 +83,14 @@ function FashionHomeCardPlaceholders() {
 	));
 }
 
+function FashionHomeCatalogueCard({ item }) {
+	if (item.type === 'collection') {
+		return <CollectionCard collection={item} to={`/fashion/collections/${item.slug}`} />;
+	}
+
+	return <LookCard look={item} />;
+}
+
 function FashionRunwayFeature({ featuredLook, featuredImage, canSwapPresentation, onSwapPresentation, saving }) {
 	const imageSrc = getImageSrc(featuredImage);
 	const usage = typeof featuredImage?.usage === 'string' ? featuredImage.usage : '';
@@ -118,6 +127,7 @@ function FashionRunwayFeature({ featuredLook, featuredImage, canSwapPresentation
 export default function FashionHomePage() {
 	const { session, token } = useAdminAuth();
 	const { data: looks, loading: looksLoading } = useApi('/api/fashion/looks');
+	const { data: catalogueItems, loading: catalogueLoading } = useApi('/api/fashion/catalogue');
 	const { data: talent, loading: talentLoading } = useApi('/api/fashion/talent');
 	const [imageUsageOverrides, setImageUsageOverrides] = useState({});
 	const [savingImageKey, setSavingImageKey] = useState(null);
@@ -128,7 +138,7 @@ export default function FashionHomePage() {
 	const featuredImage = rawFeaturedImage
 		? { ...rawFeaturedImage, usage: imageUsageOverrides[featuredImageKey] ?? rawFeaturedImage.usage }
 		: null;
-	const recentLooks = useMemo(() => getRecentItems(looks, 8), [looks]);
+	const recentCatalogueItems = useMemo(() => getRecentItems(catalogueItems, 8), [catalogueItems]);
 	const recentTalent = useMemo(() => getRecentItems(talent, 8), [talent]);
 	const canSwapPresentation = Boolean(session?.role === 'SUPER_ADMIN' && token && featuredLook && featuredImage);
 
@@ -211,27 +221,29 @@ export default function FashionHomePage() {
 					</div>
 				</section>
 
-				{recentLooks.length > 0 || looksLoading ? (
+				{recentCatalogueItems.length > 0 || catalogueLoading ? (
 					<FashionHomeSection
-						eyebrow="Latest looks"
-						title="Recent silhouettes from the ASD runway."
-						description="The newest lookbook entries, pulled straight from the fashion archive as they are published."
+						eyebrow="Latest collections / looks"
+						title="Recent edits from the ASD catalogue."
+						description="New collections and loose looks, pulled straight from the fashion archive as they are published."
 						to="/fashion/catalogue"
-						linkLabel="View all looks"
+						linkLabel="View catalogue"
 					>
-						{recentLooks.length > 0
-							? recentLooks.map((look) => <LookCard key={look.id} look={look} />)
+						{recentCatalogueItems.length > 0
+							? recentCatalogueItems.map((item) => (
+								<FashionHomeCatalogueCard key={`${item.type}-${item.id}`} item={item} />
+							))
 							: <FashionHomeCardPlaceholders />}
 					</FashionHomeSection>
 				) : (
 					<FashionHomeSection
-						eyebrow="Latest looks"
-						title="Recent silhouettes from the ASD runway."
-						description="New looks will appear here once public catalogue data is available."
+						eyebrow="Latest collections / looks"
+						title="Recent edits from the ASD catalogue."
+						description="New collections and loose looks will appear here once public catalogue data is available."
 						to="/fashion/catalogue"
 						linkLabel="View catalogue"
 					>
-						<div className="fashion-home-showcase-empty">Looks will appear here once they are published.</div>
+						<div className="fashion-home-showcase-empty">Collections and looks will appear here once they are published.</div>
 					</FashionHomeSection>
 				)}
 
@@ -259,7 +271,7 @@ export default function FashionHomePage() {
 					</FashionHomeSection>
 				)}
 
-				{!looksLoading && !talentLoading && !looks?.length && !talent?.length && (
+				{!looksLoading && !catalogueLoading && !talentLoading && !catalogueItems?.length && !talent?.length && (
 					<p className="fashion-page-empty">Fashion content coming soon.</p>
 				)}
 			</div>
