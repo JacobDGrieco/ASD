@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 const TALENT_ROLE_TO_LABEL = {
@@ -23,6 +23,7 @@ export default function CrewPickerField({ creditName, talentId, crewId, talentOp
   const [filter, setFilter] = useState('')
   const [open, setOpen] = useState(false)
   const [dropdownStyle, setDropdownStyle] = useState(null)
+  const listboxId = useId()
   const containerRef = useRef(null)
   const dropdownRef = useRef(null)
 
@@ -79,7 +80,7 @@ export default function CrewPickerField({ creditName, talentId, crewId, talentOp
   const filteredCrew = crewOptions.filter((member) => member.name.toLowerCase().includes(normalizedFilter))
   const hasResults = filteredTalent.length > 0 || filteredCrew.length > 0
   const dropdown = open && dropdownStyle ? (
-    <div className="crew-picker-dropdown" role="listbox" ref={dropdownRef} style={dropdownStyle}>
+    <div id={listboxId} className="crew-picker-dropdown" role="listbox" ref={dropdownRef} style={dropdownStyle}>
       {filteredTalent.length > 0 && (
         <>
           <div className="crew-picker-group-label">Talent</div>
@@ -88,6 +89,7 @@ export default function CrewPickerField({ creditName, talentId, crewId, talentOp
               key={talent.id}
               type="button"
               role="option"
+              aria-selected={talent.id === talentId}
               className="crew-picker-option"
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => selectTalent(talent)}
@@ -108,6 +110,7 @@ export default function CrewPickerField({ creditName, talentId, crewId, talentOp
               key={member.id}
               type="button"
               role="option"
+              aria-selected={member.id === crewId}
               className="crew-picker-option"
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => selectCrew(member)}
@@ -168,6 +171,8 @@ export default function CrewPickerField({ creditName, talentId, crewId, talentOp
           value={open ? filter : (creditName || '')}
           onChange={handleInputChange}
           onFocus={handleFocus}
+          role="combobox"
+          aria-controls={listboxId}
           aria-expanded={open}
           aria-autocomplete="list"
           autoComplete="off"

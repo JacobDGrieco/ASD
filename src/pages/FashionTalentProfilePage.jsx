@@ -103,8 +103,8 @@ export default function FashionTalentProfilePage() {
               {hasFeatured && (
                 <TabPanel header="Featured In">
                   <div className="discography-grid">
-                    {talent.featuredIn.map((credit, index) => (
-                      credit.look ? <LookCard key={`${credit.look.id}-${index}`} look={credit.look} /> : null
+                    {talent.featuredIn.map((credit) => (
+                      credit.look ? <LookCard key={credit.id ?? credit.look.id} look={credit.look} /> : null
                     ))}
                   </div>
                 </TabPanel>
@@ -112,8 +112,8 @@ export default function FashionTalentProfilePage() {
               {hasPhotos && (
                 <TabPanel header="Photos">
                   <div className="fashion-talent-photos-masonry">
-                    {photos.map((photo, index) => (
-                      <div key={photo.pathname || photo.url || index} className="fashion-talent-photo-item">
+                    {photos.map((photo) => (
+                      <div key={photo.pathname || photo.url || photo.previewUrl || photo.altText} className="fashion-talent-photo-item">
                         <Image
                           src={photo.previewUrl || photo.url}
                           alt={photo.altText || talent.name}

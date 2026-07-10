@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { preloadImage, preloadImages, prefetchArtistPage } from '../../lib/publicPrefetch.js';
 import '../../styles/ArtistSplash.css';
@@ -122,15 +122,15 @@ function ArtistCard({
 	const cycleRunIdRef = useRef(0);
 	const nameScale = getNameArtScale(artist.name);
 
-	const clearTimers = () => {
+	const clearTimers = useCallback(() => {
 		timeoutRefs.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
 		timeoutRefs.current = [];
-	};
+	}, []);
 
-	const wait = (ms) => new Promise((resolve) => {
+	const wait = useCallback((ms) => new Promise((resolve) => {
 		const timeoutId = window.setTimeout(resolve, ms);
 		timeoutRefs.current.push(timeoutId);
-	});
+	}), []);
 
 	useEffect(() => {
 		currentImageRef.current = currentImage;
@@ -152,7 +152,7 @@ function ArtistCard({
 		return undefined;
 	}, [defaultImage, imagePriority, images]);
 
-	const resetToDefault = () => {
+	const resetToDefault = useCallback(() => {
 		clearTimers();
 		cycleRunIdRef.current += 1;
 		setIsActive(forcedActive);
@@ -160,9 +160,9 @@ function ArtistCard({
 		currentImageRef.current = defaultImage;
 		setPreviousImage(null);
 		setIsTransitioning(false);
-	};
+	}, [clearTimers, defaultImage, forcedActive]);
 
-	const startSequence = () => {
+	const startSequence = useCallback(() => {
 		setIsActive(true);
 
 		if (sequence.length === 0 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -200,12 +200,12 @@ function ArtistCard({
 		};
 
 		void runSequence();
-	};
+	}, [clearTimers, sequence, wait]);
 
 	useEffect(() => {
 		resetToDefault();
 		return clearTimers;
-	}, [defaultImage, sequence]);
+	}, [clearTimers, resetToDefault, sequence]);
 
 	useEffect(() => {
 		if (autoPreview && forcedActive) {
@@ -220,7 +220,7 @@ function ArtistCard({
 
 		resetToDefault();
 		return undefined;
-	}, [autoPreview, defaultImage, forcedActive, sequence]);
+	}, [autoPreview, clearTimers, forcedActive, resetToDefault, startSequence]);
 
 	const visualActive = isActive || forcedActive;
 	const Element = as === 'button' ? 'button' : Link;

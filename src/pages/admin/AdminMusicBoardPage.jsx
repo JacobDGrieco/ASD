@@ -59,19 +59,20 @@ export default function AdminMusicBoardPage() {
 	const activePosts = useMemo(() => posts.filter((p) => !p.archivedAt), [posts]);
 	const archivedPosts = useMemo(() => posts.filter((p) => p.archivedAt), [posts]);
 
-	async function load() {
-		setLoading(true);
-		const data = await loadAdminResource({
-			cacheKey: 'boardPosts',
-			url: '/api/admin/board',
-			token,
-		});
-		setPosts(data ?? []);
-		setLoading(false);
-	}
-
 	useEffect(() => {
 		if (!token) return;
+
+		async function load() {
+			setLoading(true);
+			const data = await loadAdminResource({
+				cacheKey: 'boardPosts',
+				url: '/api/admin/board',
+				token,
+			});
+			setPosts(data ?? []);
+			setLoading(false);
+		}
+
 		void load();
 	}, [token]);
 

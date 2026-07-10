@@ -37,13 +37,23 @@ function selectedCreditImage(credit, talentOptions, crewOptions) {
   return selected?.image ?? null
 }
 
+function createClientKey() {
+  return `credit-${crypto.randomUUID()}`
+}
+
+function creditKey(credit) {
+  return credit.id
+    ?? credit.clientKey
+    ?? `${credit.talentId || credit.crewId || credit.creditName || 'credit'}:${credit.roleLabel || ''}`
+}
+
 // value: [{ talentId?, crewId?, creditName, roleLabel }]
 export default function CreditsField({ value, onChange, talentOptions = [], crewOptions = [], placeholder = 'Add a credit' }) {
   const selectId = useId()
   const credits = Array.isArray(value) ? value : []
 
   const addCredit = () => {
-    onChange([...credits, { talentId: '', crewId: '', creditName: '', roleLabel: '' }])
+    onChange([...credits, { clientKey: createClientKey(), talentId: '', crewId: '', creditName: '', roleLabel: '' }])
   }
 
   const updateCredit = (index, patch) => {
@@ -69,7 +79,7 @@ export default function CreditsField({ value, onChange, talentOptions = [], crew
             const image = selectedCreditImage(credit, talentOptions, crewOptions)
 
             return (
-              <div key={index} className="admin-credits-field-row">
+              <div key={creditKey(credit)} className="admin-credits-field-row">
                 <div className="admin-credits-person-thumb" aria-hidden="true">
                   {image ? (
                     <img src={image.previewUrl || image.url} alt="" className="admin-credits-person-thumb-img" />

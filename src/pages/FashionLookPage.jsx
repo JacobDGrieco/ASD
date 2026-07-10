@@ -46,6 +46,14 @@ function creditRolePriority(credit) {
   return 999
 }
 
+function creditKey(credit) {
+  return credit?.id
+    ?? credit?.talent?.id
+    ?? credit?.talent?.slug
+    ?? credit?.crew?.id
+    ?? `${credit?.roleLabel || credit?.talent?.role || 'credit'}:${credit?.creditName || credit?.talent?.name || ''}:${credit?.externalUrl || ''}`
+}
+
 function isModelCredit(credit) {
   return creditRolePriority(credit) === CREDIT_ROLE_PRIORITY.get('MODEL')
 }
@@ -63,24 +71,24 @@ function CreditsRow({ credits }) {
 
   return (
     <div className="fashion-look-credits-row">
-      {sortedCredits.map((credit, index) => {
+      {sortedCredits.map((credit) => {
         const creditName = credit.creditName || credit.talent?.name || ''
         if (!creditName) return null
 
         if (credit.talent) return (
-          <Link key={`${credit.id ?? credit.talent.id}-${index}`} to={`/fashion/talent/${credit.talent.slug}`} className="fashion-look-credit-chip">
+          <Link key={creditKey(credit)} to={`/fashion/talent/${credit.talent.slug}`} className="fashion-look-credit-chip">
             <span className="fashion-look-credit-role">{credit.roleLabel || 'Credit'}</span>
             <span className="fashion-look-credit-name">{creditName}</span>
           </Link>
         )
 
         return credit.externalUrl ? (
-          <a key={`${credit.id ?? creditName}-${index}`} href={credit.externalUrl} target="_blank" rel="noreferrer" className="fashion-look-credit-chip">
+          <a key={creditKey(credit)} href={credit.externalUrl} target="_blank" rel="noreferrer" className="fashion-look-credit-chip">
             <span className="fashion-look-credit-role">{credit.roleLabel || 'Credit'}</span>
             <span className="fashion-look-credit-name">{creditName}</span>
           </a>
         ) : (
-          <span key={`${credit.id ?? creditName}-${index}`} className="fashion-look-credit-chip">
+          <span key={creditKey(credit)} className="fashion-look-credit-chip">
             <span className="fashion-look-credit-role">{credit.roleLabel || 'Credit'}</span>
             <span className="fashion-look-credit-name">{creditName}</span>
           </span>
@@ -90,7 +98,7 @@ function CreditsRow({ credits }) {
   )
 }
 
-function ModelCreditCard({ credit, index }) {
+function ModelCreditCard({ credit }) {
   const name = credit.creditName || credit.talent?.name || ''
   if (!name) return null
 
@@ -112,7 +120,7 @@ function ModelCreditCard({ credit, index }) {
 
   if (slug) {
     return (
-      <Link key={`${credit.id ?? slug}-${index}`} to={`/fashion/talent/${slug}`} className="fashion-look-model-card">
+      <Link to={`/fashion/talent/${slug}`} className="fashion-look-model-card">
         {inner}
       </Link>
     )
@@ -120,14 +128,14 @@ function ModelCreditCard({ credit, index }) {
 
   if (externalUrl) {
     return (
-      <a key={`${credit.id ?? name}-${index}`} href={externalUrl} target="_blank" rel="noreferrer" className="fashion-look-model-card">
+      <a href={externalUrl} target="_blank" rel="noreferrer" className="fashion-look-model-card">
         {inner}
       </a>
     )
   }
 
   return (
-    <span key={`${credit.id ?? name}-${index}`} className="fashion-look-model-card">
+    <span className="fashion-look-model-card">
       {inner}
     </span>
   )
@@ -164,8 +172,8 @@ function ModelsRow({ credits }) {
           </button>
         )}
         <div className="fashion-look-models-row">
-          {visibleCredits.map((credit, index) => (
-            <ModelCreditCard key={credit.id ?? index} credit={credit} index={activeIndex + index} />
+          {visibleCredits.map((credit) => (
+            <ModelCreditCard key={creditKey(credit)} credit={credit} />
           ))}
         </div>
         {hasControls && (
@@ -219,8 +227,8 @@ export function CreditsCarousel({ credits }) {
     <section className="fashion-look-credits-section">
       <h2 className="discography-heading">Credits</h2>
       <div className="fashion-credits-carousel">
-        {sortedCredits.map((credit, index) => (
-          <CreditCard key={credit.id ?? index} credit={credit} />
+        {sortedCredits.map((credit) => (
+          <CreditCard key={creditKey(credit)} credit={credit} />
         ))}
       </div>
     </section>
@@ -372,8 +380,8 @@ function PieceCreditsPopover({ credits }) {
             )}
           </div>
           <div className="fashion-piece-credits-popover-grid">
-            {visibleCredits.map((credit, index) => (
-              <PieceCreditMiniCard key={credit.id ?? `${credit.creditName}-${page}-${index}`} credit={credit} />
+            {visibleCredits.map((credit) => (
+              <PieceCreditMiniCard key={creditKey(credit)} credit={credit} />
             ))}
           </div>
         </div>
@@ -452,7 +460,7 @@ export default function FashionLookPage() {
                   >
                     {images.map((image, index) => (
                       <button
-                        key={image.id ?? index}
+                        key={image.id ?? image.pathname ?? image.url ?? image.previewUrl}
                         type="button"
                         onClick={() => setActiveImageIndex(index)}
                         className={`fashion-look-gallery-thumb ${index === activeImageIndex ? 'fashion-look-gallery-thumb-active' : ''}`.trim()}

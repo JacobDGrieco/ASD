@@ -20,15 +20,15 @@ function LyricLine({ lineText, lineRanges, openAnnotationId, setOpenAnnotationId
   return (
     <div className="lyrics-view-line-wrap">
       <div className="lyrics-view-line">
-        {spans.map((span, i) => {
+        {spans.map((span) => {
           if (!span.annotationId) {
-            return <span key={i} className="lyrics-view-plain">{span.text}</span>
+            return <span key={`plain-${span.start}-${span.end}`} className="lyrics-view-plain">{span.text}</span>
           }
           const annotation = allAnnotations.find(a => a.id === span.annotationId)
           const isOpen = openAnnotationId === span.annotationId
           return (
             <button
-              key={i}
+              key={`${span.annotationId}-${span.start}-${span.end}`}
               className={`lyrics-view-annotated ${isOpen ? 'lyrics-view-active' : ''}`}
               onClick={() => setOpenAnnotationId(isOpen ? null : span.annotationId)}
             >
@@ -53,13 +53,13 @@ function buildSpans(text, lineRanges) {
     const start = Math.max(range.startChar, cursor)
     if (start >= range.endChar) continue
     if (start > cursor) {
-      spans.push({ text: text.slice(cursor, start), annotationId: null })
+      spans.push({ text: text.slice(cursor, start), annotationId: null, start: cursor, end: start })
     }
-    spans.push({ text: text.slice(start, range.endChar), annotationId: range.annotationId })
+    spans.push({ text: text.slice(start, range.endChar), annotationId: range.annotationId, start, end: range.endChar })
     cursor = range.endChar
   }
   if (cursor < text.length) {
-    spans.push({ text: text.slice(cursor), annotationId: null })
+    spans.push({ text: text.slice(cursor), annotationId: null, start: cursor, end: text.length })
   }
   return spans
 }
@@ -81,19 +81,20 @@ export default function LyricsView({ lyric }) {
     <section className="lyrics-view-section">
       <div className="lyrics-view-lyrics">
         {lines.map((line, i) => {
-          const lineEnd = lineOffset + line.length
+          const lineStart = lineOffset
+          const lineEnd = lineStart + line.length
           const lineRanges = flatRanges.reduce((ranges, r) => {
-            if (r.startChar >= lineEnd || r.endChar <= lineOffset) return ranges
+            if (r.startChar >= lineEnd || r.endChar <= lineStart) return ranges
             ranges.push({
-              startChar: Math.max(r.startChar - lineOffset, 0),
-              endChar: Math.min(r.endChar - lineOffset, line.length),
+              startChar: Math.max(r.startChar - lineStart, 0),
+              endChar: Math.min(r.endChar - lineStart, line.length),
               annotationId: r.annotationId,
             })
             return ranges
           }, [])
           const result = (
             <LyricLine
-              key={i}
+              key={`line-${lineStart}`}
               lineText={line}
               lineRanges={lineRanges}
               openAnnotationId={openAnnotationId}

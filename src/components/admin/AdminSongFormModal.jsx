@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { FaEye, FaEyeSlash, FaPlus, FaTimes } from 'react-icons/fa';
 import { SiApplemusic, SiSoundcloud, SiSpotify, SiYoutube } from 'react-icons/si';
@@ -12,8 +12,16 @@ import { slugify } from '../../lib/slugify.js';
 import '../../styles/AdminArtistsPage.css';
 import '../../styles/AdminSongsPage.css';
 
+function createClientKey(prefix) {
+	return `${prefix}-${crypto.randomUUID()}`;
+}
+
 function createAlbumPlacement() {
-	return { albumId: '', trackNumber: '', discNumber: 1 };
+	return { clientKey: createClientKey('placement'), albumId: '', trackNumber: '', discNumber: 1 };
+}
+
+function createRoleEntry(role = 'Featured Artist', name = '') {
+	return { clientKey: createClientKey('role'), role, name };
 }
 
 const emptyForm = {
@@ -137,6 +145,7 @@ function placementAlbumIds(song) {
 function buildPlacementForm(song) {
 	if (Array.isArray(song.albumPlacements) && song.albumPlacements.length) {
 		return song.albumPlacements.map((p) => ({
+			clientKey: createClientKey('placement'),
 			albumId: p.albumId ?? '',
 			trackNumber: Number(p.trackNumber ?? 1),
 			discNumber: Number(p.discNumber ?? 1),
@@ -144,13 +153,14 @@ function buildPlacementForm(song) {
 	}
 	if (Array.isArray(song.placements) && song.placements.length) {
 		return song.placements.map((p) => ({
+			clientKey: createClientKey('placement'),
 			albumId: p.albumId ?? p.album?.id ?? '',
 			trackNumber: Number(p.trackNumber ?? 1),
 			discNumber: Number(p.discNumber ?? 1),
 		}));
 	}
 	if (song.albumId) {
-		return [{ albumId: song.albumId, trackNumber: Number(song.trackNumber ?? 1), discNumber: Number(song.discNumber ?? 1) }];
+		return [{ clientKey: createClientKey('placement'), albumId: song.albumId, trackNumber: Number(song.trackNumber ?? 1), discNumber: Number(song.discNumber ?? 1) }];
 	}
 	return [createAlbumPlacement()];
 }
@@ -256,6 +266,7 @@ function initFormFromPrefill(prefill = {}) {
 function AlbumPlacementSelect({ value, albums, onChange, className, invalid }) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [searchText, setSearchText] = useState('');
+	const listboxId = useId();
 	const rootRef = useRef(null);
 	const selectedAlbum = albums.find((album) => album.id === value) ?? null;
 	const query = searchText.trim().toLowerCase();
@@ -312,6 +323,7 @@ function AlbumPlacementSelect({ value, albums, onChange, className, invalid }) {
 				className={`${className} admin-song-album-select-input`.trim()}
 				role="combobox"
 				aria-autocomplete="list"
+				aria-controls={listboxId}
 				aria-expanded={isOpen}
 				aria-invalid={invalid}
 				value={searchText}
@@ -337,7 +349,7 @@ function AlbumPlacementSelect({ value, albums, onChange, className, invalid }) {
 				}}
 			/>
 			{isOpen && (
-				<div className="admin-song-album-select-menu" role="listbox">
+				<div id={listboxId} className="admin-song-album-select-menu" role="listbox">
 					<button
 						type="button"
 						role="option"
@@ -434,7 +446,9 @@ export default function AdminSongFormModal({
 					...detail,
 					images: detail.images ?? [],
 					aboutText: detail.meta?.aboutText ?? '',
-					roles: Array.isArray(detail.meta?.roles) ? detail.meta.roles : [],
+					roles: Array.isArray(detail.meta?.roles)
+						? detail.meta.roles.map((entry) => createRoleEntry(entry.role, entry.name))
+						: [],
 					tags: detail.meta?.tags ?? [],
 					bpm: detail.meta?.bpm ?? '',
 					key: detail.meta?.key ?? '',
@@ -450,7 +464,7 @@ export default function AdminSongFormModal({
 				setForm(null);
 			})
 			.finally(() => setLoading(false));
-	}, [songId, token]);
+	}, [prefill, songId, token]);
 
 	const set = (key) => (event) =>
 		setForm((current) => {
@@ -488,7 +502,7 @@ export default function AdminSongFormModal({
 	const addRole = () =>
 		setForm((current) => ({
 			...current,
-			roles: [...current.roles, { role: 'Featured Artist', name: '' }],
+			roles: [...current.roles, createRoleEntry()],
 		}));
 
 	const removeRole = (index) =>
@@ -586,6 +600,8 @@ export default function AdminSongFormModal({
 			albumIds: form.albumPlacements.map((p) => p.albumId),
 			discNumbers: form.albumPlacements.map((p) => Number(p.discNumber)),
 			trackNumbers: form.albumPlacements.map((p) => Number(p.trackNumber)),
+			roles: form.roles.map(({ role, name }) => ({ role, name })),
+			albumPlacements: form.albumPlacements.map(({ albumId, trackNumber, discNumber }) => ({ albumId, trackNumber, discNumber })),
 		};
 
 		const response = await fetch(url, {
@@ -719,7 +735,7 @@ export default function AdminSongFormModal({
 									<div className="admin-song-tab-scroll">
 										<div className="admin-song-album-cards">
 											{form.albumPlacements.map((placement, index) => (
-												<div key={`${index}-${placement.albumId || 'new'}`} className="admin-song-album-card">
+												<div key={placement.clientKey ?? placement.albumId} className="admin-song-album-card">
 													<div className="admin-song-album-card-header">
 														<h3 className="admin-song-album-card-title">Album {index + 1}</h3>
 														{form.albumPlacements.length > 1 && (
@@ -768,7 +784,7 @@ export default function AdminSongFormModal({
 									<div className="admin-song-tab-scroll">
 										<div className="admin-song-roles-list">
 											{form.roles.map((entry, index) => (
-												<div key={index} className="admin-song-role-row">
+												<div key={entry.clientKey ?? `${entry.role}:${entry.name}`} className="admin-song-role-row">
 													<select value={entry.role} onChange={(e) => updateRole(index, 'role', e.target.value)} className="admin-artists-page-input">
 														{SONG_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
 													</select>

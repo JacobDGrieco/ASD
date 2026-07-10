@@ -72,7 +72,7 @@ function buildPayload(form) {
 
 export default function AdminMusicCrosshairPage() {
 	const { token, session } = useAdminAuth();
-	const auth = { Authorization: `Bearer ${token}` };
+	const auth = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
 	const isSuperAdmin = session?.role === 'SUPER_ADMIN';
 	const [videos, setVideos] = useState([]);
 	const [loading, setLoading] = useState(true);
@@ -125,7 +125,7 @@ export default function AdminMusicCrosshairPage() {
 		return () => {
 			ignore = true;
 		};
-	}, [isSuperAdmin, token]);
+	}, [auth, isSuperAdmin, token]);
 
 	function openCreate() {
 		setForm(emptyForm);
