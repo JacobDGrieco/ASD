@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FaArrowLeft, FaArrowRight, FaExternalLinkAlt, FaPencilAlt, FaStickyNote, FaTrash } from 'react-icons/fa'
 import { SiApplemusic, SiSoundcloud, SiSpotify, SiYoutube } from 'react-icons/si'
@@ -71,9 +71,6 @@ export default function AdminMusicSongsPage() {
   const [editingSongId, setEditingSongId] = useState(null)
   const [creatingWithPrefill, setCreatingWithPrefill] = useState(null)
   const deferredFilterTitle = useDeferredValue(filterTitle)
-  const hasHydratedArtistFilter = useRef(false)
-  const hasHydratedAlbumFilter = useRef(false)
-
   const isModalOpen = editingSongId !== null || creatingWithPrefill !== null
 
   useEffect(() => {
@@ -89,24 +86,6 @@ export default function AdminMusicSongsPage() {
     })
     return () => { ignore = true }
   }, [token])
-
-  useEffect(() => {
-    if (!hasHydratedArtistFilter.current) { hasHydratedArtistFilter.current = true; return }
-    setPage(1)
-    setFilterAlbum('')
-  }, [filterArtist])
-
-  useEffect(() => {
-    if (!hasHydratedAlbumFilter.current) { hasHydratedAlbumFilter.current = true; return }
-    setPage(1)
-  }, [filterAlbum])
-
-  useEffect(() => { setPage(1) }, [filterTitle])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    window.sessionStorage.setItem(SONGS_FILTER_STATE_KEY, JSON.stringify({ filterArtist, filterAlbum, filterTitle, page }))
-  }, [filterArtist, filterAlbum, filterTitle, page])
 
   const albumById = useMemo(
     () => Object.fromEntries(albums.map((album) => [album.id, album])),
@@ -157,8 +136,9 @@ export default function AdminMusicSongsPage() {
   )
 
   useEffect(() => {
-    if (page !== currentPage) setPage(currentPage)
-  }, [page, currentPage])
+    if (typeof window === 'undefined') return
+    window.sessionStorage.setItem(SONGS_FILTER_STATE_KEY, JSON.stringify({ filterArtist, filterAlbum, filterTitle, page: currentPage }))
+  }, [currentPage, filterAlbum, filterArtist, filterTitle])
 
   const openCreate = () => {
     setCreatingWithPrefill({
@@ -291,19 +271,37 @@ export default function AdminMusicSongsPage() {
           <input
             type="search"
             value={filterTitle}
-            onChange={(e) => setFilterTitle(e.target.value)}
+            onChange={(e) => {
+              setFilterTitle(e.target.value)
+              setPage(1)
+            }}
             className="admin-filter-select"
             placeholder="Search title..."
           />
           {!isArtistScoped && (
-            <select value={filterArtist} onChange={(e) => setFilterArtist(e.target.value)} className="admin-filter-select">
+            <select
+              value={filterArtist}
+              onChange={(e) => {
+                setFilterArtist(e.target.value)
+                setFilterAlbum('')
+                setPage(1)
+              }}
+              className="admin-filter-select"
+            >
               <option value="">All Artists</option>
               {sortedArtists.map((artist) => (
                 <option key={artist.id} value={artist.id}>{artist.name}</option>
               ))}
             </select>
           )}
-          <select value={filterAlbum} onChange={(e) => setFilterAlbum(e.target.value)} className="admin-filter-select">
+          <select
+            value={filterAlbum}
+            onChange={(e) => {
+              setFilterAlbum(e.target.value)
+              setPage(1)
+            }}
+            className="admin-filter-select"
+          >
             <option value="">All Albums</option>
             {sortedAlbumOptions.map((album) => (
               <option key={album.id} value={album.id}>{album.title}</option>
@@ -396,11 +394,11 @@ export default function AdminMusicSongsPage() {
 
       {!isModalOpen && totalPages > 1 && (
         <div className="admin-pagination">
-          <button type="button" className="admin-pagination-btn" onClick={() => setPage((p) => p - 1)} disabled={currentPage === 1}>
+          <button type="button" className="admin-pagination-btn" onClick={() => setPage(currentPage - 1)} disabled={currentPage === 1}>
             <><FaArrowLeft aria-hidden="true" /> Prev</>
           </button>
           <span className="admin-pagination-info">Page {currentPage} of {totalPages}</span>
-          <button type="button" className="admin-pagination-btn" onClick={() => setPage((p) => p + 1)} disabled={currentPage === totalPages}>
+          <button type="button" className="admin-pagination-btn" onClick={() => setPage(currentPage + 1)} disabled={currentPage === totalPages}>
             <>Next <FaArrowRight aria-hidden="true" /></>
           </button>
         </div>

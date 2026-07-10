@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 
 const AdminContext = createContext(null)
 
@@ -18,7 +18,7 @@ export function AdminProvider({ children }) {
   const [token, setToken] = useState(() => sessionStorage.getItem('admin_token'))
   const [session, setSession] = useState(() => readSession())
 
-  const login = async (password) => {
+  const login = useCallback(async (password) => {
     const res = await fetch('/api/admin/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -31,17 +31,19 @@ export function AdminProvider({ children }) {
     sessionStorage.setItem('admin_session', JSON.stringify(data.session))
     setToken(data.token)
     setSession(data.session)
-  }
+  }, [])
 
-  const logout = () => {
+  const logout = useCallback(() => {
     sessionStorage.removeItem('admin_token')
     sessionStorage.removeItem('admin_session')
     setToken(null)
     setSession(null)
-  }
+  }, [])
+
+  const value = useMemo(() => ({ token, session, login, logout }), [login, logout, session, token])
 
   return (
-    <AdminContext.Provider value={{ token, session, login, logout }}>
+    <AdminContext.Provider value={value}>
       {children}
     </AdminContext.Provider>
   )

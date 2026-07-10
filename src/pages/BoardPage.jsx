@@ -18,10 +18,16 @@ export default function BoardPage() {
   const [selectedPost, setSelectedPost] = useState(null)
   const [showHint, setShowHint] = useState(false)
   const [localPosts, setLocalPosts] = useState(null)
+  const [previousPosts, setPreviousPosts] = useState(posts)
   const [zOrder, setZOrder] = useState([])
   const [contextMenu, setContextMenu] = useState(null)
 
-  const displayPosts = localPosts ?? posts ?? []
+  if (posts !== previousPosts) {
+    setPreviousPosts(posts)
+    setLocalPosts(null)
+  }
+
+  const displayPosts = posts !== previousPosts ? posts ?? [] : localPosts ?? posts ?? []
 
   useEffect(() => {
     if (!localStorage.getItem(DRAG_HINT_KEY)) {
@@ -33,10 +39,6 @@ export default function BoardPage() {
       return () => clearTimeout(t)
     }
   }, [])
-
-  useEffect(() => {
-    if (posts) setLocalPosts(null)
-  }, [posts])
 
   useEffect(() => {
     if (!posts) return

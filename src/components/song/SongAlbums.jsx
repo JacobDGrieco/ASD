@@ -44,11 +44,8 @@ export default function SongAlbums({ placements, adminPreview = false }) {
     return () => observer.disconnect()
   }, [])
 
-  useEffect(() => {
-    setOpenAlbumId((current) => (albums.some((album) => album.id === current) ? current : null))
-  }, [albums])
-
-  const openAlbumIndex = albums.findIndex((album) => album.id === openAlbumId)
+  const activeOpenAlbumId = albums.some((album) => album.id === openAlbumId) ? openAlbumId : null
+  const openAlbumIndex = albums.findIndex((album) => album.id === activeOpenAlbumId)
   const openAlbum = openAlbumIndex === -1 ? null : albums[openAlbumIndex]
   const openRowEndIndex = openAlbum
     ? Math.min(albums.length - 1, Math.floor(openAlbumIndex / columns) * columns + columns - 1)
@@ -65,7 +62,7 @@ export default function SongAlbums({ placements, adminPreview = false }) {
           const hasSongs = (album.songs?.length ?? 0) > 0
           const isTracklistAlbum = album.type === 'ALBUM' || album.type === 'EP'
           const isExpandable = hasSongs && isTracklistAlbum
-          const isOpen = openAlbumId === album.id
+          const isOpen = activeOpenAlbumId === album.id
 
           return (
             <Fragment key={album.id}>

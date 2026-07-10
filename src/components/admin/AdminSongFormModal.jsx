@@ -269,15 +269,12 @@ function AlbumPlacementSelect({ id, value, albums, onChange, className, invalid 
 	const listboxId = useId();
 	const rootRef = useRef(null);
 	const selectedAlbum = albums.find((album) => album.id === value) ?? null;
+	const selectedAlbumLabel = albumSearchLabel(selectedAlbum);
 	const query = searchText.trim().toLowerCase();
 	const filteredAlbums = useMemo(
 		() => albums.filter((album) => albumMatchesSearch(album, query)),
 		[albums, query]
 	);
-
-	useEffect(() => {
-		if (!isOpen) setSearchText(albumSearchLabel(selectedAlbum));
-	}, [isOpen, selectedAlbum]);
 
 	useEffect(() => {
 		if (!isOpen) return undefined;
@@ -327,13 +324,17 @@ function AlbumPlacementSelect({ id, value, albums, onChange, className, invalid 
 				aria-controls={listboxId}
 				aria-expanded={isOpen}
 				aria-invalid={invalid}
-				value={searchText}
+				value={isOpen ? searchText : selectedAlbumLabel}
 				placeholder="- Album -"
 				onFocus={(event) => {
+					setSearchText(selectedAlbumLabel);
 					event.currentTarget.select();
 					setIsOpen(true);
 				}}
-				onClick={() => setIsOpen(true)}
+				onClick={() => {
+					setSearchText(selectedAlbumLabel);
+					setIsOpen(true);
+				}}
 				onChange={(event) => {
 					setSearchText(event.target.value);
 					setIsOpen(true);

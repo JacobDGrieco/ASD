@@ -162,8 +162,6 @@ export default function AdminMusicAlbumsPage() {
     }
   }, [token])
 
-  useEffect(() => { setPage(1) }, [filterArtist, filterType, filterTitle])
-
   const filteredAlbums = useMemo(() => (
     albums.filter((album) => {
       if (filterArtist) {
@@ -185,9 +183,10 @@ export default function AdminMusicAlbumsPage() {
   ), [artists])
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredAlbums.length / PAGE_SIZE)), [filteredAlbums.length])
+  const currentPage = Math.min(page, totalPages)
   const pagedAlbums = useMemo(
-    () => filteredAlbums.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-    [filteredAlbums, page]
+    () => filteredAlbums.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [currentPage, filteredAlbums]
   )
 
   const openCreate = () => {
@@ -391,14 +390,20 @@ export default function AdminMusicAlbumsPage() {
           <input
             type="search"
             value={filterTitle}
-            onChange={(e) => setFilterTitle(e.target.value)}
+            onChange={(e) => {
+              setFilterTitle(e.target.value)
+              setPage(1)
+            }}
             className="admin-filter-select"
             placeholder="Search title..."
           />
           {!isArtistScoped && (
             <select
               value={filterArtist}
-              onChange={(e) => setFilterArtist(e.target.value)}
+              onChange={(e) => {
+                setFilterArtist(e.target.value)
+                setPage(1)
+              }}
               className="admin-filter-select"
             >
               <option value="">All Artists</option>
@@ -407,7 +412,10 @@ export default function AdminMusicAlbumsPage() {
           )}
           <select
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
+            onChange={(e) => {
+              setFilterType(e.target.value)
+              setPage(1)
+            }}
             className="admin-filter-select"
           >
             <option value="">All Types</option>
@@ -467,17 +475,17 @@ export default function AdminMusicAlbumsPage() {
           <button
             type="button"
             className="admin-pagination-btn"
-            onClick={() => setPage((p) => p - 1)}
-            disabled={page === 1}
+            onClick={() => setPage(currentPage - 1)}
+            disabled={currentPage === 1}
           >
             ← Prev
           </button>
-          <span className="admin-pagination-info">Page {page} of {totalPages}</span>
+          <span className="admin-pagination-info">Page {currentPage} of {totalPages}</span>
           <button
             type="button"
             className="admin-pagination-btn"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={page === totalPages}
+            onClick={() => setPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
           >
             Next →
           </button>

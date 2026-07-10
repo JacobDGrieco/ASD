@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom'
-import { useMemo, useRef, useState, useEffect } from 'react'
+import { useMemo, useRef, useState, useEffect, useSyncExternalStore } from 'react'
 import { FaShoppingBag, FaUsers, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 import { useApi } from '../hooks/useApi.js'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
@@ -146,13 +146,10 @@ function ModelsRow({ credits }) {
   const [activeIndex, setActiveIndex] = useState(0)
   const hasControls = sortedCredits.length > 3
   const maxIndex = Math.max(0, sortedCredits.length - 3)
+  const visibleStartIndex = Math.min(activeIndex, maxIndex)
   const visibleCredits = hasControls
-    ? sortedCredits.slice(activeIndex, activeIndex + 3)
+    ? sortedCredits.slice(visibleStartIndex, visibleStartIndex + 3)
     : sortedCredits
-
-  useEffect(() => {
-    setActiveIndex((index) => Math.min(index, maxIndex))
-  }, [maxIndex])
 
   if (!sortedCredits.length) return null
 
@@ -164,8 +161,8 @@ function ModelsRow({ credits }) {
           <button
             type="button"
             className="fashion-look-gallery-arrow"
-            onClick={() => setActiveIndex((index) => Math.max(0, index - 1))}
-            disabled={activeIndex === 0}
+            onClick={() => setActiveIndex(Math.max(0, visibleStartIndex - 1))}
+            disabled={visibleStartIndex === 0}
             aria-label="Previous models"
           >
             <FaChevronLeft />
@@ -180,8 +177,8 @@ function ModelsRow({ credits }) {
           <button
             type="button"
             className="fashion-look-gallery-arrow"
-            onClick={() => setActiveIndex((index) => Math.min(maxIndex, index + 1))}
-            disabled={activeIndex === maxIndex}
+            onClick={() => setActiveIndex(Math.min(maxIndex, visibleStartIndex + 1))}
+            disabled={visibleStartIndex === maxIndex}
             aria-label="Next models"
           >
             <FaChevronRight />
@@ -278,11 +275,8 @@ function PieceCreditsPopover({ credits }) {
   const pageSize = 4
   const pageCount = Math.max(1, Math.ceil(sortedCredits.length / pageSize))
   const maxPage = pageCount - 1
-  const visibleCredits = sortedCredits.slice(page * pageSize, page * pageSize + pageSize)
-
-  useEffect(() => {
-    setPage((current) => Math.min(current, maxPage))
-  }, [maxPage])
+  const currentPage = Math.min(page, maxPage)
+  const visibleCredits = sortedCredits.slice(currentPage * pageSize, currentPage * pageSize + pageSize)
 
   useEffect(() => {
     if (!open) return undefined
@@ -313,7 +307,10 @@ function PieceCreditsPopover({ credits }) {
     }
 
     const handleOutside = (event) => {
-      if (!containerRef.current?.contains(event.target)) setOpen(false)
+      if (!containerRef.current?.contains(event.target)) {
+        setPopoverStyle(null)
+        setOpen(false)
+      }
     }
 
     updatePopoverPosition()
@@ -325,11 +322,7 @@ function PieceCreditsPopover({ credits }) {
       window.removeEventListener('resize', updatePopoverPosition)
       window.removeEventListener('scroll', updatePopoverPosition, true)
     }
-  }, [open, page, visibleCredits.length])
-
-  useEffect(() => {
-    if (!open) setPopoverStyle(null)
-  }, [open])
+  }, [open, currentPage, visibleCredits.length])
 
   if (!sortedCredits.length) return null
 
@@ -338,7 +331,10 @@ function PieceCreditsPopover({ credits }) {
       <button
         type="button"
         className="fashion-piece-credits-toggle"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => {
+          setPopoverStyle(null)
+          setOpen((current) => !current)
+        }}
         aria-expanded={open}
         aria-label="Extra Credits"
       >
@@ -354,15 +350,15 @@ function PieceCreditsPopover({ credits }) {
           <div className="fashion-piece-credits-popover-header">
             <div className="fashion-piece-credits-popover-heading">
               <span>Extra Credits</span>
-              {pageCount > 1 && <span>{page + 1}/{pageCount}</span>}
+              {pageCount > 1 && <span>{currentPage + 1}/{pageCount}</span>}
             </div>
             {pageCount > 1 && (
               <div className="fashion-piece-credits-popover-controls">
                 <button
                   type="button"
                   className="fashion-look-gallery-arrow"
-                  onClick={() => setPage((current) => Math.max(0, current - 1))}
-                  disabled={page === 0}
+                  onClick={() => setPage(Math.max(0, currentPage - 1))}
+                  disabled={currentPage === 0}
                   aria-label="Previous piece credits"
                 >
                   <FaChevronLeft />
@@ -370,8 +366,8 @@ function PieceCreditsPopover({ credits }) {
                 <button
                   type="button"
                   className="fashion-look-gallery-arrow"
-                  onClick={() => setPage((current) => Math.min(maxPage, current + 1))}
-                  disabled={page === maxPage}
+                  onClick={() => setPage(Math.min(maxPage, currentPage + 1))}
+                  disabled={currentPage === maxPage}
                   aria-label="Next piece credits"
                 >
                   <FaChevronRight />
@@ -396,6 +392,19 @@ function getThumbsVisible(width) {
   return 7
 }
 
+function subscribeToWindowResize(callback) {
+  window.addEventListener('resize', callback)
+  return () => window.removeEventListener('resize', callback)
+}
+
+function getThumbsVisibleSnapshot() {
+  return getThumbsVisible(window.innerWidth)
+}
+
+function getServerThumbsVisibleSnapshot() {
+  return 7
+}
+
 export default function FashionLookPage() {
   const { slug } = useParams()
   const { session, token } = useAdminAuth()
@@ -407,12 +416,11 @@ export default function FashionLookPage() {
     cacheKey: publicPreviewCacheKey(apiUrl, adminPreview),
   })
   const [activeImageIndex, setActiveImageIndex] = useState(0)
-  const [thumbsVisible, setThumbsVisible] = useState(() => getThumbsVisible(window.innerWidth))
-  useEffect(() => {
-    const handler = () => setThumbsVisible(getThumbsVisible(window.innerWidth))
-    window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
-  }, [])
+  const thumbsVisible = useSyncExternalStore(
+    subscribeToWindowResize,
+    getThumbsVisibleSnapshot,
+    getServerThumbsVisibleSnapshot
+  )
 
   if (!loading && (error || !look)) return <div className="page not-found"><h1>Look not found</h1></div>
   if (!look) return null
