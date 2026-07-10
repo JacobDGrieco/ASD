@@ -23,20 +23,25 @@ export default function AdminAccountsPage() {
 	const [rows, setRows] = useState([]);
 	const [form, setForm] = useState(null);
 
+	useEffect(() => {
+		if (session?.role !== 'SUPER_ADMIN' || !token) return;
+
+		fetch('/api/admin/accounts', { headers: { Authorization: `Bearer ${token}` } })
+			.then((response) => response.json())
+			.then(setRows);
+	}, [session?.role, token]);
+
+	const availableArtists = useMemo(
+		() => rows.reduce((artists, row) => {
+			if (!row.hasAccount || row.artist.id === form?.artistId) artists.push(row.artist);
+			return artists;
+		}, []),
+		[rows, form?.artistId]
+	);
+
 	if (session?.role !== 'SUPER_ADMIN') {
 		return <Navigate to="/admin" replace />;
 	}
-
-	useEffect(() => {
-		fetch('/api/admin/accounts', { headers: auth })
-			.then((response) => response.json())
-			.then(setRows);
-	}, [token]);
-
-	const availableArtists = useMemo(
-		() => rows.filter((row) => !row.hasAccount || row.artist.id === form?.artistId).map((row) => row.artist),
-		[rows, form]
-	);
 
 	const openCreate = () => setForm({ ...emptyForm });
 	const openEdit = (row) => setForm({

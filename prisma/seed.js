@@ -136,13 +136,11 @@ async function main() {
       'Every scar a lesson',
     ]
 
-    const blocks = []
-    for (let j = 0; j < lines.length; j++) {
-      const block = await prisma.lyricBlock.create({
-        data: { songId: song.id, text: lines[j], blockOrder: j },
+    const blocks = await Promise.all(lines.map((line, j) => (
+      prisma.lyricBlock.create({
+        data: { songId: song.id, text: line, blockOrder: j },
       })
-      blocks.push(block)
-    }
+    )))
 
     await prisma.annotation.create({
       data: {
@@ -209,10 +207,9 @@ async function main() {
   ]
 
   const fashionTalent = {}
-  for (let i = 0; i < fashionTalentSeeds.length; i++) {
-    const talentSeed = fashionTalentSeeds[i]
+  const createdFashionTalent = await Promise.all(fashionTalentSeeds.map((talentSeed, i) => {
     const portraitUrl = `https://picsum.photos/seed/fashion-${talentSeed.slug}/800/1100`
-    const talent = await prisma.fashionTalent.create({
+    return prisma.fashionTalent.create({
       data: {
         ...talentSeed,
         order: i,
@@ -227,6 +224,9 @@ async function main() {
         },
       },
     })
+  }))
+
+  for (const talent of createdFashionTalent) {
     fashionTalent[talent.slug] = talent
   }
 
@@ -314,9 +314,8 @@ async function main() {
     },
   ]
 
-  for (let i = 0; i < fashionLooks.length; i++) {
-    const lookSeed = fashionLooks[i]
-    await prisma.fashionLook.create({
+  await Promise.all(fashionLooks.map((lookSeed, i) => (
+    prisma.fashionLook.create({
       data: {
         title: lookSeed.title,
         slug: lookSeed.slug,
@@ -357,7 +356,7 @@ async function main() {
         },
       },
     })
-  }
+  )))
 
   console.log('Seed complete.')
 }

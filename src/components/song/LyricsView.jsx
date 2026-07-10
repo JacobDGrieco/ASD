@@ -82,13 +82,15 @@ export default function LyricsView({ lyric }) {
       <div className="lyrics-view-lyrics">
         {lines.map((line, i) => {
           const lineEnd = lineOffset + line.length
-          const lineRanges = flatRanges
-            .filter(r => r.startChar < lineEnd && r.endChar > lineOffset)
-            .map(r => ({
+          const lineRanges = flatRanges.reduce((ranges, r) => {
+            if (r.startChar >= lineEnd || r.endChar <= lineOffset) return ranges
+            ranges.push({
               startChar: Math.max(r.startChar - lineOffset, 0),
               endChar: Math.min(r.endChar - lineOffset, line.length),
               annotationId: r.annotationId,
-            }))
+            })
+            return ranges
+          }, [])
           const result = (
             <LyricLine
               key={i}

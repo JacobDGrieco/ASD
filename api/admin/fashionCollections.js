@@ -35,15 +35,17 @@ function withCollectionCover(collection) {
 }
 
 function creditsCreateManyData(credits) {
-  return (Array.isArray(credits) ? credits : [])
-    .filter((credit) => credit?.talentId || credit?.crewId || credit?.creditName?.trim())
-    .map((credit, index) => ({
+  return (Array.isArray(credits) ? credits : []).reduce((data, credit) => {
+    if (!credit?.talentId && !credit?.crewId && !credit?.creditName?.trim()) return data
+    data.push({
       talentId: credit.talentId || null,
       crewId: credit.crewId || null,
       creditName: credit.creditName?.trim() ?? '',
       roleLabel: credit.roleLabel ?? '',
-      sortOrder: index,
-    }))
+      sortOrder: data.length,
+    })
+    return data
+  }, [])
 }
 
 function normalizedCreditName(value) {
@@ -75,9 +77,14 @@ async function resolveTypedOutsideTalentCredits(tx, credits) {
   const talentByName = new Map(talent.map((person) => [normalizedCreditName(person.name), person.id]))
   const crewByName = new Map(crew.map((person) => [normalizedCreditName(person.name), person.id]))
 
+  const newCrewEntries = []
   for (const [nameKey, entry] of namesByKey) {
     if (talentByName.has(nameKey) || crewByName.has(nameKey)) continue
-    const created = await tx.fashionCrew.create({
+    newCrewEntries.push({ nameKey, entry })
+  }
+
+  const createdCrew = await Promise.all(newCrewEntries.map(({ entry }) => (
+    tx.fashionCrew.create({
       data: {
         name: entry.name,
         role: entry.role,
@@ -87,6 +94,9 @@ async function resolveTypedOutsideTalentCredits(tx, credits) {
       },
       select: { id: true, name: true },
     })
+  )))
+
+  for (const created of createdCrew) {
     crewByName.set(normalizedCreditName(created.name), created.id)
   }
 

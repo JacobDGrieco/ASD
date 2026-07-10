@@ -209,9 +209,10 @@ export default async function handler(req, res) {
       select: selectArtistList(),
     })
     return res.status(200).json(
-      artists
-        .filter((artist) => !isReservedHiddenArtist(artist))
-        .map(withListImages)
+      artists.reduce((visibleArtists, artist) => {
+        if (!isReservedHiddenArtist(artist)) visibleArtists.push(withListImages(artist))
+        return visibleArtists
+      }, [])
     )
   }
 

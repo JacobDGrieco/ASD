@@ -77,6 +77,21 @@ function validatePlacements(placements) {
   return null
 }
 
+function normalizeRoleInput(roles) {
+  if (!Array.isArray(roles)) return []
+
+  return roles.reduce((normalized, roleEntry) => {
+    if (!SONG_ROLES.includes(roleEntry.role)) return normalized
+    if (typeof roleEntry.name !== 'string') return normalized
+
+    const name = roleEntry.name.trim()
+    if (!name) return normalized
+
+    normalized.push({ role: roleEntry.role, name })
+    return normalized
+  }, [])
+}
+
 function normalizeSongDuplicateValue(value) {
   return String(value ?? '').trim().toLowerCase()
 }
@@ -313,12 +328,13 @@ async function syncSongReleaseVisibility() {
   })
 
   const upperBound = releaseVisibilityUpperBound()
-  const releasedIds = candidates
-    .filter((song) => {
-      const releaseDate = effectiveSongReleaseDate(song)
-      return releaseDate && new Date(releaseDate).getTime() < upperBound.getTime()
-    })
-    .map((song) => song.id)
+  const releasedIds = candidates.reduce((ids, song) => {
+    const releaseDate = effectiveSongReleaseDate(song)
+    if (releaseDate && new Date(releaseDate).getTime() < upperBound.getTime()) {
+      ids.push(song.id)
+    }
+    return ids
+  }, [])
 
   if (!releasedIds.length) return
 
@@ -444,10 +460,7 @@ export default async function handler(req, res) {
         },
       })
 
-      const normalizedRoles = Array.isArray(roles)
-        ? roles.filter((r) => SONG_ROLES.includes(r.role) && typeof r.name === 'string' && r.name.trim())
-              .map((r) => ({ role: r.role, name: r.name.trim() }))
-        : []
+      const normalizedRoles = normalizeRoleInput(roles)
 
       await prisma.songMeta.upsert({
         where: { songId: id },
@@ -489,8 +502,7 @@ export default async function handler(req, res) {
     })
 
     const sortedSongs = songs
-      .map(formatSong)
-      .map(withListImages)
+      .map((song) => withListImages(formatSong(song)))
       .sort((left, right) => {
         const leftArtistOrder = left.album?.artist?.order ?? Number.MAX_SAFE_INTEGER
         const rightArtistOrder = right.album?.artist?.order ?? Number.MAX_SAFE_INTEGER
@@ -573,10 +585,7 @@ export default async function handler(req, res) {
       },
     })
 
-    const normalizedRoles = Array.isArray(roles)
-      ? roles.filter((r) => SONG_ROLES.includes(r.role) && typeof r.name === 'string' && r.name.trim())
-            .map((r) => ({ role: r.role, name: r.name.trim() }))
-      : []
+    const normalizedRoles = normalizeRoleInput(roles)
 
     await prisma.songMeta.create({
       data: {

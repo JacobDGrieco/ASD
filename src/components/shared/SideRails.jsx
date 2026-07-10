@@ -32,10 +32,11 @@ function getRightRailNames(names, startIndex) {
 }
 
 function getDisplayNames(rows, fallbackNames) {
-  const names = (Array.isArray(rows) ? rows : [])
-    .map((row) => row?.name)
-    .filter((name) => typeof name === 'string' && name.trim())
-    .map((name) => name.trim())
+  const names = (Array.isArray(rows) ? rows : []).reduce((displayNames, row) => {
+    const name = row?.name
+    if (typeof name === 'string' && name.trim()) displayNames.push(name.trim())
+    return displayNames
+  }, [])
 
   return names.length ? names : fallbackNames
 }

@@ -91,10 +91,8 @@ export default function ImageCollectionField({ value, onChange, token, folder, e
 		setError('');
 
 		try {
-			const uploadedImages = [];
-
-			for (const file of files) {
-				const pathname = `${folder}/${Date.now()}-${sanitizeSegment(file.name)}`;
+			const uploadedImages = await Promise.all(files.map(async (file, index) => {
+				const pathname = `${folder}/${Date.now()}-${index}-${sanitizeSegment(file.name)}`;
 				const blob = await upload(pathname, file, {
 					access: 'public',
 					handleUploadUrl: '/api/admin/uploads',
@@ -110,8 +108,8 @@ export default function ImageCollectionField({ value, onChange, token, folder, e
 					isPrimary: false,
 				};
 
-				uploadedImages.push(createClientImage(uploadedImage, entityLabel, folder));
-			}
+				return createClientImage(uploadedImage, entityLabel, folder);
+			}));
 
 			setImages([
 				...images,

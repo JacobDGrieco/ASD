@@ -330,10 +330,9 @@ export default function AdminMusicLyricsPage() {
     .map((annotation, annotationIndex) => ({
       annotation,
       annotationIndex,
-      firstStartChar: Math.min(
-        ...annotation.ranges
-          .filter((range) => !range.dirty)
-          .map((range) => range.startChar)
+      firstStartChar: annotation.ranges.reduce(
+        (firstStartChar, range) => (range.dirty ? firstStartChar : Math.min(firstStartChar, range.startChar)),
+        Number.POSITIVE_INFINITY
       ),
     }))
     .sort((left, right) => {

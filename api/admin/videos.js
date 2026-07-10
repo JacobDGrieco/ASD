@@ -70,9 +70,9 @@ export default async function handler(req, res) {
     const artists = await ensureArtistVideoRows(session)
 
     return res.status(200).json(
-      artists
-        .filter((artist) => !isOtherArtist(artist))
-        .map((artist) => formatVideoRow({
+      artists.reduce((rows, artist) => {
+        if (isOtherArtist(artist)) return rows
+        rows.push(formatVideoRow({
           artist,
           ...(artist.videos[0] ?? {
             id: null,
@@ -89,6 +89,8 @@ export default async function handler(req, res) {
             updatedAt: null,
           }),
         }))
+        return rows
+      }, [])
     )
   }
 

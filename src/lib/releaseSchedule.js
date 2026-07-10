@@ -35,11 +35,10 @@ function getTimeZoneOffsetMilliseconds(date, timeZone = RELEASE_VISIBILITY_TIME_
     hour12: false,
   })
 
-  const parts = Object.fromEntries(
-    formatter.formatToParts(date)
-      .filter((part) => part.type !== 'literal')
-      .map((part) => [part.type, Number(part.value)])
-  )
+  const parts = formatter.formatToParts(date).reduce((dateParts, part) => {
+    if (part.type !== 'literal') dateParts[part.type] = Number(part.value)
+    return dateParts
+  }, {})
 
   const asUtcTimestamp = Date.UTC(
     parts.year,

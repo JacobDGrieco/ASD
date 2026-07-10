@@ -5,9 +5,12 @@ import { SONG_ROLES, ROLE_DISPLAY_LABELS } from '../../lib/songRoles.js'
 export default function SongInfoLinks({ song }) {
   const meta = song.meta ?? {}
   const roleGroups = meta?.roleGroups ?? {}
-  const roleRows = SONG_ROLES
-    .filter((role) => roleGroups[role]?.length)
-    .map((role) => ({ label: ROLE_DISPLAY_LABELS[role], links: roleGroups[role] }))
+  const roleRows = SONG_ROLES.reduce((rows, role) => {
+    if (roleGroups[role]?.length) {
+      rows.push({ label: ROLE_DISPLAY_LABELS[role], links: roleGroups[role] })
+    }
+    return rows
+  }, [])
   const releaseDate = meta.releaseDate
     ? new Date(meta.releaseDate).toLocaleDateString('en-US', {
         year: 'numeric',

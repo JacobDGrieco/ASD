@@ -56,8 +56,8 @@ function makeLegacyImage({ id, url, usage, altText }) {
 
 export function normalizeImageInput(images, fallbackUsage) {
   const normalized = Array.isArray(images)
-    ? images
-        .map((image, index) => ({
+    ? images.reduce((normalizedImages, image, index) => {
+        const normalizedImage = {
           id: image?.id,
           url: toTrimmedString(image?.url),
           pathname: toTrimmedString(image?.pathname) || null,
@@ -66,8 +66,10 @@ export function normalizeImageInput(images, fallbackUsage) {
           sortOrder: index,
           isPrimary: Boolean(image?.isPrimary),
           previewUrl: toTrimmedString(image?.previewUrl),
-        }))
-        .filter((image) => image.url)
+        }
+        if (normalizedImage.url) normalizedImages.push(normalizedImage)
+        return normalizedImages
+      }, [])
     : []
 
   if (!normalized.length) return []

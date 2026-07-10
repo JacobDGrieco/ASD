@@ -14,6 +14,7 @@
     "postinstall": "prisma generate",
     "lint": "eslint .",
     "preview": "vite preview",
+    "check:api-entrypoints": "node scripts/vercel-api-entrypoints.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",

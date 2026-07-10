@@ -162,16 +162,45 @@ async function fetchUploadsVideoIds(playlistId, auth) {
 }
 
 async function fetchVideoDetails(videoIds, auth) {
-  const videos = []
-  for (const ids of chunk(videoIds, 50)) {
-    const data = await fetchJson(youtubeUrl('videos', {
+  const videoChunks = await Promise.all(chunk(videoIds, 50).map((ids) => (
+    fetchJson(youtubeUrl('videos', {
       part: 'snippet,contentDetails,status',
       id: ids.join(','),
       maxResults: '50',
     }, auth), auth)
+  )))
+
+  const videos = []
+  for (const data of videoChunks) {
     videos.push(...(data.items ?? []))
   }
   return videos
+}
+
+async function saveSyncedVideo(video, existingByVideoId) {
+  const current = existingByVideoId.get(video.youtubeVideoId)
+  if (!current) {
+    return prisma.crosshairVideo.create({ data: video })
+  }
+
+  const isManualOverride = current.source !== YOUTUBE_SYNC_SOURCE
+  return prisma.crosshairVideo.update({
+    where: { id: current.id },
+    data: {
+      youtubeUrl: video.youtubeUrl,
+      youtubeVideoId: video.youtubeVideoId,
+      durationSeconds: video.durationSeconds,
+      privacyStatus: video.privacyStatus,
+      lastSyncedAt: video.lastSyncedAt,
+      source: current.source || YOUTUBE_SYNC_SOURCE,
+      title: isManualOverride ? current.title : video.title,
+      description: isManualOverride ? current.description : video.description,
+      type: isManualOverride ? current.type : video.type,
+      thumbnailUrl: (current.thumbnailPathname || isManualOverride) ? current.thumbnailUrl : video.thumbnailUrl,
+      publishedAt: isManualOverride ? current.publishedAt : video.publishedAt,
+      isVisible: current.isVisible,
+    },
+  })
 }
 
 function toSyncedVideo(video) {
@@ -205,36 +234,7 @@ async function upsertSyncedVideos(syncedVideos) {
     },
   })
   const existingByVideoId = new Map(existing.map((video) => [video.youtubeVideoId, video]))
-  const saved = []
-
-  for (const video of syncedVideos) {
-    const current = existingByVideoId.get(video.youtubeVideoId)
-    if (!current) {
-      saved.push(await prisma.crosshairVideo.create({ data: video }))
-      continue
-    }
-
-    const isManualOverride = current.source !== YOUTUBE_SYNC_SOURCE
-    saved.push(await prisma.crosshairVideo.update({
-      where: { id: current.id },
-      data: {
-        youtubeUrl: video.youtubeUrl,
-        youtubeVideoId: video.youtubeVideoId,
-        durationSeconds: video.durationSeconds,
-        privacyStatus: video.privacyStatus,
-        lastSyncedAt: video.lastSyncedAt,
-        source: current.source || YOUTUBE_SYNC_SOURCE,
-        title: isManualOverride ? current.title : video.title,
-        description: isManualOverride ? current.description : video.description,
-        type: isManualOverride ? current.type : video.type,
-        thumbnailUrl: (current.thumbnailPathname || isManualOverride) ? current.thumbnailUrl : video.thumbnailUrl,
-        publishedAt: isManualOverride ? current.publishedAt : video.publishedAt,
-        isVisible: current.isVisible,
-      },
-    }))
-  }
-
-  return saved
+  return Promise.all(syncedVideos.map((video) => saveSyncedVideo(video, existingByVideoId)))
 }
 
 function selectAuthMode(mode = 'auto') {
@@ -267,10 +267,12 @@ export async function syncCrosshairFromYouTube({ mode = 'auto' } = {}) {
   const channel = await resolveUploadsPlaylist(auth)
   const videoIds = await fetchUploadsVideoIds(channel.playlistId, auth)
   const details = await fetchVideoDetails(videoIds, auth)
-  const syncedVideos = details
-    .filter((video) => video.id && video.status?.uploadStatus !== 'deleted')
-    .filter((video) => video.status?.privacyStatus === 'public' || video.status?.privacyStatus === 'unlisted')
-    .map(toSyncedVideo)
+  const syncedVideos = details.reduce((videos, video) => {
+    if (!video.id || video.status?.uploadStatus === 'deleted') return videos
+    if (video.status?.privacyStatus !== 'public' && video.status?.privacyStatus !== 'unlisted') return videos
+    videos.push(toSyncedVideo(video))
+    return videos
+  }, [])
 
   const saved = await upsertSyncedVideos(syncedVideos)
 

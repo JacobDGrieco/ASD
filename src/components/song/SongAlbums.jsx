@@ -15,12 +15,13 @@ export default function SongAlbums({ placements, adminPreview = false }) {
   const albums = useMemo(() => {
     const seen = new Set()
     return (placements ?? [])
-      .map((placement) => placement.album)
-      .filter((album) => {
-        if (!album?.id || seen.has(album.id)) return false
+      .reduce((uniqueAlbums, placement) => {
+        const album = placement.album
+        if (!album?.id || seen.has(album.id)) return uniqueAlbums
         seen.add(album.id)
-        return true
-      })
+        uniqueAlbums.push(album)
+        return uniqueAlbums
+      }, [])
       .sort((left, right) => releaseTime(right) - releaseTime(left))
   }, [placements])
 

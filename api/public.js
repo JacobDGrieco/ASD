@@ -98,7 +98,14 @@ function collectRoleCreditNames(roles) {
 }
 
 async function resolveArtistLinksByName(names, includeHidden = false) {
-  const uniqueNames = [...new Set((Array.isArray(names) ? names : []).map((name) => name.trim()).filter(Boolean))]
+  const uniqueNames = []
+  const seenNames = new Set()
+  for (const value of Array.isArray(names) ? names : []) {
+    const name = value.trim()
+    if (!name || seenNames.has(name)) continue
+    seenNames.add(name)
+    uniqueNames.push(name)
+  }
   if (!uniqueNames.length) return {}
 
   const matched = await prisma.artist.findMany({
@@ -111,11 +118,12 @@ async function resolveArtistLinksByName(names, includeHidden = false) {
     select: publicArtistSelect(),
   })
 
-  return Object.fromEntries(
-    matched
-      .filter((artist) => includeHidden || isPublicArtistVisible(artist))
-      .map((artist) => [artist.name.trim().toLowerCase(), artist.slug])
-  )
+  return matched.reduce((linksByName, artist) => {
+    if (includeHidden || isPublicArtistVisible(artist)) {
+      linksByName[artist.name.trim().toLowerCase()] = artist.slug
+    }
+    return linksByName
+  }, {})
 }
 
 function applyPublicArtistName(album) {
@@ -164,6 +172,18 @@ function formatPlacementSongs(placements, fallbackReleaseDate = null, now = new 
       discNumber: placement.discNumber,
       placementOrder: placement.placementOrder,
     }))
+}
+
+function visiblePlacementSongs(placements, fallbackReleaseDate, now, includeHidden, artistVisible = true) {
+  const songs = []
+  for (const song of formatPlacementSongs(placements, fallbackReleaseDate, now)) {
+    if (!includeHidden && !isPublicSongReleased(song, fallbackReleaseDate, now)) continue
+    songs.push({
+      ...song,
+      isPubliclyVisible: song.isPubliclyVisible && artistVisible,
+    })
+  }
+  return songs
 }
 
 function isPublicAlbumReleased(album, now) {
@@ -275,27 +295,27 @@ async function getArtists(res, includeHidden = false) {
   })
 
   return res.status(200).json(
-    artists.map((artist) => {
+    artists.reduce((publicArtists, artist) => {
+      if (!includeHidden && !isPublicArtistVisible(artist)) return publicArtists
       const images = formatArtistImages(artist)
-      return {
+      publicArtists.push({
         ...artist,
         isPubliclyVisible: isPublicArtistVisible(artist),
         portrait: images[0]?.previewUrl ?? artist.portrait,
         images,
-        albums: (artist.albums ?? [])
-          .filter((album) => includeHidden || isPublicAlbumReleased(album, now))
-          .map((album) => ({
+        albums: (artist.albums ?? []).reduce((albums, album) => {
+          if (!includeHidden && !isPublicAlbumReleased(album, now)) return albums
+          const artistVisible = isPublicArtistVisible(artist)
+          albums.push({
             ...formatAlbumSummary(album),
-            isPubliclyVisible: isPublicAlbumReleased(album, now) && isPublicArtistVisible(artist),
-            songs: formatPlacementSongs(album.songPlacements, album.releaseDate, now)
-              .map((song) => ({
-                ...song,
-                isPubliclyVisible: song.isPubliclyVisible && isPublicArtistVisible(artist),
-              }))
-              .filter((song) => includeHidden || isPublicSongReleased(song, album.releaseDate, now)),
-          })),
-      }
-    }).filter((artist) => includeHidden || isPublicArtistVisible(artist))
+            isPubliclyVisible: isPublicAlbumReleased(album, now) && artistVisible,
+            songs: visiblePlacementSongs(album.songPlacements, album.releaseDate, now, includeHidden, artistVisible),
+          })
+          return albums
+        }, []),
+      })
+      return publicArtists
+    }, [])
   )
 }
 
@@ -439,18 +459,16 @@ async function getArtist(res, slug, includeHidden = false) {
     isPubliclyVisible: isPublicArtistVisible(artist),
     portrait: images[0]?.previewUrl ?? artist.portrait,
     images,
-    albums: artist.albums
-      .filter((album) => includeHidden || isPublicAlbumReleased(album, now))
-      .map((album) => ({
+    albums: artist.albums.reduce((albums, album) => {
+      if (!includeHidden && !isPublicAlbumReleased(album, now)) return albums
+      const artistVisible = isPublicArtistVisible(artist)
+      albums.push({
         ...formatAlbumSummary(album),
-        isPubliclyVisible: isPublicAlbumReleased(album, now) && isPublicArtistVisible(artist),
-        songs: formatPlacementSongs(album.songPlacements, album.releaseDate, now)
-          .map((song) => ({
-            ...song,
-            isPubliclyVisible: song.isPubliclyVisible && isPublicArtistVisible(artist),
-          }))
-          .filter((song) => includeHidden || isPublicSongReleased(song, album.releaseDate, now)),
-      })),
+        isPubliclyVisible: isPublicAlbumReleased(album, now) && artistVisible,
+        songs: visiblePlacementSongs(album.songPlacements, album.releaseDate, now, includeHidden, artistVisible),
+      })
+      return albums
+    }, []),
     featuredIn,
   })
 }
@@ -498,23 +516,26 @@ async function getVideos(res) {
   })
 
   return res.status(200).json(
-    videos
-      .filter((video) => isPublicArtistVisible(video.artist))
-      .filter((video) => (
-        (video.sourceType === 'YOUTUBE' && video.youtubeUrl) ||
-        (video.sourceType === 'UPLOAD' && video.videoUrl)
-      ))
-      .map((video) => {
+    videos.reduce((publicVideos, video) => {
+      if (!isPublicArtistVisible(video.artist)) return publicVideos
+      if (
+        (video.sourceType !== 'YOUTUBE' || !video.youtubeUrl) &&
+        (video.sourceType !== 'UPLOAD' || !video.videoUrl)
+      ) {
+        return publicVideos
+      }
+
         const artistImages = formatArtistImages(video.artist)
-        return formatArtistVideo({
+        publicVideos.push(formatArtistVideo({
           ...video,
           artist: {
             ...video.artist,
             portrait: artistImages[0]?.previewUrl ?? video.artist.portrait,
             images: artistImages,
           },
-        })
-      })
+        }))
+        return publicVideos
+      }, [])
   )
 }
 
@@ -536,10 +557,12 @@ async function getCrosshairVideos(res) {
   })
 
   return res.status(200).json(
-    videos
-      .filter((video) => video.youtubeUrl)
-      .map(formatCrosshairVideo)
-      .filter((video) => video.youtubeEmbedUrl)
+    videos.reduce((formattedVideos, video) => {
+      if (!video.youtubeUrl) return formattedVideos
+      const formattedVideo = formatCrosshairVideo(video)
+      if (formattedVideo.youtubeEmbedUrl) formattedVideos.push(formattedVideo)
+      return formattedVideos
+    }, [])
   )
 }
 
@@ -584,12 +607,13 @@ async function getAlbum(res, id, includeHidden = false) {
     isPubliclyVisible: isPublicAlbumReleased(album, now) && isPublicArtistVisible(album.artist),
     coverArt: albumImages[0]?.previewUrl ?? album.coverArt,
     images: albumImages,
-    songs: formatPlacementSongs(album.songPlacements, album.releaseDate, now)
-      .map((song) => ({
-        ...song,
-        isPubliclyVisible: song.isPubliclyVisible && isPublicArtistVisible(album.artist),
-      }))
-      .filter((song) => includeHidden || isPublicSongReleased(song, album.releaseDate, now)),
+    songs: visiblePlacementSongs(
+      album.songPlacements,
+      album.releaseDate,
+      now,
+      includeHidden,
+      isPublicArtistVisible(album.artist),
+    ),
   })
 }
 
@@ -711,12 +735,13 @@ async function getSong(res, id, includeHidden = false) {
       album: {
         ...album,
         isPubliclyVisible: isPublicAlbumReleased(placement.album, now) && isPublicArtistVisible(placement.album.artist),
-        songs: formatPlacementSongs(songPlacements, album.releaseDate, now)
-          .map((placementSong) => ({
-            ...placementSong,
-            isPubliclyVisible: placementSong.isPubliclyVisible && isPublicArtistVisible(album.artist),
-          }))
-          .filter((placementSong) => includeHidden || isPublicSongReleased(placementSong, album.releaseDate, now)),
+        songs: visiblePlacementSongs(
+          songPlacements,
+          album.releaseDate,
+          now,
+          includeHidden,
+          isPublicArtistVisible(album.artist),
+        ),
       },
     }
   })
@@ -940,9 +965,9 @@ async function getFashionTalent(res, slug, includeHidden) {
   if (!talent) return res.status(404).json({ error: 'Talent not found' })
   if (!includeHidden && !talent.isVisible) return res.status(404).json({ error: 'Talent not found' })
 
-  const featuredIn = (talent.lookCredits ?? [])
-    .filter((credit) => includeHidden || credit.look?.isVisible)
-    .map((credit) => ({
+  const featuredIn = (talent.lookCredits ?? []).reduce((credits, credit) => {
+    if (!includeHidden && !credit.look?.isVisible) return credits
+    credits.push({
       roleLabel: credit.roleLabel,
       look: credit.look
         ? {
@@ -953,7 +978,9 @@ async function getFashionTalent(res, slug, includeHidden) {
             pieces: new Array(credit.look._count?.pieces ?? 0),
           }
         : null,
-    }))
+    })
+    return credits
+  }, [])
 
   const rest = { ...talent }
   delete rest.lookCredits
