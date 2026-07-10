@@ -211,11 +211,11 @@ export default function AdminMusicVideosPage() {
 						<div className="admin-modal-body">
 							<div className="admin-modal-grid">
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Artist</label>
-									<input type="text" value={findArtist(rows, form.artistId)?.name ?? ''} className="admin-artists-page-input" disabled />
+									<label htmlFor="admin-music-video-artist" className="admin-modal-label">Artist</label>
+									<input id="admin-music-video-artist" type="text" value={findArtist(rows, form.artistId)?.name ?? ''} className="admin-artists-page-input" disabled />
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Poster</label>
+									<div className="admin-modal-label">Poster</div>
 									<ImageCollectionField
 										value={form.posterImage}
 										onChange={(images) => setForm((current) => ({ ...current, posterImage: images.slice(0, 1) }))}
@@ -225,16 +225,17 @@ export default function AdminMusicVideosPage() {
 									/>
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Title</label>
-									<input type="text" value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} className="admin-artists-page-input" placeholder="Optional promo title" />
+									<label htmlFor="admin-music-video-title" className="admin-modal-label">Title</label>
+									<input id="admin-music-video-title" type="text" value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} className="admin-artists-page-input" placeholder="Optional promo title" />
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Description</label>
-									<textarea value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} className="admin-artists-page-input admin-modal-textarea" rows={4} placeholder="Optional description" />
+									<label htmlFor="admin-music-video-description" className="admin-modal-label">Description</label>
+									<textarea id="admin-music-video-description" value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} className="admin-artists-page-input admin-modal-textarea" rows={4} placeholder="Optional description" />
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Source Type</label>
+									<label htmlFor="admin-music-video-source-type" className="admin-modal-label">Source Type</label>
 									<select
+										id="admin-music-video-source-type"
 										value={form.sourceType}
 										onChange={(event) => setForm((current) => ({
 											...current,
@@ -251,14 +252,15 @@ export default function AdminMusicVideosPage() {
 								</div>
 								{form.sourceType === ARTIST_VIDEO_SOURCE.YOUTUBE && (
 									<div className="admin-modal-field admin-modal-field-full">
-										<label className="admin-modal-label">YouTube URL</label>
-										<input type="url" value={form.youtubeUrl} onChange={(event) => setForm((current) => ({ ...current, youtubeUrl: event.target.value }))} className="admin-artists-page-input" placeholder="https://www.youtube.com/watch?v=..." />
+										<label htmlFor="admin-music-video-youtube-url" className="admin-modal-label">YouTube URL</label>
+										<input id="admin-music-video-youtube-url" type="url" value={form.youtubeUrl} onChange={(event) => setForm((current) => ({ ...current, youtubeUrl: event.target.value }))} className="admin-artists-page-input" placeholder="https://www.youtube.com/watch?v=..." />
 									</div>
 								)}
 								{form.sourceType === ARTIST_VIDEO_SOURCE.UPLOAD && (
 									<div className="admin-modal-field admin-modal-field-full">
-										<label className="admin-modal-label">Local/Static Video Path</label>
+										<label htmlFor="admin-music-video-static-path" className="admin-modal-label">Local/Static Video Path</label>
 										<input
+											id="admin-music-video-static-path"
 											type="text"
 											value={buildArtistStaticVideoUrl(rows, form.artistId, form.videoUrl, VIDEO_BASE_URL, form.videoExtension) ?? ''}
 											className="admin-artists-page-input"
@@ -268,8 +270,9 @@ export default function AdminMusicVideosPage() {
 								)}
 								{form.sourceType === ARTIST_VIDEO_SOURCE.UPLOAD && (
 									<div className="admin-modal-field">
-										<label className="admin-modal-label">Video File Type</label>
+										<label htmlFor="admin-music-video-file-type" className="admin-modal-label">Video File Type</label>
 										<select
+											id="admin-music-video-file-type"
 											value={form.videoExtension}
 											onChange={(event) => setForm((current) => ({
 												...current,
@@ -284,8 +287,8 @@ export default function AdminMusicVideosPage() {
 									</div>
 								)}
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Video Page URL</label>
-									<input type="url" value={form.videosPageUrl} onChange={(event) => setForm((current) => ({ ...current, videosPageUrl: event.target.value }))} className="admin-artists-page-input" placeholder="https://youtube.com/@artist/videos" />
+									<label htmlFor="admin-music-video-page-url" className="admin-modal-label">Video Page URL</label>
+									<input id="admin-music-video-page-url" type="url" value={form.videosPageUrl} onChange={(event) => setForm((current) => ({ ...current, videosPageUrl: event.target.value }))} className="admin-artists-page-input" placeholder="https://youtube.com/@artist/videos" />
 								</div>
 							</div>
 						</div>

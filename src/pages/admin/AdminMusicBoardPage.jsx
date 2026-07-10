@@ -424,8 +424,9 @@ export default function AdminMusicBoardPage() {
 								</div>
 							) : null}
 							<div className="admin-modal-field admin-modal-field-full">
-								<label className="admin-modal-label">Title *</label>
+								<label htmlFor="admin-board-post-title" className="admin-modal-label">Title *</label>
 								<input
+									id="admin-board-post-title"
 									className={`admin-modal-input admin-board-page-text-input${validationErrors.title ? ' admin-board-page-input-invalid' : ''}`}
 									value={form.title}
 									onChange={(e) => {
@@ -445,8 +446,9 @@ export default function AdminMusicBoardPage() {
 							</div>
 							{isSuperAdmin && (
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Post As</label>
+									<label htmlFor="admin-board-post-artist" className="admin-modal-label">Post As</label>
 									<select
+										id="admin-board-post-artist"
 										className={`admin-modal-input admin-board-page-text-input admin-board-page-select-input${validationErrors.artistId ? ' admin-board-page-input-invalid' : ''}`}
 										value={form.artistId}
 										onChange={(e) => {
@@ -496,7 +498,7 @@ export default function AdminMusicBoardPage() {
 								/>
 							</div>
 							<div className="admin-modal-field admin-modal-field-full">
-								<label className="admin-modal-label">Cover Image</label>
+								<div className="admin-modal-label">Cover Image</div>
 								<ImageCollectionField
 									value={form.images}
 									onChange={(imgs) => setForm((f) => ({ ...f, images: imgs }))}
@@ -507,8 +509,9 @@ export default function AdminMusicBoardPage() {
 							</div>
 							<div className="admin-board-page-settings-row admin-modal-field-full">
 								<div className="admin-modal-field admin-board-page-color-field">
-									<label className="admin-modal-label">Pin Color</label>
+									<label htmlFor="admin-board-post-pin-color" className="admin-modal-label">Pin Color</label>
 									<input
+										id="admin-board-post-pin-color"
 										type="color"
 										className="admin-modal-input admin-board-page-color-input"
 										value={form.pinColor || '#e06060'}
@@ -516,8 +519,9 @@ export default function AdminMusicBoardPage() {
 									/>
 								</div>
 								<div className="admin-modal-field">
-									<label className="admin-modal-label">Expires At</label>
+									<label htmlFor="admin-board-post-expires-at" className="admin-modal-label">Expires At</label>
 									<AdminDateInput
+										id="admin-board-post-expires-at"
 										className="admin-modal-input admin-board-page-date-input"
 										value={form.expiresAt}
 										onChange={(v) => setForm((f) => ({ ...f, expiresAt: v }))}
@@ -526,7 +530,7 @@ export default function AdminMusicBoardPage() {
 							</div>
 							<div className="admin-board-page-publish-panel admin-modal-field-full">
 								<div className="admin-board-page-publish-header">
-									<label className="admin-modal-label">Publishing</label>
+									<div className="admin-modal-label">Publishing</div>
 									<span className="admin-board-page-publish-summary">
 										{form.publishMode === 'draft'
 											? 'Save keeps this post as a draft.'
@@ -560,8 +564,9 @@ export default function AdminMusicBoardPage() {
 								</div>
 								{form.publishMode === 'schedule' && (
 									<div className="admin-modal-field admin-board-page-publish-date-field">
-										<label className="admin-modal-label">Publish On</label>
+										<label htmlFor="admin-board-post-publish-at" className="admin-modal-label">Publish On</label>
 										<AdminDateInput
+											id="admin-board-post-publish-at"
 											className={`admin-modal-input admin-board-page-date-input${validationErrors.publishAt ? ' admin-board-page-input-invalid' : ''}`}
 											value={form.publishAt}
 											onChange={(v) => {

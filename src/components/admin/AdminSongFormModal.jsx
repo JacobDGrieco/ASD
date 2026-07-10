@@ -263,7 +263,7 @@ function initFormFromPrefill(prefill = {}) {
 	};
 }
 
-function AlbumPlacementSelect({ value, albums, onChange, className, invalid }) {
+function AlbumPlacementSelect({ id, value, albums, onChange, className, invalid }) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [searchText, setSearchText] = useState('');
 	const listboxId = useId();
@@ -319,6 +319,7 @@ function AlbumPlacementSelect({ value, albums, onChange, className, invalid }) {
 	return (
 		<div className="admin-song-album-select" ref={rootRef}>
 			<input
+				id={id}
 				type="text"
 				className={`${className} admin-song-album-select-input`.trim()}
 				role="combobox"
@@ -660,13 +661,13 @@ export default function AdminSongFormModal({
 												{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
 											</button>
 											<div className="admin-artists-page-name-field-main">
-												<label className="admin-modal-label">Title <span className="admin-modal-label-required">*</span></label>
-												<input type="text" placeholder="Title" value={form.title} onChange={set('title')} className={songFieldClassName('title')} aria-invalid={Boolean(validationErrors?.title)} />
+												<label htmlFor="admin-song-title" className="admin-modal-label">Title <span className="admin-modal-label-required">*</span></label>
+												<input id="admin-song-title" type="text" placeholder="Title" value={form.title} onChange={set('title')} className={songFieldClassName('title')} aria-invalid={Boolean(validationErrors?.title)} />
 											</div>
 										</div>
 									</div>
 									<div className="admin-modal-field admin-modal-field-full">
-										<label className="admin-modal-label">Images</label>
+										<div className="admin-modal-label">Images</div>
 										<ImageCollectionField
 											value={form.images}
 											onChange={(images) => setForm((current) => ({ ...current, images }))}
@@ -677,31 +678,31 @@ export default function AdminSongFormModal({
 									</div>
 									<div className="admin-song-metadata-grid admin-modal-field-full">
 										<div className="admin-modal-field admin-song-metadata-field-duration">
-											<label className="admin-modal-label">Duration</label>
-											<input type="text" placeholder="e.g. 3:42" value={form.duration} onChange={set('duration')} className="admin-artists-page-input" />
+											<label htmlFor="admin-song-duration" className="admin-modal-label">Duration</label>
+											<input id="admin-song-duration" type="text" placeholder="e.g. 3:42" value={form.duration} onChange={set('duration')} className="admin-artists-page-input" />
 										</div>
 										<div className="admin-modal-field">
-											<label className="admin-modal-label">Release Date</label>
-											<AdminDateInput value={form.releaseDate} onChange={setReleaseDate} className={songFieldClassName('releaseDate')} ariaInvalid={Boolean(validationErrors?.releaseDate)} />
+											<label htmlFor="admin-song-release-date" className="admin-modal-label">Release Date</label>
+											<AdminDateInput id="admin-song-release-date" value={form.releaseDate} onChange={setReleaseDate} className={songFieldClassName('releaseDate')} ariaInvalid={Boolean(validationErrors?.releaseDate)} />
 										</div>
 										<div className="admin-modal-field admin-song-metadata-field-bpm">
-											<label className="admin-modal-label">BPM</label>
-											<input type="number" min="0" max="999" step="1" placeholder="e.g. 120" value={form.bpm} onChange={setBpm} className="admin-artists-page-input" />
+											<label htmlFor="admin-song-bpm" className="admin-modal-label">BPM</label>
+											<input id="admin-song-bpm" type="number" min="0" max="999" step="1" placeholder="e.g. 120" value={form.bpm} onChange={setBpm} className="admin-artists-page-input" />
 										</div>
 										<div className="admin-modal-field">
-											<label className="admin-modal-label">Key</label>
-											<select value={form.key} onChange={set('key')} className="admin-artists-page-input">
+											<label htmlFor="admin-song-key" className="admin-modal-label">Key</label>
+											<select id="admin-song-key" value={form.key} onChange={set('key')} className="admin-artists-page-input">
 												<option value="">- Key -</option>
 												{SONG_KEYS.map((key) => <option key={key} value={key}>{key}</option>)}
 											</select>
 										</div>
 									</div>
 									<div className="admin-modal-field admin-modal-field-full">
-										<label className="admin-modal-label">About</label>
-										<textarea placeholder="About this song..." value={form.aboutText} onChange={set('aboutText')} className="admin-artists-page-input admin-modal-textarea" rows={5} />
+										<label htmlFor="admin-song-about" className="admin-modal-label">About</label>
+										<textarea id="admin-song-about" placeholder="About this song..." value={form.aboutText} onChange={set('aboutText')} className="admin-artists-page-input admin-modal-textarea" rows={5} />
 									</div>
 									<div className="admin-modal-field admin-modal-field-full">
-										<label className="admin-modal-label">Tags</label>
+										<div className="admin-modal-label">Tags</div>
 										<ChipInputField
 											value={form.tags}
 											onChange={(tags) => setForm((current) => ({ ...current, tags }))}
@@ -744,8 +745,9 @@ export default function AdminSongFormModal({
 													</div>
 													<div className="admin-modal-grid admin-song-album-grid">
 														<div className="admin-modal-field admin-modal-field-full">
-															<label className="admin-modal-label">Album <span className="admin-modal-label-required">*</span></label>
+															<label htmlFor={`admin-song-${placement.clientKey}-album`} className="admin-modal-label">Album <span className="admin-modal-label-required">*</span></label>
 															<AlbumPlacementSelect
+																id={`admin-song-${placement.clientKey}-album`}
 																value={placement.albumId}
 																albums={sortedAlbums}
 																onChange={setAlbumPlacement(index, 'albumId')}
@@ -754,12 +756,12 @@ export default function AdminSongFormModal({
 															/>
 														</div>
 														<div className="admin-modal-field">
-															<label className="admin-modal-label">Track # <span className="admin-modal-label-required">*</span></label>
-															<input type="number" placeholder="Track #" value={placement.trackNumber} onChange={setAlbumPlacement(index, 'trackNumber')} className={placementFieldClassName(index, 'trackNumber')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.trackNumber)} />
+															<label htmlFor={`admin-song-${placement.clientKey}-track-number`} className="admin-modal-label">Track # <span className="admin-modal-label-required">*</span></label>
+															<input id={`admin-song-${placement.clientKey}-track-number`} type="number" placeholder="Track #" value={placement.trackNumber} onChange={setAlbumPlacement(index, 'trackNumber')} className={placementFieldClassName(index, 'trackNumber')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.trackNumber)} />
 														</div>
 														<div className="admin-modal-field">
-															<label className="admin-modal-label">Disc # <span className="admin-modal-label-required">*</span></label>
-															<input type="number" placeholder="Disc #" value={placement.discNumber} onChange={setAlbumPlacement(index, 'discNumber')} className={placementFieldClassName(index, 'discNumber')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.discNumber)} />
+															<label htmlFor={`admin-song-${placement.clientKey}-disc-number`} className="admin-modal-label">Disc # <span className="admin-modal-label-required">*</span></label>
+															<input id={`admin-song-${placement.clientKey}-disc-number`} type="number" placeholder="Disc #" value={placement.discNumber} onChange={setAlbumPlacement(index, 'discNumber')} className={placementFieldClassName(index, 'discNumber')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.discNumber)} />
 														</div>
 													</div>
 												</div>

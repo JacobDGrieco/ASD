@@ -527,13 +527,13 @@ export default function AdminMusicAlbumsPage() {
                           {form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
                         </button>
                         <div className="admin-artists-page-name-field-main">
-                          <label className="admin-modal-label">Title <span className="admin-modal-label-required">*</span></label>
-                          <input type="text" placeholder="Title" value={form.title} onChange={set('title')} className={fieldClassName('title')} aria-invalid={Boolean(validationErrors.title)} />
+                          <label htmlFor="admin-music-album-title" className="admin-modal-label">Title <span className="admin-modal-label-required">*</span></label>
+                          <input id="admin-music-album-title" type="text" placeholder="Title" value={form.title} onChange={set('title')} className={fieldClassName('title')} aria-invalid={Boolean(validationErrors.title)} />
                         </div>
                       </div>
                     </div>
                     <div className="admin-modal-field admin-modal-field-full">
-                      <label className="admin-modal-label">Images</label>
+                      <div className="admin-modal-label">Images</div>
                       <ImageCollectionField
                         value={form.images}
                         onChange={(images) => setForm((current) => ({ ...current, images }))}
@@ -544,24 +544,25 @@ export default function AdminMusicAlbumsPage() {
                     </div>
                     <div className="admin-modal-field admin-modal-field-full admin-albums-modal-meta-row">
                       <div className="admin-modal-field admin-albums-modal-meta-artist">
-                        <label className="admin-modal-label">Artist <span className="admin-modal-label-required">*</span></label>
+                        <label htmlFor="admin-music-album-artist" className="admin-modal-label">Artist <span className="admin-modal-label-required">*</span></label>
                         {isArtistScoped ? (
                           <input
+                            id="admin-music-album-artist"
                             type="text"
                             value={artistOptions.find((artist) => artist.id === scopedArtistId)?.name ?? ''}
                             className="admin-artists-page-input"
                             readOnly
                           />
                         ) : (
-                          <select value={form.artistId} onChange={set('artistId')} className={fieldClassName('artistId')} aria-invalid={Boolean(validationErrors.artistId)}>
+                          <select id="admin-music-album-artist" value={form.artistId} onChange={set('artistId')} className={fieldClassName('artistId')} aria-invalid={Boolean(validationErrors.artistId)}>
                             <option value="">- Artist -</option>
                             {artistOptions.map((artist) => <option key={artist.id} value={artist.id}>{artist.name}</option>)}
                           </select>
                         )}
                       </div>
                       <div className="admin-modal-field admin-albums-modal-meta-type">
-                        <label className="admin-modal-label">Type <span className="admin-modal-label-required">*</span></label>
-                        <select value={form.type} onChange={set('type')} className={fieldClassName('type')} aria-invalid={Boolean(validationErrors.type)}>
+                        <label htmlFor="admin-music-album-type" className="admin-modal-label">Type <span className="admin-modal-label-required">*</span></label>
+                        <select id="admin-music-album-type" value={form.type} onChange={set('type')} className={fieldClassName('type')} aria-invalid={Boolean(validationErrors.type)}>
                           <option value="">- Type -</option>
                           <option value="ALBUM">Album</option>
                           <option value="SINGLE">Single</option>
@@ -569,39 +570,39 @@ export default function AdminMusicAlbumsPage() {
                         </select>
                       </div>
                       <div className="admin-modal-field admin-albums-modal-meta-date">
-                        <label className="admin-modal-label">Release Date <span className="admin-modal-label-required">*</span></label>
-                        <AdminDateInput value={form.releaseDate} onChange={setReleaseDate} className={fieldClassName('releaseDate')} ariaInvalid={Boolean(validationErrors.releaseDate)} required />
+                        <label htmlFor="admin-music-album-release-date" className="admin-modal-label">Release Date <span className="admin-modal-label-required">*</span></label>
+                        <AdminDateInput id="admin-music-album-release-date" value={form.releaseDate} onChange={setReleaseDate} className={fieldClassName('releaseDate')} ariaInvalid={Boolean(validationErrors.releaseDate)} required />
                       </div>
                     </div>
                     {form.artistId === OTHER_ARTIST_OPTION_ID && (
                       <div className="admin-modal-field admin-modal-field-full">
-                        <label className="admin-modal-label">Other Artist Name <span className="admin-modal-label-required">*</span></label>
-                        <input type="text" placeholder="Artist name" value={form.otherArtistName} onChange={set('otherArtistName')} className={fieldClassName('otherArtistName')} aria-invalid={Boolean(validationErrors.otherArtistName)} />
+                        <label htmlFor="admin-music-album-other-artist-name" className="admin-modal-label">Other Artist Name <span className="admin-modal-label-required">*</span></label>
+                        <input id="admin-music-album-other-artist-name" type="text" placeholder="Artist name" value={form.otherArtistName} onChange={set('otherArtistName')} className={fieldClassName('otherArtistName')} aria-invalid={Boolean(validationErrors.otherArtistName)} />
                       </div>
                     )}
                     <div className="admin-modal-field admin-modal-field-full">
-                      <label className="admin-modal-label">About</label>
-                      <textarea placeholder="About this album..." value={form.aboutText} onChange={set('aboutText')} className="admin-artists-page-input admin-modal-textarea" rows={5} />
+                      <label htmlFor="admin-music-album-about" className="admin-modal-label">About</label>
+                      <textarea id="admin-music-album-about" placeholder="About this album..." value={form.aboutText} onChange={set('aboutText')} className="admin-artists-page-input admin-modal-textarea" rows={5} />
                     </div>
                   </div>
                 </TabPanel>
                 <TabPanel header="Links">
                   <div className="admin-modal-grid">
                     <div className="admin-modal-field admin-modal-field-full">
-                      <label className="admin-modal-label">{iconLabel(<FaSoundcloud />, 'SoundCloud URL')}</label>
-                      <input type="url" placeholder="SoundCloud URL" value={form.soundcloudUrl} onChange={set('soundcloudUrl')} className="admin-artists-page-input" />
+                      <label htmlFor="admin-music-album-soundcloud" className="admin-modal-label">{iconLabel(<FaSoundcloud />, 'SoundCloud URL')}</label>
+                      <input id="admin-music-album-soundcloud" type="url" placeholder="SoundCloud URL" value={form.soundcloudUrl} onChange={set('soundcloudUrl')} className="admin-artists-page-input" />
                     </div>
                     <div className="admin-modal-field admin-modal-field-full">
-                      <label className="admin-modal-label">{iconLabel(<FaSpotify />, 'Spotify URL')}</label>
-                      <input type="url" placeholder="Spotify URL" value={form.spotifyUrl} onChange={set('spotifyUrl')} className="admin-artists-page-input" />
+                      <label htmlFor="admin-music-album-spotify" className="admin-modal-label">{iconLabel(<FaSpotify />, 'Spotify URL')}</label>
+                      <input id="admin-music-album-spotify" type="url" placeholder="Spotify URL" value={form.spotifyUrl} onChange={set('spotifyUrl')} className="admin-artists-page-input" />
                     </div>
                     <div className="admin-modal-field admin-modal-field-full">
-                      <label className="admin-modal-label">{iconLabel(<FaApple />, 'Apple Music URL')}</label>
-                      <input type="url" placeholder="Apple Music URL" value={form.appleMusicUrl} onChange={set('appleMusicUrl')} className="admin-artists-page-input" />
+                      <label htmlFor="admin-music-album-apple-music" className="admin-modal-label">{iconLabel(<FaApple />, 'Apple Music URL')}</label>
+                      <input id="admin-music-album-apple-music" type="url" placeholder="Apple Music URL" value={form.appleMusicUrl} onChange={set('appleMusicUrl')} className="admin-artists-page-input" />
                     </div>
                     <div className="admin-modal-field admin-modal-field-full">
-                      <label className="admin-modal-label">{iconLabel(<FaYoutube />, 'YouTube URL')}</label>
-                      <input type="url" placeholder="YouTube URL" value={form.youtubeUrl} onChange={set('youtubeUrl')} className="admin-artists-page-input" />
+                      <label htmlFor="admin-music-album-youtube" className="admin-modal-label">{iconLabel(<FaYoutube />, 'YouTube URL')}</label>
+                      <input id="admin-music-album-youtube" type="url" placeholder="YouTube URL" value={form.youtubeUrl} onChange={set('youtubeUrl')} className="admin-artists-page-input" />
                     </div>
                   </div>
                 </TabPanel>

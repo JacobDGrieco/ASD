@@ -78,8 +78,9 @@ export default function FashionPiecesField({ value, onChange, token, lookTitle, 
 
 					<div className="admin-fashion-piece-card-row">
 						<div>
-							<label className="admin-modal-label">Piece Name</label>
+							<label htmlFor={`admin-fashion-piece-${piece.clientKey ?? index}-name`} className="admin-modal-label">Piece Name</label>
 							<input
+								id={`admin-fashion-piece-${piece.clientKey ?? index}-name`}
 								type="text"
 								placeholder="e.g. Oversized Wool Coat"
 								value={piece.name ?? ''}
@@ -88,8 +89,9 @@ export default function FashionPiecesField({ value, onChange, token, lookTitle, 
 							/>
 						</div>
 						<div>
-							<label className="admin-modal-label">Buy Link</label>
+							<label htmlFor={`admin-fashion-piece-${piece.clientKey ?? index}-buy-url`} className="admin-modal-label">Buy Link</label>
 							<input
+								id={`admin-fashion-piece-${piece.clientKey ?? index}-buy-url`}
 								type="url"
 								placeholder="External link to purchase"
 								value={piece.buyUrl ?? ''}
@@ -100,7 +102,7 @@ export default function FashionPiecesField({ value, onChange, token, lookTitle, 
 					</div>
 
 					<div>
-						<label className="admin-modal-label">Image</label>
+						<div className="admin-modal-label">Image</div>
 						<ImageCollectionField
 							value={piece.image ? [piece.image] : []}
 							onChange={(images) => updatePiece(index, { image: images[0] ?? null })}
@@ -111,7 +113,7 @@ export default function FashionPiecesField({ value, onChange, token, lookTitle, 
 					</div>
 
 					<div>
-						<label className="admin-modal-label admin-fashion-piece-card-credits-label">Credit overrides</label>
+						<div className="admin-modal-label admin-fashion-piece-card-credits-label">Credit overrides</div>
 						<CreditsField
 							value={piece.credits}
 							onChange={(credits) => updatePiece(index, { credits })}

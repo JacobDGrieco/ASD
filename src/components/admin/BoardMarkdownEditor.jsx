@@ -61,6 +61,7 @@ export default function BoardMarkdownEditor({
 	maxLinks = 5,
 }) {
 	const inputId = useId();
+	const textareaId = `${inputId}-body`;
 	const textareaRef = useRef(null);
 	const [helpOpen, setHelpOpen] = useState(false);
 	const [uploading, setUploading] = useState(false);
@@ -157,7 +158,7 @@ export default function BoardMarkdownEditor({
 	return (
 		<div className="admin-board-page-markdown-editor">
 			<div className="admin-board-page-markdown-label-row">
-				<label className="admin-modal-label">{label}</label>
+				<label htmlFor={textareaId} className="admin-modal-label">{label}</label>
 			</div>
 
 			<div className="admin-board-page-markdown-formatbar" aria-label="Markdown formatting">
@@ -238,6 +239,7 @@ export default function BoardMarkdownEditor({
 				<div className="admin-board-page-markdown-pane">
 					<div className="admin-board-page-markdown-pane-title">Markdown</div>
 					<textarea
+						id={textareaId}
 						ref={textareaRef}
 						className={`admin-board-page-markdown-input${error || limitError ? ' admin-board-page-input-invalid' : ''}`}
 						value={body}

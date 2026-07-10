@@ -142,47 +142,48 @@ async function findDuplicateSong({ id, title, releaseDate, placements }) {
   const albumIds = [...new Set(placements.map((placement) => placement.albumId).filter(Boolean))]
   if (!albumIds.length) return null
 
-  const candidates = await prisma.song.findMany({
-    where: {
-      ...(id ? { id: { not: id } } : {}),
-      placements: {
-        some: {
-          albumId: {
-            in: albumIds,
+  const [candidates, placementAlbums] = await Promise.all([
+    prisma.song.findMany({
+      where: {
+        ...(id ? { id: { not: id } } : {}),
+        placements: {
+          some: {
+            albumId: {
+              in: albumIds,
+            },
           },
         },
       },
-    },
-    include: {
-      placements: {
-        include: {
-          album: {
-            select: {
-              id: true,
-              title: true,
-              otherArtistName: true,
-              artistId: true,
-              artist: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                  isVisible: true,
+      include: {
+        placements: {
+          include: {
+            album: {
+              select: {
+                id: true,
+                title: true,
+                otherArtistName: true,
+                artistId: true,
+                artist: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    isVisible: true,
+                  },
                 },
               },
             },
           },
         },
-      },
-      meta: {
-        select: {
-          releaseDate: true,
+        meta: {
+          select: {
+            releaseDate: true,
+          },
         },
       },
-    },
-  })
-
-  const placementAlbums = await loadPlacementAlbums(placements)
+    }),
+    loadPlacementAlbums(placements),
+  ])
   const placementAlbumById = Object.fromEntries(placementAlbums.map((album) => [album.id, album]))
   const normalizedTitle = normalizeSongDuplicateValue(title)
   const normalizedReleaseDate = normalizeSongReleaseDate(releaseDate)

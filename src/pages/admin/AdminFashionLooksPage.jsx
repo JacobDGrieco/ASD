@@ -403,8 +403,9 @@ export default function AdminFashionLooksPage() {
 													{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
 												</button>
 												<div className="admin-artists-page-name-field-main">
-													<label className="admin-modal-label">Title</label>
+													<label htmlFor="admin-fashion-look-title" className="admin-modal-label">Title</label>
 													<input
+														id="admin-fashion-look-title"
 														type="text"
 														placeholder="Look title"
 														value={form.title}
@@ -416,8 +417,9 @@ export default function AdminFashionLooksPage() {
 										</div>
 
 										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">Collection</label>
+											<label htmlFor="admin-fashion-look-collection" className="admin-modal-label">Collection</label>
 											<select
+												id="admin-fashion-look-collection"
 												value={form.collectionId ?? ''}
 												onChange={(event) => setForm((current) => ({ ...current, collectionId: event.target.value || null }))}
 												className="admin-artists-page-input"
@@ -432,7 +434,7 @@ export default function AdminFashionLooksPage() {
 										</div>
 
 										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">Lookbook Images</label>
+											<div className="admin-modal-label">Lookbook Images</div>
 											<ImageCollectionField
 												value={form.images}
 												onChange={(images) => setForm((current) => ({ ...current, images }))}
@@ -443,8 +445,9 @@ export default function AdminFashionLooksPage() {
 										</div>
 
 										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">Description (the ideas behind it)</label>
+											<label htmlFor="admin-fashion-look-description" className="admin-modal-label">Description (the ideas behind it)</label>
 											<textarea
+												id="admin-fashion-look-description"
 												placeholder="Describe the fashion and the ideas behind this look..."
 												value={form.description}
 												onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
@@ -458,7 +461,7 @@ export default function AdminFashionLooksPage() {
 								<TabPanel header="Credits">
 									<div className="admin-modal-grid">
 										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">Default Credits</label>
+											<div className="admin-modal-label">Default Credits</div>
 											<CreditsField
 												value={form.credits}
 												onChange={(credits) => setForm((current) => ({ ...current, credits }))}
@@ -473,7 +476,7 @@ export default function AdminFashionLooksPage() {
 								<TabPanel header="Pieces">
 									<div className="admin-modal-grid">
 										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">Pieces</label>
+											<div className="admin-modal-label">Pieces</div>
 											<FashionPiecesField
 												value={form.pieces}
 												onChange={(pieces) => setForm((current) => ({ ...current, pieces }))}

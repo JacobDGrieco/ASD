@@ -184,9 +184,10 @@ export default function AdminAccountsPage() {
 						<div className="admin-modal-body">
 							<div className="admin-modal-grid">
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Artist</label>
+									<label htmlFor="admin-account-artist" className="admin-modal-label">Artist</label>
 									{form.id ? (
 										<input
+											id="admin-account-artist"
 											type="text"
 											readOnly
 											value={rows.find((row) => row.artist.id === form.artistId)?.artist.name ?? ''}
@@ -194,6 +195,7 @@ export default function AdminAccountsPage() {
 										/>
 									) : (
 										<select
+											id="admin-account-artist"
 											value={form.artistId}
 											onChange={(event) => setForm((current) => ({ ...current, artistId: event.target.value }))}
 											className="admin-artists-page-input"
@@ -206,8 +208,9 @@ export default function AdminAccountsPage() {
 									)}
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Password</label>
+									<label htmlFor="admin-account-password" className="admin-modal-label">Password</label>
 									<input
+										id="admin-account-password"
 										type="password"
 										value={form.password}
 										onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
@@ -216,7 +219,7 @@ export default function AdminAccountsPage() {
 									/>
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Status</label>
+									<div className="admin-modal-label">Status</div>
 									<label className="admin-admin-account-toggle">
 										<input
 											type="checkbox"

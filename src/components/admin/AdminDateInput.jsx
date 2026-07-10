@@ -33,6 +33,7 @@ export function isValidDateInput(value, { required = false } = {}) {
 }
 
 export default function AdminDateInput({
+  id,
   value,
   onChange,
   className,
@@ -44,6 +45,7 @@ export default function AdminDateInput({
 
   return (
     <input
+      id={id}
       type="date"
       value={value ?? ''}
       onFocus={() => {

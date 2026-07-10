@@ -349,8 +349,9 @@ export default function AdminMusicArtistsPage() {
 													{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
 												</button>
 												<div className="admin-artists-page-name-field-main">
-													<label className="admin-modal-label">Name</label>
+													<label htmlFor="admin-music-artist-name" className="admin-modal-label">Name</label>
 													<input
+														id="admin-music-artist-name"
 														type="text"
 														placeholder="Name"
 														value={form.name}
@@ -361,7 +362,7 @@ export default function AdminMusicArtistsPage() {
 											</div>
 										</div>
 										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">Images</label>
+											<div className="admin-modal-label">Images</div>
 											<ImageCollectionField
 												value={form.images}
 												onChange={(images) => setForm((current) => ({ ...current, images }))}
@@ -371,8 +372,9 @@ export default function AdminMusicArtistsPage() {
 											/>
 										</div>
 										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">Bio</label>
+											<label htmlFor="admin-music-artist-bio" className="admin-modal-label">Bio</label>
 											<textarea
+												id="admin-music-artist-bio"
 												placeholder="Bio"
 												value={form.bio}
 												onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))}
@@ -381,8 +383,9 @@ export default function AdminMusicArtistsPage() {
 											/>
 										</div>
 										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">About Me</label>
+											<label htmlFor="admin-music-artist-about-me" className="admin-modal-label">About Me</label>
 											<textarea
+												id="admin-music-artist-about-me"
 												placeholder="About Me"
 												value={form.aboutMe}
 												onChange={(event) => setForm((current) => ({ ...current, aboutMe: event.target.value }))}

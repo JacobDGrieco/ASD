@@ -209,8 +209,9 @@ export default function AdminFashionOutsideTalentPage() {
 						<div className="admin-modal-body">
 							<div className="admin-modal-grid">
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Name</label>
+									<label htmlFor="admin-fashion-outside-talent-name" className="admin-modal-label">Name</label>
 									<input
+										id="admin-fashion-outside-talent-name"
 										type="text"
 										placeholder="Full name"
 										value={form.name}
@@ -219,8 +220,9 @@ export default function AdminFashionOutsideTalentPage() {
 									/>
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Default Role</label>
+									<label htmlFor="admin-fashion-outside-talent-role" className="admin-modal-label">Default Role</label>
 									<select
+										id="admin-fashion-outside-talent-role"
 										value={form.role}
 										onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))}
 										className="admin-artists-page-input"
@@ -230,8 +232,9 @@ export default function AdminFashionOutsideTalentPage() {
 									</select>
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">External Link</label>
+									<label htmlFor="admin-fashion-outside-talent-external-url" className="admin-modal-label">External Link</label>
 									<input
+										id="admin-fashion-outside-talent-external-url"
 										type="url"
 										placeholder="https://instagram.com/name"
 										value={form.externalUrl}
@@ -240,7 +243,7 @@ export default function AdminFashionOutsideTalentPage() {
 									/>
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Photo</label>
+									<div className="admin-modal-label">Photo</div>
 									<ImageCollectionField
 										value={form.image ? [form.image] : []}
 										onChange={(images) => setForm((current) => ({ ...current, image: images[0] ?? null }))}

@@ -52,7 +52,7 @@ export default function AppleMusicPlayer({ url, onPlay = null }) {
         height={String(height)}
         frameBorder="0"
         allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write"
-        sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation-by-user-activation"
+        sandbox="allow-forms allow-popups allow-scripts allow-top-navigation-by-user-activation"
         loading="lazy"
         style={{ borderRadius: '12px', background: 'transparent' }}
       />

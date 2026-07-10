@@ -347,13 +347,13 @@ export default function AdminMusicCrosshairPage() {
 											{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
 										</button>
 										<div className="admin-artists-page-name-field-main">
-											<label className="admin-modal-label">Title *</label>
-											<input type="text" value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} className="admin-artists-page-input" />
+											<label htmlFor="admin-crosshair-title" className="admin-modal-label">Title *</label>
+											<input id="admin-crosshair-title" type="text" value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} className="admin-artists-page-input" />
 										</div>
 									</div>
 								</div>
 								<div className="admin-modal-field admin-modal-field-full admin-crosshair-page-thumbnail-row">
-									<label className="admin-modal-label">Custom Thumbnail</label>
+									<div className="admin-modal-label">Custom Thumbnail</div>
 									<ImageCollectionField
 										value={form.thumbnailImage}
 										onChange={(images) => setForm((current) => ({ ...current, thumbnailImage: images.slice(0, 1) }))}
@@ -363,24 +363,24 @@ export default function AdminMusicCrosshairPage() {
 									/>
 								</div>
 								<div className="admin-modal-field admin-crosshair-page-half-field">
-									<label className="admin-modal-label">Type</label>
-									<select value={form.type} onChange={(event) => setForm((current) => ({ ...current, type: event.target.value }))} className="admin-artists-page-input">
+									<label htmlFor="admin-crosshair-type" className="admin-modal-label">Type</label>
+									<select id="admin-crosshair-type" value={form.type} onChange={(event) => setForm((current) => ({ ...current, type: event.target.value }))} className="admin-artists-page-input">
 										{CROSSHAIR_VIDEO_TYPE_OPTIONS.map((option) => (
 											<option key={option.value} value={option.value}>{option.label}</option>
 										))}
 									</select>
 								</div>
 								<div className="admin-modal-field admin-crosshair-page-half-field">
-									<label className="admin-modal-label">Publish Date</label>
-									<input type="date" value={form.publishedAt} onChange={(event) => setForm((current) => ({ ...current, publishedAt: event.target.value }))} className="admin-artists-page-input" />
+									<label htmlFor="admin-crosshair-publish-date" className="admin-modal-label">Publish Date</label>
+									<input id="admin-crosshair-publish-date" type="date" value={form.publishedAt} onChange={(event) => setForm((current) => ({ ...current, publishedAt: event.target.value }))} className="admin-artists-page-input" />
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Description</label>
-									<textarea value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} className="admin-artists-page-input admin-modal-textarea admin-crosshair-page-description-input" rows={5} />
+									<label htmlFor="admin-crosshair-description" className="admin-modal-label">Description</label>
+									<textarea id="admin-crosshair-description" value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} className="admin-artists-page-input admin-modal-textarea admin-crosshair-page-description-input" rows={5} />
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">YouTube URL *</label>
-									<input type="url" value={form.youtubeUrl} onChange={(event) => setForm((current) => ({ ...current, youtubeUrl: event.target.value }))} className="admin-artists-page-input" placeholder="https://www.youtube.com/watch?v=..." />
+									<label htmlFor="admin-crosshair-youtube-url" className="admin-modal-label">YouTube URL *</label>
+									<input id="admin-crosshair-youtube-url" type="url" value={form.youtubeUrl} onChange={(event) => setForm((current) => ({ ...current, youtubeUrl: event.target.value }))} className="admin-artists-page-input" placeholder="https://www.youtube.com/watch?v=..." />
 								</div>
 							</div>
 						</div>

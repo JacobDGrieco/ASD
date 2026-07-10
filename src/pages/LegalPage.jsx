@@ -14,6 +14,7 @@ export default function LegalPage({ title, documentSrc }) {
 						className="legal-page-frame"
 						src={documentSrc}
 						title={title}
+						sandbox=""
 					/>
 				</section>
 			</div>
