@@ -8,6 +8,11 @@ import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCa
 import { isEffectivelyVisible } from '../../lib/contentVisibility.js'
 import { isOtherArtist, OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID } from '../../lib/publicVisibility.js'
 import AdminSongFormModal from '../../components/admin/AdminSongFormModal.jsx'
+import {
+  buildSongFormFromDetail,
+  hasManualSongVisibilityChoice,
+  loadAdminSongDetail,
+} from '../../lib/adminSongForm.js'
 import '../../styles/AdminArtistsPage.css'
 import '../../styles/AdminSongsPage.css'
 
@@ -68,10 +73,12 @@ export default function AdminMusicSongsPage() {
   const [filterAlbum, setFilterAlbum] = useState(initialFilterState.filterAlbum)
   const [filterTitle, setFilterTitle] = useState(initialFilterState.filterTitle)
   const [page, setPage] = useState(initialFilterState.page)
-  const [editingSongId, setEditingSongId] = useState(null)
+  const [editingSongForm, setEditingSongForm] = useState(null)
+  const [editingSongVisibilityTouched, setEditingSongVisibilityTouched] = useState(false)
+  const [loadingEditSongId, setLoadingEditSongId] = useState(null)
   const [creatingWithPrefill, setCreatingWithPrefill] = useState(null)
   const deferredFilterTitle = useDeferredValue(filterTitle)
-  const isModalOpen = editingSongId !== null || creatingWithPrefill !== null
+  const isModalOpen = editingSongForm !== null || creatingWithPrefill !== null
 
   useEffect(() => {
     let ignore = false
@@ -147,15 +154,29 @@ export default function AdminMusicSongsPage() {
     })
   }
 
-  const openEdit = (song) => { setEditingSongId(song.id) }
+  const openEdit = async (song) => {
+    setLoadingEditSongId(song.id)
+    try {
+      const detail = await loadAdminSongDetail(song.id, token)
+      setCreatingWithPrefill(null)
+      setEditingSongVisibilityTouched(hasManualSongVisibilityChoice(detail))
+      setEditingSongForm(buildSongFormFromDetail(detail))
+    } catch (error) {
+      console.error(error)
+      window.alert(error instanceof Error ? error.message : 'Failed to load song.')
+    } finally {
+      setLoadingEditSongId(null)
+    }
+  }
 
   const closeModal = () => {
-    setEditingSongId(null)
+    setEditingSongForm(null)
+    setEditingSongVisibilityTouched(false)
     setCreatingWithPrefill(null)
   }
 
   const handleSongSaved = (saved) => {
-    const nextSongs = editingSongId
+    const nextSongs = editingSongForm?.id
       ? songs.map((s) => (s.id === saved.id ? saved : s))
       : [...songs, saved]
     setSongs(nextSongs)
@@ -371,7 +392,7 @@ export default function AdminMusicSongsPage() {
                           <FaStickyNote aria-hidden="true" />
                         </Link>
                         {!isViewer && (
-                          <button type="button" onClick={() => openEdit(song)} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit song" title="Edit">
+                          <button type="button" onClick={() => void openEdit(song)} disabled={loadingEditSongId === song.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit song" title="Edit">
                             <FaPencilAlt aria-hidden="true" />
                           </button>
                         )}
@@ -410,7 +431,8 @@ export default function AdminMusicSongsPage() {
 
       {isModalOpen && (
         <AdminSongFormModal
-          songId={editingSongId}
+          initialForm={editingSongForm}
+          initialVisibilityTouched={editingSongVisibilityTouched}
           prefill={creatingWithPrefill}
           songs={songs}
           albums={albums}

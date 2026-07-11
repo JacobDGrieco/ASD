@@ -498,7 +498,6 @@ export default function AdminMusicAlbumsPage() {
 
       {createSongPrefill && (
         <AdminSongFormModal
-          songId={null}
           prefill={createSongPrefill}
           songs={[]}
           albums={albums}

@@ -107,6 +107,7 @@ export default function ConfirmActionButton({
           style={popoverStyle ?? undefined}
           role="dialog"
           aria-modal="false"
+          aria-label={`Confirm action: ${message}`}
         >
           <p className="admin-inline-confirm-message">{message}</p>
           <div className="admin-inline-confirm-actions">
