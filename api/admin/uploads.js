@@ -146,7 +146,10 @@ export default async function handler(req, res) {
 
     if (req.method === 'DELETE') {
       const requestedPathnames = Array.isArray(body?.pathnames) ? body.pathnames : [body?.pathname]
-      const pathnames = [...new Set(requestedPathnames.map(normalizeBlobPathname).filter(Boolean))]
+      const pathnames = [...new Set(requestedPathnames.flatMap((pathname) => {
+        const normalized = normalizeBlobPathname(pathname)
+        return normalized ? [normalized] : []
+      }))]
 
       if (!pathnames.length) {
         return res.status(400).json({ error: 'Valid blob pathname is required' })

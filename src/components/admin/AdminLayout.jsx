@@ -12,6 +12,9 @@ const DEFAULT_SECTION_STATE = {
 	music: true,
 	fashion: true,
 };
+const BOARD_LINKS = [
+	{ to: '/admin/board', label: 'Posts', icon: <FaBullhorn aria-hidden="true" /> },
+];
 
 function readStoredSectionState() {
 	if (typeof window === 'undefined') return DEFAULT_SECTION_STATE;
@@ -77,10 +80,6 @@ export default function AdminLayout() {
 		...(isSuperAdminSession ? [{ to: '/admin/crosshair', label: 'Crosshair', icon: <FaBullseye aria-hidden="true" /> }] : []),
 	];
 
-	const boardLinks = [
-		{ to: '/admin/board', label: 'Posts', icon: <FaBullhorn aria-hidden="true" /> },
-	];
-
 	const fashionLinks = [
 		...(isSuperAdminSession ? [
 			{ to: '/admin/fashion/talent', label: 'Talent', icon: <FaUsers aria-hidden="true" /> },
@@ -92,7 +91,7 @@ export default function AdminLayout() {
 
 	const navSections = [
 		...(adminLinks.length > 0 ? [{ key: 'admin', label: 'Admin', icon: <FaUserShield aria-hidden="true" />, links: adminLinks }] : []),
-		{ key: 'board', label: 'The Board', icon: <FaBullhorn aria-hidden="true" />, links: boardLinks },
+		{ key: 'board', label: 'The Board', icon: <FaBullhorn aria-hidden="true" />, links: BOARD_LINKS },
 		{ key: 'music', label: 'Music', icon: <FaMusic aria-hidden="true" />, links: musicLinks },
 		...(fashionLinks.length > 0 ? [{ key: 'fashion', label: 'Fashion', icon: <FaTshirt aria-hidden="true" />, links: fashionLinks }] : []),
 	];
@@ -164,7 +163,7 @@ export default function AdminLayout() {
 						);
 					})}
 				</div>
-				<button onClick={logout} className="admin-layout-logout" aria-label="Log out" title="Log out">
+				<button type="button" onClick={logout} className="admin-layout-logout" aria-label="Log out" title="Log out">
 					<span className="admin-layout-link-icon"><FaSignOutAlt aria-hidden="true" /></span>
 					<span className="admin-layout-label">Log out</span>
 				</button>

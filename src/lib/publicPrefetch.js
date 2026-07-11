@@ -35,7 +35,10 @@ export function prefetchArtistPage(artist) {
   prefetchApi(`/api/artists/${artist.slug}`).catch(() => {})
 
   const images = Array.isArray(artist.images)
-    ? artist.images.map((image) => image?.previewUrl || image?.url).filter(Boolean)
+    ? artist.images.flatMap((image) => {
+      const url = image?.previewUrl || image?.url
+      return url ? [url] : []
+    })
     : []
 
   void preloadImages([artist.portrait, ...images].slice(0, 4), { priority: 'high' })

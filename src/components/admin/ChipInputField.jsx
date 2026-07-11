@@ -3,10 +3,16 @@ import { useState } from 'react'
 function normalizeTags(tags) {
   if (!Array.isArray(tags)) return []
 
-  return tags
-    .map((tag) => String(tag ?? '').trim())
-    .filter(Boolean)
-    .filter((tag, index, values) => values.findIndex((value) => value.toLowerCase() === tag.toLowerCase()) === index)
+  const seenTags = new Set()
+  return tags.reduce((normalizedTags, tag) => {
+    const normalizedTag = String(tag ?? '').trim()
+    const key = normalizedTag.toLowerCase()
+    if (!normalizedTag || seenTags.has(key)) return normalizedTags
+
+    seenTags.add(key)
+    normalizedTags.push(normalizedTag)
+    return normalizedTags
+  }, [])
 }
 
 export default function ChipInputField({ value, onChange, placeholder = 'Add a tag' }) {
@@ -61,6 +67,7 @@ export default function ChipInputField({ value, onChange, placeholder = 'Add a t
           onBlur={() => commitTag(draft)}
           className="admin-chip-input-field"
           placeholder={tags.length ? '' : placeholder}
+          aria-label={placeholder}
         />
       </div>
     </div>

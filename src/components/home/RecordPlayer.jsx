@@ -13,9 +13,10 @@ export default function RecordPlayer({ tracks, message = null }) {
   useEffect(() => {
     if (!hasTracks) return undefined
 
-    const coverArtUrls = tracks
-      .map((track) => track?.song?.album?.coverArt)
-      .filter(Boolean)
+    const coverArtUrls = tracks.flatMap((track) => {
+      const coverArt = track?.song?.album?.coverArt
+      return coverArt ? [coverArt] : []
+    })
 
     void preloadImages(coverArtUrls, { priority: 'high' })
     return undefined

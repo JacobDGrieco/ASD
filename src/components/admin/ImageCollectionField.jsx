@@ -203,6 +203,8 @@ export default function ImageCollectionField({ value, onChange, token, folder, e
 				<label
 					htmlFor={inputId}
 					className="admin-artists-page-ghost-btn admin-artists-page-upload-btn"
+					aria-label="Upload images"
+					title="Upload images"
 				>
 					<FaUpload aria-hidden="true" />
 				</label>
@@ -214,6 +216,7 @@ export default function ImageCollectionField({ value, onChange, token, folder, e
 					onChange={handleUpload}
 					className="admin-artists-page-file-input"
 					disabled={uploading}
+					aria-label="Upload images"
 				/>
 			</div>
 

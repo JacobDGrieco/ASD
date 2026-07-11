@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FaApple, FaExternalLinkAlt, FaEye, FaEyeSlash, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash, FaYoutube } from 'react-icons/fa';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { SiFacebook, SiInstagram, SiSnapchat, SiTiktok, SiX, SiYoutube } from 'react-icons/si';
@@ -74,7 +74,7 @@ export default function AdminMusicArtistsPage() {
 	const auth = { Authorization: `Bearer ${token}` };
 	const [artists, setArtists] = useState([]);
 	const [form, setForm] = useState(null);
-	const [draggedArtistId, setDraggedArtistId] = useState(null);
+	const draggedArtistIdRef = useRef(null);
 	const [dropTargetId, setDropTargetId] = useState(null);
 	const [loadingEditId, setLoadingEditId] = useState(null);
 
@@ -165,26 +165,26 @@ export default function AdminMusicArtistsPage() {
 		if (form) return;
 		event.dataTransfer.effectAllowed = 'move';
 		event.dataTransfer.setData('text/plain', artistId);
-		setDraggedArtistId(artistId);
+		draggedArtistIdRef.current = artistId;
 	};
 
 	const handleDragOver = (event, artistId) => {
-		if (!draggedArtistId || draggedArtistId === artistId) return;
+		if (!draggedArtistIdRef.current || draggedArtistIdRef.current === artistId) return;
 		event.preventDefault();
 		setDropTargetId(artistId);
 	};
 
 	const handleDrop = async (artistId) => {
-		if (!draggedArtistId || draggedArtistId === artistId) {
-			setDraggedArtistId(null);
+		if (!draggedArtistIdRef.current || draggedArtistIdRef.current === artistId) {
+			draggedArtistIdRef.current = null;
 			setDropTargetId(null);
 			return;
 		}
 
-		const draggedIndex = artists.findIndex((artist) => artist.id === draggedArtistId);
+		const draggedIndex = artists.findIndex((artist) => artist.id === draggedArtistIdRef.current);
 		const targetIndex = artists.findIndex((artist) => artist.id === artistId);
 		if (draggedIndex === -1 || targetIndex === -1) {
-			setDraggedArtistId(null);
+			draggedArtistIdRef.current = null;
 			setDropTargetId(null);
 			return;
 		}
@@ -196,7 +196,7 @@ export default function AdminMusicArtistsPage() {
 		const normalized = reordered.map((artist, index) => ({ ...artist, order: index }));
 		setArtists(normalized);
 		primeAdminResource('artists-list', token, normalized);
-		setDraggedArtistId(null);
+		draggedArtistIdRef.current = null;
 		setDropTargetId(null);
 
 		const persisted = await persistArtistOrder(reordered);
@@ -205,7 +205,7 @@ export default function AdminMusicArtistsPage() {
 	};
 
 	const handleDragEnd = () => {
-		setDraggedArtistId(null);
+		draggedArtistIdRef.current = null;
 		setDropTargetId(null);
 	};
 
@@ -253,7 +253,7 @@ export default function AdminMusicArtistsPage() {
 			<div className="admin-artists-page-sticky-top">
 				<div className="admin-artists-page-header">
 					<h1 className="admin-artists-page-title">Music — Artists</h1>
-					{isSuperAdmin && !isViewer && <button onClick={openCreate} className="admin-artists-page-primary-btn">New Artist</button>}
+					{isSuperAdmin && !isViewer && <button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Artist</button>}
 				</div>
 			</div>
 
@@ -327,7 +327,7 @@ export default function AdminMusicArtistsPage() {
 			</div>
 
 			{form && (
-				<div className="admin-modal-overlay" onClick={(event) => { if (event.target === event.currentTarget) closeForm(); }}>
+				<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm(); }}>
 					<div className="admin-modal">
 						<div className="admin-modal-header">
 							<h2 className="admin-modal-title">{form.id ? 'Edit Artist' : 'New Artist'}</h2>

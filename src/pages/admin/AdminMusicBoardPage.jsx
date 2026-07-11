@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { FaArchive, FaPencilAlt, FaThumbtack, FaTrash } from 'react-icons/fa';
 import BoardMarkdownEditor from '../../components/admin/BoardMarkdownEditor.jsx';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
@@ -25,6 +25,71 @@ const empty = {
 	publishMode: 'draft',
 	publishAt: todayDateInputValue(),
 };
+const initialBoardModalState = {
+	form: empty,
+	editing: null,
+	modalOpen: false,
+	saving: false,
+	validationErrors: {},
+	formMessage: '',
+};
+
+function boardModalReducer(state, action) {
+	switch (action.type) {
+		case 'open-create':
+			return {
+				...state,
+				form: action.form,
+				editing: null,
+				modalOpen: true,
+				validationErrors: {},
+				formMessage: '',
+			};
+		case 'open-edit':
+			return {
+				...state,
+				form: action.form,
+				editing: action.post,
+				modalOpen: true,
+				validationErrors: {},
+				formMessage: '',
+			};
+		case 'close':
+			return {
+				...state,
+				form: empty,
+				editing: null,
+				modalOpen: false,
+				validationErrors: {},
+				formMessage: '',
+				saving: false,
+			};
+		case 'set-form':
+			return {
+				...state,
+				form: action.updater(state.form),
+			};
+		case 'set-validation-errors':
+			return {
+				...state,
+				validationErrors: typeof action.updater === 'function'
+					? action.updater(state.validationErrors)
+					: action.updater,
+			};
+		case 'set-form-message':
+			return {
+				...state,
+				formMessage: action.message,
+			};
+		case 'set-saving':
+			return {
+				...state,
+				saving: action.saving,
+			};
+		default:
+			return state;
+	}
+}
 
 function statusLabel(post) {
 	if (post.archivedAt) return 'Archived';
@@ -47,14 +112,14 @@ export default function AdminMusicBoardPage() {
 	const [posts, setPosts] = useState([]);
 	const [artists, setArtists] = useState([]);
 	const [loading, setLoading] = useState(true);
-	const [form, setForm] = useState(empty);
-	const [editing, setEditing] = useState(null);
-	const [modalOpen, setModalOpen] = useState(false);
-	const [saving, setSaving] = useState(false);
 	const [archivedOpen, setArchivedOpen] = useState(false);
-	const [validationErrors, setValidationErrors] = useState({});
-	const [formMessage, setFormMessage] = useState('');
-	const [pendingBodyImagePathnames, setPendingBodyImagePathnames] = useState([]);
+	const [boardModalState, dispatchBoardModal] = useReducer(boardModalReducer, initialBoardModalState);
+	const { form, editing, modalOpen, saving, validationErrors, formMessage } = boardModalState;
+	const pendingBodyImagePathnamesRef = useRef([]);
+	const setForm = (updater) => dispatchBoardModal({ type: 'set-form', updater });
+	const setValidationErrors = (updater) => dispatchBoardModal({ type: 'set-validation-errors', updater });
+	const setFormMessage = (message) => dispatchBoardModal({ type: 'set-form-message', message });
+	const setSaving = (saving) => dispatchBoardModal({ type: 'set-saving', saving });
 
 	const activePosts = useMemo(() => posts.filter((p) => !p.archivedAt), [posts]);
 	const archivedPosts = useMemo(() => posts.filter((p) => p.archivedAt), [posts]);
@@ -98,22 +163,19 @@ export default function AdminMusicBoardPage() {
 	}, [isSuperAdmin, token]);
 
 	function openCreate() {
-		setValidationErrors({});
-		setFormMessage('');
-		setPendingBodyImagePathnames([]);
-		setForm({
-			...empty,
-			artistId: isSuperAdmin ? ASD_RECORDS_ARTIST_OPTION_ID : '',
-			publishAt: todayDateInputValue(),
+		pendingBodyImagePathnamesRef.current = [];
+		dispatchBoardModal({
+			type: 'open-create',
+			form: {
+				...empty,
+				artistId: isSuperAdmin ? ASD_RECORDS_ARTIST_OPTION_ID : '',
+				publishAt: todayDateInputValue(),
+			},
 		});
-		setEditing(null);
-		setModalOpen(true);
 	}
 
 	function openEdit(post) {
-		setValidationErrors({});
-		setFormMessage('');
-		setPendingBodyImagePathnames([]);
+		pendingBodyImagePathnamesRef.current = [];
 		const publishedAt = post.publishedAt ? new Date(post.publishedAt) : null;
 		const publishMode = !publishedAt
 			? 'draft'
@@ -121,18 +183,20 @@ export default function AdminMusicBoardPage() {
 				? 'schedule'
 				: 'publish';
 
-		setForm({
-			title: post.title,
-			artistId: isAsdRecordsArtist(post.artist) ? ASD_RECORDS_ARTIST_OPTION_ID : post.artistId,
-			body: post.body ?? '',
-			images: post.imageUrl ? [{ url: post.imageUrl, isPrimary: true }] : [],
-			pinColor: post.pinColor ?? '',
-			expiresAt: post.expiresAt ? String(post.expiresAt).slice(0, 10) : '',
-			publishMode,
-			publishAt: post.publishedAt ? String(post.publishedAt).slice(0, 10) : todayDateInputValue(),
+		dispatchBoardModal({
+			type: 'open-edit',
+			post,
+			form: {
+				title: post.title,
+				artistId: isAsdRecordsArtist(post.artist) ? ASD_RECORDS_ARTIST_OPTION_ID : post.artistId,
+				body: post.body ?? '',
+				images: post.imageUrl ? [{ url: post.imageUrl, isPrimary: true }] : [],
+				pinColor: post.pinColor ?? '',
+				expiresAt: post.expiresAt ? String(post.expiresAt).slice(0, 10) : '',
+				publishMode,
+				publishAt: post.publishedAt ? String(post.publishedAt).slice(0, 10) : todayDateInputValue(),
+			},
 		});
-		setEditing(post);
-		setModalOpen(true);
 	}
 
 	function cleanupBodyImageUploads(pathnames, body, { deleteAll = false } = {}) {
@@ -154,14 +218,10 @@ export default function AdminMusicBoardPage() {
 
 	function closeModal({ cleanupUploads = true } = {}) {
 		if (cleanupUploads) {
-			cleanupBodyImageUploads(pendingBodyImagePathnames, form.body, { deleteAll: true });
+			cleanupBodyImageUploads(pendingBodyImagePathnamesRef.current, form.body, { deleteAll: true });
 		}
-		setModalOpen(false);
-		setEditing(null);
-		setForm(empty);
-		setValidationErrors({});
-		setFormMessage('');
-		setPendingBodyImagePathnames([]);
+		dispatchBoardModal({ type: 'close' });
+		pendingBodyImagePathnamesRef.current = [];
 	}
 
 	async function save() {
@@ -221,7 +281,7 @@ export default function AdminMusicBoardPage() {
 				if (!res.ok) throw new Error(updated.error ?? 'Save failed');
 				setPosts((prev) => [updated, ...prev]);
 			}
-			cleanupBodyImageUploads(pendingBodyImagePathnames, payload.body);
+			cleanupBodyImageUploads(pendingBodyImagePathnamesRef.current, payload.body);
 			primeAdminResource('boardPosts', token, null);
 			closeModal({ cleanupUploads: false });
 		} catch (err) {
@@ -288,31 +348,37 @@ export default function AdminMusicBoardPage() {
 				</td>
 				<td className="admin-board-page-col-pos">
 					<button
+						type="button"
 						className={`admin-board-page-pin-btn${post.posX != null ? ' admin-board-page-pin-btn-active' : ''}`}
 						onClick={isSuperAdmin && post.posX != null ? () => releasePosition(post) : undefined}
 						title={post.posX != null ? positionLabel(post) + ' — click to release' : 'Auto-placed'}
+						aria-label={post.posX != null ? 'Release pinned board position' : 'Board position is automatic'}
 						disabled={!isSuperAdmin || post.posX == null}
 					>
-						<FaThumbtack />
+						<FaThumbtack aria-hidden="true" />
 					</button>
 				</td>
 				<td className="admin-board-page-col-actions">
 					{canEdit && !isViewer && (
 						<button
+							type="button"
 							className="admin-artists-page-ghost-btn admin-artists-page-icon-btn"
 							onClick={() => openEdit(post)}
+							aria-label="Edit post"
 							title="Edit"
 						>
-							<FaPencilAlt />
+							<FaPencilAlt aria-hidden="true" />
 						</button>
 					)}
 					{isSuperAdmin && !post.archivedAt && (
 						<button
+							type="button"
 							className="admin-artists-page-ghost-btn admin-artists-page-icon-btn"
 							onClick={() => toggleArchive(post, true)}
+							aria-label="Archive post"
 							title="Archive"
 						>
-							<FaArchive />
+							<FaArchive aria-hidden="true" />
 						</button>
 					)}
 					{canEdit && !isViewer && (
@@ -323,7 +389,7 @@ export default function AdminMusicBoardPage() {
 							buttonAriaLabel="Delete post"
 							onConfirm={() => deletePost(post)}
 						>
-							<FaTrash />
+							<FaTrash aria-hidden="true" />
 						</ConfirmActionButton>
 					)}
 				</td>
@@ -336,7 +402,7 @@ export default function AdminMusicBoardPage() {
 			<div className="admin-artists-page-header">
 				<h1 className="admin-artists-page-title">The Board</h1>
 				{(isArtist || isSuperAdmin) && (
-					<button className="admin-artists-page-primary-btn" onClick={openCreate}>
+					<button type="button" className="admin-artists-page-primary-btn" onClick={openCreate}>
 						New Post
 					</button>
 				)}
@@ -366,6 +432,7 @@ export default function AdminMusicBoardPage() {
 			{isSuperAdmin && archivedPosts.length > 0 && (
 				<div className="admin-board-page-archived">
 					<button
+						type="button"
 						className="admin-board-page-archived-toggle"
 						onClick={() => setArchivedOpen((v) => !v)}
 					>
@@ -387,6 +454,7 @@ export default function AdminMusicBoardPage() {
 											<td colSpan={3} />
 											<td className="admin-board-page-col-actions">
 												<button
+													type="button"
 													className="admin-artists-page-ghost-btn"
 													onClick={() => toggleArchive(post, false)}
 												>
@@ -398,7 +466,7 @@ export default function AdminMusicBoardPage() {
 													buttonAriaLabel="Delete archived post"
 													onConfirm={() => deletePost(post)}
 												>
-													<FaTrash />
+													<FaTrash aria-hidden="true" />
 												</ConfirmActionButton>
 											</td>
 										</tr>
@@ -411,11 +479,11 @@ export default function AdminMusicBoardPage() {
 			)}
 
 			{modalOpen && (
-				<div className="admin-modal-overlay" onClick={closeModal}>
-					<div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+				<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}>
+					<div className="admin-modal">
 						<div className="admin-modal-header">
 							<h2 className="admin-modal-title">{editing ? 'Edit Post' : 'New Post'}</h2>
-							<button className="admin-modal-close" onClick={closeModal}>x</button>
+							<button type="button" className="admin-modal-close" onClick={closeModal} aria-label="Close">x</button>
 						</div>
 						<div className="admin-modal-body">
 							{formMessage ? (
@@ -489,9 +557,9 @@ export default function AdminMusicBoardPage() {
 									entityLabel={form.title || 'Board image'}
 									error={validationErrors.body}
 									onBodyImageUpload={(pathname) => {
-										setPendingBodyImagePathnames((current) => (
-											current.includes(pathname) ? current : [...current, pathname]
-										));
+										if (!pendingBodyImagePathnamesRef.current.includes(pathname)) {
+											pendingBodyImagePathnamesRef.current = [...pendingBodyImagePathnamesRef.current, pathname];
+										}
 									}}
 									maxImages={1}
 									maxLinks={5}
@@ -522,6 +590,7 @@ export default function AdminMusicBoardPage() {
 									<label htmlFor="admin-board-post-expires-at" className="admin-modal-label">Expires At</label>
 									<AdminDateInput
 										id="admin-board-post-expires-at"
+										ariaLabel="Post expiration date"
 										className="admin-modal-input admin-board-page-date-input"
 										value={form.expiresAt}
 										onChange={(v) => setForm((f) => ({ ...f, expiresAt: v }))}
@@ -567,6 +636,7 @@ export default function AdminMusicBoardPage() {
 										<label htmlFor="admin-board-post-publish-at" className="admin-modal-label">Publish On</label>
 										<AdminDateInput
 											id="admin-board-post-publish-at"
+											ariaLabel="Post publish date"
 											className={`admin-modal-input admin-board-page-date-input${validationErrors.publishAt ? ' admin-board-page-input-invalid' : ''}`}
 											value={form.publishAt}
 											onChange={(v) => {

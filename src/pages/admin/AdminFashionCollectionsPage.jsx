@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { FaEye, FaEyeSlash, FaPencilAlt, FaTrash } from 'react-icons/fa'
 import { TabPanel, TabView } from 'primereact/tabview'
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
@@ -76,7 +76,7 @@ export default function AdminFashionCollectionsPage() {
   const [talentOptions, setTalentOptions] = useState([])
   const [crewOptions, setCrewOptions] = useState([])
   const [form, setForm] = useState(null)
-  const [draggedId, setDraggedId] = useState(null)
+  const draggedIdRef = useRef(null)
   const [dropTargetId, setDropTargetId] = useState(null)
   const [loadingEditId, setLoadingEditId] = useState(null)
 
@@ -206,26 +206,26 @@ export default function AdminFashionCollectionsPage() {
     if (form) return
     event.dataTransfer.effectAllowed = 'move'
     event.dataTransfer.setData('text/plain', id)
-    setDraggedId(id)
+    draggedIdRef.current = id
   }
 
   const handleDragOver = (event, id) => {
-    if (!draggedId || draggedId === id) return
+    if (!draggedIdRef.current || draggedIdRef.current === id) return
     event.preventDefault()
     setDropTargetId(id)
   }
 
   const handleDrop = async (id) => {
-    if (!draggedId || draggedId === id) {
-      setDraggedId(null)
+    if (!draggedIdRef.current || draggedIdRef.current === id) {
+      draggedIdRef.current = null
       setDropTargetId(null)
       return
     }
 
-    const draggedIndex = collections.findIndex((collection) => collection.id === draggedId)
+    const draggedIndex = collections.findIndex((collection) => collection.id === draggedIdRef.current)
     const targetIndex = collections.findIndex((collection) => collection.id === id)
     if (draggedIndex === -1 || targetIndex === -1) {
-      setDraggedId(null)
+      draggedIdRef.current = null
       setDropTargetId(null)
       return
     }
@@ -237,7 +237,7 @@ export default function AdminFashionCollectionsPage() {
     const normalized = reordered.map((collection, index) => ({ ...collection, order: index }))
     setCollections(normalized)
     primeAdminResource('fashion-collections-list', token, normalized)
-    setDraggedId(null)
+    draggedIdRef.current = null
     setDropTargetId(null)
 
     const persisted = await persistCollectionOrder(reordered)
@@ -246,7 +246,7 @@ export default function AdminFashionCollectionsPage() {
   }
 
   const handleDragEnd = () => {
-    setDraggedId(null)
+    draggedIdRef.current = null
     setDropTargetId(null)
   }
 
@@ -279,7 +279,7 @@ export default function AdminFashionCollectionsPage() {
       <div className="admin-artists-page-sticky-top">
         <div className="admin-artists-page-header">
           <h1 className="admin-artists-page-title">Fashion - Collections</h1>
-          <button onClick={openCreate} className="admin-artists-page-primary-btn">New Collection</button>
+          <button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Collection</button>
         </div>
       </div>
 
@@ -347,7 +347,7 @@ export default function AdminFashionCollectionsPage() {
       </div>
 
       {form && (
-        <div className="admin-modal-overlay" onClick={(event) => { if (event.target === event.currentTarget) closeForm() }}>
+        <div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm() }}>
           <div className="admin-modal">
             <div className="admin-modal-header">
               <h2 className="admin-modal-title">{form.id ? 'Edit Collection' : 'New Collection'}</h2>

@@ -28,6 +28,7 @@ function LyricLine({ lineText, lineRanges, openAnnotationId, setOpenAnnotationId
           const isOpen = openAnnotationId === span.annotationId
           return (
             <button
+              type="button"
               key={`${span.annotationId}-${span.start}-${span.end}`}
               className={`lyrics-view-annotated ${isOpen ? 'lyrics-view-active' : ''}`}
               onClick={() => setOpenAnnotationId(isOpen ? null : span.annotationId)}
@@ -46,7 +47,7 @@ function LyricLine({ lineText, lineRanges, openAnnotationId, setOpenAnnotationId
 }
 
 function buildSpans(text, lineRanges) {
-  const sorted = [...lineRanges].sort((a, b) => a.startChar - b.startChar)
+  const sorted = lineRanges.toSorted((a, b) => a.startChar - b.startChar)
   const spans = []
   let cursor = 0
   for (const range of sorted) {

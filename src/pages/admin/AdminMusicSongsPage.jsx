@@ -103,11 +103,11 @@ export default function AdminMusicSongsPage() {
   ), [albums, filterArtist])
 
   const sortedArtists = useMemo(() => (
-    withOtherArtistOption(artists).sort((left, right) => compareLexicographically(left.name, right.name))
+    withOtherArtistOption(artists).toSorted((left, right) => compareLexicographically(left.name, right.name))
   ), [artists])
 
   const sortedAlbumOptions = useMemo(
-    () => [...albumOptions].sort((left, right) => compareLexicographically(left.title, right.title)),
+    () => albumOptions.toSorted((left, right) => compareLexicographically(left.title, right.title)),
     [albumOptions]
   )
 
@@ -193,9 +193,10 @@ export default function AdminMusicSongsPage() {
   }
 
   const albumTitles = (song) => {
-    const titles = placementAlbumIds(song)
-      .map((albumId) => albumById[albumId]?.title ?? song.placements?.find((p) => p.albumId === albumId)?.album?.title ?? null)
-      .filter(Boolean)
+    const titles = placementAlbumIds(song).flatMap((albumId) => {
+      const title = albumById[albumId]?.title ?? song.placements?.find((p) => p.albumId === albumId)?.album?.title ?? null
+      return title ? [title] : []
+    })
     return titles.length ? titles.join(', ') : null
   }
 
@@ -263,7 +264,7 @@ export default function AdminMusicSongsPage() {
         <div className="admin-artists-page-header">
           <h1 className="admin-artists-page-title">Music — Songs</h1>
           {!isViewer && (
-            <button onClick={openCreate} className="admin-artists-page-primary-btn">New Song</button>
+            <button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Song</button>
           )}
         </div>
 
@@ -277,6 +278,7 @@ export default function AdminMusicSongsPage() {
             }}
             className="admin-filter-select"
             placeholder="Search title..."
+            aria-label="Search songs by title"
           />
           {!isArtistScoped && (
             <select
@@ -287,6 +289,7 @@ export default function AdminMusicSongsPage() {
                 setPage(1)
               }}
               className="admin-filter-select"
+              aria-label="Filter songs by artist"
             >
               <option value="">All Artists</option>
               {sortedArtists.map((artist) => (
@@ -301,6 +304,7 @@ export default function AdminMusicSongsPage() {
               setPage(1)
             }}
             className="admin-filter-select"
+            aria-label="Filter songs by album"
           >
             <option value="">All Albums</option>
             {sortedAlbumOptions.map((album) => (

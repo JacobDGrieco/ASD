@@ -10,12 +10,15 @@ const CARD_WAVE_DELAY_MS = 260;
 const MOBILE_SPOTLIGHT_QUERY = '(max-width: 640px)';
 
 function uniqueUrls(urls) {
-	return [...new Set(urls.filter(Boolean))];
+	return [...new Set(urls.flatMap((url) => (url ? [url] : [])))];
 }
 
 function getArtistImages(artist) {
 	const listedImages = Array.isArray(artist.images)
-		? artist.images.map((image) => image?.previewUrl || image?.url || '').filter(Boolean)
+		? artist.images.flatMap((image) => {
+			const url = image?.previewUrl || image?.url || '';
+			return url ? [url] : [];
+		})
 		: [];
 	const images = uniqueUrls([artist.portrait, ...listedImages]).slice(0, 4);
 

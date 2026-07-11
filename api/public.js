@@ -70,8 +70,10 @@ function splitRoleCreditNames(value) {
 
   return name
     .split(/\s*(?:;|,|&|\+|\band\b)\s*/i)
-    .map((part) => part.trim())
-    .filter(Boolean)
+    .flatMap((part) => {
+      const trimmedPart = part.trim()
+      return trimmedPart ? [trimmedPart] : []
+    })
 }
 
 function getRoleCreditDisplayNames(name, slugByName) {
@@ -815,7 +817,7 @@ async function getRecordPlayer(res, includeHidden = false) {
 
     return res.status(200).json(
       tracks
-        .map((track) => {
+        .flatMap((track) => {
           const placement = track.song.placements.find((candidate) => (
             includeHidden || (
               isPublicArtistVisible(candidate.album.artist) &&
@@ -823,10 +825,10 @@ async function getRecordPlayer(res, includeHidden = false) {
               isPublicSongReleased(track.song, candidate.album.releaseDate, now)
             )
           ))
-          if (!placement) return null
+          if (!placement) return []
 
           const album = formatAlbumSummary(placement.album)
-          return {
+          return [{
             ...track,
             song: {
               ...track.song,
@@ -835,9 +837,8 @@ async function getRecordPlayer(res, includeHidden = false) {
                 && isPublicArtistVisible(placement.album.artist),
               album,
             },
-          }
+          }]
         })
-        .filter(Boolean)
     )
   } catch (error) {
     console.error('Record player route failed', error)

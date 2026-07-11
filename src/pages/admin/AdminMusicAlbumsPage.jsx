@@ -1,8 +1,9 @@
-import { useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { FaApple, FaExternalLinkAlt, FaEye, FaEyeSlash, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash, FaYoutube } from 'react-icons/fa'
 import { TabPanel, TabView } from 'primereact/tabview'
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
-import AdminDateInput, { isValidDateInput } from '../../components/admin/AdminDateInput.jsx'
+import AdminDateInput from '../../components/admin/AdminDateInput.jsx'
+import { isValidDateInput } from '../../lib/dateInput.js'
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import { clearAdminResource, loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js'
@@ -127,6 +128,63 @@ function validateAlbumForm(form, albums = []) {
   return errors
 }
 
+function renderValue(album, column) {
+  if (column.key === 'artistId') {
+    const artistLabel = isOtherArtist(album.artist)
+      ? album.otherArtistName || OTHER_ARTIST_NAME
+      : album.artist?.name
+    return artistLabel ? <span className="admin-artists-page-cell-value" title={artistLabel}>{artistLabel}</span> : <span className="admin-artists-page-empty-value">-</span>
+  }
+
+  if (column.key === 'releaseDate') {
+    const value = album.releaseDate ? album.releaseDate.slice(0, 10) : ''
+    return value ? <span className="admin-artists-page-cell-value" title={value}>{value}</span> : <span className="admin-artists-page-empty-value">-</span>
+  }
+
+  if (column.kind === 'link') {
+    const value = album[column.key]
+    return value
+      ? (
+        <a
+          href={String(value)}
+          target="_blank"
+          rel="noreferrer"
+          className="admin-artists-page-link-btn"
+          aria-label={`Open ${column.label} in new tab`}
+          title="Open in new tab"
+        >
+          <FaExternalLinkAlt aria-hidden="true" />
+        </a>
+      )
+      : <span className="admin-artists-page-empty-value">-</span>
+  }
+
+  if (column.kind === 'images') {
+    const image = primaryImage(album.images)
+    if (!image) return <span className="admin-artists-page-empty-value">-</span>
+    return (
+      <div className="admin-artists-page-image-summary">
+        <div className={`admin-artists-page-thumb-frame ${isAlbumHidden(album) ? 'admin-artists-page-thumb-frame-hidden' : ''}`.trim()}>
+          <img src={image.previewUrl || image.url} alt={album.title} className="admin-artists-page-thumb" />
+        </div>
+        <span className="admin-artists-page-image-count">{album.imageCount ?? album.images?.length ?? 1} image{(album.imageCount ?? album.images?.length ?? 1) === 1 ? '' : 's'}</span>
+      </div>
+    )
+  }
+
+  const value = album[column.key]
+  if (value === null || value === undefined || value === '') return <span className="admin-artists-page-empty-value">-</span>
+  return <span className={column.valueClassName ?? 'admin-artists-page-cell-value'} title={String(value)}>{String(value)}</span>
+}
+
+function renderHeader(column) {
+  if (column.key === 'soundcloudUrl') return <span className="admin-artists-page-social-header" aria-label="SoundCloud"><FaSoundcloud aria-hidden="true" /></span>
+  if (column.key === 'spotifyUrl') return <span className="admin-artists-page-social-header" aria-label="Spotify"><FaSpotify aria-hidden="true" /></span>
+  if (column.key === 'appleMusicUrl') return <span className="admin-artists-page-social-header" aria-label="Apple Music"><FaApple aria-hidden="true" /></span>
+  if (column.key === 'youtubeUrl') return <span className="admin-artists-page-social-header" aria-label="YouTube"><FaYoutube aria-hidden="true" /></span>
+  return column.label
+}
+
 export default function AdminMusicAlbumsPage() {
   const { token, session } = useAdminAuth()
   const isArtistScoped = session?.role === 'ARTIST'
@@ -142,7 +200,7 @@ export default function AdminMusicAlbumsPage() {
   const [page, setPage] = useState(1)
   const [loadingEditId, setLoadingEditId] = useState(null)
   const [validationErrors, setValidationErrors] = useState({})
-  const [visibilityTouched, setVisibilityTouched] = useState(false)
+  const visibilityTouchedRef = useRef(false)
   const [createSongPrefill, setCreateSongPrefill] = useState(null)
   const deferredFilterTitle = useDeferredValue(filterTitle)
 
@@ -191,7 +249,7 @@ export default function AdminMusicAlbumsPage() {
 
   const openCreate = () => {
     setValidationErrors({})
-    setVisibilityTouched(false)
+    visibilityTouchedRef.current = false
     setForm({
       ...empty,
       artistId: isArtistScoped ? scopedArtistId : filterArtist,
@@ -202,7 +260,7 @@ export default function AdminMusicAlbumsPage() {
     setLoadingEditId(album.id)
     try {
       const detail = await fetch(`/api/admin/albums?id=${album.id}`, { headers: auth }).then((r) => r.json())
-      setVisibilityTouched(hasManualAlbumVisibilityChoice(detail))
+      visibilityTouchedRef.current = hasManualAlbumVisibilityChoice(detail)
       setForm({
         ...empty,
         ...detail,
@@ -224,7 +282,7 @@ export default function AdminMusicAlbumsPage() {
   const closeForm = () => {
     setForm(null)
     setValidationErrors({})
-    setVisibilityTouched(false)
+    visibilityTouchedRef.current = false
   }
 
   const handleSave = async () => {
@@ -317,73 +375,16 @@ export default function AdminMusicAlbumsPage() {
     return {
       ...current,
       releaseDate: value,
-      ...(!visibilityTouched ? defaultVisibilityForReleaseDate(value) : {}),
+      ...(!visibilityTouchedRef.current ? defaultVisibilityForReleaseDate(value) : {}),
     }
   })
-
-  const renderValue = (album, column) => {
-    if (column.key === 'artistId') {
-      const artistLabel = isOtherArtist(album.artist)
-        ? album.otherArtistName || OTHER_ARTIST_NAME
-        : album.artist?.name
-      return artistLabel ? <span className="admin-artists-page-cell-value" title={artistLabel}>{artistLabel}</span> : <span className="admin-artists-page-empty-value">-</span>
-    }
-
-    if (column.key === 'releaseDate') {
-      const value = album.releaseDate ? album.releaseDate.slice(0, 10) : ''
-      return value ? <span className="admin-artists-page-cell-value" title={value}>{value}</span> : <span className="admin-artists-page-empty-value">-</span>
-    }
-
-    if (column.kind === 'link') {
-      const value = album[column.key]
-      return value
-        ? (
-          <a
-            href={String(value)}
-            target="_blank"
-            rel="noreferrer"
-            className="admin-artists-page-link-btn"
-            aria-label={`Open ${column.label} in new tab`}
-            title="Open in new tab"
-          >
-            <FaExternalLinkAlt aria-hidden="true" />
-          </a>
-        )
-        : <span className="admin-artists-page-empty-value">-</span>
-    }
-
-    if (column.kind === 'images') {
-      const image = primaryImage(album.images)
-      if (!image) return <span className="admin-artists-page-empty-value">-</span>
-      return (
-        <div className="admin-artists-page-image-summary">
-          <div className={`admin-artists-page-thumb-frame ${isAlbumHidden(album) ? 'admin-artists-page-thumb-frame-hidden' : ''}`.trim()}>
-            <img src={image.previewUrl || image.url} alt={album.title} className="admin-artists-page-thumb" />
-          </div>
-          <span className="admin-artists-page-image-count">{album.imageCount ?? album.images?.length ?? 1} image{(album.imageCount ?? album.images?.length ?? 1) === 1 ? '' : 's'}</span>
-        </div>
-      )
-    }
-
-    const value = album[column.key]
-    if (value === null || value === undefined || value === '') return <span className="admin-artists-page-empty-value">-</span>
-    return <span className={column.valueClassName ?? 'admin-artists-page-cell-value'} title={String(value)}>{String(value)}</span>
-  }
-
-  const renderHeader = (column) => {
-    if (column.key === 'soundcloudUrl') return <span className="admin-artists-page-social-header" aria-label="SoundCloud"><FaSoundcloud aria-hidden="true" /></span>
-    if (column.key === 'spotifyUrl') return <span className="admin-artists-page-social-header" aria-label="Spotify"><FaSpotify aria-hidden="true" /></span>
-    if (column.key === 'appleMusicUrl') return <span className="admin-artists-page-social-header" aria-label="Apple Music"><FaApple aria-hidden="true" /></span>
-    if (column.key === 'youtubeUrl') return <span className="admin-artists-page-social-header" aria-label="YouTube"><FaYoutube aria-hidden="true" /></span>
-    return column.label
-  }
 
   return (
     <div>
       <div className="admin-artists-page-sticky-top">
         <div className="admin-artists-page-header">
           <h1 className="admin-artists-page-title">Music — Albums</h1>
-          {!isViewer && <button onClick={openCreate} className="admin-artists-page-primary-btn">New Album</button>}
+          {!isViewer && <button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Album</button>}
         </div>
 
         <div className="admin-filter-bar">
@@ -396,6 +397,7 @@ export default function AdminMusicAlbumsPage() {
             }}
             className="admin-filter-select"
             placeholder="Search title..."
+            aria-label="Search albums by title"
           />
           {!isArtistScoped && (
             <select
@@ -405,6 +407,7 @@ export default function AdminMusicAlbumsPage() {
                 setPage(1)
               }}
               className="admin-filter-select"
+              aria-label="Filter albums by artist"
             >
               <option value="">All Artists</option>
               {artistOptions.map((artist) => <option key={artist.id} value={artist.id}>{artist.name}</option>)}
@@ -417,6 +420,7 @@ export default function AdminMusicAlbumsPage() {
               setPage(1)
             }}
             className="admin-filter-select"
+            aria-label="Filter albums by type"
           >
             <option value="">All Types</option>
             <option value="ALBUM">Album</option>
@@ -506,7 +510,7 @@ export default function AdminMusicAlbumsPage() {
       )}
 
       {form && (
-        <div className="admin-modal-overlay" onClick={(event) => { if (event.target === event.currentTarget) closeForm() }}>
+        <div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm() }}>
           <div className="admin-modal">
             <div className="admin-modal-header">
               <h2 className="admin-modal-title">{form.id ? 'Edit Album' : 'New Album'}</h2>
@@ -521,7 +525,7 @@ export default function AdminMusicAlbumsPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            setVisibilityTouched(true)
+                            visibilityTouchedRef.current = true
                             setForm((current) => ({
                               ...current,
                               isVisible: !current.isVisible,
@@ -579,7 +583,7 @@ export default function AdminMusicAlbumsPage() {
                       </div>
                       <div className="admin-modal-field admin-albums-modal-meta-date">
                         <label htmlFor="admin-music-album-release-date" className="admin-modal-label">Release Date <span className="admin-modal-label-required">*</span></label>
-                        <AdminDateInput id="admin-music-album-release-date" value={form.releaseDate} onChange={setReleaseDate} className={fieldClassName('releaseDate')} ariaInvalid={Boolean(validationErrors.releaseDate)} required />
+                        <AdminDateInput id="admin-music-album-release-date" ariaLabel="Album release date" value={form.releaseDate} onChange={setReleaseDate} className={fieldClassName('releaseDate')} ariaInvalid={Boolean(validationErrors.releaseDate)} required />
                       </div>
                     </div>
                     {form.artistId === OTHER_ARTIST_OPTION_ID && (

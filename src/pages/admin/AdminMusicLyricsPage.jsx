@@ -335,7 +335,7 @@ export default function AdminMusicLyricsPage() {
         Number.POSITIVE_INFINITY
       ),
     }))
-    .sort((left, right) => {
+    .toSorted((left, right) => {
       const leftStart = Number.isFinite(left.firstStartChar) ? left.firstStartChar : Number.POSITIVE_INFINITY
       const rightStart = Number.isFinite(right.firstStartChar) ? right.firstStartChar : Number.POSITIVE_INFINITY
       if (leftStart !== rightStart) return leftStart - rightStart
@@ -344,7 +344,7 @@ export default function AdminMusicLyricsPage() {
 
   function renderBackdrop(text, ranges) {
     if (ranges.length === 0) return text
-    const sorted = [...ranges].sort((a, b) => a.startChar - b.startChar)
+    const sorted = ranges.toSorted((a, b) => a.startChar - b.startChar)
     const parts = []
     let cursor = 0
     for (const range of sorted) {
@@ -370,7 +370,7 @@ export default function AdminMusicLyricsPage() {
         </div>
         {!isViewer && !isLoading && (
           <div className="alp-header-actions">
-            <button className="alp-save-btn" onClick={saveAll} disabled={isSaving}>
+            <button type="button" className="alp-save-btn" onClick={saveAll} disabled={isSaving}>
               {isSaving ? 'Saving...' : 'Save All'}
             </button>
           </div>
@@ -410,6 +410,7 @@ export default function AdminMusicLyricsPage() {
                     ref={textareaRef}
                     className={`alp-lyric-textarea${isPicking ? ' alp-lyric-textarea-picking' : ''}${highlightedRanges.length > 0 ? ' alp-lyric-textarea-highlighting' : ''}`}
                     value={lyricText}
+                    aria-label="Lyrics text"
                     spellCheck={false}
                     disabled={isViewer}
                     onChange={handleLyricChange}
@@ -445,6 +446,7 @@ export default function AdminMusicLyricsPage() {
                   if (!isEditing) {
                     return (
                       <button
+                        type="button"
                         key={annotation.id ?? `unsaved-${annotationIndex}`}
                         className={`alp-annotation-card alp-annotation-card-neutral${hasDirty ? ' alp-annotation-card-dirty' : ''}`}
                         onClick={() => setEditingAnnotationIndex(annotationIndex)}
@@ -521,6 +523,7 @@ export default function AdminMusicLyricsPage() {
                             )}
                             {!isViewer && (
                               <button
+                                type="button"
                                 className="alp-range-chip-remove"
                                 onClick={() => removeRange(annotationIndex, rangeIndex)}
                                 aria-label="Remove range"
@@ -533,6 +536,7 @@ export default function AdminMusicLyricsPage() {
 
                         {!isViewer && (
                           <button
+                            type="button"
                             className="alp-add-range-btn"
                             onClick={() => setPendingRangeForAnnotationIndex(annotationIndex)}
                           >

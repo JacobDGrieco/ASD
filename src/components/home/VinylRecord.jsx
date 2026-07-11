@@ -3,6 +3,7 @@ import '../../styles/VinylRecord.css'
 export default function VinylRecord({ track, isActive, onClick, imagePriority = 'auto', shouldEagerLoad = false }) {
   return (
     <button
+      type="button"
       className={`vinyl-record-record ${isActive ? 'vinyl-record-active' : ''}`}
       onClick={onClick}
       aria-label={track.song.title}

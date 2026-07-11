@@ -163,19 +163,19 @@ export default function BoardMarkdownEditor({
 
 			<div className="admin-board-page-markdown-formatbar" aria-label="Markdown formatting">
 				<div className="admin-board-page-markdown-format-actions">
-					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => prefixSelectionLines('## ', 'Heading')} title="Heading">
+					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => prefixSelectionLines('## ', 'Heading')} aria-label="Heading" title="Heading">
 						<FaHeading aria-hidden="true" />
 					</button>
-					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => wrapSelection('**', '**', 'bold text')} title="Bold">
+					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => wrapSelection('**', '**', 'bold text')} aria-label="Bold" title="Bold">
 						<FaBold aria-hidden="true" />
 					</button>
-					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => wrapSelection('*', '*', 'italic text')} title="Italic">
+					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => wrapSelection('*', '*', 'italic text')} aria-label="Italic" title="Italic">
 						<FaItalic aria-hidden="true" />
 					</button>
-					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => wrapSelection('++', '++', 'underlined text')} title="Underline">
+					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => wrapSelection('++', '++', 'underlined text')} aria-label="Underline" title="Underline">
 						<FaUnderline aria-hidden="true" />
 					</button>
-					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => wrapSelection('[', '](https://example.com)', 'link text')} title="Link">
+					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => wrapSelection('[', '](https://example.com)', 'link text')} aria-label="Link" title="Link">
 						<FaLink aria-hidden="true" />
 					</button>
 					<label
@@ -191,19 +191,20 @@ export default function BoardMarkdownEditor({
 						type="file"
 						accept="image/*"
 						className="admin-board-page-markdown-file"
+						aria-label="Upload image into body"
 						onChange={handleUpload}
 						disabled={uploading || imageCount >= maxImages}
 					/>
-					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => prefixSelectionLines('- ', 'List item', { skipEmptyLines: true })} title="Bulleted list">
+					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => prefixSelectionLines('- ', 'List item', { skipEmptyLines: true })} aria-label="Bulleted list" title="Bulleted list">
 						<FaListUl aria-hidden="true" />
 					</button>
-					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => prefixSelectionLines('1. ', 'List item', { skipEmptyLines: true })} title="Numbered list">
+					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => prefixSelectionLines('1. ', 'List item', { skipEmptyLines: true })} aria-label="Numbered list" title="Numbered list">
 						<FaListOl aria-hidden="true" />
 					</button>
-					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => prefixSelectionLines('> ', 'Quote')} title="Quote">
+					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => prefixSelectionLines('> ', 'Quote')} aria-label="Quote" title="Quote">
 						<FaQuoteLeft aria-hidden="true" />
 					</button>
-					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => wrapSelection('`', '`', 'inline quote')} title="Inline quote">
+					<button type="button" className="admin-board-page-markdown-format-btn" onClick={() => wrapSelection('`', '`', 'inline quote')} aria-label="Inline quote" title="Inline quote">
 						<FaCode aria-hidden="true" />
 					</button>
 				</div>

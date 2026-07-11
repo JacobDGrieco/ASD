@@ -84,7 +84,7 @@ export default function AdminMusicCrosshairPage() {
 	const [syncConfig, setSyncConfig] = useState(null);
 	const [message, setMessage] = useState('');
 
-	const sortedVideos = useMemo(() => [...videos].sort((left, right) => {
+	const sortedVideos = useMemo(() => videos.toSorted((left, right) => {
 		const leftDate = left.publishedAt ?? left.createdAt ?? 0;
 		const rightDate = right.publishedAt ?? right.createdAt ?? 0;
 		return new Date(rightDate) - new Date(leftDate);
@@ -293,7 +293,7 @@ export default function AdminMusicCrosshairPage() {
 									<td><span className="admin-artists-page-cell-value">{formatDate(video.publishedAt)}</span></td>
 									<td><span className="admin-artists-page-cell-value">{video.typeLabel}</span></td>
 									<td className="admin-artists-page-center-cell">
-										<a href={video.youtubeUrl} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" title="Open YouTube video">
+										<a href={video.youtubeUrl} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" aria-label="Open YouTube video" title="Open YouTube video">
 											<FaExternalLinkAlt aria-hidden="true" />
 										</a>
 									</td>
@@ -326,7 +326,7 @@ export default function AdminMusicCrosshairPage() {
 			)}
 
 			{modalOpen && (
-				<div className="admin-modal-overlay" onClick={(event) => { if (event.target === event.currentTarget) closeModal(); }}>
+				<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}>
 					<div className="admin-modal admin-crosshair-page-modal">
 						<div className="admin-modal-header">
 							<h2 className="admin-modal-title">{editing ? 'Edit Crosshair Video' : 'New Crosshair Video'}</h2>

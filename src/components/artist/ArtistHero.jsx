@@ -9,12 +9,15 @@ const AUTO_SWAP_INTERVAL_MS = 20000;
 const IMAGE_TRANSITION_MS = 480;
 
 function uniqueUrls(urls) {
-	return [...new Set(urls.filter(Boolean))];
+	return [...new Set(urls.flatMap((url) => (url ? [url] : [])))];
 }
 
 function getArtistImages(artist) {
 	const listedImages = Array.isArray(artist.images)
-		? artist.images.map((image) => image?.previewUrl || image?.url || '').filter(Boolean)
+		? artist.images.flatMap((image) => {
+			const url = image?.previewUrl || image?.url || '';
+			return url ? [url] : [];
+		})
 		: [];
 	const images = uniqueUrls([artist.portrait, ...listedImages]).slice(0, 4);
 

@@ -10,13 +10,18 @@ import '../styles/board-page.css'
 
 const DRAG_HINT_KEY = 'board-drag-hint-seen'
 
+function shouldShowDragHint() {
+  if (typeof window === 'undefined') return false
+  return !window.localStorage.getItem(DRAG_HINT_KEY)
+}
+
 export default function BoardPage() {
   const { data: posts, loading } = useApi('/api/public?resource=boardPosts', { maxAge: 0 })
   const { session, token } = useAdminAuth()
   const canEditBoard = isAdminPreviewSession(session, token)
   const [editMode, setEditMode] = useState(false)
   const [selectedPost, setSelectedPost] = useState(null)
-  const [showHint, setShowHint] = useState(false)
+  const [showHint, setShowHint] = useState(shouldShowDragHint)
   const [localPosts, setLocalPosts] = useState(null)
   const [previousPosts, setPreviousPosts] = useState(posts)
   const [zOrder, setZOrder] = useState([])
@@ -30,22 +35,24 @@ export default function BoardPage() {
   const displayPosts = posts !== previousPosts ? posts ?? [] : localPosts ?? posts ?? []
 
   useEffect(() => {
-    if (!localStorage.getItem(DRAG_HINT_KEY)) {
+    if (showHint) {
       setShowHint(true)
       const t = setTimeout(() => {
         setShowHint(false)
-        localStorage.setItem(DRAG_HINT_KEY, '1')
+        window.localStorage.setItem(DRAG_HINT_KEY, '1')
       }, 5000)
       return () => clearTimeout(t)
     }
-  }, [])
+  }, [showHint])
 
   useEffect(() => {
     if (!posts) return
     setZOrder(prev => {
       const allIds = posts.map(p => p.id)
-      const existing = prev.filter(id => allIds.includes(id))
-      const newIds = allIds.filter(id => !prev.includes(id))
+      const allIdSet = new Set(allIds)
+      const previousIdSet = new Set(prev)
+      const existing = prev.filter(id => allIdSet.has(id))
+      const newIds = allIds.filter(id => !previousIdSet.has(id))
       return [...existing, ...newIds]
     })
   }, [posts])
@@ -148,18 +155,24 @@ export default function BoardPage() {
 
       {contextMenu && (
         <>
-          <div className="board-context-overlay" onClick={() => setContextMenu(null)} />
+          <button
+            type="button"
+            className="board-context-overlay"
+            onClick={() => setContextMenu(null)}
+            aria-label="Close board context menu"
+          />
           <div className="board-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }}>
-            <button className="board-context-item" onClick={() => { bringToFront(contextMenu.postId); setContextMenu(null) }}>Bring to Front</button>
-            <button className="board-context-item" onClick={() => { bringForward(contextMenu.postId); setContextMenu(null) }}>Bring Forward</button>
-            <button className="board-context-item" onClick={() => { sendBack(contextMenu.postId); setContextMenu(null) }}>Send Back</button>
-            <button className="board-context-item" onClick={() => { sendToBack(contextMenu.postId); setContextMenu(null) }}>Send to Back</button>
+            <button type="button" className="board-context-item" onClick={() => { bringToFront(contextMenu.postId); setContextMenu(null) }}>Bring to Front</button>
+            <button type="button" className="board-context-item" onClick={() => { bringForward(contextMenu.postId); setContextMenu(null) }}>Bring Forward</button>
+            <button type="button" className="board-context-item" onClick={() => { sendBack(contextMenu.postId); setContextMenu(null) }}>Send Back</button>
+            <button type="button" className="board-context-item" onClick={() => { sendToBack(contextMenu.postId); setContextMenu(null) }}>Send to Back</button>
           </div>
         </>
       )}
 
       {canEditBoard && (
         <button
+          type="button"
           className={`board-edit-fab board-edit-fab-stacked${editMode ? ' board-edit-fab-active' : ''}`}
           onClick={() => { setEditMode((v) => !v); setContextMenu(null) }}
         >

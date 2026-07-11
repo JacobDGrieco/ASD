@@ -6,6 +6,20 @@ import { isOtherArtist } from '../../src/lib/publicVisibility.js'
 
 const VIDEO_BASE_URL = process.env.VIDEO_BASE_URL || process.env.VITE_VIDEO_BASE_URL || ''
 
+function getArtistVideoInput(body, artistId) {
+  return {
+    artistId,
+    title: body?.title,
+    description: body?.description,
+    posterUrl: body?.posterUrl,
+    posterPathname: body?.posterPathname,
+    sourceType: body?.sourceType,
+    youtubeUrl: body?.youtubeUrl,
+    videoUrl: body?.videoUrl,
+    videosPageUrl: body?.videosPageUrl,
+  }
+}
+
 function formatVideoRow(row) {
   const videoExtension = getStaticArtistVideoExtension(row.videoUrl)
   const resolvedVideoUrl = row.sourceType === ARTIST_VIDEO_SOURCE.UPLOAD
@@ -107,10 +121,7 @@ export default async function handler(req, res) {
     })
     if (!artist || isOtherArtist(artist)) return res.status(404).json({ error: 'Artist not found' })
 
-    const normalized = normalizeArtistVideoInput({
-      ...req.body,
-      artistId: targetArtistId,
-    })
+    const normalized = normalizeArtistVideoInput(getArtistVideoInput(req.body, targetArtistId))
     const videoExtension = getStaticArtistVideoExtension(normalized.videoUrl)
     const payload = normalized.sourceType === ARTIST_VIDEO_SOURCE.UPLOAD
       ? {

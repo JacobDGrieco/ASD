@@ -1,12 +1,33 @@
 export const RELEASE_VISIBILITY_TIME_ZONE = 'America/New_York'
 
+const DEFAULT_DAY_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+  timeZone: RELEASE_VISIBILITY_TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+const DEFAULT_OFFSET_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  timeZone: RELEASE_VISIBILITY_TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+})
+
 function dayPartsInTimeZone(date, timeZone = RELEASE_VISIBILITY_TIME_ZONE) {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date).split('-').map(Number)
+  const formatter = timeZone === RELEASE_VISIBILITY_TIME_ZONE
+    ? DEFAULT_DAY_FORMATTER
+    : new Intl.DateTimeFormat('en-CA', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      })
+
+  return formatter.format(date).split('-').map(Number)
 }
 
 export function releaseVisibilityUpperBound(now = new Date(), timeZone = RELEASE_VISIBILITY_TIME_ZONE) {
@@ -24,16 +45,18 @@ export function isReleasedOnUtcDay(releaseDate, now = new Date(), timeZone = REL
 }
 
 function getTimeZoneOffsetMilliseconds(date, timeZone = RELEASE_VISIBILITY_TIME_ZONE) {
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  })
+  const formatter = timeZone === RELEASE_VISIBILITY_TIME_ZONE
+    ? DEFAULT_OFFSET_FORMATTER
+    : new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      })
 
   const parts = formatter.formatToParts(date).reduce((dateParts, part) => {
     if (part.type !== 'literal') dateParts[part.type] = Number(part.value)

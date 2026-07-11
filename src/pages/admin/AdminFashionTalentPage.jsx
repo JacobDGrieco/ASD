@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { FaExternalLinkAlt, FaEye, FaEyeSlash, FaPencilAlt, FaTrash } from 'react-icons/fa'
 import { TabPanel, TabView } from 'primereact/tabview'
 import { SiFacebook, SiInstagram, SiTiktok, SiX, SiYoutube } from 'react-icons/si'
@@ -80,7 +80,7 @@ export default function AdminFashionTalentPage() {
   const auth = { Authorization: `Bearer ${token}` }
   const [talent, setTalent] = useState([])
   const [form, setForm] = useState(null)
-  const [draggedId, setDraggedId] = useState(null)
+  const draggedIdRef = useRef(null)
   const [dropTargetId, setDropTargetId] = useState(null)
   const [loadingEditId, setLoadingEditId] = useState(null)
 
@@ -171,26 +171,26 @@ export default function AdminFashionTalentPage() {
     if (form) return
     event.dataTransfer.effectAllowed = 'move'
     event.dataTransfer.setData('text/plain', id)
-    setDraggedId(id)
+    draggedIdRef.current = id
   }
 
   const handleDragOver = (event, id) => {
-    if (!draggedId || draggedId === id) return
+    if (!draggedIdRef.current || draggedIdRef.current === id) return
     event.preventDefault()
     setDropTargetId(id)
   }
 
   const handleDrop = async (id) => {
-    if (!draggedId || draggedId === id) {
-      setDraggedId(null)
+    if (!draggedIdRef.current || draggedIdRef.current === id) {
+      draggedIdRef.current = null
       setDropTargetId(null)
       return
     }
 
-    const draggedIndex = talent.findIndex((person) => person.id === draggedId)
+    const draggedIndex = talent.findIndex((person) => person.id === draggedIdRef.current)
     const targetIndex = talent.findIndex((person) => person.id === id)
     if (draggedIndex === -1 || targetIndex === -1) {
-      setDraggedId(null)
+      draggedIdRef.current = null
       setDropTargetId(null)
       return
     }
@@ -202,7 +202,7 @@ export default function AdminFashionTalentPage() {
     const normalized = reordered.map((person, index) => ({ ...person, order: index }))
     setTalent(normalized)
     primeAdminResource('fashion-talent-list', token, normalized)
-    setDraggedId(null)
+    draggedIdRef.current = null
     setDropTargetId(null)
 
     const persisted = await persistTalentOrder(reordered)
@@ -211,7 +211,7 @@ export default function AdminFashionTalentPage() {
   }
 
   const handleDragEnd = () => {
-    setDraggedId(null)
+    draggedIdRef.current = null
     setDropTargetId(null)
   }
 
@@ -271,7 +271,7 @@ export default function AdminFashionTalentPage() {
       <div className="admin-artists-page-sticky-top">
         <div className="admin-artists-page-header">
           <h1 className="admin-artists-page-title">Fashion — Talent</h1>
-          <button onClick={openCreate} className="admin-artists-page-primary-btn">New Talent</button>
+          <button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Talent</button>
         </div>
       </div>
 
@@ -339,7 +339,7 @@ export default function AdminFashionTalentPage() {
       </div>
 
       {form && (
-        <div className="admin-modal-overlay" onClick={(event) => { if (event.target === event.currentTarget) closeForm() }}>
+        <div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm() }}>
           <div className="admin-modal">
             <div className="admin-modal-header">
               <h2 className="admin-modal-title">{form.id ? 'Edit Talent' : 'New Talent'}</h2>

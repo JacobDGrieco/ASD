@@ -1,8 +1,9 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useReducer, useRef, useState } from 'react';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { FaEye, FaEyeSlash, FaPlus, FaTimes } from 'react-icons/fa';
 import { SiApplemusic, SiSoundcloud, SiSpotify, SiYoutube } from 'react-icons/si';
-import AdminDateInput, { isValidDateInput } from './AdminDateInput.jsx';
+import AdminDateInput from './AdminDateInput.jsx';
+import { isValidDateInput } from '../../lib/dateInput.js';
 import ImageCollectionField from './ImageCollectionField.jsx';
 import ChipInputField from './ChipInputField.jsx';
 import { SONG_ROLES } from '../../lib/songRoles.js';
@@ -165,6 +166,164 @@ function buildPlacementForm(song) {
 	return [createAlbumPlacement()];
 }
 
+async function loadAdminSongDetail(songId, token) {
+	const response = await fetch(`/api/admin/songs?id=${songId}`, { headers: { Authorization: `Bearer ${token}` } });
+	const contentType = response.headers.get('content-type') ?? '';
+	const payload = contentType.includes('application/json')
+		? await response.json().catch(() => null)
+		: await response.text().catch(() => '');
+
+	if (!response.ok) {
+		const message = payload && typeof payload === 'object'
+			? payload.error
+			: String(payload || '').trim();
+		throw new Error(message || `Failed to load song (${response.status})`);
+	}
+
+	return payload;
+}
+
+const initialSongModalState = {
+	form: null,
+	validationErrors: null,
+	activeTabIndex: 0,
+	loadStatus: { pending: false, error: '' },
+};
+
+function clearFieldError(errors, fieldName) {
+	return errors ? { ...errors, [fieldName]: '' } : errors;
+}
+
+function songModalReducer(state, action) {
+	switch (action.type) {
+		case 'init-create':
+			return {
+				...state,
+				form: action.form,
+				validationErrors: null,
+				activeTabIndex: 0,
+				loadStatus: { pending: false, error: '' },
+			};
+		case 'load-start':
+			return {
+				...state,
+				loadStatus: { pending: true, error: '' },
+			};
+		case 'load-success':
+			return {
+				...state,
+				form: action.form,
+				validationErrors: null,
+				activeTabIndex: 0,
+				loadStatus: { pending: false, error: '' },
+			};
+		case 'load-failure':
+			return {
+				...state,
+				form: null,
+				loadStatus: { pending: false, error: action.error },
+			};
+		case 'set-form':
+			return {
+				...state,
+				form: state.form ? action.updater(state.form) : state.form,
+			};
+		case 'set-field': {
+			const nextValue = action.value;
+			return {
+				...state,
+				form: {
+					...state.form,
+					[action.fieldName]: nextValue,
+					...(action.fieldName === 'title' ? { slug: slugify(nextValue) } : {}),
+				},
+				validationErrors: clearFieldError(state.validationErrors, action.fieldName),
+			};
+		}
+		case 'set-release-date':
+			return {
+				...state,
+				form: {
+					...state.form,
+					releaseDate: action.value,
+					...(!action.visibilityTouched ? defaultVisibilityForReleaseDate(action.value) : {}),
+				},
+				validationErrors: clearFieldError(state.validationErrors, 'releaseDate'),
+			};
+		case 'set-album-placement': {
+			const nextPlacements = state.form.albumPlacements.map((placement, i) =>
+				i === action.index ? { ...placement, [action.fieldName]: action.value } : placement
+			);
+			const primaryAlbumReleaseDate = state.form.releaseDate || action.visibilityTouched
+				? ''
+				: action.albumById[nextPlacements[0]?.albumId]?.releaseDate?.slice?.(0, 10) ?? '';
+			return {
+				...state,
+				form: {
+					...state.form,
+					albumPlacements: nextPlacements,
+					...(state.form.releaseDate || action.visibilityTouched ? {} : defaultVisibilityForReleaseDate(primaryAlbumReleaseDate)),
+				},
+				validationErrors: state.validationErrors?.albumPlacements?.[action.index]
+					? {
+						...state.validationErrors,
+						albumPlacementsRoot: '',
+						albumPlacements: state.validationErrors.albumPlacements.map((placementErrors, i) =>
+							i === action.index ? { ...placementErrors, [action.fieldName]: '' } : placementErrors
+						),
+					}
+					: state.validationErrors,
+			};
+		}
+		case 'add-album-placement':
+			return {
+				...state,
+				form: { ...state.form, albumPlacements: [...state.form.albumPlacements, createAlbumPlacement()] },
+				validationErrors: state.validationErrors
+					? {
+						...state.validationErrors,
+						albumPlacementsRoot: '',
+						albumPlacements: [...(state.validationErrors.albumPlacements ?? []), { albumId: '', trackNumber: '', discNumber: '' }],
+					}
+					: state.validationErrors,
+			};
+		case 'remove-album-placement': {
+			const nextPlacements = state.form.albumPlacements.filter((_, i) => i !== action.index);
+			const primaryAlbumReleaseDate = state.form.releaseDate || action.visibilityTouched
+				? ''
+				: action.albumById[nextPlacements[0]?.albumId]?.releaseDate?.slice?.(0, 10) ?? '';
+			return {
+				...state,
+				form: {
+					...state.form,
+					albumPlacements: nextPlacements,
+					...(state.form.releaseDate || action.visibilityTouched ? {} : defaultVisibilityForReleaseDate(primaryAlbumReleaseDate)),
+				},
+				validationErrors: state.validationErrors
+					? {
+						...state.validationErrors,
+						albumPlacementsRoot: '',
+						albumPlacements: (state.validationErrors.albumPlacements ?? []).filter((_, i) => i !== action.index),
+					}
+					: state.validationErrors,
+			};
+		}
+		case 'set-validation-errors':
+			return {
+				...state,
+				validationErrors: action.errors,
+				activeTabIndex: action.activeTabIndex ?? state.activeTabIndex,
+			};
+		case 'set-active-tab':
+			return {
+				...state,
+				activeTabIndex: action.index,
+			};
+		default:
+			return state;
+	}
+}
+
 function hasManualSongVisibilityChoice(song) {
 	const releaseDate = song?.meta?.releaseDate ?? song?.placements?.[0]?.album?.releaseDate ?? '';
 	const defaultVisibility = defaultVisibilityForReleaseDate(releaseDate);
@@ -203,14 +362,15 @@ function validateSongForm(form, songs = [], albumById = {}) {
 	if (!errors.title && !errors.releaseDate && !errors.albumPlacementsRoot && !errors.albumPlacements.some((p) => p.albumId || p.trackNumber || p.discNumber)) {
 		const normalizedTitle = normalizeSongDuplicateValue(form.title);
 		const normalizedReleaseDate = normalizeSongReleaseDate(form.releaseDate);
-		const selectedAlbumIds = [...new Set(form.albumPlacements.map((p) => p.albumId).filter(Boolean))];
+		const selectedAlbumIds = form.albumPlacements.flatMap((p) => (p.albumId ? [p.albumId] : []));
+		const selectedAlbumIdSet = new Set(selectedAlbumIds);
 
 		const duplicateSong = songs.find((song) => {
 			if (song.id === form.id) return false;
 			if (normalizeSongDuplicateValue(song.title) !== normalizedTitle) return false;
 			if (normalizeSongReleaseDate(song.meta?.releaseDate) !== normalizedReleaseDate) return false;
 			return placementAlbumIds(song).some((albumId) => {
-				if (!selectedAlbumIds.includes(albumId)) return false;
+				if (!selectedAlbumIdSet.has(albumId)) return false;
 				const selectedAlbum = albumById[albumId];
 				const existingAlbum = albumById[albumId] ?? song.placements?.find((p) => p.albumId === albumId)?.album ?? null;
 				return (
@@ -263,6 +423,15 @@ function initFormFromPrefill(prefill = {}) {
 	};
 }
 
+function renderAlbumOption(album) {
+	return (
+		<span className="admin-song-album-select-option-content">
+			<span className="admin-song-album-select-title" title={album.title}>{album.title}</span>
+			<span className="admin-song-album-select-artist" title={albumArtistName(album)}>{albumArtistName(album)}</span>
+		</span>
+	);
+}
+
 function AlbumPlacementSelect({ id, value, albums, onChange, className, invalid }) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [searchText, setSearchText] = useState('');
@@ -305,13 +474,6 @@ function AlbumPlacementSelect({ id, value, albums, onChange, className, invalid 
 		setSearchText(albumSearchLabel(albums.find((album) => album.id === nextValue) ?? null));
 		setIsOpen(false);
 	};
-
-	const renderAlbumOption = (album) => (
-		<span className="admin-song-album-select-option-content">
-			<span className="admin-song-album-select-title" title={album.title}>{album.title}</span>
-			<span className="admin-song-album-select-artist" title={albumArtistName(album)}>{albumArtistName(album)}</span>
-		</span>
-	);
 
 	return (
 		<div className="admin-song-album-select" ref={rootRef}>
@@ -395,12 +557,9 @@ export default function AdminSongFormModal({
 	const isArtistScoped = session?.role === 'ARTIST';
 	const isViewer = session?.role === 'VIEWER';
 
-	const [form, setForm] = useState(null);
-	const [validationErrors, setValidationErrors] = useState(null);
-	const [activeTabIndex, setActiveTabIndex] = useState(0);
-	const [visibilityTouched, setVisibilityTouched] = useState(false);
-	const [loading, setLoading] = useState(Boolean(songId));
-	const [loadError, setLoadError] = useState('');
+	const [modalState, dispatchModal] = useReducer(songModalReducer, initialSongModalState);
+	const visibilityTouchedRef = useRef(false);
+	const { form, validationErrors, activeTabIndex, loadStatus } = modalState;
 
 	const albumById = useMemo(
 		() => Object.fromEntries(albums.map((album) => [album.id, album])),
@@ -408,42 +567,24 @@ export default function AdminSongFormModal({
 	);
 
 	const sortedAlbums = useMemo(
-		() => [...albums].sort(compareAlbumOptions),
+		() => albums.toSorted(compareAlbumOptions),
 		[albums]
 	);
 
 	useEffect(() => {
 		if (!songId) {
-			setForm(initFormFromPrefill(prefill ?? {}));
-			setVisibilityTouched(false);
-			setValidationErrors(null);
-			setActiveTabIndex(0);
-			setLoading(false);
-			setLoadError('');
+			visibilityTouchedRef.current = false;
+			dispatchModal({ type: 'init-create', form: initFormFromPrefill(prefill ?? {}) });
 			return;
 		}
 
-		setLoading(true);
-		setLoadError('');
-		fetch(`/api/admin/songs?id=${songId}`, { headers: { Authorization: `Bearer ${token}` } })
-			.then(async (response) => {
-				const contentType = response.headers.get('content-type') ?? '';
-				const payload = contentType.includes('application/json')
-					? await response.json().catch(() => null)
-					: await response.text().catch(() => '');
-
-				if (!response.ok) {
-					const message = payload && typeof payload === 'object'
-						? payload.error
-						: String(payload || '').trim();
-					throw new Error(message || `Failed to load song (${response.status})`);
-				}
-
-				return payload;
-			})
+		dispatchModal({ type: 'load-start' });
+		loadAdminSongDetail(songId, token)
 			.then((detail) => {
-				setVisibilityTouched(hasManualSongVisibilityChoice(detail));
-				setForm({
+				visibilityTouchedRef.current = hasManualSongVisibilityChoice(detail);
+				dispatchModal({
+					type: 'load-success',
+					form: {
 					...emptyForm,
 					...detail,
 					images: detail.images ?? [],
@@ -456,38 +597,30 @@ export default function AdminSongFormModal({
 					key: detail.meta?.key ?? '',
 					releaseDate: detail.meta?.releaseDate ? detail.meta.releaseDate.slice(0, 10) : '',
 					albumPlacements: buildPlacementForm(detail),
+					},
 				});
-				setValidationErrors(null);
-				setActiveTabIndex(0);
 			})
 			.catch((error) => {
 				console.error(error);
-				setLoadError(error instanceof Error ? error.message : 'Failed to load song.');
-				setForm(null);
-			})
-			.finally(() => setLoading(false));
+				dispatchModal({
+					type: 'load-failure',
+					error: error instanceof Error ? error.message : 'Failed to load song.',
+				});
+			});
 	}, [prefill, songId, token]);
 
-	const set = (key) => (event) =>
-		setForm((current) => {
-			const nextValue = event.target.value;
-			setValidationErrors((currentErrors) => currentErrors ? { ...currentErrors, [key]: '' } : currentErrors);
-			return {
-				...current,
-				[key]: nextValue,
-				...(key === 'title' ? { slug: slugify(nextValue) } : {}),
-			};
-		});
+	const loading = loadStatus.pending;
+	const loadError = loadStatus.error;
 
-	const setReleaseDate = (value) =>
-		setForm((current) => {
-			setValidationErrors((currentErrors) => currentErrors ? { ...currentErrors, releaseDate: '' } : currentErrors);
-			return {
-				...current,
-				releaseDate: value,
-				...(!visibilityTouched ? defaultVisibilityForReleaseDate(value) : {}),
-			};
-		});
+	const setForm = (updater) => dispatchModal({ type: 'set-form', updater });
+
+	const set = (key) => (event) => {
+		dispatchModal({ type: 'set-field', fieldName: key, value: event.target.value });
+	};
+
+	const setReleaseDate = (value) => {
+		dispatchModal({ type: 'set-release-date', value, visibilityTouched: visibilityTouchedRef.current });
+	};
 
 	const setBpm = (event) =>
 		setForm((current) => {
@@ -520,79 +653,44 @@ export default function AdminSongFormModal({
 		}));
 
 	const setAlbumPlacement = (index, key) => (event) =>
-		setForm((current) => {
+		{
 			const nextValue = key === 'albumId'
 				? event.target.value
 				: event.target.value === '' ? '' : Number(event.target.value);
-
-			setValidationErrors((currentErrors) => {
-				if (!currentErrors?.albumPlacements?.[index]) return currentErrors;
-				return {
-					...currentErrors,
-					albumPlacementsRoot: '',
-					albumPlacements: currentErrors.albumPlacements.map((placementErrors, i) =>
-						i === index ? { ...placementErrors, [key]: '' } : placementErrors
-					),
-				};
+			dispatchModal({
+				type: 'set-album-placement',
+				index,
+				fieldName: key,
+				value: nextValue,
+				albumById,
+				visibilityTouched: visibilityTouchedRef.current,
 			});
+		};
 
-			return {
-				...current,
-				albumPlacements: current.albumPlacements.map((placement, i) =>
-					i === index ? { ...placement, [key]: nextValue } : placement
-				),
-				...(() => {
-					if (current.releaseDate || visibilityTouched) return {};
-					const nextPlacements = current.albumPlacements.map((placement, i) =>
-						i === index ? { ...placement, [key]: nextValue } : placement
-					);
-					const primaryAlbumReleaseDate = albumById[nextPlacements[0]?.albumId]?.releaseDate?.slice?.(0, 10) ?? '';
-					return defaultVisibilityForReleaseDate(primaryAlbumReleaseDate);
-				})(),
-			};
-		});
+	const addAlbumPlacement = () => {
+		dispatchModal({ type: 'add-album-placement' });
+	};
 
-	const addAlbumPlacement = () =>
-		setForm((current) => {
-			setValidationErrors((currentErrors) => currentErrors
-				? {
-					...currentErrors,
-					albumPlacementsRoot: '',
-					albumPlacements: [...(currentErrors.albumPlacements ?? []), { albumId: '', trackNumber: '', discNumber: '' }],
-				}
-				: currentErrors);
-			return { ...current, albumPlacements: [...current.albumPlacements, createAlbumPlacement()] };
+	const removeAlbumPlacement = (index) => {
+		dispatchModal({
+			type: 'remove-album-placement',
+			index,
+			albumById,
+			visibilityTouched: visibilityTouchedRef.current,
 		});
-
-	const removeAlbumPlacement = (index) =>
-		setForm((current) => {
-			setValidationErrors((currentErrors) => currentErrors
-				? {
-					...currentErrors,
-					albumPlacementsRoot: '',
-					albumPlacements: (currentErrors.albumPlacements ?? []).filter((_, i) => i !== index),
-				}
-				: currentErrors);
-			return {
-				...current,
-				albumPlacements: current.albumPlacements.filter((_, i) => i !== index),
-				...(() => {
-					if (current.releaseDate || visibilityTouched) return {};
-					const nextPlacements = current.albumPlacements.filter((_, i) => i !== index);
-					const primaryAlbumReleaseDate = albumById[nextPlacements[0]?.albumId]?.releaseDate?.slice?.(0, 10) ?? '';
-					return defaultVisibilityForReleaseDate(primaryAlbumReleaseDate);
-				})(),
-			};
-		});
+	};
 
 	const handleSave = async () => {
 		const nextErrors = validateSongForm(form, songs ?? [], albumById);
 		if (hasSongValidationErrors(nextErrors)) {
-			setValidationErrors(nextErrors);
-			if (hasAlbumErrors(nextErrors) && !hasSongInfoErrors(nextErrors)) setActiveTabIndex(2);
+			dispatchModal({
+				type: 'set-validation-errors',
+				errors: nextErrors,
+				activeTabIndex: hasAlbumErrors(nextErrors) && !hasSongInfoErrors(nextErrors) ? 2 : undefined,
+			});
 			return;
 		}
-		setValidationErrors(null);
+		dispatchModal({ type: 'set-validation-errors', errors: null });
 
 		const isEdit = Boolean(form.id);
 		const url = isEdit ? `/api/admin/songs?id=${form.id}` : '/api/admin/songs';
@@ -628,7 +726,7 @@ export default function AdminSongFormModal({
 		`admin-artists-page-input${validationErrors?.albumPlacements?.[index]?.[fieldName] ? ' admin-artists-page-input-invalid' : ''}`;
 
 	return (
-		<div className="admin-modal-overlay" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
 			<div className="admin-modal admin-song-modal">
 				<div className="admin-modal-header">
 					<h2 className="admin-modal-title">{form?.id ? 'Edit Song' : 'New Song'}</h2>
@@ -644,7 +742,7 @@ export default function AdminSongFormModal({
 					) : !form ? (
 						<div className="admin-song-modal-error">Song could not be loaded.</div>
 					) : (
-						<TabView activeIndex={activeTabIndex} onTabChange={(e) => setActiveTabIndex(e.index)} className="page-tabview admin-song-editor-tabs">
+						<TabView activeIndex={activeTabIndex} onTabChange={(e) => dispatchModal({ type: 'set-active-tab', index: e.index })} className="page-tabview admin-song-editor-tabs">
 							<TabPanel header="Song">
 								<div className="admin-modal-grid">
 									<div className="admin-modal-field admin-modal-field-full">
@@ -652,7 +750,7 @@ export default function AdminSongFormModal({
 											<button
 												type="button"
 												onClick={() => {
-													setVisibilityTouched(true);
+													visibilityTouchedRef.current = true;
 													setForm((current) => ({ ...current, isVisible: !current.isVisible, autoShowOnRelease: false }));
 												}}
 												className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
@@ -684,7 +782,7 @@ export default function AdminSongFormModal({
 										</div>
 										<div className="admin-modal-field">
 											<label htmlFor="admin-song-release-date" className="admin-modal-label">Release Date</label>
-											<AdminDateInput id="admin-song-release-date" value={form.releaseDate} onChange={setReleaseDate} className={songFieldClassName('releaseDate')} ariaInvalid={Boolean(validationErrors?.releaseDate)} />
+											<AdminDateInput id="admin-song-release-date" ariaLabel="Song release date" value={form.releaseDate} onChange={setReleaseDate} className={songFieldClassName('releaseDate')} ariaInvalid={Boolean(validationErrors?.releaseDate)} />
 										</div>
 										<div className="admin-modal-field admin-song-metadata-field-bpm">
 											<label htmlFor="admin-song-bpm" className="admin-modal-label">BPM</label>
@@ -788,7 +886,7 @@ export default function AdminSongFormModal({
 										<div className="admin-song-roles-list">
 											{form.roles.map((entry, index) => (
 												<div key={entry.clientKey ?? `${entry.role}:${entry.name}`} className="admin-song-role-row">
-													<select value={entry.role} onChange={(e) => updateRole(index, 'role', e.target.value)} className="admin-artists-page-input">
+													<select value={entry.role} onChange={(e) => updateRole(index, 'role', e.target.value)} className="admin-artists-page-input" aria-label={`Role type ${index + 1}`}>
 														{SONG_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
 													</select>
 													<input
@@ -797,6 +895,7 @@ export default function AdminSongFormModal({
 														value={entry.name}
 														onChange={(e) => updateRole(index, 'name', e.target.value)}
 														className="admin-artists-page-input"
+														aria-label={`Role name ${index + 1}`}
 													/>
 													<button type="button" onClick={() => removeRole(index)} className="admin-artists-page-danger-btn" aria-label="Remove role">
 														<FaTimes aria-hidden="true" />

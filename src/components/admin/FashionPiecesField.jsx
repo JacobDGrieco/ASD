@@ -2,6 +2,8 @@ import { FaArrowDown, FaArrowUp } from 'react-icons/fa';
 import ImageCollectionField from './ImageCollectionField.jsx';
 import CreditsField from './CreditsField.jsx';
 
+const EMPTY_OPTIONS = [];
+
 function createClientKey() {
 	return `piece-${crypto.randomUUID()}`;
 }
@@ -13,7 +15,7 @@ function pieceKey(piece) {
 }
 
 // value: [{ id?, name, buyUrl, image, credits }]
-export default function FashionPiecesField({ value, onChange, token, lookTitle, talentOptions = [], crewOptions = [] }) {
+export default function FashionPiecesField({ value, onChange, token, lookTitle, talentOptions = EMPTY_OPTIONS, crewOptions = EMPTY_OPTIONS }) {
 	const pieces = Array.isArray(value) ? value : [];
 
 	const addPiece = () => {

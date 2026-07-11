@@ -27,6 +27,8 @@ const fashionCreditRoles = [
   'Other',
 ]
 
+const EMPTY_OPTIONS = []
+
 function selectedCreditImage(credit, talentOptions, crewOptions) {
   const selected = credit.talentId
     ? talentOptions.find((person) => person.id === credit.talentId)
@@ -48,7 +50,7 @@ function creditKey(credit) {
 }
 
 // value: [{ talentId?, crewId?, creditName, roleLabel }]
-export default function CreditsField({ value, onChange, talentOptions = [], crewOptions = [], placeholder = 'Add a credit' }) {
+export default function CreditsField({ value, onChange, talentOptions = EMPTY_OPTIONS, crewOptions = EMPTY_OPTIONS, placeholder = 'Add a credit' }) {
   const selectId = useId()
   const credits = Array.isArray(value) ? value : []
 
@@ -98,6 +100,7 @@ export default function CreditsField({ value, onChange, talentOptions = [], crew
                   value={credit.roleLabel ?? ''}
                   onChange={(event) => updateCredit(index, { roleLabel: event.target.value })}
                   className="admin-artists-page-input admin-credits-role-select"
+                  aria-label="Credit role"
                 >
                   <option value="">- Role -</option>
                   {fashionCreditRoles.map((role) => (

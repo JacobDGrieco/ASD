@@ -111,7 +111,7 @@ function albumArtistKey(album) {
 }
 
 async function loadPlacementAlbums(placements) {
-  const albumIds = [...new Set(placements.map((placement) => placement.albumId).filter(Boolean))]
+  const albumIds = [...new Set(placements.flatMap((placement) => (placement.albumId ? [placement.albumId] : [])))]
   if (!albumIds.length) return []
 
   return prisma.album.findMany({
@@ -139,7 +139,7 @@ async function loadPlacementAlbums(placements) {
 }
 
 async function findDuplicateSong({ id, title, releaseDate, placements }) {
-  const albumIds = [...new Set(placements.map((placement) => placement.albumId).filter(Boolean))]
+  const albumIds = [...new Set(placements.flatMap((placement) => (placement.albumId ? [placement.albumId] : [])))]
   if (!albumIds.length) return null
 
   const [candidates, placementAlbums] = await Promise.all([
@@ -219,7 +219,7 @@ function buildSongSlug({ title, album, releaseDate }) {
 }
 
 function formatSong(song) {
-  const placements = [...(song.placements ?? [])].sort((left, right) => left.placementOrder - right.placementOrder)
+  const placements = (song.placements ?? []).toSorted((left, right) => left.placementOrder - right.placementOrder)
   const primaryPlacement = placements[0] ?? null
 
   return withImages({

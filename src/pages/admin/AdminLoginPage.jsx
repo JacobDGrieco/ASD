@@ -37,7 +37,6 @@ export default function AdminLoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
             className="admin-login-page-input"
-            autoFocus
           />
           {error && <p className="admin-login-page-error">{error}</p>}
           <button type="submit" disabled={loading} className="admin-login-page-button">
