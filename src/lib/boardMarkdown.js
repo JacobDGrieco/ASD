@@ -148,9 +148,10 @@ function renderInlineMarkdown(value) {
 
 function renderList(lines) {
   const items = lines
-    .map((line) => line.replace(/^\s*[-*]\s+/, '').trim())
-    .filter(Boolean)
-    .map((line) => `<li>${renderInlineMarkdown(line)}</li>`)
+    .flatMap((line) => {
+      const trimmedLine = line.replace(/^\s*[-*]\s+/, '').trim()
+      return trimmedLine ? [`<li>${renderInlineMarkdown(trimmedLine)}</li>`] : []
+    })
     .join('')
 
   return items ? `<ul>${items}</ul>` : ''
@@ -158,9 +159,10 @@ function renderList(lines) {
 
 function renderOrderedList(lines) {
   const items = lines
-    .map((line) => line.replace(/^\s*\d+[.)]\s+/, '').trim())
-    .filter(Boolean)
-    .map((line) => `<li>${renderInlineMarkdown(line)}</li>`)
+    .flatMap((line) => {
+      const trimmedLine = line.replace(/^\s*\d+[.)]\s+/, '').trim()
+      return trimmedLine ? [`<li>${renderInlineMarkdown(trimmedLine)}</li>`] : []
+    })
     .join('')
 
   return items ? `<ol>${items}</ol>` : ''
@@ -168,9 +170,10 @@ function renderOrderedList(lines) {
 
 function renderQuote(lines) {
   const content = lines
-    .map((line) => line.replace(/^\s*>\s?/, '').trim())
-    .filter(Boolean)
-    .map((line) => renderInlineMarkdown(line))
+    .flatMap((line) => {
+      const trimmedLine = line.replace(/^\s*>\s?/, '').trim()
+      return trimmedLine ? [renderInlineMarkdown(trimmedLine)] : []
+    })
     .join('<br />')
 
   return content ? `<blockquote>${content}</blockquote>` : ''
@@ -263,12 +266,13 @@ export function renderBoardBodyMarkdown(body) {
   const blocks = source.replace(/\r\n?/g, '\n').split(/\n{2,}/)
 
   return blocks
-    .map((block) => {
+    .flatMap((block) => {
       const lines = block.split('\n').filter((line) => line.trim())
-      if (!lines.length) return ''
-      if (HTML_BLOCK_TAG_PATTERN.test(block)) return renderHtmlBlock(lines)
-      return renderMarkdownBlock(lines)
+      if (!lines.length) return []
+      const renderedBlock = HTML_BLOCK_TAG_PATTERN.test(block)
+        ? renderHtmlBlock(lines)
+        : renderMarkdownBlock(lines)
+      return renderedBlock ? [renderedBlock] : []
     })
-    .filter(Boolean)
     .join('')
 }

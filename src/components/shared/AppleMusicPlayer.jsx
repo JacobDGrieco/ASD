@@ -43,19 +43,17 @@ export default function AppleMusicPlayer({ url, onPlay = null }) {
   if (!src) return null
 
   return (
-    <div onClick={onPlay} style={{ cursor: 'default' }}>
-      <iframe
-        title="Apple Music Player"
-        src={src}
-        onFocus={onPlay ?? undefined}
-        width="100%"
-        height={String(height)}
-        frameBorder="0"
-        allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write"
-        sandbox="allow-forms allow-popups allow-scripts allow-top-navigation-by-user-activation"
-        loading="lazy"
-        style={{ borderRadius: '12px', background: 'transparent' }}
-      />
-    </div>
+    <iframe
+      title="Apple Music Player"
+      src={src}
+      onFocus={onPlay ?? undefined}
+      width="100%"
+      height={String(height)}
+      frameBorder="0"
+      allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write"
+      sandbox="allow-forms allow-popups allow-scripts allow-top-navigation-by-user-activation"
+      loading="lazy"
+      style={{ borderRadius: '12px', background: 'transparent' }}
+    />
   )
 }

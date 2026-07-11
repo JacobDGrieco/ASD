@@ -58,18 +58,16 @@ export default function SpotifyPlayer({ url, theme = '0', onPlay = null }) {
   const height = EMBED_HEIGHT_BY_TYPE[resource.type] ?? 152
 
   return (
-    <div onClick={onPlay} style={{ cursor: 'default' }}>
-      <iframe
-        title="Spotify Player"
-        src={src}
-        onFocus={onPlay ?? undefined}
-        width="100%"
-        height={String(height)}
-        frameBorder="0"
-        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-        loading="lazy"
-        style={{ borderRadius: '12px' }}
-      />
-    </div>
+    <iframe
+      title="Spotify Player"
+      src={src}
+      onFocus={onPlay ?? undefined}
+      width="100%"
+      height={String(height)}
+      frameBorder="0"
+      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+      loading="lazy"
+      style={{ borderRadius: '12px' }}
+    />
   )
 }

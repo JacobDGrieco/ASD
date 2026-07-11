@@ -27,6 +27,7 @@ function PushPin({ color }) {
 export default function BoardCard({ post, position, editMode, zIndex, onFlip, onContextMenu, onPositionChange }) {
   const dragX = useMotionValue(0)
   const dragY = useMotionValue(0)
+  const canFlip = !editMode
 
   const handleDragEnd = () => {
     const newPosX = Math.round(position.posX + dragX.get())
@@ -36,9 +37,21 @@ export default function BoardCard({ post, position, editMode, zIndex, onFlip, on
     onPositionChange?.({ posX: newPosX, posY: newPosY, rotation: position.rotation })
   }
 
+  const handleFlip = () => {
+    onFlip(post)
+  }
+
+  const handleFlipKeyDown = (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    onFlip(post)
+  }
+
   return (
     <motion.div
       className={`board-card${editMode ? ' board-card-edit' : ''}`}
+      role={canFlip ? 'button' : undefined}
+      tabIndex={canFlip ? 0 : undefined}
       style={{
         left: position.posX,
         top: position.posY,
@@ -53,7 +66,8 @@ export default function BoardCard({ post, position, editMode, zIndex, onFlip, on
       dragElastic={0}
       onDragEnd={handleDragEnd}
       whileHover={!editMode ? { scale: 1.06, zIndex: 1000 } : {}}
-      onClick={!editMode ? () => onFlip(post) : undefined}
+      onClick={canFlip ? handleFlip : undefined}
+      onKeyDown={canFlip ? handleFlipKeyDown : undefined}
       onContextMenu={onContextMenu}
     >
       <PushPin color={post.pinColor ?? 'default'} />

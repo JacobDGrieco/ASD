@@ -17,17 +17,15 @@ const DEFAULT_OFFSET_FORMATTER = new Intl.DateTimeFormat('en-US', {
   hour12: false,
 })
 
-function dayPartsInTimeZone(date, timeZone = RELEASE_VISIBILITY_TIME_ZONE) {
-  const formatter = timeZone === RELEASE_VISIBILITY_TIME_ZONE
-    ? DEFAULT_DAY_FORMATTER
-    : new Intl.DateTimeFormat('en-CA', {
-        timeZone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      })
+function assertReleaseVisibilityTimeZone(timeZone) {
+  if (timeZone !== RELEASE_VISIBILITY_TIME_ZONE) {
+    throw new Error(`Unsupported release visibility time zone: ${timeZone}`)
+  }
+}
 
-  return formatter.format(date).split('-').map(Number)
+function dayPartsInTimeZone(date, timeZone = RELEASE_VISIBILITY_TIME_ZONE) {
+  assertReleaseVisibilityTimeZone(timeZone)
+  return DEFAULT_DAY_FORMATTER.format(date).split('-').map(Number)
 }
 
 export function releaseVisibilityUpperBound(now = new Date(), timeZone = RELEASE_VISIBILITY_TIME_ZONE) {
@@ -45,20 +43,8 @@ export function isReleasedOnUtcDay(releaseDate, now = new Date(), timeZone = REL
 }
 
 function getTimeZoneOffsetMilliseconds(date, timeZone = RELEASE_VISIBILITY_TIME_ZONE) {
-  const formatter = timeZone === RELEASE_VISIBILITY_TIME_ZONE
-    ? DEFAULT_OFFSET_FORMATTER
-    : new Intl.DateTimeFormat('en-US', {
-        timeZone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      })
-
-  const parts = formatter.formatToParts(date).reduce((dateParts, part) => {
+  assertReleaseVisibilityTimeZone(timeZone)
+  const parts = DEFAULT_OFFSET_FORMATTER.formatToParts(date).reduce((dateParts, part) => {
     if (part.type !== 'literal') dateParts[part.type] = Number(part.value)
     return dateParts
   }, {})

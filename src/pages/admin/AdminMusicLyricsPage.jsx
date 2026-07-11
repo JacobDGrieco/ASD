@@ -15,13 +15,13 @@ export default function AdminMusicLyricsPage() {
 
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [lyricId, setLyricId] = useState(null)
   const [lyricText, setLyricText] = useState('')
   const [annotations, setAnnotations] = useState([])
   const [editingAnnotationIndex, setEditingAnnotationIndex] = useState(null)
   const [hoveredAnnotationIndex, setHoveredAnnotationIndex] = useState(null)
   const [pendingRangeForAnnotationIndex, setPendingRangeForAnnotationIndex] = useState(null)
 
+  const lyricIdRef = useRef(null)
   const preEditRef = useRef({ value: '', selectionStart: 0, selectionEnd: 0 })
   const textareaWrapperRef = useRef(null)
   const textareaRef = useRef(null)
@@ -43,7 +43,7 @@ export default function AdminMusicLyricsPage() {
       .then((res) => res.json())
       .then((data) => {
         if (ignore) return
-        setLyricId(data.id ?? null)
+        lyricIdRef.current = data.id ?? null
         setLyricText(data.text ?? '')
         setAnnotations(
           (data.annotations ?? []).map((annotation) => ({
@@ -238,7 +238,7 @@ export default function AdminMusicLyricsPage() {
       if (!lyricRes.ok) throw new Error('Failed to save lyrics.')
       const lyricData = await lyricRes.json()
       const savedLyricId = lyricData.id
-      setLyricId(savedLyricId)
+      lyricIdRef.current = savedLyricId
 
       // 2. Save each annotation
       const updatedAnnotations = await Promise.all(

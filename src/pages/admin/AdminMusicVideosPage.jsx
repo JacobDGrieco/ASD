@@ -170,18 +170,18 @@ export default function AdminMusicVideosPage() {
 								<td><span className="admin-artists-page-cell-value">{row.sourceType === ARTIST_VIDEO_SOURCE.YOUTUBE ? 'YouTube' : row.sourceType === ARTIST_VIDEO_SOURCE.UPLOAD ? 'Local' : '-'}</span></td>
 								<td className="admin-artists-page-center-cell">
 									{row.sourceType === ARTIST_VIDEO_SOURCE.YOUTUBE && row.youtubeUrl ? (
-										<a href={row.youtubeUrl} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" title="Open video">
+										<a href={row.youtubeUrl} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" aria-label={`Open ${row.artist.name} YouTube video`} title="Open video">
 											<FaExternalLinkAlt aria-hidden="true" />
 										</a>
 									) : row.sourceType === ARTIST_VIDEO_SOURCE.UPLOAD && row.videoUrl ? (
-										<a href={row.videoUrl} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" title="Open video file">
+										<a href={row.videoUrl} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" aria-label={`Open ${row.artist.name} video file`} title="Open video file">
 											<FaExternalLinkAlt aria-hidden="true" />
 										</a>
 									) : <span className="admin-artists-page-empty-value">-</span>}
 								</td>
 								<td className="admin-artists-page-center-cell">
 									{row.videosPageUrl ? (
-										<a href={row.videosPageUrl} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" title="Open full videos page">
+										<a href={row.videosPageUrl} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" aria-label={`Open ${row.artist.name} full videos page`} title="Open full videos page">
 											<FaExternalLinkAlt aria-hidden="true" />
 										</a>
 									) : <span className="admin-artists-page-empty-value">-</span>}
