@@ -1,31 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
+import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
 import '../../styles/AdminRecordPlayerPage.css';
 
 const MAX_SLOTS = 8;
 let slotsCache = null;
-let slotsPromise = null;
 
 function loadSlots(token) {
 	if (slotsCache) return Promise.resolve(slotsCache);
-	if (slotsPromise) return slotsPromise;
-
-	slotsPromise = fetch('/api/admin/record-player', {
-		headers: { Authorization: `Bearer ${token}` },
-	})
-		.then(async (response) => {
-			if (!response.ok) throw new Error(`Failed to load record player slots (${response.status})`);
-			return response.json();
-		})
+	return loadAdminResource({ cacheKey: 'record-player-slots', url: '/api/admin/record-player', token })
 		.then((tracks) => {
 			slotsCache = tracks;
 			return tracks;
 		})
-		.finally(() => {
-			slotsPromise = null;
-		});
-
-	return slotsPromise;
 }
 
 function makeSlots(tracks) {
@@ -63,23 +50,16 @@ export default function AdminMusicRecordPlayerPage() {
 	const [isSearching, setIsSearching] = useState(false);
 
 	useEffect(() => {
-		const effectStartedAt = performance.now();
 		let ignore = false;
-		let completed = false;
-
-		const fetchStartedAt = performance.now();
 
 		loadSlots(token)
 			.then((tracks) => {
-				const mapStartedAt = performance.now();
 				const nextSlots = makeSlots(tracks);
 				return nextSlots;
 			})
 			.then((nextSlots) => {
 				if (!ignore) {
-					const setStartedAt = performance.now();
 					setSlots(nextSlots);
-					completed = true;
 				}
 			});
 
@@ -95,29 +75,28 @@ export default function AdminMusicRecordPlayerPage() {
 			return undefined;
 		}
 
-		const controller = new AbortController();
+		let ignore = false;
 		const timeoutId = window.setTimeout(async () => {
 			setIsSearching(true);
 			try {
-				const searchStartedAt = performance.now();
-				const response = await fetch(`/api/admin/record-player?resource=songs&q=${encodeURIComponent(searchQuery.trim())}`, {
-					headers: { Authorization: `Bearer ${token}` },
-					signal: controller.signal,
+				const trimmedQuery = searchQuery.trim();
+				const results = await loadAdminResource({
+					cacheKey: `record-player-song-search:${trimmedQuery}`,
+					url: `/api/admin/record-player?resource=songs&q=${encodeURIComponent(trimmedQuery)}`,
+					token,
 				});
-				const jsonStartedAt = performance.now();
-				const results = await response.json();
-				setSearchResults(Array.isArray(results) ? results : []);
+				if (!ignore) setSearchResults(Array.isArray(results) ? results : []);
 			} catch (error) {
-				if (error.name !== 'AbortError') {
+				if (!ignore) {
 					setSearchResults([]);
 				}
 			} finally {
-				setIsSearching(false);
+				if (!ignore) setIsSearching(false);
 			}
 		}, 200);
 
 		return () => {
-			controller.abort();
+			ignore = true;
 			window.clearTimeout(timeoutId);
 		};
 	}, [activeSearchPosition, searchQuery, token]);
@@ -174,6 +153,7 @@ export default function AdminMusicRecordPlayerPage() {
 		});
 		const updated = await response.json();
 		slotsCache = updated;
+		primeAdminResource('record-player-slots', token, updated);
 		setSlots(makeSlots(updated));
 		setSaved(true);
 		window.setTimeout(() => setSaved(false), 2000);

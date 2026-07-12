@@ -202,7 +202,7 @@ export default function AdminMusicVideosPage() {
 			</div>
 
 			{form && (
-				<div className="admin-modal-overlay" onClick={(event) => { if (event.target === event.currentTarget) closeForm(); }}>
+				<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm(); }}>
 					<div className="admin-modal">
 						<div className="admin-modal-header">
 							<h2 className="admin-modal-title">Edit Video</h2>

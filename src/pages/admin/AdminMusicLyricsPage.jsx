@@ -5,6 +5,459 @@ import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import '../../styles/AdminLyricsPage.css'
 
+function renderBackdrop(text, ranges) {
+  if (ranges.length === 0) return text
+  const sorted = ranges.toSorted((a, b) => a.startChar - b.startChar)
+  const parts = []
+  let cursor = 0
+  for (const range of sorted) {
+    const start = Math.max(range.startChar, cursor)
+    if (start >= range.endChar) continue
+    if (start > cursor) parts.push(text.slice(cursor, start))
+    parts.push(<mark key={`${start}-${range.endChar}`}>{text.slice(start, range.endChar)}</mark>)
+    cursor = range.endChar
+  }
+  if (cursor < text.length) parts.push(text.slice(cursor))
+  return parts
+}
+
+async function saveLyricsAndAnnotations({
+  isSaving,
+  annotations,
+  songId,
+  auth,
+  lyricText,
+  lyricIdRef,
+  setAnnotations,
+  setIsSaving,
+}) {
+  if (isSaving) return
+
+  const hasDirty = annotations.some((annotation) =>
+    annotation.ranges.some((range) => range.dirty)
+  )
+  if (hasDirty) {
+    alert('Fix or remove all invalid ranges before saving.')
+    return
+  }
+
+  setIsSaving(true)
+  try {
+    const lyricRes = await fetch(`/api/admin/lyrics?songId=${songId}`, {
+      method: 'PUT',
+      headers: { ...auth, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: lyricText }),
+    })
+    if (!lyricRes.ok) throw new Error('Failed to save lyrics.')
+    const lyricData = await lyricRes.json()
+    const savedLyricId = lyricData.id
+    lyricIdRef.current = savedLyricId
+
+    const updatedAnnotations = await Promise.all(
+      annotations.map(async (annotation) => {
+        const body = {
+          explanation: annotation.explanation,
+          ranges: annotation.ranges.map((range) => ({
+            startChar: range.startChar,
+            endChar: range.endChar,
+          })),
+        }
+
+        if (annotation.id === null) {
+          const res = await fetch('/api/admin/annotations', {
+            method: 'POST',
+            headers: { ...auth, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ songLyricId: savedLyricId, ...body }),
+          })
+          if (!res.ok) throw new Error('Failed to create annotation.')
+          const data = await res.json()
+          return {
+            id: data.id,
+            explanation: data.explanation,
+            ranges: (data.ranges ?? []).map((range) => ({
+              id: range.id ?? null,
+              startChar: range.startChar,
+              endChar: range.endChar,
+              dirty: false,
+            })),
+          }
+        }
+
+        const res = await fetch(`/api/admin/annotations?id=${annotation.id}`, {
+          method: 'PUT',
+          headers: { ...auth, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+        if (!res.ok) throw new Error('Failed to update annotation.')
+        const data = await res.json()
+        return {
+          id: data.id,
+          explanation: data.explanation,
+          ranges: (data.ranges ?? []).map((range) => ({
+            id: range.id ?? null,
+            startChar: range.startChar,
+            endChar: range.endChar,
+            dirty: false,
+          })),
+        }
+      })
+    )
+
+    setAnnotations((prev) =>
+      prev.map((annotation, index) => {
+        const saved = updatedAnnotations[index]
+        if (!saved) return annotation
+        return {
+          ...annotation,
+          id: saved.id,
+          ranges: annotation.ranges.map((range, rangeIndex) => ({
+            ...range,
+            id: saved.ranges[rangeIndex]?.id ?? range.id,
+            dirty: false,
+          })),
+        }
+      })
+    )
+  } catch (err) {
+    alert(err.message ?? 'An error occurred while saving.')
+  } finally {
+    setIsSaving(false)
+  }
+}
+
+function LyricsHeader({ songTitle, isViewer, isLoading, isSaving, onSave }) {
+  return (
+    <div className="alp-header">
+      <div>
+        <Link to="/admin/songs" className="alp-back-link">Ã¢â€ Â Songs</Link>
+        <h1 className="alp-title">Music - Lyrics</h1>
+        <p className="alp-subtitle">{songTitle}</p>
+      </div>
+      {!isViewer && !isLoading && (
+        <div className="alp-header-actions">
+          <button type="button" className="alp-save-btn" onClick={onSave} disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Save All'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function LyricsPanel({
+  isViewer,
+  isPicking,
+  lyricText,
+  highlightedRanges,
+  textareaWrapperRef,
+  textareaRef,
+  onLyricChange,
+  onTextareaInteraction,
+  onTextareaMouseUp,
+  onTextareaKeyUp,
+}) {
+  return (
+    <div className="alp-lyrics-panel">
+      <div className="alp-lyrics-header">
+        <span>Lyrics</span>
+      </div>
+
+      <div className="alp-textarea-wrapper" ref={textareaWrapperRef}>
+        {highlightedRanges.length > 0 && (
+          <div className="alp-textarea-backdrop" aria-hidden="true">
+            {renderBackdrop(lyricText, highlightedRanges)}
+          </div>
+        )}
+        <textarea
+          ref={textareaRef}
+          className={`alp-lyric-textarea${isPicking ? ' alp-lyric-textarea-picking' : ''}${highlightedRanges.length > 0 ? ' alp-lyric-textarea-highlighting' : ''}`}
+          value={lyricText}
+          aria-label="Lyrics text"
+          spellCheck={false}
+          disabled={isViewer}
+          onChange={onLyricChange}
+          onSelect={onTextareaInteraction}
+          onKeyDown={onTextareaInteraction}
+          onMouseDown={onTextareaInteraction}
+          onMouseUp={onTextareaMouseUp}
+          onKeyUp={onTextareaKeyUp}
+        />
+      </div>
+    </div>
+  )
+}
+
+function AnnotationNeutralCard({ annotation, annotationIndex, hasDirty, lyricText, onEdit, onHover, onLeave }) {
+  return (
+    <button
+      type="button"
+      className={`alp-annotation-card alp-annotation-card-neutral${hasDirty ? ' alp-annotation-card-dirty' : ''}`}
+      onClick={() => onEdit(annotationIndex)}
+      onMouseEnter={() => onHover(annotationIndex)}
+      onMouseLeave={onLeave}
+    >
+      <div className="alp-annotation-neutral-ranges">
+        {annotation.ranges.length === 0 ? (
+          <span className="alp-annotation-neutral-empty">No ranges</span>
+        ) : annotation.ranges.map((range, rangeIndex) => (
+          <span
+            key={range.id ?? `range-${annotationIndex}-${rangeIndex}`}
+            className={`alp-range-chip${range.dirty ? ' alp-range-chip-dirty' : ''}`}
+          >
+            {range.dirty
+              ? <span className="alp-range-chip-text">Re-highlight to fix</span>
+              : <span className="alp-range-chip-text">&ldquo;{lyricText.slice(range.startChar, range.endChar)}&rdquo;</span>
+            }
+          </span>
+        ))}
+      </div>
+      {annotation.explanation && (
+        <p className="alp-annotation-neutral-explanation">{annotation.explanation}</p>
+      )}
+    </button>
+  )
+}
+
+function AnnotationEditingCard({
+  annotation,
+  annotationIndex,
+  lyricText,
+  isViewer,
+  onDone,
+  onDelete,
+  onHover,
+  onLeave,
+  onRemoveRange,
+  onAddRange,
+  onUpdateExplanation,
+}) {
+  return (
+    <div
+      className="alp-annotation-card alp-annotation-card-editing"
+      onMouseEnter={() => onHover(annotationIndex)}
+      onMouseLeave={onLeave}
+    >
+      <div className="alp-annotation-card-edit-header">
+        <div className="alp-annotation-card-actions">
+          <button
+            type="button"
+            className="alp-annotation-icon-btn alp-annotation-done-btn"
+            onClick={onDone}
+            aria-label="Done editing annotation"
+            title="Done"
+          >
+            <FaCheck aria-hidden="true" />
+          </button>
+          {!isViewer && (
+            <ConfirmActionButton
+              message="Delete this annotation?"
+              onConfirm={() => onDelete(annotationIndex)}
+              buttonClassName="alp-annotation-icon-btn alp-annotation-delete-btn"
+              buttonAriaLabel="Delete annotation"
+              buttonTitle="Delete"
+            >
+              <FaTrash aria-hidden="true" />
+            </ConfirmActionButton>
+          )}
+        </div>
+      </div>
+
+      <div className="alp-ranges-list">
+        <div>Ranges:</div>
+        {annotation.ranges.map((range, rangeIndex) => (
+          <div
+            key={range.id ?? `range-${annotationIndex}-${rangeIndex}`}
+            className={`alp-range-chip${range.dirty ? ' alp-range-chip-dirty' : ''}`}
+          >
+            {range.dirty ? (
+              <span className="alp-range-chip-text">Re-highlight to fix</span>
+            ) : (
+              <span className="alp-range-chip-text">
+                &ldquo;{lyricText.slice(range.startChar, range.endChar)}&rdquo;
+              </span>
+            )}
+            {!isViewer && (
+              <button
+                type="button"
+                className="alp-range-chip-remove"
+                onClick={() => onRemoveRange(annotationIndex, rangeIndex)}
+                aria-label="Remove range"
+              >
+                x
+              </button>
+            )}
+          </div>
+        ))}
+
+        {!isViewer && (
+          <button
+            type="button"
+            className="alp-add-range-btn"
+            onClick={() => onAddRange(annotationIndex)}
+          >
+            + Add range
+          </button>
+        )}
+      </div>
+
+      <textarea
+        className="alp-annotation-explanation"
+        value={annotation.explanation}
+        disabled={isViewer}
+        placeholder="Explanation..."
+        onChange={(event) => onUpdateExplanation(annotationIndex, event.target.value)}
+      />
+    </div>
+  )
+}
+
+function AnnotationsPanel({
+  isViewer,
+  sortedAnnotationEntries,
+  editingAnnotationIndex,
+  lyricText,
+  onAddAnnotation,
+  onEditAnnotation,
+  onDoneEditing,
+  onHoverAnnotation,
+  onLeaveAnnotation,
+  onDeleteAnnotation,
+  onRemoveRange,
+  onAddRange,
+  onUpdateExplanation,
+}) {
+  return (
+    <div className="alp-annotations-panel">
+      <div className="alp-annotations-header">
+        <span>Annotations</span>
+        {!isViewer && (
+          <button
+            type="button"
+            className="alp-annotation-icon-btn alp-add-annotation-btn"
+            onClick={onAddAnnotation}
+            aria-label="Add annotation"
+            title="Add annotation"
+          >
+            <FaPlus aria-hidden="true" />
+          </button>
+        )}
+      </div>
+
+      {sortedAnnotationEntries.map(({ annotation, annotationIndex }) => {
+        const isEditing = editingAnnotationIndex === annotationIndex
+        const hasDirty = annotation.ranges.some((range) => range.dirty)
+        const key = annotation.id ?? `unsaved-${annotationIndex}`
+
+        return isEditing ? (
+          <AnnotationEditingCard
+            key={key}
+            annotation={annotation}
+            annotationIndex={annotationIndex}
+            lyricText={lyricText}
+            isViewer={isViewer}
+            onDone={onDoneEditing}
+            onDelete={onDeleteAnnotation}
+            onHover={onHoverAnnotation}
+            onLeave={onLeaveAnnotation}
+            onRemoveRange={onRemoveRange}
+            onAddRange={onAddRange}
+            onUpdateExplanation={onUpdateExplanation}
+          />
+        ) : (
+          <AnnotationNeutralCard
+            key={key}
+            annotation={annotation}
+            annotationIndex={annotationIndex}
+            hasDirty={hasDirty}
+            lyricText={lyricText}
+            onEdit={onEditAnnotation}
+            onHover={onHoverAnnotation}
+            onLeave={onLeaveAnnotation}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
+function LyricsEditPane({
+  state,
+  lyricText,
+  highlightedRanges,
+  textareaWrapperRef,
+  textareaRef,
+  sortedAnnotationEntries,
+  editingAnnotationIndex,
+  onLyricChange,
+  onTextareaInteraction,
+  onTextareaMouseUp,
+  onTextareaKeyUp,
+  onAddAnnotation,
+  onEditAnnotation,
+  onDoneEditing,
+  onHoverAnnotation,
+  onLeaveAnnotation,
+  onDeleteAnnotation,
+  onRemoveRange,
+  onAddRange,
+  onUpdateExplanation,
+}) {
+  const { isLoading, hasDirtyRanges, isPicking, isViewer } = state
+
+  return (
+    <div className="alp-edit-pane">
+      {isLoading ? (
+        <div>Loading lyrics...</div>
+      ) : (
+        <>
+          {hasDirtyRanges && (
+            <div className="alp-dirty-banner">
+              Some annotation ranges were affected by your edits. Select the annotation card and re-highlight the text to fix them.
+            </div>
+          )}
+
+          {isPicking && (
+            <div className="alp-picking-banner">
+              Highlight text in the lyrics to add a range to this annotation
+            </div>
+          )}
+
+          <div className="alp-editor-columns">
+            <LyricsPanel
+              isViewer={isViewer}
+              isPicking={isPicking}
+              lyricText={lyricText}
+              highlightedRanges={highlightedRanges}
+              textareaWrapperRef={textareaWrapperRef}
+              textareaRef={textareaRef}
+              onLyricChange={onLyricChange}
+              onTextareaInteraction={onTextareaInteraction}
+              onTextareaMouseUp={onTextareaMouseUp}
+              onTextareaKeyUp={onTextareaKeyUp}
+            />
+
+            <AnnotationsPanel
+              isViewer={isViewer}
+              sortedAnnotationEntries={sortedAnnotationEntries}
+              editingAnnotationIndex={editingAnnotationIndex}
+              lyricText={lyricText}
+              onAddAnnotation={onAddAnnotation}
+              onEditAnnotation={onEditAnnotation}
+              onDoneEditing={onDoneEditing}
+              onHoverAnnotation={onHoverAnnotation}
+              onLeaveAnnotation={onLeaveAnnotation}
+              onDeleteAnnotation={onDeleteAnnotation}
+              onRemoveRange={onRemoveRange}
+              onAddRange={onAddRange}
+              onUpdateExplanation={onUpdateExplanation}
+            />
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function AdminMusicLyricsPage() {
   const { songId } = useParams()
   const { state } = useLocation()
@@ -33,7 +486,7 @@ export default function AdminMusicLyricsPage() {
     el.style.height = `${el.scrollHeight + borderHeight}px`
   }, [])
 
-  // ── Load ──────────────────────────────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Load Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   useEffect(() => {
     let ignore = false
@@ -82,7 +535,7 @@ export default function AdminMusicLyricsPage() {
     return () => resizeObserver.disconnect()
   }, [resizeLyricTextarea])
 
-  // ── Annotation range adjustment ───────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Annotation range adjustment Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   const adjustAnnotationRanges = useCallback((changeStart, changeEnd, netDelta) => {
     setAnnotations((prev) =>
@@ -103,7 +556,7 @@ export default function AdminMusicLyricsPage() {
     )
   }, [])
 
-  // ── Textarea interaction capture ──────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Textarea interaction capture Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   const handleTextareaInteraction = (e) => {
     preEditRef.current = {
@@ -113,7 +566,7 @@ export default function AdminMusicLyricsPage() {
     }
   }
 
-  // ── Lyric text change ─────────────────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Lyric text change Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   const handleLyricChange = (e) => {
     const newValue = e.target.value
@@ -136,7 +589,7 @@ export default function AdminMusicLyricsPage() {
     }
   }
 
-  // ── Range picking ─────────────────────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Range picking Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   const addRangeFromSelection = useCallback((annotationIndex, selectionStart, selectionEnd) => {
     setAnnotations((prev) =>
@@ -169,13 +622,11 @@ export default function AdminMusicLyricsPage() {
     setPendingRangeForAnnotationIndex(null)
   }
 
-  // ── Annotation mutations ──────────────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Annotation mutations Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   const addAnnotation = () => {
-    setAnnotations((prev) => {
-      setEditingAnnotationIndex(prev.length)
-      return [...prev, { id: null, explanation: '', ranges: [] }]
-    })
+    setEditingAnnotationIndex(annotations.length)
+    setAnnotations((prev) => [...prev, { id: null, explanation: '', ranges: [] }])
   }
 
   const updateAnnotationExplanation = (annotationIndex, explanation) => {
@@ -214,106 +665,21 @@ export default function AdminMusicLyricsPage() {
     setEditingAnnotationIndex(null)
   }
 
-  // ── Save ──────────────────────────────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Save Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
-  const saveAll = async () => {
-    if (isSaving) return
-
-    const hasDirty = annotations.some((annotation) =>
-      annotation.ranges.some((range) => range.dirty)
-    )
-    if (hasDirty) {
-      alert('Fix or remove all invalid ranges before saving.')
-      return
-    }
-
-    setIsSaving(true)
-    try {
-      // 1. Save lyric text
-      const lyricRes = await fetch(`/api/admin/lyrics?songId=${songId}`, {
-        method: 'PUT',
-        headers: { ...auth, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: lyricText }),
-      })
-      if (!lyricRes.ok) throw new Error('Failed to save lyrics.')
-      const lyricData = await lyricRes.json()
-      const savedLyricId = lyricData.id
-      lyricIdRef.current = savedLyricId
-
-      // 2. Save each annotation
-      const updatedAnnotations = await Promise.all(
-        annotations.map(async (annotation) => {
-          const body = {
-            explanation: annotation.explanation,
-            ranges: annotation.ranges.map((range) => ({
-              startChar: range.startChar,
-              endChar: range.endChar,
-            })),
-          }
-
-          if (annotation.id === null) {
-            const res = await fetch('/api/admin/annotations', {
-              method: 'POST',
-              headers: { ...auth, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ songLyricId: savedLyricId, ...body }),
-            })
-            if (!res.ok) throw new Error('Failed to create annotation.')
-            const data = await res.json()
-            return {
-              id: data.id,
-              explanation: data.explanation,
-              ranges: (data.ranges ?? []).map((range) => ({
-                id: range.id ?? null,
-                startChar: range.startChar,
-                endChar: range.endChar,
-                dirty: false,
-              })),
-            }
-          } else {
-            const res = await fetch(`/api/admin/annotations?id=${annotation.id}`, {
-              method: 'PUT',
-              headers: { ...auth, 'Content-Type': 'application/json' },
-              body: JSON.stringify(body),
-            })
-            if (!res.ok) throw new Error('Failed to update annotation.')
-            const data = await res.json()
-            return {
-              id: data.id,
-              explanation: data.explanation,
-              ranges: (data.ranges ?? []).map((range) => ({
-                id: range.id ?? null,
-                startChar: range.startChar,
-                endChar: range.endChar,
-                dirty: false,
-              })),
-            }
-          }
-        })
-      )
-
-      setAnnotations((prev) =>
-        prev.map((ann, i) => {
-          const saved = updatedAnnotations[i]
-          if (!saved) return ann
-          return {
-            ...ann,
-            id: saved.id,
-            ranges: ann.ranges.map((range, j) => ({
-              ...range,
-              id: saved.ranges[j]?.id ?? range.id,
-              dirty: false,
-            })),
-          }
-        })
-      )
-    } catch (err) {
-      alert(err.message ?? 'An error occurred while saving.')
-    } finally {
-      setIsSaving(false)
-    }
+  const saveAll = () => {
+    void saveLyricsAndAnnotations({
+      isSaving,
+      annotations,
+      songId,
+      auth,
+      lyricText,
+      lyricIdRef,
+      setAnnotations,
+      setIsSaving,
+    })
   }
-
-  // ── Derived ───────────────────────────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Derived Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   const hasDirtyRanges = annotations.some((annotation) =>
     annotation.ranges.some((range) => range.dirty)
@@ -342,225 +708,40 @@ export default function AdminMusicLyricsPage() {
       return left.annotationIndex - right.annotationIndex
     })
 
-  function renderBackdrop(text, ranges) {
-    if (ranges.length === 0) return text
-    const sorted = ranges.toSorted((a, b) => a.startChar - b.startChar)
-    const parts = []
-    let cursor = 0
-    for (const range of sorted) {
-      const start = Math.max(range.startChar, cursor)
-      if (start >= range.endChar) continue
-      if (start > cursor) parts.push(text.slice(cursor, start))
-      parts.push(<mark key={`${start}-${range.endChar}`}>{text.slice(start, range.endChar)}</mark>)
-      cursor = range.endChar
-    }
-    if (cursor < text.length) parts.push(text.slice(cursor))
-    return parts
-  }
-
-  // ── Render ────────────────────────────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Render Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   return (
     <div className="alp-page">
-      <div className="alp-header">
-        <div>
-          <Link to="/admin/songs" className="alp-back-link">← Songs</Link>
-          <h1 className="alp-title">Music — Lyrics</h1>
-          <p className="alp-subtitle">{songTitle}</p>
-        </div>
-        {!isViewer && !isLoading && (
-          <div className="alp-header-actions">
-            <button type="button" className="alp-save-btn" onClick={saveAll} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save All'}
-            </button>
-          </div>
-        )}
-      </div>
+      <LyricsHeader
+        songTitle={songTitle}
+        isViewer={isViewer}
+        isLoading={isLoading}
+        isSaving={isSaving}
+        onSave={saveAll}
+      />
 
-      <div className="alp-edit-pane">
-        {isLoading ? (
-          <div>Loading lyrics...</div>
-        ) : (
-          <>
-            {hasDirtyRanges && (
-              <div className="alp-dirty-banner">
-                ⚠ Some annotation ranges were affected by your edits. Select the annotation card and re-highlight the text to fix them.
-              </div>
-            )}
-
-            {isPicking && (
-              <div className="alp-picking-banner">
-                Highlight text in the lyrics to add a range to this annotation
-              </div>
-            )}
-
-            <div className="alp-editor-columns">
-              <div className="alp-lyrics-panel">
-                <div className="alp-lyrics-header">
-                  <span>Lyrics</span>
-                </div>
-
-                <div className="alp-textarea-wrapper" ref={textareaWrapperRef}>
-                  {highlightedRanges.length > 0 && (
-                    <div className="alp-textarea-backdrop" aria-hidden="true">
-                      {renderBackdrop(lyricText, highlightedRanges)}
-                    </div>
-                  )}
-                  <textarea
-                    ref={textareaRef}
-                    className={`alp-lyric-textarea${isPicking ? ' alp-lyric-textarea-picking' : ''}${highlightedRanges.length > 0 ? ' alp-lyric-textarea-highlighting' : ''}`}
-                    value={lyricText}
-                    aria-label="Lyrics text"
-                    spellCheck={false}
-                    disabled={isViewer}
-                    onChange={handleLyricChange}
-                    onSelect={handleTextareaInteraction}
-                    onKeyDown={handleTextareaInteraction}
-                    onMouseDown={handleTextareaInteraction}
-                    onMouseUp={handleTextareaMouseUp}
-                    onKeyUp={handleTextareaKeyUp}
-                  />
-                </div>
-              </div>
-
-              <div className="alp-annotations-panel">
-                <div className="alp-annotations-header">
-                  <span>Annotations</span>
-                  {!isViewer && (
-                    <button
-                      type="button"
-                      className="alp-annotation-icon-btn alp-add-annotation-btn"
-                      onClick={addAnnotation}
-                      aria-label="Add annotation"
-                      title="Add annotation"
-                    >
-                      <FaPlus aria-hidden="true" />
-                    </button>
-                  )}
-                </div>
-
-                {sortedAnnotationEntries.map(({ annotation, annotationIndex }) => {
-                  const isEditing = editingAnnotationIndex === annotationIndex
-                  const hasDirty = annotation.ranges.some((r) => r.dirty)
-
-                  if (!isEditing) {
-                    return (
-                      <button
-                        type="button"
-                        key={annotation.id ?? `unsaved-${annotationIndex}`}
-                        className={`alp-annotation-card alp-annotation-card-neutral${hasDirty ? ' alp-annotation-card-dirty' : ''}`}
-                        onClick={() => setEditingAnnotationIndex(annotationIndex)}
-                        onMouseEnter={() => setHoveredAnnotationIndex(annotationIndex)}
-                        onMouseLeave={() => setHoveredAnnotationIndex(null)}
-                      >
-                        <div className="alp-annotation-neutral-ranges">
-                          {annotation.ranges.length === 0 ? (
-                            <span className="alp-annotation-neutral-empty">No ranges</span>
-                          ) : annotation.ranges.map((range, rangeIndex) => (
-                            <span
-                              key={range.id ?? `range-${annotationIndex}-${rangeIndex}`}
-                              className={`alp-range-chip${range.dirty ? ' alp-range-chip-dirty' : ''}`}
-                            >
-                              {range.dirty
-                                ? <span className="alp-range-chip-text">⚠ Re-highlight to fix</span>
-                                : <span className="alp-range-chip-text">&ldquo;{lyricText.slice(range.startChar, range.endChar)}&rdquo;</span>
-                              }
-                            </span>
-                          ))}
-                        </div>
-                        {annotation.explanation && (
-                          <p className="alp-annotation-neutral-explanation">{annotation.explanation}</p>
-                        )}
-                      </button>
-                    )
-                  }
-
-                  return (
-                    <div
-                      key={annotation.id ?? `unsaved-${annotationIndex}`}
-                      className="alp-annotation-card alp-annotation-card-editing"
-                      onMouseEnter={() => setHoveredAnnotationIndex(annotationIndex)}
-                      onMouseLeave={() => setHoveredAnnotationIndex(null)}
-                    >
-                      <div className="alp-annotation-card-edit-header">
-                        <div className="alp-annotation-card-actions">
-                          <button
-                            type="button"
-                            className="alp-annotation-icon-btn alp-annotation-done-btn"
-                            onClick={() => setEditingAnnotationIndex(null)}
-                            aria-label="Done editing annotation"
-                            title="Done"
-                          >
-                            <FaCheck aria-hidden="true" />
-                          </button>
-                          {!isViewer && (
-                            <ConfirmActionButton
-                              message="Delete this annotation?"
-                              onConfirm={() => deleteAnnotation(annotationIndex)}
-                              buttonClassName="alp-annotation-icon-btn alp-annotation-delete-btn"
-                              buttonAriaLabel="Delete annotation"
-                              buttonTitle="Delete"
-                            >
-                              <FaTrash aria-hidden="true" />
-                            </ConfirmActionButton>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="alp-ranges-list">
-                        <div>Ranges:</div>
-                        {annotation.ranges.map((range, rangeIndex) => (
-                          <div
-                            key={range.id ?? `range-${annotationIndex}-${rangeIndex}`}
-                            className={`alp-range-chip${range.dirty ? ' alp-range-chip-dirty' : ''}`}
-                          >
-                            {range.dirty ? (
-                              <span className="alp-range-chip-text">⚠ Re-highlight to fix</span>
-                            ) : (
-                              <span className="alp-range-chip-text">
-                                &ldquo;{lyricText.slice(range.startChar, range.endChar)}&rdquo;
-                              </span>
-                            )}
-                            {!isViewer && (
-                              <button
-                                type="button"
-                                className="alp-range-chip-remove"
-                                onClick={() => removeRange(annotationIndex, rangeIndex)}
-                                aria-label="Remove range"
-                              >
-                                ×
-                              </button>
-                            )}
-                          </div>
-                        ))}
-
-                        {!isViewer && (
-                          <button
-                            type="button"
-                            className="alp-add-range-btn"
-                            onClick={() => setPendingRangeForAnnotationIndex(annotationIndex)}
-                          >
-                            + Add range
-                          </button>
-                        )}
-                      </div>
-
-                      <textarea
-                        className="alp-annotation-explanation"
-                        value={annotation.explanation}
-                        disabled={isViewer}
-                        placeholder="Explanation..."
-                        onChange={(e) => updateAnnotationExplanation(annotationIndex, e.target.value)}
-                      />
-
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+      <LyricsEditPane
+        state={{ isLoading, hasDirtyRanges, isPicking, isViewer }}
+        lyricText={lyricText}
+        highlightedRanges={highlightedRanges}
+        textareaWrapperRef={textareaWrapperRef}
+        textareaRef={textareaRef}
+        sortedAnnotationEntries={sortedAnnotationEntries}
+        editingAnnotationIndex={editingAnnotationIndex}
+        onLyricChange={handleLyricChange}
+        onTextareaInteraction={handleTextareaInteraction}
+        onTextareaMouseUp={handleTextareaMouseUp}
+        onTextareaKeyUp={handleTextareaKeyUp}
+        onAddAnnotation={addAnnotation}
+        onEditAnnotation={setEditingAnnotationIndex}
+        onDoneEditing={() => setEditingAnnotationIndex(null)}
+        onHoverAnnotation={setHoveredAnnotationIndex}
+        onLeaveAnnotation={() => setHoveredAnnotationIndex(null)}
+        onDeleteAnnotation={deleteAnnotation}
+        onRemoveRange={removeRange}
+        onAddRange={setPendingRangeForAnnotationIndex}
+        onUpdateExplanation={updateAnnotationExplanation}
+      />
     </div>
   )
 }

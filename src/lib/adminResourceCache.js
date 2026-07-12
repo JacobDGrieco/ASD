@@ -9,9 +9,6 @@ function expireAdminSession() {
 
   if (typeof window === 'undefined') return
 
-  window.sessionStorage.removeItem('admin_token')
-  window.sessionStorage.removeItem('admin_session')
-
   if (window.location.pathname !== '/admin/login') {
     window.location.assign('/admin/login')
   }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { LazyMotion, domAnimation, m } from 'framer-motion';
 import MusicHomePreview from '../components/home/MusicHomePreview.jsx';
 import FashionHomePreview from '../components/home/FashionHomePreview.jsx';
 import '../styles/HomePortal.css';
@@ -145,6 +145,7 @@ export default function HomePage() {
 	};
 
 	return (
+		<LazyMotion features={domAnimation}>
 		<main className={`portal-home ${expandingKey ? 'portal-home-expanding' : ''}`}>
 			{sections.map((section) => {
 				const Preview = section.Preview;
@@ -152,7 +153,7 @@ export default function HomePage() {
 				const isCompressed = activeKey && activeKey !== section.key;
 
 				return (
-					<motion.div
+					<m.div
 						key={section.key}
 						className={`portal-panel portal-panel-${section.key} ${isActive ? 'portal-panel-active' : ''} ${isCompressed ? 'portal-panel-compressed' : ''}`.trim()}
 						ref={(element) => {
@@ -178,9 +179,10 @@ export default function HomePage() {
 							onBlur={() => hasHover && !expandingKey && setHoveredKey(null)}
 							onClick={() => enterSection(section)}
 						/>
-					</motion.div>
+					</m.div>
 				);
 			})}
 		</main>
+		</LazyMotion>
 	);
 }

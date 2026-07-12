@@ -1,84 +1,57 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useReducer } from 'react'
+import { clearCachedApiEntry, getCachedApiEntry, prefetchApi } from '../lib/apiCache.js'
 import { millisecondsUntilNextUtcMidnight } from '../lib/releaseSchedule.js'
 
-const apiCache = new Map()
-const inflightRequests = new Map()
-
-function getCachedEntry(cacheKey, maxAge) {
-  if (maxAge <= 0) {
-    apiCache.delete(cacheKey)
-    return null
+function apiStateReducer(state, action) {
+  switch (action.type) {
+    case 'cached':
+      return { data: action.data, loading: false, error: null }
+    case 'loading':
+      return { ...state, loading: true, error: null }
+    case 'success':
+      return { data: action.data, loading: false, error: null }
+    case 'refreshSuccess':
+      return { ...state, data: action.data, error: null }
+    case 'error':
+      return { ...state, loading: false, error: action.error }
+    case 'refreshError':
+      return { ...state, error: action.error }
+    default:
+      return state
   }
-
-  const entry = apiCache.get(cacheKey)
-  if (!entry) return null
-  if (Date.now() - entry.timestamp > maxAge) {
-    apiCache.delete(cacheKey)
-    return null
-  }
-  return entry
 }
 
-async function fetchJson(url, headers) {
-  const response = await fetch(url, headers ? { headers } : undefined)
-  if (!response.ok) throw new Error(String(response.status))
-  return response.json()
-}
-
-export function prefetchApi(url, { maxAge = 5 * 60 * 1000, headers, cacheKey = url } = {}) {
-  if (!url) return Promise.resolve(null)
-
-  const cached = getCachedEntry(cacheKey, maxAge)
-  if (cached) return Promise.resolve(cached.data)
-
-  if (inflightRequests.has(cacheKey)) return inflightRequests.get(cacheKey)
-
-  const request = fetchJson(url, headers)
-    .then((data) => {
-      apiCache.set(cacheKey, { data, timestamp: Date.now() })
-      return data
-    })
-    .finally(() => {
-      inflightRequests.delete(cacheKey)
-    })
-
-  inflightRequests.set(cacheKey, request)
-  return request
-}
+export { prefetchApi }
 
 export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = false, headers, cacheKey = url } = {}) {
-  const cached = url ? getCachedEntry(cacheKey, maxAge) : null
-  const [data, setData] = useState(cached?.data ?? null)
-  const [loading, setLoading] = useState(url !== null && !cached)
-  const [error, setError] = useState(null)
+  const cached = url ? getCachedApiEntry(cacheKey, maxAge) : null
+  const [{ data, loading, error }, dispatchApiState] = useReducer(
+    apiStateReducer,
+    { data: cached?.data ?? null, loading: url !== null && !cached, error: null }
+  )
 
   useEffect(() => {
     if (!url) return
 
     let cancelled = false
-    const cachedEntry = getCachedEntry(cacheKey, maxAge)
+    const cachedEntry = getCachedApiEntry(cacheKey, maxAge)
 
     if (cachedEntry) {
-      setData(cachedEntry.data)
-      setLoading(false)
-      setError(null)
+      dispatchApiState({ type: 'cached', data: cachedEntry.data })
       return
     }
 
-    setLoading(true)
-    setError(null)
+    dispatchApiState({ type: 'loading' })
 
     prefetchApi(url, { maxAge, headers, cacheKey })
       .then((nextData) => {
         if (!cancelled) {
-          setData(nextData)
-          setLoading(false)
+          dispatchApiState({ type: 'success', data: nextData })
         }
       })
       .catch((nextError) => {
         if (!cancelled) {
-          setError(nextError.message)
-          setLoading(false)
+          dispatchApiState({ type: 'error', error: nextError.message })
         }
       })
 
@@ -95,19 +68,17 @@ export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = fal
 
     const scheduleRefresh = () => {
       timeoutId = window.setTimeout(() => {
-        apiCache.delete(cacheKey)
-        inflightRequests.delete(cacheKey)
+        clearCachedApiEntry(cacheKey)
 
         prefetchApi(url, { maxAge, headers, cacheKey })
           .then((nextData) => {
             if (!cancelled) {
-              setData(nextData)
-              setError(null)
+              dispatchApiState({ type: 'refreshSuccess', data: nextData })
             }
           })
           .catch((nextError) => {
             if (!cancelled) {
-              setError(nextError.message)
+              dispatchApiState({ type: 'refreshError', error: nextError.message })
             }
           })
           .finally(() => {

@@ -4,8 +4,45 @@ import { releaseVisibilityUpperBound } from './releaseSchedule.js'
 export const ADMIN_ROLE_SUPER = 'SUPER_ADMIN'
 export const ADMIN_ROLE_ARTIST = 'ARTIST'
 export const ADMIN_ROLE_VIEWER = 'VIEWER'
+export const ADMIN_AUTH_COOKIE_NAME = 'asd_admin_token'
+
 function secret() {
   return process.env.JWT_SECRET
+}
+
+function isUsableBearerToken(value) {
+  return Boolean(value && value !== 'null' && value !== 'undefined' && value !== 'cookie')
+}
+
+function parseCookieHeader(cookieHeader = '') {
+  return cookieHeader.split(';').reduce((cookies, part) => {
+    const separatorIndex = part.indexOf('=')
+    if (separatorIndex === -1) return cookies
+    const key = part.slice(0, separatorIndex).trim()
+    const value = part.slice(separatorIndex + 1).trim()
+    if (key) cookies[key] = decodeURIComponent(value)
+    return cookies
+  }, {})
+}
+
+export function serializeAdminAuthCookie(token) {
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : ''
+  return `${ADMIN_AUTH_COOKIE_NAME}=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${8 * 60 * 60}${secure}`
+}
+
+export function serializeClearAdminAuthCookie() {
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : ''
+  return `${ADMIN_AUTH_COOKIE_NAME}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${secure}`
+}
+
+export function readAdminTokenFromRequest(req) {
+  const auth = req.headers.authorization
+  if (auth?.startsWith('Bearer ')) {
+    const bearerToken = auth.slice(7)
+    if (isUsableBearerToken(bearerToken)) return bearerToken
+  }
+
+  return parseCookieHeader(req.headers.cookie)[ADMIN_AUTH_COOKIE_NAME] ?? null
 }
 
 export function signToken(session) {
@@ -57,13 +94,13 @@ export function isViewer(session) {
 }
 
 export function requireAdmin(req, res) {
-  const auth = req.headers.authorization
-  if (!auth?.startsWith('Bearer ')) {
+  const token = readAdminTokenFromRequest(req)
+  if (!token) {
     res.status(401).json({ error: 'Unauthorized' })
     return null
   }
 
-  const session = verifyToken(auth.slice(7))
+  const session = verifyToken(token)
   if (!session) {
     res.status(401).json({ error: 'Unauthorized' })
     return null

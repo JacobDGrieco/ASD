@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { preloadImage, preloadImages, prefetchArtistPage } from '../../lib/publicPrefetch.js';
 import '../../styles/ArtistSplash.css';
@@ -34,6 +34,31 @@ function getNameArtScale(name) {
 	const weightedLength = safeName.replace(/\s+/g, '').length + (safeName.match(/\s/g)?.length ?? 0) * 0.45;
 
 	return Math.max(0.72, Math.min(1, 7.6 / Math.max(1, weightedLength)));
+}
+
+function cardVisualStateReducer(state, action) {
+	switch (action.type) {
+		case 'reset':
+			return {
+				currentImage: action.image,
+				previousImage: null,
+				isTransitioning: false,
+				isActive: action.isActive,
+			};
+		case 'setActive':
+			return { ...state, isActive: action.isActive };
+		case 'transitionStart':
+			return {
+				currentImage: action.image,
+				previousImage: action.previousImage,
+				isTransitioning: true,
+				isActive: true,
+			};
+		case 'transitionEnd':
+			return { ...state, previousImage: null, isTransitioning: false };
+		default:
+			return state;
+	}
 }
 
 function useMediaQuery(query) {
@@ -116,10 +141,16 @@ function ArtistCard({
 	onClick = null,
 }) {
 	const { images, defaultImage, sequence } = useMemo(() => getArtistImages(artist), [artist]);
-	const [currentImage, setCurrentImage] = useState(defaultImage);
-	const [previousImage, setPreviousImage] = useState(null);
-	const [isTransitioning, setIsTransitioning] = useState(false);
-	const [isActive, setIsActive] = useState(false);
+	const [{ currentImage, previousImage, isTransitioning, isActive }, dispatchVisualState] = useReducer(
+		cardVisualStateReducer,
+		{ defaultImage, forcedActive },
+		({ defaultImage: image, forcedActive: active }) => ({
+			currentImage: image,
+			previousImage: null,
+			isTransitioning: false,
+			isActive: active,
+		})
+	);
 	const timeoutRefs = useRef([]);
 	const currentImageRef = useRef(defaultImage);
 	const cycleRunIdRef = useRef(0);
@@ -142,11 +173,9 @@ function ArtistCard({
 	useEffect(() => {
 		clearTimers();
 		cycleRunIdRef.current += 1;
-		setCurrentImage(defaultImage);
 		currentImageRef.current = defaultImage;
-		setPreviousImage(null);
-		setIsTransitioning(false);
-	}, [defaultImage]);
+		dispatchVisualState({ type: 'reset', image: defaultImage, isActive: forcedActive });
+	}, [defaultImage, forcedActive]);
 
 	useEffect(() => {
 		if (!defaultImage) return undefined;
@@ -158,15 +187,12 @@ function ArtistCard({
 	const resetToDefault = useCallback(() => {
 		clearTimers();
 		cycleRunIdRef.current += 1;
-		setIsActive(forcedActive);
-		setCurrentImage(defaultImage);
 		currentImageRef.current = defaultImage;
-		setPreviousImage(null);
-		setIsTransitioning(false);
+		dispatchVisualState({ type: 'reset', image: defaultImage, isActive: forcedActive });
 	}, [clearTimers, defaultImage, forcedActive]);
 
 	const startSequence = useCallback(() => {
-		setIsActive(true);
+		dispatchVisualState({ type: 'setActive', isActive: true });
 
 		if (sequence.length === 0 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 			return;
@@ -187,14 +213,11 @@ function ArtistCard({
 
 				const activeImage = currentImageRef.current;
 				if (activeImage !== image) {
-					setPreviousImage(activeImage);
-					setCurrentImage(image);
 					currentImageRef.current = image;
-					setIsTransitioning(true);
+					dispatchVisualState({ type: 'transitionStart', image, previousImage: activeImage });
 					await wait(IMAGE_TRANSITION_MS);
 					if (cycleRunIdRef.current !== runId) return;
-					setPreviousImage(null);
-					setIsTransitioning(false);
+					dispatchVisualState({ type: 'transitionEnd' });
 				}
 
 				nextIndex = (nextIndex + 1) % sequence.length;
@@ -217,7 +240,7 @@ function ArtistCard({
 		}
 
 		if (forcedActive) {
-			setIsActive(true);
+			dispatchVisualState({ type: 'setActive', isActive: true });
 			return undefined;
 		}
 
@@ -377,23 +400,19 @@ function ArtistSpotlightCarousel({ artists }) {
 	const navigate = useNavigate();
 	const artistCount = artists.length;
 
-	useEffect(() => {
-		if (activeIndex < artistCount) return;
-		setActiveIndex(0);
-	}, [activeIndex, artistCount]);
-
 	const goToIndex = (index) => {
 		if (artistCount === 0) return;
 		setActiveIndex((index + artistCount) % artistCount);
 	};
 
-	const activeArtist = artists[activeIndex];
+	const safeActiveIndex = artistCount > 0 ? activeIndex % artistCount : 0;
+	const activeArtist = artists[safeActiveIndex];
 
 	const getSpotlightPosition = (index) => {
-		if (index === activeIndex) return 'center';
+		if (index === safeActiveIndex) return 'center';
 		if (artistCount <= 1) return 'hidden';
 
-		let offset = index - activeIndex;
+		let offset = index - safeActiveIndex;
 		if (offset > artistCount / 2) offset -= artistCount;
 		if (offset < artistCount / -2) offset += artistCount;
 

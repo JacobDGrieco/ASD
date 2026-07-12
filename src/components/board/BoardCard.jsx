@@ -1,5 +1,4 @@
-import { useMotionValue } from 'framer-motion'
-import { motion } from 'framer-motion'
+import { LazyMotion, domAnimation, m, useMotionValue } from 'framer-motion'
 import '../../styles/board-card.css'
 
 const PIN_COLORS = {
@@ -48,41 +47,43 @@ export default function BoardCard({ post, position, editMode, zIndex, onFlip, on
   }
 
   return (
-    <motion.div
-      className={`board-card${editMode ? ' board-card-edit' : ''}`}
-      role={canFlip ? 'button' : undefined}
-      tabIndex={canFlip ? 0 : undefined}
-      style={{
-        left: position.posX,
-        top: position.posY,
-        width: position.width,
-        rotate: position.rotation,
-        x: dragX,
-        y: dragY,
-        zIndex,
-      }}
-      drag={editMode}
-      dragMomentum={false}
-      dragElastic={0}
-      onDragEnd={handleDragEnd}
-      whileHover={!editMode ? { scale: 1.06, zIndex: 1000 } : {}}
-      onClick={canFlip ? handleFlip : undefined}
-      onKeyDown={canFlip ? handleFlipKeyDown : undefined}
-      onContextMenu={onContextMenu}
-    >
-      <PushPin color={post.pinColor ?? 'default'} />
-      <div className="board-card-inner">
-        {post.imageUrl ? (
-          <img src={post.imageUrl} alt={post.title} className="board-card-image" draggable={false} />
-        ) : (
-          <div
-            className="board-card-placeholder"
-            style={{ height: position.height - 0 }}
-          >
-            {post.title}
-          </div>
-        )}
-      </div>
-    </motion.div>
+    <LazyMotion features={domAnimation}>
+      <m.div
+        className={`board-card${editMode ? ' board-card-edit' : ''}`}
+        role={canFlip ? 'button' : undefined}
+        tabIndex={canFlip ? 0 : undefined}
+        style={{
+          left: position.posX,
+          top: position.posY,
+          width: position.width,
+          rotate: position.rotation,
+          x: dragX,
+          y: dragY,
+          zIndex,
+        }}
+        drag={editMode}
+        dragMomentum={false}
+        dragElastic={0}
+        onDragEnd={handleDragEnd}
+        whileHover={!editMode ? { scale: 1.06, zIndex: 1000 } : {}}
+        onClick={canFlip ? handleFlip : undefined}
+        onKeyDown={canFlip ? handleFlipKeyDown : undefined}
+        onContextMenu={onContextMenu}
+      >
+        <PushPin color={post.pinColor ?? 'default'} />
+        <div className="board-card-inner">
+          {post.imageUrl ? (
+            <img src={post.imageUrl} alt={post.title} className="board-card-image" draggable={false} />
+          ) : (
+            <div
+              className="board-card-placeholder"
+              style={{ height: position.height - 0 }}
+            >
+              {post.title}
+            </div>
+          )}
+        </div>
+      </m.div>
+    </LazyMotion>
   )
 }

@@ -103,6 +103,372 @@ function positionLabel(post) {
 	return `Pinned until ${new Date(post.positionPinnedUntil).toLocaleDateString()}`;
 }
 
+function BoardPostModal({
+	editing,
+	form,
+	formMessage,
+	validationErrors,
+	isSuperAdmin,
+	artists,
+	token,
+	saving,
+	pendingBodyImagePathnamesRef,
+	setForm,
+	setValidationErrors,
+	onClose,
+	onSave,
+}) {
+	return (
+		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+			<div className="admin-modal">
+				<div className="admin-modal-header">
+					<h2 className="admin-modal-title">{editing ? 'Edit Post' : 'New Post'}</h2>
+					<button type="button" className="admin-modal-close" onClick={onClose} aria-label="Close">x</button>
+				</div>
+				<div className="admin-modal-body">
+					{formMessage ? (
+						<div className="admin-board-page-form-message" role="alert">
+							{formMessage}
+						</div>
+					) : null}
+					<div className="admin-modal-field admin-modal-field-full">
+						<label htmlFor="admin-board-post-title" className="admin-modal-label">Title *</label>
+						<input
+							id="admin-board-post-title"
+							className={`admin-modal-input admin-board-page-text-input${validationErrors.title ? ' admin-board-page-input-invalid' : ''}`}
+							value={form.title}
+							onChange={(e) => {
+								const nextValue = e.target.value;
+								setForm((f) => ({ ...f, title: nextValue }));
+								if (validationErrors.title) {
+									setValidationErrors((current) => {
+										const next = { ...current };
+										delete next.title;
+										return next;
+									});
+								}
+							}}
+							placeholder="Post title"
+						/>
+						{validationErrors.title ? <p className="admin-board-page-field-error">{validationErrors.title}</p> : null}
+					</div>
+					{isSuperAdmin && (
+						<div className="admin-modal-field admin-modal-field-full">
+							<label htmlFor="admin-board-post-artist" className="admin-modal-label">Post As</label>
+							<select
+								id="admin-board-post-artist"
+								className={`admin-modal-input admin-board-page-text-input admin-board-page-select-input${validationErrors.artistId ? ' admin-board-page-input-invalid' : ''}`}
+								value={form.artistId}
+								onChange={(e) => {
+									const nextValue = e.target.value;
+									setForm((f) => ({ ...f, artistId: nextValue }));
+									if (validationErrors.artistId) {
+										setValidationErrors((current) => {
+											const next = { ...current };
+											delete next.artistId;
+											return next;
+										});
+									}
+								}}
+							>
+								<option value="">Select artist</option>
+								<option value={ASD_RECORDS_ARTIST_OPTION_ID}>{ASD_RECORDS_ARTIST_NAME}</option>
+								{artists.map((artist) => (
+									<option key={artist.id} value={artist.id}>{artist.name}</option>
+								))}
+							</select>
+							{validationErrors.artistId ? <p className="admin-board-page-field-error">{validationErrors.artistId}</p> : null}
+						</div>
+					)}
+					<div className="admin-modal-field admin-modal-field-full">
+						<BoardMarkdownEditor
+							value={form.body}
+							onChange={(markdown) => {
+								setForm((f) => ({ ...f, body: markdown }));
+								if (validationErrors.body) {
+									setValidationErrors((current) => {
+										const next = { ...current };
+										delete next.body;
+										return next;
+									});
+								}
+							}}
+							token={token}
+							entityLabel={form.title || 'Board image'}
+							error={validationErrors.body}
+							onBodyImageUpload={(pathname) => {
+								if (!pendingBodyImagePathnamesRef.current.includes(pathname)) {
+									pendingBodyImagePathnamesRef.current = [...pendingBodyImagePathnamesRef.current, pathname];
+								}
+							}}
+							maxImages={1}
+							maxLinks={5}
+						/>
+					</div>
+					<div className="admin-modal-field admin-modal-field-full">
+						<div className="admin-modal-label">Cover Image</div>
+						<ImageCollectionField
+							value={form.images}
+							onChange={(imgs) => setForm((f) => ({ ...f, images: imgs }))}
+							token={token}
+							folder="board"
+							entityLabel={form.title || 'post'}
+						/>
+					</div>
+					<div className="admin-board-page-settings-row admin-modal-field-full">
+						<div className="admin-modal-field admin-board-page-color-field">
+							<label htmlFor="admin-board-post-pin-color" className="admin-modal-label">Pin Color</label>
+							<input
+								id="admin-board-post-pin-color"
+								type="color"
+								className="admin-modal-input admin-board-page-color-input"
+								value={form.pinColor || '#e06060'}
+								onChange={(e) => setForm((f) => ({ ...f, pinColor: e.target.value }))}
+							/>
+						</div>
+						<div className="admin-modal-field">
+							<label htmlFor="admin-board-post-expires-at" className="admin-modal-label">Expires At</label>
+							<AdminDateInput
+								id="admin-board-post-expires-at"
+								ariaLabel="Post expiration date"
+								className="admin-modal-input admin-board-page-date-input"
+								value={form.expiresAt}
+								onChange={(v) => setForm((f) => ({ ...f, expiresAt: v }))}
+							/>
+						</div>
+					</div>
+					<div className="admin-board-page-publish-panel admin-modal-field-full">
+						<div className="admin-board-page-publish-header">
+							<div className="admin-modal-label">Publishing</div>
+							<span className="admin-board-page-publish-summary">
+								{form.publishMode === 'draft'
+									? 'Save keeps this post as a draft.'
+									: form.publishMode === 'publish'
+										? 'Save publishes this post immediately.'
+										: 'Save schedules this post for the selected date.'}
+							</span>
+						</div>
+						<div className="admin-board-page-publish-options">
+							<button
+								type="button"
+								className={`admin-board-page-publish-option${form.publishMode === 'draft' ? ' admin-board-page-publish-option-active' : ''}`}
+								onClick={() => setForm((f) => ({ ...f, publishMode: 'draft' }))}
+							>
+								Draft
+							</button>
+							<button
+								type="button"
+								className={`admin-board-page-publish-option${form.publishMode === 'publish' ? ' admin-board-page-publish-option-active' : ''}`}
+								onClick={() => setForm((f) => ({ ...f, publishMode: 'publish' }))}
+							>
+								Publish Now
+							</button>
+							<button
+								type="button"
+								className={`admin-board-page-publish-option${form.publishMode === 'schedule' ? ' admin-board-page-publish-option-active' : ''}`}
+								onClick={() => setForm((f) => ({ ...f, publishMode: 'schedule' }))}
+							>
+								Schedule
+							</button>
+						</div>
+						{form.publishMode === 'schedule' && (
+							<div className="admin-modal-field admin-board-page-publish-date-field">
+								<label htmlFor="admin-board-post-publish-at" className="admin-modal-label">Publish On</label>
+								<AdminDateInput
+									id="admin-board-post-publish-at"
+									ariaLabel="Post publish date"
+									className={`admin-modal-input admin-board-page-date-input${validationErrors.publishAt ? ' admin-board-page-input-invalid' : ''}`}
+									value={form.publishAt}
+									onChange={(v) => {
+										setForm((f) => ({ ...f, publishAt: v }));
+										if (validationErrors.publishAt) {
+											setValidationErrors((current) => {
+												const next = { ...current };
+												delete next.publishAt;
+												return next;
+											});
+										}
+									}}
+								/>
+								{validationErrors.publishAt ? <p className="admin-board-page-field-error">{validationErrors.publishAt}</p> : null}
+							</div>
+						)}
+					</div>
+				</div>
+				<div className="admin-modal-footer">
+					<button type="button" className="admin-artists-page-ghost-btn" onClick={onClose}>Cancel</button>
+					<button type="button" className="admin-artists-page-primary-btn" onClick={onSave} disabled={saving}>
+						{saving
+							? 'Saving...'
+							: form.publishMode === 'draft'
+								? 'Save Draft'
+								: form.publishMode === 'publish'
+									? 'Publish Post'
+									: 'Schedule Post'}
+					</button>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function BoardPostRow({ post, canEdit, isViewer, isSuperAdmin, onEdit, onArchive, onDelete, onReleasePosition }) {
+	return (
+		<tr>
+			<td className="admin-board-page-col-thumb">
+				{post.imageUrl
+					? <img src={post.imageUrl} alt={post.title} className="admin-board-page-thumb" />
+					: <div className="admin-board-page-thumb-placeholder" />}
+			</td>
+			<td className="admin-board-page-col-title">{post.title}</td>
+			<td className="admin-board-page-col-sm">{post.artist?.name}</td>
+			<td className="admin-board-page-col-sm">
+				{post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : <span className="admin-board-page-badge-draft">Draft</span>}
+			</td>
+			<td className="admin-board-page-col-sm">
+				<span className={`admin-board-page-badge admin-board-page-badge-${statusLabel(post).toLowerCase()}`}>
+					{statusLabel(post)}
+				</span>
+			</td>
+			<td className="admin-board-page-col-pos">
+				<button
+					type="button"
+					className={`admin-board-page-pin-btn${post.posX != null ? ' admin-board-page-pin-btn-active' : ''}`}
+					onClick={isSuperAdmin && post.posX != null ? () => onReleasePosition(post) : undefined}
+					title={post.posX != null ? positionLabel(post) + ' - click to release' : 'Auto-placed'}
+					aria-label={post.posX != null ? 'Release pinned board position' : 'Board position is automatic'}
+					disabled={!isSuperAdmin || post.posX == null}
+				>
+					<FaThumbtack aria-hidden="true" />
+				</button>
+			</td>
+			<td className="admin-board-page-col-actions">
+				{canEdit && !isViewer && (
+					<button
+						type="button"
+						className="admin-artists-page-ghost-btn admin-artists-page-icon-btn"
+						onClick={() => onEdit(post)}
+						aria-label="Edit post"
+						title="Edit"
+					>
+						<FaPencilAlt aria-hidden="true" />
+					</button>
+				)}
+				{isSuperAdmin && !post.archivedAt && (
+					<button
+						type="button"
+						className="admin-artists-page-ghost-btn admin-artists-page-icon-btn"
+						onClick={() => onArchive(post, true)}
+						aria-label="Archive post"
+						title="Archive"
+					>
+						<FaArchive aria-hidden="true" />
+					</button>
+				)}
+				{canEdit && !isViewer && (
+					<ConfirmActionButton
+						message="Delete this board post?"
+						buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+						buttonTitle="Delete"
+						buttonAriaLabel="Delete post"
+						onConfirm={() => onDelete(post)}
+					>
+						<FaTrash aria-hidden="true" />
+					</ConfirmActionButton>
+				)}
+			</td>
+		</tr>
+	);
+}
+
+function ArchivedBoardPosts({ posts, isOpen, onToggleOpen, onRestore, onDelete }) {
+	if (!posts.length) return null;
+
+	return (
+		<div className="admin-board-page-archived">
+			<button
+				type="button"
+				className="admin-board-page-archived-toggle"
+				onClick={onToggleOpen}
+			>
+				{isOpen ? 'v' : '>'} Archived ({posts.length})
+			</button>
+			{isOpen && (
+				<div className="admin-board-page-table-wrap">
+					<table className="admin-board-page-table">
+						<tbody>
+							{posts.map((post) => (
+								<tr key={post.id}>
+									<td className="admin-board-page-col-thumb">
+										{post.imageUrl
+											? <img src={post.imageUrl} alt={post.title} className="admin-board-page-thumb" />
+											: <div className="admin-board-page-thumb-placeholder" />}
+									</td>
+									<td className="admin-board-page-col-title">{post.title}</td>
+									<td className="admin-board-page-col-sm">{post.artist?.name}</td>
+									<td colSpan={3} />
+									<td className="admin-board-page-col-actions">
+										<button
+											type="button"
+											className="admin-artists-page-ghost-btn"
+											onClick={() => onRestore(post)}
+										>
+											Restore
+										</button>
+										<ConfirmActionButton
+											message="Delete this archived board post?"
+											buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+											buttonAriaLabel="Delete archived post"
+											onConfirm={() => onDelete(post)}
+										>
+											<FaTrash aria-hidden="true" />
+										</ConfirmActionButton>
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			)}
+		</div>
+	);
+}
+
+function ActiveBoardPostsTable({ posts, isViewer, isSuperAdmin, isArtist, sessionArtistId, onEdit, onArchive, onDelete, onReleasePosition }) {
+	return (
+		<div className="admin-board-page-table-wrap">
+			<table className="admin-board-page-table">
+				<thead>
+					<tr>
+						<th className="admin-board-page-col-thumb" />
+						<th className="admin-board-page-col-title">Title</th>
+						<th className="admin-board-page-col-sm">Artist</th>
+						<th className="admin-board-page-col-sm">Published</th>
+						<th className="admin-board-page-col-sm">Status</th>
+						<th className="admin-board-page-col-pos">Pin</th>
+						<th className="admin-board-page-col-actions">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{posts.map((post) => (
+						<BoardPostRow
+							key={post.id}
+							post={post}
+							canEdit={isSuperAdmin || (isArtist && post.artistId === sessionArtistId)}
+							isViewer={isViewer}
+							isSuperAdmin={isSuperAdmin}
+							onEdit={onEdit}
+							onArchive={onArchive}
+							onDelete={onDelete}
+							onReleasePosition={onReleasePosition}
+						/>
+					))}
+				</tbody>
+			</table>
+		</div>
+	);
+}
+
 export default function AdminMusicBoardPage() {
 	const { token, session } = useAdminAuth();
 	const isSuperAdmin = session?.role === 'SUPER_ADMIN';
@@ -327,75 +693,6 @@ export default function AdminMusicBoardPage() {
 		}
 	}
 
-	function renderRow(post) {
-		const canEdit = isSuperAdmin || (isArtist && post.artistId === session?.artistId);
-		return (
-			<tr key={post.id}>
-				<td className="admin-board-page-col-thumb">
-					{post.imageUrl
-						? <img src={post.imageUrl} alt={post.title} className="admin-board-page-thumb" />
-						: <div className="admin-board-page-thumb-placeholder" />}
-				</td>
-				<td className="admin-board-page-col-title">{post.title}</td>
-				<td className="admin-board-page-col-sm">{post.artist?.name}</td>
-				<td className="admin-board-page-col-sm">
-					{post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : <span className="admin-board-page-badge-draft">Draft</span>}
-				</td>
-				<td className="admin-board-page-col-sm">
-					<span className={`admin-board-page-badge admin-board-page-badge-${statusLabel(post).toLowerCase()}`}>
-						{statusLabel(post)}
-					</span>
-				</td>
-				<td className="admin-board-page-col-pos">
-					<button
-						type="button"
-						className={`admin-board-page-pin-btn${post.posX != null ? ' admin-board-page-pin-btn-active' : ''}`}
-						onClick={isSuperAdmin && post.posX != null ? () => releasePosition(post) : undefined}
-						title={post.posX != null ? positionLabel(post) + ' — click to release' : 'Auto-placed'}
-						aria-label={post.posX != null ? 'Release pinned board position' : 'Board position is automatic'}
-						disabled={!isSuperAdmin || post.posX == null}
-					>
-						<FaThumbtack aria-hidden="true" />
-					</button>
-				</td>
-				<td className="admin-board-page-col-actions">
-					{canEdit && !isViewer && (
-						<button
-							type="button"
-							className="admin-artists-page-ghost-btn admin-artists-page-icon-btn"
-							onClick={() => openEdit(post)}
-							aria-label="Edit post"
-							title="Edit"
-						>
-							<FaPencilAlt aria-hidden="true" />
-						</button>
-					)}
-					{isSuperAdmin && !post.archivedAt && (
-						<button
-							type="button"
-							className="admin-artists-page-ghost-btn admin-artists-page-icon-btn"
-							onClick={() => toggleArchive(post, true)}
-							aria-label="Archive post"
-							title="Archive"
-						>
-							<FaArchive aria-hidden="true" />
-						</button>
-					)}
-					{canEdit && !isViewer && (
-						<ConfirmActionButton
-							message="Delete this board post?"
-							buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-							buttonTitle="Delete"
-							buttonAriaLabel="Delete post"
-							onConfirm={() => deletePost(post)}
-						>
-							<FaTrash aria-hidden="true" />
-						</ConfirmActionButton>
-					)}
-				</td>
-			</tr>
-		);
-	}
 
 	return (
 		<div className="admin-board-page">
@@ -411,265 +708,46 @@ export default function AdminMusicBoardPage() {
 			{loading ? (
 				<p className="admin-board-page-loading">Loading posts...</p>
 			) : (
-				<div className="admin-board-page-table-wrap">
-					<table className="admin-board-page-table">
-						<thead>
-							<tr>
-								<th className="admin-board-page-col-thumb" />
-								<th className="admin-board-page-col-title">Title</th>
-								<th className="admin-board-page-col-sm">Artist</th>
-								<th className="admin-board-page-col-sm">Published</th>
-								<th className="admin-board-page-col-sm">Status</th>
-								<th className="admin-board-page-col-pos">Pin</th>
-								<th className="admin-board-page-col-actions">Actions</th>
-							</tr>
-						</thead>
-						<tbody>{activePosts.map(renderRow)}</tbody>
-					</table>
-				</div>
+                <ActiveBoardPostsTable
+                    posts={activePosts}
+                    isViewer={isViewer}
+                    isSuperAdmin={isSuperAdmin}
+                    isArtist={isArtist}
+                    sessionArtistId={session?.artistId}
+                    onEdit={openEdit}
+                    onArchive={toggleArchive}
+                    onDelete={deletePost}
+                    onReleasePosition={releasePosition}
+                />
 			)}
 
-			{isSuperAdmin && archivedPosts.length > 0 && (
-				<div className="admin-board-page-archived">
-					<button
-						type="button"
-						className="admin-board-page-archived-toggle"
-						onClick={() => setArchivedOpen((v) => !v)}
-					>
-						{archivedOpen ? 'v' : '>'} Archived ({archivedPosts.length})
-					</button>
-					{archivedOpen && (
-						<div className="admin-board-page-table-wrap">
-							<table className="admin-board-page-table">
-								<tbody>
-									{archivedPosts.map((post) => (
-										<tr key={post.id}>
-											<td className="admin-board-page-col-thumb">
-												{post.imageUrl
-													? <img src={post.imageUrl} alt={post.title} className="admin-board-page-thumb" />
-													: <div className="admin-board-page-thumb-placeholder" />}
-											</td>
-											<td className="admin-board-page-col-title">{post.title}</td>
-											<td className="admin-board-page-col-sm">{post.artist?.name}</td>
-											<td colSpan={3} />
-											<td className="admin-board-page-col-actions">
-												<button
-													type="button"
-													className="admin-artists-page-ghost-btn"
-													onClick={() => toggleArchive(post, false)}
-												>
-													Restore
-												</button>
-												<ConfirmActionButton
-													message="Delete this archived board post?"
-													buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-													buttonAriaLabel="Delete archived post"
-													onConfirm={() => deletePost(post)}
-												>
-													<FaTrash aria-hidden="true" />
-												</ConfirmActionButton>
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-					)}
-				</div>
-			)}
+            {isSuperAdmin && (
+                <ArchivedBoardPosts
+                    posts={archivedPosts}
+                    isOpen={archivedOpen}
+                    onToggleOpen={() => setArchivedOpen((value) => !value)}
+                    onRestore={(post) => toggleArchive(post, false)}
+                    onDelete={deletePost}
+                />
+            )}
 
-			{modalOpen && (
-				<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}>
-					<div className="admin-modal">
-						<div className="admin-modal-header">
-							<h2 className="admin-modal-title">{editing ? 'Edit Post' : 'New Post'}</h2>
-							<button type="button" className="admin-modal-close" onClick={closeModal} aria-label="Close">x</button>
-						</div>
-						<div className="admin-modal-body">
-							{formMessage ? (
-								<div className="admin-board-page-form-message" role="alert">
-									{formMessage}
-								</div>
-							) : null}
-							<div className="admin-modal-field admin-modal-field-full">
-								<label htmlFor="admin-board-post-title" className="admin-modal-label">Title *</label>
-								<input
-									id="admin-board-post-title"
-									className={`admin-modal-input admin-board-page-text-input${validationErrors.title ? ' admin-board-page-input-invalid' : ''}`}
-									value={form.title}
-									onChange={(e) => {
-										const nextValue = e.target.value;
-										setForm((f) => ({ ...f, title: nextValue }));
-										if (validationErrors.title) {
-											setValidationErrors((current) => {
-												const next = { ...current };
-												delete next.title;
-												return next;
-											});
-										}
-									}}
-									placeholder="Post title"
-								/>
-								{validationErrors.title ? <p className="admin-board-page-field-error">{validationErrors.title}</p> : null}
-							</div>
-							{isSuperAdmin && (
-								<div className="admin-modal-field admin-modal-field-full">
-									<label htmlFor="admin-board-post-artist" className="admin-modal-label">Post As</label>
-									<select
-										id="admin-board-post-artist"
-										className={`admin-modal-input admin-board-page-text-input admin-board-page-select-input${validationErrors.artistId ? ' admin-board-page-input-invalid' : ''}`}
-										value={form.artistId}
-										onChange={(e) => {
-											const nextValue = e.target.value;
-											setForm((f) => ({ ...f, artistId: nextValue }));
-											if (validationErrors.artistId) {
-												setValidationErrors((current) => {
-													const next = { ...current };
-													delete next.artistId;
-													return next;
-												});
-											}
-										}}
-									>
-										<option value="">Select artist</option>
-										<option value={ASD_RECORDS_ARTIST_OPTION_ID}>{ASD_RECORDS_ARTIST_NAME}</option>
-										{artists.map((artist) => (
-											<option key={artist.id} value={artist.id}>{artist.name}</option>
-										))}
-									</select>
-									{validationErrors.artistId ? <p className="admin-board-page-field-error">{validationErrors.artistId}</p> : null}
-								</div>
-							)}
-							<div className="admin-modal-field admin-modal-field-full">
-								<BoardMarkdownEditor
-									value={form.body}
-									onChange={(markdown) => {
-										setForm((f) => ({ ...f, body: markdown }));
-										if (validationErrors.body) {
-											setValidationErrors((current) => {
-												const next = { ...current };
-												delete next.body;
-												return next;
-											});
-										}
-									}}
-									token={token}
-									entityLabel={form.title || 'Board image'}
-									error={validationErrors.body}
-									onBodyImageUpload={(pathname) => {
-										if (!pendingBodyImagePathnamesRef.current.includes(pathname)) {
-											pendingBodyImagePathnamesRef.current = [...pendingBodyImagePathnamesRef.current, pathname];
-										}
-									}}
-									maxImages={1}
-									maxLinks={5}
-								/>
-							</div>
-							<div className="admin-modal-field admin-modal-field-full">
-								<div className="admin-modal-label">Cover Image</div>
-								<ImageCollectionField
-									value={form.images}
-									onChange={(imgs) => setForm((f) => ({ ...f, images: imgs }))}
-									token={token}
-									folder="board"
-									entityLabel={form.title || 'post'}
-								/>
-							</div>
-							<div className="admin-board-page-settings-row admin-modal-field-full">
-								<div className="admin-modal-field admin-board-page-color-field">
-									<label htmlFor="admin-board-post-pin-color" className="admin-modal-label">Pin Color</label>
-									<input
-										id="admin-board-post-pin-color"
-										type="color"
-										className="admin-modal-input admin-board-page-color-input"
-										value={form.pinColor || '#e06060'}
-										onChange={(e) => setForm((f) => ({ ...f, pinColor: e.target.value }))}
-									/>
-								</div>
-								<div className="admin-modal-field">
-									<label htmlFor="admin-board-post-expires-at" className="admin-modal-label">Expires At</label>
-									<AdminDateInput
-										id="admin-board-post-expires-at"
-										ariaLabel="Post expiration date"
-										className="admin-modal-input admin-board-page-date-input"
-										value={form.expiresAt}
-										onChange={(v) => setForm((f) => ({ ...f, expiresAt: v }))}
-									/>
-								</div>
-							</div>
-							<div className="admin-board-page-publish-panel admin-modal-field-full">
-								<div className="admin-board-page-publish-header">
-									<div className="admin-modal-label">Publishing</div>
-									<span className="admin-board-page-publish-summary">
-										{form.publishMode === 'draft'
-											? 'Save keeps this post as a draft.'
-											: form.publishMode === 'publish'
-												? 'Save publishes this post immediately.'
-												: 'Save schedules this post for the selected date.'}
-									</span>
-								</div>
-								<div className="admin-board-page-publish-options">
-									<button
-										type="button"
-										className={`admin-board-page-publish-option${form.publishMode === 'draft' ? ' admin-board-page-publish-option-active' : ''}`}
-										onClick={() => setForm((f) => ({ ...f, publishMode: 'draft' }))}
-									>
-										Draft
-									</button>
-									<button
-										type="button"
-										className={`admin-board-page-publish-option${form.publishMode === 'publish' ? ' admin-board-page-publish-option-active' : ''}`}
-										onClick={() => setForm((f) => ({ ...f, publishMode: 'publish' }))}
-									>
-										Publish Now
-									</button>
-									<button
-										type="button"
-										className={`admin-board-page-publish-option${form.publishMode === 'schedule' ? ' admin-board-page-publish-option-active' : ''}`}
-										onClick={() => setForm((f) => ({ ...f, publishMode: 'schedule' }))}
-									>
-										Schedule
-									</button>
-								</div>
-								{form.publishMode === 'schedule' && (
-									<div className="admin-modal-field admin-board-page-publish-date-field">
-										<label htmlFor="admin-board-post-publish-at" className="admin-modal-label">Publish On</label>
-										<AdminDateInput
-											id="admin-board-post-publish-at"
-											ariaLabel="Post publish date"
-											className={`admin-modal-input admin-board-page-date-input${validationErrors.publishAt ? ' admin-board-page-input-invalid' : ''}`}
-											value={form.publishAt}
-											onChange={(v) => {
-												setForm((f) => ({ ...f, publishAt: v }));
-												if (validationErrors.publishAt) {
-													setValidationErrors((current) => {
-														const next = { ...current };
-														delete next.publishAt;
-														return next;
-													});
-												}
-											}}
-										/>
-										{validationErrors.publishAt ? <p className="admin-board-page-field-error">{validationErrors.publishAt}</p> : null}
-									</div>
-								)}
-							</div>
-						</div>
-						<div className="admin-modal-footer">
-							<button type="button" className="admin-artists-page-ghost-btn" onClick={closeModal}>Cancel</button>
-							<button type="button" className="admin-artists-page-primary-btn" onClick={save} disabled={saving}>
-								{saving
-									? 'Saving...'
-									: form.publishMode === 'draft'
-										? 'Save Draft'
-										: form.publishMode === 'publish'
-											? 'Publish Post'
-											: 'Schedule Post'}
-							</button>
-						</div>
-					</div>
-				</div>
-			)}
+            {modalOpen && (
+                <BoardPostModal
+                    editing={editing}
+                    form={form}
+                    formMessage={formMessage}
+                    validationErrors={validationErrors}
+                    isSuperAdmin={isSuperAdmin}
+                    artists={artists}
+                    token={token}
+                    saving={saving}
+                    pendingBodyImagePathnamesRef={pendingBodyImagePathnamesRef}
+                    setForm={setForm}
+                    setValidationErrors={setValidationErrors}
+                    onClose={closeModal}
+                    onSave={save}
+                />
+            )}
 		</div>
 	);
 }

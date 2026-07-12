@@ -1,6 +1,6 @@
 import { prisma } from '../src/lib/prisma.js'
 import { isEffectivelyVisible } from '../src/lib/contentVisibility.js'
-import { verifyToken } from '../src/lib/auth.js'
+import { readAdminTokenFromRequest, verifyToken } from '../src/lib/auth.js'
 import { buildClientImageUrl, clientImage, clientImages, mergeLegacyImages } from '../src/lib/images.js'
 import { ARTIST_VIDEO_SOURCE, buildStaticArtistVideoPath, getStaticArtistVideoExtension, getYouTubeEmbedUrl } from '../src/lib/artistVideos.js'
 import { formatCrosshairVideo } from '../src/lib/crosshairVideos.js'
@@ -49,9 +49,8 @@ function setPublicCache(res) {
 }
 
 function readPreviewSession(req) {
-  const auth = req.headers.authorization
-  if (!auth?.startsWith('Bearer ')) return null
-  return verifyToken(auth.slice(7))
+  const token = readAdminTokenFromRequest(req)
+  return token ? verifyToken(token) : null
 }
 
 function publicArtistSelect() {

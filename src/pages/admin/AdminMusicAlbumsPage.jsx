@@ -185,6 +185,213 @@ function renderHeader(column) {
   return column.label
 }
 
+function AlbumsTable({ albums, isViewer, loadingEditId, onEdit, onDelete }) {
+  return (
+    <div className="admin-artists-page-table-wrap">
+      <table className="admin-artists-page-table">
+        <thead>
+          <tr>
+            {columns.map((column) => <th key={column.key} className={column.className}>{renderHeader(column)}</th>)}
+            <th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {albums.map((album) => (
+            <tr key={album.id} className={isAlbumHidden(album) ? 'admin-artists-page-hidden-row' : ''}>
+              {columns.map((column) => (
+                <td key={column.key} className={`${column.className ?? ''} ${column.key === 'type' ? 'admin-artists-page-muted' : ''}`.trim()}>
+                  {renderValue(album, column)}
+                </td>
+              ))}
+              <td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
+                <div className="admin-artists-page-actions">
+                  {!isViewer && (
+                    <button type="button" onClick={() => void onEdit(album)} disabled={loadingEditId === album.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit album" title="Edit">
+                      <FaPencilAlt aria-hidden="true" />
+                    </button>
+                  )}
+                  {!isViewer && (
+                    <ConfirmActionButton
+                      message="Delete this album and all its songs?"
+                      onConfirm={() => onDelete(album.id)}
+                      buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+                      buttonAriaLabel="Delete album"
+                      buttonTitle="Delete"
+                    >
+                      <FaTrash aria-hidden="true" />
+                    </ConfirmActionButton>
+                  )}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function AlbumsPagination({ currentPage, totalPages, onPageChange }) {
+  if (totalPages <= 1) return null
+
+  return (
+    <div className="admin-pagination">
+      <button
+        type="button"
+        className="admin-pagination-btn"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+      >
+        Ã¢â€ Â Prev
+      </button>
+      <span className="admin-pagination-info">Page {currentPage} of {totalPages}</span>
+      <button
+        type="button"
+        className="admin-pagination-btn"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+      >
+        Next Ã¢â€ â€™
+      </button>
+    </div>
+  )
+}
+
+function AlbumFormModal({
+  form,
+  setForm,
+  token,
+  artistOptions,
+  scopedArtistId,
+  isArtistScoped,
+  validationErrors,
+  visibilityTouchedRef,
+  fieldClassName,
+  set,
+  setReleaseDate,
+  onClose,
+  onSave,
+}) {
+  return (
+    <div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
+      <div className="admin-modal">
+        <div className="admin-modal-header">
+          <h2 className="admin-modal-title">{form.id ? 'Edit Album' : 'New Album'}</h2>
+          <button type="button" onClick={onClose} className="admin-modal-close" aria-label="Close">x</button>
+        </div>
+        <div className="admin-modal-body">
+          <TabView className="page-tabview admin-modal-tabs">
+            <TabPanel header="Album">
+              <div className="admin-modal-grid">
+                <div className="admin-modal-field admin-modal-field-full">
+                  <div className="admin-artists-page-name-field">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        visibilityTouchedRef.current = true
+                        setForm((current) => ({
+                          ...current,
+                          isVisible: !current.isVisible,
+                          autoShowOnRelease: false,
+                        }))
+                      }}
+                      className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
+                      aria-label={form.isVisible ? 'Album is visible to the public. Click to hide.' : 'Album is hidden from the public. Click to show.'}
+                      title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
+                    >
+                      {form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
+                    </button>
+                    <div className="admin-artists-page-name-field-main">
+                      <label htmlFor="admin-music-album-title" className="admin-modal-label">Title <span className="admin-modal-label-required">*</span></label>
+                      <input id="admin-music-album-title" type="text" placeholder="Title" value={form.title} onChange={set('title')} className={fieldClassName('title')} aria-invalid={Boolean(validationErrors.title)} />
+                    </div>
+                  </div>
+                </div>
+                <div className="admin-modal-field admin-modal-field-full">
+                  <div className="admin-modal-label">Images</div>
+                  <ImageCollectionField
+                    value={form.images}
+                    onChange={(images) => setForm((current) => ({ ...current, images }))}
+                    token={token}
+                    folder="albums"
+                    entityLabel={form.title || 'Album image'}
+                  />
+                </div>
+                <div className="admin-modal-field admin-modal-field-full admin-albums-modal-meta-row">
+                  <div className="admin-modal-field admin-albums-modal-meta-artist">
+                    <label htmlFor="admin-music-album-artist" className="admin-modal-label">Artist <span className="admin-modal-label-required">*</span></label>
+                    {isArtistScoped ? (
+                      <input
+                        id="admin-music-album-artist"
+                        type="text"
+                        value={artistOptions.find((artist) => artist.id === scopedArtistId)?.name ?? ''}
+                        className="admin-artists-page-input"
+                        readOnly
+                      />
+                    ) : (
+                      <select id="admin-music-album-artist" value={form.artistId} onChange={set('artistId')} className={fieldClassName('artistId')} aria-invalid={Boolean(validationErrors.artistId)}>
+                        <option value="">- Artist -</option>
+                        {artistOptions.map((artist) => <option key={artist.id} value={artist.id}>{artist.name}</option>)}
+                      </select>
+                    )}
+                  </div>
+                  <div className="admin-modal-field admin-albums-modal-meta-type">
+                    <label htmlFor="admin-music-album-type" className="admin-modal-label">Type <span className="admin-modal-label-required">*</span></label>
+                    <select id="admin-music-album-type" value={form.type} onChange={set('type')} className={fieldClassName('type')} aria-invalid={Boolean(validationErrors.type)}>
+                      <option value="">- Type -</option>
+                      <option value="ALBUM">Album</option>
+                      <option value="SINGLE">Single</option>
+                      <option value="EP">EP</option>
+                    </select>
+                  </div>
+                  <div className="admin-modal-field admin-albums-modal-meta-date">
+                    <label htmlFor="admin-music-album-release-date" className="admin-modal-label">Release Date <span className="admin-modal-label-required">*</span></label>
+                    <AdminDateInput id="admin-music-album-release-date" ariaLabel="Album release date" value={form.releaseDate} onChange={setReleaseDate} className={fieldClassName('releaseDate')} ariaInvalid={Boolean(validationErrors.releaseDate)} required />
+                  </div>
+                </div>
+                {form.artistId === OTHER_ARTIST_OPTION_ID && (
+                  <div className="admin-modal-field admin-modal-field-full">
+                    <label htmlFor="admin-music-album-other-artist-name" className="admin-modal-label">Other Artist Name <span className="admin-modal-label-required">*</span></label>
+                    <input id="admin-music-album-other-artist-name" type="text" placeholder="Artist name" value={form.otherArtistName} onChange={set('otherArtistName')} className={fieldClassName('otherArtistName')} aria-invalid={Boolean(validationErrors.otherArtistName)} />
+                  </div>
+                )}
+                <div className="admin-modal-field admin-modal-field-full">
+                  <label htmlFor="admin-music-album-about" className="admin-modal-label">About</label>
+                  <textarea id="admin-music-album-about" placeholder="About this album..." value={form.aboutText} onChange={set('aboutText')} className="admin-artists-page-input admin-modal-textarea" rows={5} />
+                </div>
+              </div>
+            </TabPanel>
+            <TabPanel header="Links">
+              <div className="admin-modal-grid">
+                <div className="admin-modal-field admin-modal-field-full">
+                  <label htmlFor="admin-music-album-soundcloud" className="admin-modal-label">{iconLabel(<FaSoundcloud />, 'SoundCloud URL')}</label>
+                  <input id="admin-music-album-soundcloud" type="url" placeholder="SoundCloud URL" value={form.soundcloudUrl} onChange={set('soundcloudUrl')} className="admin-artists-page-input" />
+                </div>
+                <div className="admin-modal-field admin-modal-field-full">
+                  <label htmlFor="admin-music-album-spotify" className="admin-modal-label">{iconLabel(<FaSpotify />, 'Spotify URL')}</label>
+                  <input id="admin-music-album-spotify" type="url" placeholder="Spotify URL" value={form.spotifyUrl} onChange={set('spotifyUrl')} className="admin-artists-page-input" />
+                </div>
+                <div className="admin-modal-field admin-modal-field-full">
+                  <label htmlFor="admin-music-album-apple-music" className="admin-modal-label">{iconLabel(<FaApple />, 'Apple Music URL')}</label>
+                  <input id="admin-music-album-apple-music" type="url" placeholder="Apple Music URL" value={form.appleMusicUrl} onChange={set('appleMusicUrl')} className="admin-artists-page-input" />
+                </div>
+                <div className="admin-modal-field admin-modal-field-full">
+                  <label htmlFor="admin-music-album-youtube" className="admin-modal-label">{iconLabel(<FaYoutube />, 'YouTube URL')}</label>
+                  <input id="admin-music-album-youtube" type="url" placeholder="YouTube URL" value={form.youtubeUrl} onChange={set('youtubeUrl')} className="admin-artists-page-input" />
+                </div>
+              </div>
+            </TabPanel>
+          </TabView>
+        </div>
+        <div className="admin-modal-footer">
+          <button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
+          <button type="button" onClick={onSave} className="admin-artists-page-primary-btn">Save</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminMusicAlbumsPage() {
   const { token, session } = useAdminAuth()
   const isArtistScoped = session?.role === 'ARTIST'
@@ -342,7 +549,7 @@ export default function AdminMusicAlbumsPage() {
     setCreateSongPrefill(null)
   }
 
-  const set = (key) => (event) => setForm((current) => {
+  const set = (key) => (event) => {
     const nextValue = event.target.value
     setValidationErrors((currentErrors) => {
       if (!(key in currentErrors) && !(key === 'artistId' && 'otherArtistName' in currentErrors)) return currentErrors
@@ -352,19 +559,21 @@ export default function AdminMusicAlbumsPage() {
       return nextErrors
     })
 
-    return {
+    setForm((current) => ({
       ...current,
       [key]: nextValue,
       ...(key === 'title' ? { slug: slugify(nextValue) } : {}),
       ...(key === 'artistId' && nextValue !== OTHER_ARTIST_OPTION_ID ? { otherArtistName: '' } : {}),
-    }
-  })
+    }))
+  }
 
   const fieldClassName = (fieldName) => (
     `admin-artists-page-input${validationErrors[fieldName] ? ' admin-artists-page-input-invalid' : ''}`
   )
 
-  const setReleaseDate = (value) => setForm((current) => {
+  const setReleaseDate = (value) => {
+    const visibilityDefaults = !visibilityTouchedRef.current ? defaultVisibilityForReleaseDate(value) : {}
+
     setValidationErrors((currentErrors) => {
       if (!('releaseDate' in currentErrors)) return currentErrors
       const nextErrors = { ...currentErrors }
@@ -372,18 +581,18 @@ export default function AdminMusicAlbumsPage() {
       return nextErrors
     })
 
-    return {
+    setForm((current) => ({
       ...current,
       releaseDate: value,
-      ...(!visibilityTouchedRef.current ? defaultVisibilityForReleaseDate(value) : {}),
-    }
-  })
+      ...visibilityDefaults,
+    }))
+  }
 
   return (
     <div>
       <div className="admin-artists-page-sticky-top">
         <div className="admin-artists-page-header">
-          <h1 className="admin-artists-page-title">Music — Albums</h1>
+          <h1 className="admin-artists-page-title">Music Ã¢â‚¬â€ Albums</h1>
           {!isViewer && <button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Album</button>}
         </div>
 
@@ -431,69 +640,17 @@ export default function AdminMusicAlbumsPage() {
       </div>
 
       {!form && (
-        <div className="admin-artists-page-table-wrap">
-          <table className="admin-artists-page-table">
-            <thead>
-              <tr>
-                {columns.map((column) => <th key={column.key} className={column.className}>{renderHeader(column)}</th>)}
-                <th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagedAlbums.map((album) => (
-                <tr key={album.id} className={isAlbumHidden(album) ? 'admin-artists-page-hidden-row' : ''}>
-                  {columns.map((column) => (
-                    <td key={column.key} className={`${column.className ?? ''} ${column.key === 'type' ? 'admin-artists-page-muted' : ''}`.trim()}>
-                      {renderValue(album, column)}
-                    </td>
-                  ))}
-                  <td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
-                    <div className="admin-artists-page-actions">
-                      {!isViewer && (
-                        <button type="button" onClick={() => void openEdit(album)} disabled={loadingEditId === album.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit album" title="Edit">
-                          <FaPencilAlt aria-hidden="true" />
-                        </button>
-                      )}
-                      {!isViewer && (
-                        <ConfirmActionButton
-                          message="Delete this album and all its songs?"
-                          onConfirm={() => handleDelete(album.id)}
-                          buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-                          buttonAriaLabel="Delete album"
-                          buttonTitle="Delete"
-                        >
-                          <FaTrash aria-hidden="true" />
-                        </ConfirmActionButton>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <AlbumsTable
+          albums={pagedAlbums}
+          isViewer={isViewer}
+          loadingEditId={loadingEditId}
+          onEdit={openEdit}
+          onDelete={handleDelete}
+        />
       )}
 
-      {!form && totalPages > 1 && (
-        <div className="admin-pagination">
-          <button
-            type="button"
-            className="admin-pagination-btn"
-            onClick={() => setPage(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            ← Prev
-          </button>
-          <span className="admin-pagination-info">Page {currentPage} of {totalPages}</span>
-          <button
-            type="button"
-            className="admin-pagination-btn"
-            onClick={() => setPage(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            Next →
-          </button>
-        </div>
+      {!form && (
+        <AlbumsPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setPage} />
       )}
 
       {createSongPrefill && (
@@ -509,122 +666,21 @@ export default function AdminMusicAlbumsPage() {
       )}
 
       {form && (
-        <div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm() }}>
-          <div className="admin-modal">
-            <div className="admin-modal-header">
-              <h2 className="admin-modal-title">{form.id ? 'Edit Album' : 'New Album'}</h2>
-              <button type="button" onClick={closeForm} className="admin-modal-close" aria-label="Close">×</button>
-            </div>
-            <div className="admin-modal-body">
-              <TabView className="page-tabview admin-modal-tabs">
-                <TabPanel header="Album">
-                  <div className="admin-modal-grid">
-                    <div className="admin-modal-field admin-modal-field-full">
-                      <div className="admin-artists-page-name-field">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            visibilityTouchedRef.current = true
-                            setForm((current) => ({
-                              ...current,
-                              isVisible: !current.isVisible,
-                              autoShowOnRelease: false,
-                            }))
-                          }}
-                          className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
-                          aria-label={form.isVisible ? 'Album is visible to the public. Click to hide.' : 'Album is hidden from the public. Click to show.'}
-                          title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
-                        >
-                          {form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
-                        </button>
-                        <div className="admin-artists-page-name-field-main">
-                          <label htmlFor="admin-music-album-title" className="admin-modal-label">Title <span className="admin-modal-label-required">*</span></label>
-                          <input id="admin-music-album-title" type="text" placeholder="Title" value={form.title} onChange={set('title')} className={fieldClassName('title')} aria-invalid={Boolean(validationErrors.title)} />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="admin-modal-field admin-modal-field-full">
-                      <div className="admin-modal-label">Images</div>
-                      <ImageCollectionField
-                        value={form.images}
-                        onChange={(images) => setForm((current) => ({ ...current, images }))}
-                        token={token}
-                        folder="albums"
-                        entityLabel={form.title || 'Album image'}
-                      />
-                    </div>
-                    <div className="admin-modal-field admin-modal-field-full admin-albums-modal-meta-row">
-                      <div className="admin-modal-field admin-albums-modal-meta-artist">
-                        <label htmlFor="admin-music-album-artist" className="admin-modal-label">Artist <span className="admin-modal-label-required">*</span></label>
-                        {isArtistScoped ? (
-                          <input
-                            id="admin-music-album-artist"
-                            type="text"
-                            value={artistOptions.find((artist) => artist.id === scopedArtistId)?.name ?? ''}
-                            className="admin-artists-page-input"
-                            readOnly
-                          />
-                        ) : (
-                          <select id="admin-music-album-artist" value={form.artistId} onChange={set('artistId')} className={fieldClassName('artistId')} aria-invalid={Boolean(validationErrors.artistId)}>
-                            <option value="">- Artist -</option>
-                            {artistOptions.map((artist) => <option key={artist.id} value={artist.id}>{artist.name}</option>)}
-                          </select>
-                        )}
-                      </div>
-                      <div className="admin-modal-field admin-albums-modal-meta-type">
-                        <label htmlFor="admin-music-album-type" className="admin-modal-label">Type <span className="admin-modal-label-required">*</span></label>
-                        <select id="admin-music-album-type" value={form.type} onChange={set('type')} className={fieldClassName('type')} aria-invalid={Boolean(validationErrors.type)}>
-                          <option value="">- Type -</option>
-                          <option value="ALBUM">Album</option>
-                          <option value="SINGLE">Single</option>
-                          <option value="EP">EP</option>
-                        </select>
-                      </div>
-                      <div className="admin-modal-field admin-albums-modal-meta-date">
-                        <label htmlFor="admin-music-album-release-date" className="admin-modal-label">Release Date <span className="admin-modal-label-required">*</span></label>
-                        <AdminDateInput id="admin-music-album-release-date" ariaLabel="Album release date" value={form.releaseDate} onChange={setReleaseDate} className={fieldClassName('releaseDate')} ariaInvalid={Boolean(validationErrors.releaseDate)} required />
-                      </div>
-                    </div>
-                    {form.artistId === OTHER_ARTIST_OPTION_ID && (
-                      <div className="admin-modal-field admin-modal-field-full">
-                        <label htmlFor="admin-music-album-other-artist-name" className="admin-modal-label">Other Artist Name <span className="admin-modal-label-required">*</span></label>
-                        <input id="admin-music-album-other-artist-name" type="text" placeholder="Artist name" value={form.otherArtistName} onChange={set('otherArtistName')} className={fieldClassName('otherArtistName')} aria-invalid={Boolean(validationErrors.otherArtistName)} />
-                      </div>
-                    )}
-                    <div className="admin-modal-field admin-modal-field-full">
-                      <label htmlFor="admin-music-album-about" className="admin-modal-label">About</label>
-                      <textarea id="admin-music-album-about" placeholder="About this album..." value={form.aboutText} onChange={set('aboutText')} className="admin-artists-page-input admin-modal-textarea" rows={5} />
-                    </div>
-                  </div>
-                </TabPanel>
-                <TabPanel header="Links">
-                  <div className="admin-modal-grid">
-                    <div className="admin-modal-field admin-modal-field-full">
-                      <label htmlFor="admin-music-album-soundcloud" className="admin-modal-label">{iconLabel(<FaSoundcloud />, 'SoundCloud URL')}</label>
-                      <input id="admin-music-album-soundcloud" type="url" placeholder="SoundCloud URL" value={form.soundcloudUrl} onChange={set('soundcloudUrl')} className="admin-artists-page-input" />
-                    </div>
-                    <div className="admin-modal-field admin-modal-field-full">
-                      <label htmlFor="admin-music-album-spotify" className="admin-modal-label">{iconLabel(<FaSpotify />, 'Spotify URL')}</label>
-                      <input id="admin-music-album-spotify" type="url" placeholder="Spotify URL" value={form.spotifyUrl} onChange={set('spotifyUrl')} className="admin-artists-page-input" />
-                    </div>
-                    <div className="admin-modal-field admin-modal-field-full">
-                      <label htmlFor="admin-music-album-apple-music" className="admin-modal-label">{iconLabel(<FaApple />, 'Apple Music URL')}</label>
-                      <input id="admin-music-album-apple-music" type="url" placeholder="Apple Music URL" value={form.appleMusicUrl} onChange={set('appleMusicUrl')} className="admin-artists-page-input" />
-                    </div>
-                    <div className="admin-modal-field admin-modal-field-full">
-                      <label htmlFor="admin-music-album-youtube" className="admin-modal-label">{iconLabel(<FaYoutube />, 'YouTube URL')}</label>
-                      <input id="admin-music-album-youtube" type="url" placeholder="YouTube URL" value={form.youtubeUrl} onChange={set('youtubeUrl')} className="admin-artists-page-input" />
-                    </div>
-                  </div>
-                </TabPanel>
-              </TabView>
-            </div>
-            <div className="admin-modal-footer">
-              <button type="button" onClick={closeForm} className="admin-artists-page-ghost-btn">Cancel</button>
-              <button type="button" onClick={handleSave} className="admin-artists-page-primary-btn">Save</button>
-            </div>
-          </div>
-        </div>
+        <AlbumFormModal
+          form={form}
+          setForm={setForm}
+          token={token}
+          artistOptions={artistOptions}
+          scopedArtistId={scopedArtistId}
+          isArtistScoped={isArtistScoped}
+          validationErrors={validationErrors}
+          visibilityTouchedRef={visibilityTouchedRef}
+          fieldClassName={fieldClassName}
+          set={set}
+          setReleaseDate={setReleaseDate}
+          onClose={closeForm}
+          onSave={handleSave}
+        />
       )}
     </div>
   )

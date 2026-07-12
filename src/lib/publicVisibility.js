@@ -41,13 +41,6 @@ export function isReservedHiddenArtist(value) {
   return isOtherArtist(value) || isAsdRecordsArtist(value)
 }
 
-export function hasPublicArtistPage(value) {
-  if (!value) return false
-  if (isReservedHiddenArtist(value)) return false
-  if (typeof value === 'object' && value.isVisible === false) return false
-  return true
-}
-
 export function hasPublicBoardSource(value) {
   if (!value) return false
   if (typeof value === 'object' && value.isVisible === false) return false

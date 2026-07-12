@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useReducer, useRef } from 'react';
 import { FaApple, FaSoundcloud, FaSpotify, FaYoutube } from 'react-icons/fa';
 import { SiFacebook, SiInstagram, SiSnapchat, SiTiktok, SiX, SiYoutube } from 'react-icons/si';
 import { preloadImage, preloadImages } from '../../lib/publicPrefetch.js';
@@ -28,11 +28,26 @@ function getArtistImages(artist) {
 	};
 }
 
+function imageStateReducer(state, action) {
+	switch (action.type) {
+		case 'reset':
+			return { currentImage: action.image, previousImage: null, isTransitioning: false };
+		case 'transitionStart':
+			return { currentImage: action.image, previousImage: action.previousImage, isTransitioning: true };
+		case 'transitionEnd':
+			return { ...state, previousImage: null, isTransitioning: false };
+		default:
+			return state;
+	}
+}
+
 export default function ArtistHero({ artist }) {
 	const { images, defaultImage, sequence } = useMemo(() => getArtistImages(artist), [artist]);
-	const [currentImage, setCurrentImage] = useState(defaultImage);
-	const [previousImage, setPreviousImage] = useState(null);
-	const [isTransitioning, setIsTransitioning] = useState(false);
+	const [{ currentImage, previousImage, isTransitioning }, dispatchImageState] = useReducer(
+		imageStateReducer,
+		defaultImage,
+		(image) => ({ currentImage: image, previousImage: null, isTransitioning: false })
+	);
 	const timeoutRefs = useRef([]);
 	const currentImageRef = useRef(defaultImage);
 	const cycleRunIdRef = useRef(0);
@@ -54,10 +69,8 @@ export default function ArtistHero({ artist }) {
 	useEffect(() => {
 		clearTimers();
 		cycleRunIdRef.current += 1;
-		setCurrentImage(defaultImage);
 		currentImageRef.current = defaultImage;
-		setPreviousImage(null);
-		setIsTransitioning(false);
+		dispatchImageState({ type: 'reset', image: defaultImage });
 	}, [defaultImage]);
 
 	useEffect(() => {
@@ -72,9 +85,7 @@ export default function ArtistHero({ artist }) {
 		cycleRunIdRef.current += 1;
 
 		if (sequence.length === 0 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-			setCurrentImage(defaultImage);
-			setPreviousImage(null);
-			setIsTransitioning(false);
+			dispatchImageState({ type: 'reset', image: defaultImage });
 			return clearTimers;
 		}
 
@@ -94,14 +105,11 @@ export default function ArtistHero({ artist }) {
 
 				const activeImage = currentImageRef.current;
 				if (activeImage !== image) {
-					setPreviousImage(activeImage);
-					setCurrentImage(image);
 					currentImageRef.current = image;
-					setIsTransitioning(true);
+					dispatchImageState({ type: 'transitionStart', image, previousImage: activeImage });
 					await wait(IMAGE_TRANSITION_MS);
 					if (cycleRunIdRef.current !== runId) return;
-					setPreviousImage(null);
-					setIsTransitioning(false);
+					dispatchImageState({ type: 'transitionEnd' });
 				}
 
 				nextIndex = (nextIndex + 1) % sequence.length;

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FaPencilAlt, FaTrash } from 'react-icons/fa';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
+import { loadAdminResource } from '../../lib/adminResourceCache.js';
 import '../../styles/AdminArtistsPage.css';
 
 const emptyForm = {
@@ -26,9 +27,15 @@ export default function AdminAccountsPage() {
 	useEffect(() => {
 		if (session?.role !== 'SUPER_ADMIN' || !token) return;
 
-		fetch('/api/admin/accounts', { headers: { Authorization: `Bearer ${token}` } })
-			.then((response) => response.json())
-			.then(setRows);
+		let ignore = false;
+		loadAdminResource({ cacheKey: 'admin-accounts-list', url: '/api/admin/accounts', token })
+			.then((accountRows) => {
+				if (!ignore) setRows(accountRows);
+			});
+
+		return () => {
+			ignore = true;
+		};
 	}, [session?.role, token]);
 
 	const availableArtists = useMemo(
@@ -175,7 +182,7 @@ export default function AdminAccountsPage() {
 			</div>
 
 			{form && (
-				<div className="admin-modal-overlay" onClick={(event) => { if (event.target === event.currentTarget) closeForm(); }}>
+				<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm(); }}>
 					<div className="admin-modal">
 						<div className="admin-modal-header">
 							<h2 className="admin-modal-title">{form.id ? 'Edit Account' : 'New Account'}</h2>

@@ -106,12 +106,6 @@ export function mergeLegacyImages(images, legacyUrl, { fallbackUsage, altText, i
   })
 }
 
-export function primaryImageUrl(images, legacyUrl = '') {
-  const collection = Array.isArray(images) ? images : []
-  const primary = collection.find((image) => image.isPrimary) ?? collection[0]
-  return primary?.url ?? legacyUrl ?? ''
-}
-
 export function primaryImageReference(images, legacyValue = '') {
   const collection = Array.isArray(images) ? images : []
   const primary = collection.find((image) => image.isPrimary) ?? collection[0]

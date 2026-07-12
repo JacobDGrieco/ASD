@@ -101,12 +101,11 @@ export default function ConfirmActionButton({
         {children}
       </button>
       {open && typeof document !== 'undefined' && createPortal(
-        <div
+        <dialog
           ref={popoverRef}
           className="admin-inline-confirm-popover"
           style={popoverStyle ?? undefined}
-          role="dialog"
-          aria-modal="false"
+          open
           aria-label={`Confirm action: ${message}`}
         >
           <p className="admin-inline-confirm-message">{message}</p>
@@ -118,7 +117,7 @@ export default function ConfirmActionButton({
               {confirmLabel}
             </button>
           </div>
-        </div>,
+        </dialog>,
         document.body
       )}
     </div>

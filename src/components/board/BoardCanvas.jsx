@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react'
-import { motion, useMotionValue } from 'framer-motion'
+import { LazyMotion, domAnimation, m, useMotionValue } from 'framer-motion'
 import '../../styles/board-canvas.css'
 
 export const CANVAS_WIDTH = 3000
@@ -23,21 +23,23 @@ export default function BoardCanvas({ children, editMode }) {
       ref={viewportRef}
       className="board-viewport"
     >
-      <motion.div
-        className="board-canvas"
-        drag
-        dragMomentum={false}
-        dragElastic={0}
-        dragConstraints={{
-          left: -(CANVAS_WIDTH - (viewportRef.current?.offsetWidth ?? 0)),
-          right: 0,
-          top: -(CANVAS_HEIGHT - (viewportRef.current?.offsetHeight ?? 0)),
-          bottom: 0,
-        }}
-        style={{ x, y, width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}
-      >
-        {children}
-      </motion.div>
+      <LazyMotion features={domAnimation}>
+        <m.div
+          className="board-canvas"
+          drag
+          dragMomentum={false}
+          dragElastic={0}
+          dragConstraints={{
+            left: -(CANVAS_WIDTH - (viewportRef.current?.offsetWidth ?? 0)),
+            right: 0,
+            top: -(CANVAS_HEIGHT - (viewportRef.current?.offsetHeight ?? 0)),
+            bottom: 0,
+          }}
+          style={{ x, y, width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}
+        >
+          {children}
+        </m.div>
+      </LazyMotion>
     </div>
   )
 }

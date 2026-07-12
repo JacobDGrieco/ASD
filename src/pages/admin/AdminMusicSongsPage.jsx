@@ -47,6 +47,194 @@ function placementAlbumIds(song) {
   return song.albumId ? [song.albumId] : []
 }
 
+function primaryAlbum(song, albumById) {
+  if (song.album?.id) return song.album
+  const albumIds = placementAlbumIds(song)
+  return albumIds.length ? albumById[albumIds[0]] ?? null : null
+}
+
+function displayArtistName(song, albumById) {
+  const album = primaryAlbum(song, albumById)
+  if (!album) return null
+  if (isOtherArtist(album.artist)) return album.otherArtistName || OTHER_ARTIST_NAME
+  return album.artist?.name ?? null
+}
+
+function primaryTrackNumber(song) {
+  if (song.trackNumber) return song.trackNumber
+  if (Array.isArray(song.albumPlacements) && song.albumPlacements.length) return song.albumPlacements[0]?.trackNumber ?? null
+  if (Array.isArray(song.placements) && song.placements.length) return song.placements[0]?.trackNumber ?? null
+  return null
+}
+
+function albumTitles(song, albumById) {
+  const titles = placementAlbumIds(song).flatMap((albumId) => {
+    const title = albumById[albumId]?.title ?? song.placements?.find((p) => p.albumId === albumId)?.album?.title ?? null
+    return title ? [title] : []
+  })
+  return titles.length ? titles.join(', ') : null
+}
+
+function imageCell(song, albumById) {
+  const albumIds = placementAlbumIds(song)
+  const album = albumIds.length ? albumById[albumIds[0]] ?? null : null
+
+  const albumImage = album ? primaryImage(album.images) : null
+  const songImage = primaryImage(song.images)
+  const displayImage = albumImage ?? songImage
+
+  if (!displayImage) return <span className="admin-artists-page-empty-value">-</span>
+
+  const albumCount = album ? (album.imageCount ?? album.images?.length ?? 0) : 0
+  const songCount = song.imageCount ?? song.images?.length ?? 0
+  const count = albumCount + songCount
+
+  return (
+    <div className="admin-artists-page-image-summary">
+      <div className={`admin-artists-page-thumb-frame ${isSongHidden(song) ? 'admin-artists-page-thumb-frame-hidden' : ''}`.trim()}>
+        <img src={displayImage.previewUrl || displayImage.url} alt={song.title} className="admin-artists-page-thumb" />
+      </div>
+      <span className="admin-artists-page-image-count">
+        {count} image{count === 1 ? '' : 's'}
+      </span>
+    </div>
+  )
+}
+
+function cell(value) {
+  return value ? (
+    <span className="admin-artists-page-cell-value" title={String(value)}>{String(value)}</span>
+  ) : (
+    <span className="admin-artists-page-empty-value">-</span>
+  )
+}
+
+function wrapCell(value) {
+  return value ? (
+    <span className="admin-artists-page-wrap-value" title={String(value)}>{String(value)}</span>
+  ) : (
+    <span className="admin-artists-page-empty-value">-</span>
+  )
+}
+
+function linkCell(song, key, label) {
+  const value = song[key]
+  return value ? (
+    <a
+      href={String(value)}
+      target="_blank"
+      rel="noreferrer"
+      className="admin-artists-page-link-btn"
+      aria-label={`Open ${label} link`}
+      title="Open in new tab"
+    >
+      <FaExternalLinkAlt aria-hidden="true" />
+    </a>
+  ) : (
+    <span className="admin-artists-page-empty-value">-</span>
+  )
+}
+
+function SongsTable({ songs, albumById, isViewer, loadingEditSongId, onEdit, onDelete }) {
+  return (
+    <div className="admin-artists-page-table-wrap">
+      <table className="admin-artists-page-table admin-songs-table">
+        <thead>
+          <tr>
+            <th className="admin-artists-page-col-image">Images</th>
+            <th className="admin-songs-col-track admin-artists-page-center-cell">#</th>
+            <th className="admin-songs-col-title">Title</th>
+            <th className="admin-songs-col-artist">Artist</th>
+            <th className="admin-songs-col-featured">Featured</th>
+            <th className="admin-songs-col-album">Album</th>
+            <th className="admin-songs-col-date">Release Date</th>
+            <th className="admin-artists-page-col-action admin-artists-page-center-cell">
+              <span className="admin-artists-page-social-header" title="SoundCloud"><SiSoundcloud aria-hidden="true" /><span className="admin-artists-page-sr-only">SoundCloud</span></span>
+            </th>
+            <th className="admin-artists-page-col-action admin-artists-page-center-cell">
+              <span className="admin-artists-page-social-header" title="Spotify"><SiSpotify aria-hidden="true" /><span className="admin-artists-page-sr-only">Spotify</span></span>
+            </th>
+            <th className="admin-artists-page-col-action admin-artists-page-center-cell">
+              <span className="admin-artists-page-social-header" title="Apple Music"><SiApplemusic aria-hidden="true" /><span className="admin-artists-page-sr-only">Apple Music</span></span>
+            </th>
+            <th className="admin-artists-page-col-action admin-artists-page-center-cell">
+              <span className="admin-artists-page-social-header" title="YouTube"><SiYoutube aria-hidden="true" /><span className="admin-artists-page-sr-only">YouTube</span></span>
+            </th>
+            <th className="admin-songs-col-actions admin-artists-page-sticky-right-0"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {songs.map((song) => {
+            const releaseDate = song.meta?.releaseDate ?? primaryAlbum(song, albumById)?.releaseDate ?? ''
+            const dateStr = releaseDate ? String(releaseDate).slice(0, 10) : ''
+            return (
+              <tr key={song.id} className={isSongHidden(song) ? 'admin-artists-page-hidden-row' : ''}>
+                <td className="admin-artists-page-col-image">{imageCell(song, albumById)}</td>
+                <td className="admin-songs-col-track admin-artists-page-center-cell">{cell(primaryTrackNumber(song))}</td>
+                <td className="admin-songs-col-title">{cell(song.title)}</td>
+                <td className="admin-songs-col-artist">{cell(displayArtistName(song, albumById))}</td>
+                <td className="admin-songs-col-featured">{cell(song.meta?.featuredArtists)}</td>
+                <td className="admin-songs-col-album">{wrapCell(albumTitles(song, albumById))}</td>
+                <td className="admin-songs-col-date">{cell(dateStr)}</td>
+                <td className="admin-artists-page-col-action admin-artists-page-center-cell">{linkCell(song, 'soundcloudUrl', 'SoundCloud')}</td>
+                <td className="admin-artists-page-col-action admin-artists-page-center-cell">{linkCell(song, 'spotifyUrl', 'Spotify')}</td>
+                <td className="admin-artists-page-col-action admin-artists-page-center-cell">{linkCell(song, 'appleMusicUrl', 'Apple Music')}</td>
+                <td className="admin-artists-page-col-action admin-artists-page-center-cell">{linkCell(song, 'youtubeUrl', 'YouTube')}</td>
+                <td className="admin-songs-col-actions admin-artists-page-sticky-right-0">
+                  <div className="admin-songs-actions">
+                    <Link
+                      to={`/admin/lyrics/${song.id}`}
+                      state={{ songTitle: song.title }}
+                      className="admin-artists-page-ghost-btn admin-artists-page-icon-btn"
+                      style={{ textDecoration: 'none' }}
+                      aria-label="Edit lyrics"
+                      title="Edit lyrics"
+                    >
+                      <FaStickyNote aria-hidden="true" />
+                    </Link>
+                    {!isViewer && (
+                      <button type="button" onClick={() => void onEdit(song)} disabled={loadingEditSongId === song.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit song" title="Edit">
+                        <FaPencilAlt aria-hidden="true" />
+                      </button>
+                    )}
+                    {!isViewer && (
+                      <ConfirmActionButton
+                        message="Delete this song and all its lyrics/annotations?"
+                        onConfirm={() => onDelete(song.id)}
+                        buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+                        buttonAriaLabel="Delete song"
+                        buttonTitle="Delete"
+                      >
+                        <FaTrash aria-hidden="true" />
+                      </ConfirmActionButton>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function SongsPagination({ currentPage, totalPages, onPageChange }) {
+  if (totalPages <= 1) return null
+
+  return (
+    <div className="admin-pagination">
+      <button type="button" className="admin-pagination-btn" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}>
+        <><FaArrowLeft aria-hidden="true" /> Prev</>
+      </button>
+      <span className="admin-pagination-info">Page {currentPage} of {totalPages}</span>
+      <button type="button" className="admin-pagination-btn" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages}>
+        <>Next <FaArrowRight aria-hidden="true" /></>
+      </button>
+    </div>
+  )
+}
+
 export default function AdminMusicSongsPage() {
   const { token, session } = useAdminAuth()
   const isViewer = session?.role === 'VIEWER'
@@ -193,97 +381,11 @@ export default function AdminMusicSongsPage() {
 
   const isArtistScoped = session?.role === 'ARTIST'
 
-  const primaryAlbum = (song) => {
-    if (song.album?.id) return song.album
-    const albumIds = placementAlbumIds(song)
-    return albumIds.length ? albumById[albumIds[0]] ?? null : null
-  }
-
-  const displayArtistName = (song) => {
-    const album = primaryAlbum(song)
-    if (!album) return null
-    if (isOtherArtist(album.artist)) return album.otherArtistName || OTHER_ARTIST_NAME
-    return album.artist?.name ?? null
-  }
-
-  const primaryTrackNumber = (song) => {
-    if (song.trackNumber) return song.trackNumber
-    if (Array.isArray(song.albumPlacements) && song.albumPlacements.length) return song.albumPlacements[0]?.trackNumber ?? null
-    if (Array.isArray(song.placements) && song.placements.length) return song.placements[0]?.trackNumber ?? null
-    return null
-  }
-
-  const albumTitles = (song) => {
-    const titles = placementAlbumIds(song).flatMap((albumId) => {
-      const title = albumById[albumId]?.title ?? song.placements?.find((p) => p.albumId === albumId)?.album?.title ?? null
-      return title ? [title] : []
-    })
-    return titles.length ? titles.join(', ') : null
-  }
-
-  const imageCell = (song) => {
-    const albumIds = placementAlbumIds(song)
-    const album = albumIds.length ? albumById[albumIds[0]] ?? null : null
-
-    const albumImage = album ? primaryImage(album.images) : null
-    const songImage = primaryImage(song.images)
-    const displayImage = albumImage ?? songImage
-
-    if (!displayImage) return <span className="admin-artists-page-empty-value">-</span>
-
-    const albumCount = album ? (album.imageCount ?? album.images?.length ?? 0) : 0
-    const songCount = song.imageCount ?? song.images?.length ?? 0
-    const count = albumCount + songCount
-
-    return (
-      <div className="admin-artists-page-image-summary">
-        <div className={`admin-artists-page-thumb-frame ${isSongHidden(song) ? 'admin-artists-page-thumb-frame-hidden' : ''}`.trim()}>
-          <img src={displayImage.previewUrl || displayImage.url} alt={song.title} className="admin-artists-page-thumb" />
-        </div>
-        <span className="admin-artists-page-image-count">
-          {count} image{count === 1 ? '' : 's'}
-        </span>
-      </div>
-    )
-  }
-
-  const cell = (value) =>
-    value ? (
-      <span className="admin-artists-page-cell-value" title={String(value)}>{String(value)}</span>
-    ) : (
-      <span className="admin-artists-page-empty-value">-</span>
-    )
-
-  const wrapCell = (value) =>
-    value ? (
-      <span className="admin-artists-page-wrap-value" title={String(value)}>{String(value)}</span>
-    ) : (
-      <span className="admin-artists-page-empty-value">-</span>
-    )
-
-  const linkCell = (song, key, label) => {
-    const value = song[key]
-    return value ? (
-      <a
-        href={String(value)}
-        target="_blank"
-        rel="noreferrer"
-        className="admin-artists-page-link-btn"
-        aria-label={`Open ${label} link`}
-        title="Open in new tab"
-      >
-        <FaExternalLinkAlt aria-hidden="true" />
-      </a>
-    ) : (
-      <span className="admin-artists-page-empty-value">-</span>
-    )
-  }
-
   return (
     <div>
       <div className="admin-artists-page-sticky-top">
         <div className="admin-artists-page-header">
-          <h1 className="admin-artists-page-title">Music — Songs</h1>
+          <h1 className="admin-artists-page-title">Music â€” Songs</h1>
           {!isViewer && (
             <button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Song</button>
           )}
@@ -336,97 +438,18 @@ export default function AdminMusicSongsPage() {
       </div>
 
       {!isModalOpen && (
-        <div className="admin-artists-page-table-wrap">
-          <table className="admin-artists-page-table admin-songs-table">
-            <thead>
-              <tr>
-                <th className="admin-artists-page-col-image">Images</th>
-                <th className="admin-songs-col-track admin-artists-page-center-cell">#</th>
-                <th className="admin-songs-col-title">Title</th>
-                <th className="admin-songs-col-artist">Artist</th>
-                <th className="admin-songs-col-featured">Featured</th>
-                <th className="admin-songs-col-album">Album</th>
-                <th className="admin-songs-col-date">Release Date</th>
-                <th className="admin-artists-page-col-action admin-artists-page-center-cell">
-                  <span className="admin-artists-page-social-header" title="SoundCloud"><SiSoundcloud aria-hidden="true" /><span className="admin-artists-page-sr-only">SoundCloud</span></span>
-                </th>
-                <th className="admin-artists-page-col-action admin-artists-page-center-cell">
-                  <span className="admin-artists-page-social-header" title="Spotify"><SiSpotify aria-hidden="true" /><span className="admin-artists-page-sr-only">Spotify</span></span>
-                </th>
-                <th className="admin-artists-page-col-action admin-artists-page-center-cell">
-                  <span className="admin-artists-page-social-header" title="Apple Music"><SiApplemusic aria-hidden="true" /><span className="admin-artists-page-sr-only">Apple Music</span></span>
-                </th>
-                <th className="admin-artists-page-col-action admin-artists-page-center-cell">
-                  <span className="admin-artists-page-social-header" title="YouTube"><SiYoutube aria-hidden="true" /><span className="admin-artists-page-sr-only">YouTube</span></span>
-                </th>
-                <th className="admin-songs-col-actions admin-artists-page-sticky-right-0"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagedSongs.map((song) => {
-                const releaseDate = song.meta?.releaseDate ?? primaryAlbum(song)?.releaseDate ?? ''
-                const dateStr = releaseDate ? String(releaseDate).slice(0, 10) : ''
-                return (
-                  <tr key={song.id} className={isSongHidden(song) ? 'admin-artists-page-hidden-row' : ''}>
-                    <td className="admin-artists-page-col-image">{imageCell(song)}</td>
-                    <td className="admin-songs-col-track admin-artists-page-center-cell">{cell(primaryTrackNumber(song))}</td>
-                    <td className="admin-songs-col-title">{cell(song.title)}</td>
-                    <td className="admin-songs-col-artist">{cell(displayArtistName(song))}</td>
-                    <td className="admin-songs-col-featured">{cell(song.meta?.featuredArtists)}</td>
-                    <td className="admin-songs-col-album">{wrapCell(albumTitles(song))}</td>
-                    <td className="admin-songs-col-date">{cell(dateStr)}</td>
-                    <td className="admin-artists-page-col-action admin-artists-page-center-cell">{linkCell(song, 'soundcloudUrl', 'SoundCloud')}</td>
-                    <td className="admin-artists-page-col-action admin-artists-page-center-cell">{linkCell(song, 'spotifyUrl', 'Spotify')}</td>
-                    <td className="admin-artists-page-col-action admin-artists-page-center-cell">{linkCell(song, 'appleMusicUrl', 'Apple Music')}</td>
-                    <td className="admin-artists-page-col-action admin-artists-page-center-cell">{linkCell(song, 'youtubeUrl', 'YouTube')}</td>
-                    <td className="admin-songs-col-actions admin-artists-page-sticky-right-0">
-                      <div className="admin-songs-actions">
-                        <Link
-                          to={`/admin/lyrics/${song.id}`}
-                          state={{ songTitle: song.title }}
-                          className="admin-artists-page-ghost-btn admin-artists-page-icon-btn"
-                          style={{ textDecoration: 'none' }}
-                          aria-label="Edit lyrics"
-                          title="Edit lyrics"
-                        >
-                          <FaStickyNote aria-hidden="true" />
-                        </Link>
-                        {!isViewer && (
-                          <button type="button" onClick={() => void openEdit(song)} disabled={loadingEditSongId === song.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit song" title="Edit">
-                            <FaPencilAlt aria-hidden="true" />
-                          </button>
-                        )}
-                        {!isViewer && (
-                          <ConfirmActionButton
-                            message="Delete this song and all its lyrics/annotations?"
-                            onConfirm={() => handleDelete(song.id)}
-                            buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-                            buttonAriaLabel="Delete song"
-                            buttonTitle="Delete"
-                          >
-                            <FaTrash aria-hidden="true" />
-                          </ConfirmActionButton>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+        <SongsTable
+          songs={pagedSongs}
+          albumById={albumById}
+          isViewer={isViewer}
+          loadingEditSongId={loadingEditSongId}
+          onEdit={openEdit}
+          onDelete={handleDelete}
+        />
       )}
 
-      {!isModalOpen && totalPages > 1 && (
-        <div className="admin-pagination">
-          <button type="button" className="admin-pagination-btn" onClick={() => setPage(currentPage - 1)} disabled={currentPage === 1}>
-            <><FaArrowLeft aria-hidden="true" /> Prev</>
-          </button>
-          <span className="admin-pagination-info">Page {currentPage} of {totalPages}</span>
-          <button type="button" className="admin-pagination-btn" onClick={() => setPage(currentPage + 1)} disabled={currentPage === totalPages}>
-            <>Next <FaArrowRight aria-hidden="true" /></>
-          </button>
-        </div>
+      {!isModalOpen && (
+        <SongsPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setPage} />
       )}
 
       {isModalOpen && (

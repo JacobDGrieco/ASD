@@ -51,6 +51,32 @@ function validateCrewForm(form) {
 	return null;
 }
 
+function renderDisplayValue(person, column) {
+	if (column.kind === 'image') {
+		if (!person.image) return <span className="admin-artists-page-empty-value">-</span>;
+		return (
+			<div className="admin-artists-page-image-summary">
+				<div className="admin-artists-page-thumb-frame">
+					<img src={person.image.previewUrl || person.image.url} alt={person.name} className="admin-artists-page-thumb" />
+				</div>
+			</div>
+		);
+	}
+
+	if (column.kind === 'link') {
+		if (!person.externalUrl) return <span className="admin-artists-page-empty-value">-</span>;
+		return (
+			<a href={person.externalUrl} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" aria-label={`Open promo link for ${person.name}`} title="Open in new tab">
+				<FaExternalLinkAlt aria-hidden="true" />
+			</a>
+		);
+	}
+
+	const value = person[column.key];
+	if (value === null || value === undefined || value === '') return <span className="admin-artists-page-empty-value">-</span>;
+	return <span className="admin-artists-page-cell-value" title={String(value)}>{String(value)}</span>;
+}
+
 export default function AdminFashionOutsideTalentPage() {
 	const { token } = useAdminAuth();
 	const auth = { Authorization: `Bearer ${token}` };
@@ -119,32 +145,6 @@ export default function AdminFashionOutsideTalentPage() {
 		primeAdminResource('fashion-crew-list', token, nextCrew);
 	};
 
-	const renderDisplayValue = (person, column) => {
-		if (column.kind === 'image') {
-			if (!person.image) return <span className="admin-artists-page-empty-value">-</span>;
-			return (
-				<div className="admin-artists-page-image-summary">
-					<div className="admin-artists-page-thumb-frame">
-						<img src={person.image.previewUrl || person.image.url} alt={person.name} className="admin-artists-page-thumb" />
-					</div>
-				</div>
-			);
-		}
-
-		if (column.kind === 'link') {
-			if (!person.externalUrl) return <span className="admin-artists-page-empty-value">-</span>;
-			return (
-				<a href={person.externalUrl} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" aria-label={`Open promo link for ${person.name}`} title="Open in new tab">
-					<FaExternalLinkAlt aria-hidden="true" />
-				</a>
-			);
-		}
-
-		const value = person[column.key];
-		if (value === null || value === undefined || value === '') return <span className="admin-artists-page-empty-value">-</span>;
-		return <span className="admin-artists-page-cell-value" title={String(value)}>{String(value)}</span>;
-	};
-
 	return (
 		<div>
 			<div className="admin-artists-page-sticky-top">
@@ -200,7 +200,7 @@ export default function AdminFashionOutsideTalentPage() {
 			</div>
 
 			{form && (
-				<div className="admin-modal-overlay" onClick={(event) => { if (event.target === event.currentTarget) closeForm(); }}>
+				<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm(); }}>
 					<div className="admin-modal">
 						<div className="admin-modal-header">
 							<h2 className="admin-modal-title">{form.id ? 'Edit Outside Talent' : 'New Outside Talent'}</h2>

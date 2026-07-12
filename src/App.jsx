@@ -92,8 +92,8 @@ function PublicLayout() {
 					<button
 						type="button"
 						className="public-admin-preview-exit"
-						onClick={() => {
-							logout();
+						onClick={async () => {
+							await logout();
 							window.location.reload();
 						}}
 					>

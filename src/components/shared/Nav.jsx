@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import '../../styles/Nav.css';
 
@@ -85,26 +85,42 @@ function NavContent({ section }) {
 	);
 }
 
+function transitionStateReducer(state, action) {
+	switch (action.type) {
+		case 'start':
+			return {
+				exitingSection: action.exitingSection,
+				isTransitioning: true,
+				transitionKey: state.transitionKey + 1,
+			};
+		case 'clearExit':
+			return { ...state, exitingSection: null };
+		case 'finish':
+			return { ...state, isTransitioning: false };
+		default:
+			return state;
+	}
+}
+
 export default function Nav() {
 	const { pathname } = useLocation();
 	const section = getSection(pathname);
 
 	// Ref instead of state so updating it doesn't re-trigger this effect and cancel the timers
 	const renderedSectionRef = useRef(section);
-	const [exitingSection, setExitingSection] = useState(null);
-	const [isTransitioning, setIsTransitioning] = useState(false);
-	const [transitionKey, setTransitionKey] = useState(0);
+	const [{ exitingSection, isTransitioning, transitionKey }, dispatchTransitionState] = useReducer(
+		transitionStateReducer,
+		{ exitingSection: null, isTransitioning: false, transitionKey: 0 }
+	);
 
 	useEffect(() => {
 		if (section === renderedSectionRef.current) return undefined;
 
-		setExitingSection(renderedSectionRef.current);
+		dispatchTransitionState({ type: 'start', exitingSection: renderedSectionRef.current });
 		renderedSectionRef.current = section;
-		setIsTransitioning(true);
-		setTransitionKey((k) => k + 1); // Force remount so CSS animation restarts every time
 
-		const exitTimer = window.setTimeout(() => setExitingSection(null), 500);
-		const enterTimer = window.setTimeout(() => setIsTransitioning(false), 1600);
+		const exitTimer = window.setTimeout(() => dispatchTransitionState({ type: 'clearExit' }), 500);
+		const enterTimer = window.setTimeout(() => dispatchTransitionState({ type: 'finish' }), 1600);
 
 		return () => {
 			window.clearTimeout(exitTimer);

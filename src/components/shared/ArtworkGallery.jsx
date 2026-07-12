@@ -16,11 +16,9 @@ export default function ArtworkGallery({ images, title, className = '', buttonLa
 
 	const selectedImage = normalizedImages[selectedIndex] ?? normalizedImages[0];
 	const overlay = open ? (
-		<div
+		<dialog
 			className="artwork-gallery-overlay"
-			onClick={() => setOpen(false)}
-			role="dialog"
-			aria-modal="true"
+			open
 			aria-label={`${title} artworks`}
 		>
 			<div className="artwork-gallery-modal" onClick={(event) => event.stopPropagation()}>
@@ -61,7 +59,7 @@ export default function ArtworkGallery({ images, title, className = '', buttonLa
 					</div>
 				</div>
 			</div>
-		</div>
+		</dialog>
 	) : null;
 
 	return (

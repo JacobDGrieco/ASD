@@ -47,6 +47,30 @@ function hasCreditValue(credit) {
 	return Boolean(credit?.creditName?.trim() || credit?.talentId || credit?.crewId);
 }
 
+function renderDisplayValue(look, column) {
+	if (column.kind === 'images') {
+		const image = primaryImage(look.images);
+		if (!image) return <span className="admin-artists-page-empty-value">-</span>;
+		return (
+			<div className="admin-artists-page-image-summary">
+				<div className={`admin-artists-page-thumb-frame ${isLookHidden(look) ? 'admin-artists-page-thumb-frame-hidden' : ''}`.trim()}>
+					<img src={image.previewUrl || image.url} alt={look.title} className="admin-artists-page-thumb" />
+				</div>
+				<span className="admin-artists-page-image-count">{look.imageCount ?? look.images?.length ?? 1} image{(look.imageCount ?? look.images?.length ?? 1) === 1 ? '' : 's'}</span>
+			</div>
+		);
+	}
+
+	if (column.kind === 'pieceCount') {
+		const count = look.pieceCount ?? look.pieces?.length ?? 0;
+		return <span className="admin-artists-page-cell-value">{count} piece{count === 1 ? '' : 's'}</span>;
+	}
+
+	const value = look[column.key];
+	if (value === null || value === undefined || value === '') return <span className="admin-artists-page-empty-value">-</span>;
+	return <span className="admin-artists-page-cell-value" title={String(value)}>{String(value)}</span>;
+}
+
 // Older credits may still have a linked person. Keep that id while making the
 // visible credit name editable as plain text.
 function toFormCredits(credits) {
@@ -100,6 +124,193 @@ function toCrewOption(person) {
 		role: person.role,
 		image: person.image ?? null,
 	};
+}
+
+function LooksTable({ looks, isFormOpen, dropTargetId, loadingEditId, onDragStart, onDragOver, onDrop, onDragEnd, onEdit, onDelete }) {
+	return (
+		<div className="admin-artists-page-table-wrap">
+			<table className="admin-artists-page-table">
+				<thead>
+					<tr>
+						<th className="admin-artists-page-drag-header"></th>
+						{columns.map((column) => <th key={column.key} className={column.className}>{column.label}</th>)}
+						<th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
+					</tr>
+				</thead>
+				<tbody>
+					{looks.map((look) => (
+						<tr
+							key={look.id}
+							className={[
+								dropTargetId === look.id ? 'admin-artists-page-drop-target-row' : '',
+								isLookHidden(look) ? 'admin-artists-page-hidden-row' : '',
+							].filter(Boolean).join(' ')}
+							onDragOver={(event) => onDragOver(event, look.id)}
+							onDrop={(event) => {
+								event.preventDefault();
+								onDrop(look.id);
+							}}
+						>
+							<td className="admin-artists-page-drag-cell">
+								<button
+									type="button"
+									draggable={!isFormOpen}
+									onDragStart={(event) => onDragStart(event, look.id)}
+									onDragEnd={onDragEnd}
+									className="admin-artists-page-drag-handle"
+									aria-label={`Reorder ${look.title}`}
+									title="Drag to reorder"
+								>
+									::
+								</button>
+							</td>
+							{columns.map((column) => (
+								<td key={column.key} className={column.className ?? ''}>
+									{renderDisplayValue(look, column)}
+								</td>
+							))}
+							<td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
+								<div className="admin-artists-page-actions">
+									<button type="button" onClick={() => void onEdit(look)} disabled={loadingEditId === look.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit look" title="Edit">
+										<FaPencilAlt aria-hidden="true" />
+									</button>
+									<ConfirmActionButton
+										message="Delete this Look and all its pieces and credits?"
+										onConfirm={() => onDelete(look.id)}
+										buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+										buttonAriaLabel="Delete look"
+										buttonTitle="Delete"
+									>
+										<FaTrash aria-hidden="true" />
+									</ConfirmActionButton>
+								</div>
+							</td>
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
+	);
+}
+
+function LookFormModal({ form, setForm, token, collections, talentOptions, crewOptions, onClose, onSave }) {
+	return (
+		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+			<div className="admin-modal">
+				<div className="admin-modal-header">
+					<h2 className="admin-modal-title">{form.id ? 'Edit Look' : 'New Look'}</h2>
+					<button type="button" onClick={onClose} className="admin-modal-close" aria-label="Close">Ã—</button>
+				</div>
+				<div className="admin-modal-body">
+					<TabView className="page-tabview admin-modal-tabs">
+						<TabPanel header="Look">
+							<div className="admin-modal-grid">
+								<div className="admin-modal-field admin-modal-field-full">
+									<div className="admin-artists-page-name-field">
+										<button
+											type="button"
+											onClick={() => setForm((current) => ({ ...current, isVisible: !current.isVisible }))}
+											className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
+											aria-label={form.isVisible ? 'Look is visible to the public. Click to hide.' : 'Look is hidden from the public. Click to show.'}
+											title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
+										>
+											{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
+										</button>
+										<div className="admin-artists-page-name-field-main">
+											<label htmlFor="admin-fashion-look-title" className="admin-modal-label">Title</label>
+											<input
+												id="admin-fashion-look-title"
+												type="text"
+												placeholder="Look title"
+												value={form.title}
+												onChange={(event) => setForm((current) => ({ ...current, title: event.target.value, slug: slugify(event.target.value) }))}
+												className="admin-artists-page-input"
+											/>
+										</div>
+									</div>
+								</div>
+
+								<div className="admin-modal-field admin-modal-field-full">
+									<label htmlFor="admin-fashion-look-collection" className="admin-modal-label">Collection</label>
+									<select
+										id="admin-fashion-look-collection"
+										value={form.collectionId ?? ''}
+										onChange={(event) => setForm((current) => ({ ...current, collectionId: event.target.value || null }))}
+										className="admin-artists-page-input"
+									>
+										<option value="">No collection (loose look)</option>
+										{collections.map((collection) => (
+											<option key={collection.id} value={collection.id}>
+												{collection.title}{collection.season ? ` (${collection.season})` : ''}
+											</option>
+										))}
+									</select>
+								</div>
+
+								<div className="admin-modal-field admin-modal-field-full">
+									<div className="admin-modal-label">Lookbook Images</div>
+									<ImageCollectionField
+										value={form.images}
+										onChange={(images) => setForm((current) => ({ ...current, images }))}
+										token={token}
+										folder="fashion-looks"
+										entityLabel={form.title || 'Look image'}
+									/>
+								</div>
+
+								<div className="admin-modal-field admin-modal-field-full">
+									<label htmlFor="admin-fashion-look-description" className="admin-modal-label">Description (the ideas behind it)</label>
+									<textarea
+										id="admin-fashion-look-description"
+										placeholder="Describe the fashion and the ideas behind this look..."
+										value={form.description}
+										onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+										className="admin-artists-page-input admin-modal-textarea"
+										rows={6}
+									/>
+								</div>
+							</div>
+						</TabPanel>
+
+						<TabPanel header="Credits">
+							<div className="admin-modal-grid">
+								<div className="admin-modal-field admin-modal-field-full">
+									<div className="admin-modal-label">Default Credits</div>
+									<CreditsField
+										value={form.credits}
+										onChange={(credits) => setForm((current) => ({ ...current, credits }))}
+										talentOptions={talentOptions}
+										crewOptions={crewOptions}
+										placeholder="Add credit"
+									/>
+								</div>
+							</div>
+						</TabPanel>
+
+						<TabPanel header="Pieces">
+							<div className="admin-modal-grid">
+								<div className="admin-modal-field admin-modal-field-full">
+									<div className="admin-modal-label">Pieces</div>
+									<FashionPiecesField
+										value={form.pieces}
+										onChange={(pieces) => setForm((current) => ({ ...current, pieces }))}
+										token={token}
+										lookTitle={form.title}
+										talentOptions={talentOptions}
+										crewOptions={crewOptions}
+									/>
+								</div>
+							</div>
+						</TabPanel>
+					</TabView>
+				</div>
+				<div className="admin-modal-footer">
+					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
+					<button type="button" onClick={onSave} className="admin-artists-page-primary-btn">Save</button>
+				</div>
+			</div>
+		</div>
+	);
 }
 
 export default function AdminFashionLooksPage() {
@@ -284,219 +495,40 @@ export default function AdminFashionLooksPage() {
 		setDropTargetId(null);
 	};
 
-	const renderDisplayValue = (look, column) => {
-		if (column.kind === 'images') {
-			const image = primaryImage(look.images);
-			if (!image) return <span className="admin-artists-page-empty-value">-</span>;
-			return (
-				<div className="admin-artists-page-image-summary">
-					<div className={`admin-artists-page-thumb-frame ${isLookHidden(look) ? 'admin-artists-page-thumb-frame-hidden' : ''}`.trim()}>
-						<img src={image.previewUrl || image.url} alt={look.title} className="admin-artists-page-thumb" />
-					</div>
-					<span className="admin-artists-page-image-count">{look.imageCount ?? look.images?.length ?? 1} image{(look.imageCount ?? look.images?.length ?? 1) === 1 ? '' : 's'}</span>
-				</div>
-			);
-		}
-
-		if (column.kind === 'pieceCount') {
-			const count = look.pieceCount ?? look.pieces?.length ?? 0;
-			return <span className="admin-artists-page-cell-value">{count} piece{count === 1 ? '' : 's'}</span>;
-		}
-
-		const value = look[column.key];
-		if (value === null || value === undefined || value === '') return <span className="admin-artists-page-empty-value">-</span>;
-		return <span className="admin-artists-page-cell-value" title={String(value)}>{String(value)}</span>;
-	};
-
 	return (
 		<div>
 			<div className="admin-artists-page-sticky-top">
 				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Fashion — Looks</h1>
+					<h1 className="admin-artists-page-title">Fashion â€” Looks</h1>
 					<button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Look</button>
 				</div>
 			</div>
 
-			<div className="admin-artists-page-table-wrap">
-				<table className="admin-artists-page-table">
-					<thead>
-						<tr>
-							<th className="admin-artists-page-drag-header"></th>
-							{columns.map((column) => <th key={column.key} className={column.className}>{column.label}</th>)}
-							<th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
-						</tr>
-					</thead>
-					<tbody>
-						{looks.map((look) => (
-							<tr
-								key={look.id}
-								className={[
-									dropTargetId === look.id ? 'admin-artists-page-drop-target-row' : '',
-									isLookHidden(look) ? 'admin-artists-page-hidden-row' : '',
-								].filter(Boolean).join(' ')}
-								onDragOver={(event) => handleDragOver(event, look.id)}
-								onDrop={(event) => {
-									event.preventDefault();
-									handleDrop(look.id);
-								}}
-							>
-								<td className="admin-artists-page-drag-cell">
-									<button
-										type="button"
-										draggable={!form}
-										onDragStart={(event) => handleDragStart(event, look.id)}
-										onDragEnd={handleDragEnd}
-										className="admin-artists-page-drag-handle"
-										aria-label={`Reorder ${look.title}`}
-										title="Drag to reorder"
-									>
-										::
-									</button>
-								</td>
-								{columns.map((column) => (
-									<td key={column.key} className={column.className ?? ''}>
-										{renderDisplayValue(look, column)}
-									</td>
-								))}
-								<td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
-									<div className="admin-artists-page-actions">
-										<button type="button" onClick={() => void openEdit(look)} disabled={loadingEditId === look.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit look" title="Edit">
-											<FaPencilAlt aria-hidden="true" />
-										</button>
-										<ConfirmActionButton
-											message="Delete this Look and all its pieces and credits?"
-											onConfirm={() => handleDelete(look.id)}
-											buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-											buttonAriaLabel="Delete look"
-											buttonTitle="Delete"
-										>
-											<FaTrash aria-hidden="true" />
-										</ConfirmActionButton>
-									</div>
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			</div>
+			<LooksTable
+				looks={looks}
+				isFormOpen={Boolean(form)}
+				dropTargetId={dropTargetId}
+				loadingEditId={loadingEditId}
+				onDragStart={handleDragStart}
+				onDragOver={handleDragOver}
+				onDrop={handleDrop}
+				onDragEnd={handleDragEnd}
+				onEdit={openEdit}
+				onDelete={handleDelete}
+			/>
 
-			{form && (
-				<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm(); }}>
-					<div className="admin-modal">
-						<div className="admin-modal-header">
-							<h2 className="admin-modal-title">{form.id ? 'Edit Look' : 'New Look'}</h2>
-							<button type="button" onClick={closeForm} className="admin-modal-close" aria-label="Close">×</button>
-						</div>
-						<div className="admin-modal-body">
-							<TabView className="page-tabview admin-modal-tabs">
-								<TabPanel header="Look">
-									<div className="admin-modal-grid">
-										<div className="admin-modal-field admin-modal-field-full">
-											<div className="admin-artists-page-name-field">
-												<button
-													type="button"
-													onClick={() => setForm((current) => ({ ...current, isVisible: !current.isVisible }))}
-													className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
-													aria-label={form.isVisible ? 'Look is visible to the public. Click to hide.' : 'Look is hidden from the public. Click to show.'}
-													title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
-												>
-													{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
-												</button>
-												<div className="admin-artists-page-name-field-main">
-													<label htmlFor="admin-fashion-look-title" className="admin-modal-label">Title</label>
-													<input
-														id="admin-fashion-look-title"
-														type="text"
-														placeholder="Look title"
-														value={form.title}
-														onChange={(event) => setForm((current) => ({ ...current, title: event.target.value, slug: slugify(event.target.value) }))}
-														className="admin-artists-page-input"
-													/>
-												</div>
-											</div>
-										</div>
-
-										<div className="admin-modal-field admin-modal-field-full">
-											<label htmlFor="admin-fashion-look-collection" className="admin-modal-label">Collection</label>
-											<select
-												id="admin-fashion-look-collection"
-												value={form.collectionId ?? ''}
-												onChange={(event) => setForm((current) => ({ ...current, collectionId: event.target.value || null }))}
-												className="admin-artists-page-input"
-											>
-												<option value="">No collection (loose look)</option>
-												{collections.map((collection) => (
-													<option key={collection.id} value={collection.id}>
-														{collection.title}{collection.season ? ` (${collection.season})` : ''}
-													</option>
-												))}
-											</select>
-										</div>
-
-										<div className="admin-modal-field admin-modal-field-full">
-											<div className="admin-modal-label">Lookbook Images</div>
-											<ImageCollectionField
-												value={form.images}
-												onChange={(images) => setForm((current) => ({ ...current, images }))}
-												token={token}
-												folder="fashion-looks"
-												entityLabel={form.title || 'Look image'}
-											/>
-										</div>
-
-										<div className="admin-modal-field admin-modal-field-full">
-											<label htmlFor="admin-fashion-look-description" className="admin-modal-label">Description (the ideas behind it)</label>
-											<textarea
-												id="admin-fashion-look-description"
-												placeholder="Describe the fashion and the ideas behind this look..."
-												value={form.description}
-												onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-												className="admin-artists-page-input admin-modal-textarea"
-												rows={6}
-											/>
-										</div>
-									</div>
-								</TabPanel>
-
-								<TabPanel header="Credits">
-									<div className="admin-modal-grid">
-										<div className="admin-modal-field admin-modal-field-full">
-											<div className="admin-modal-label">Default Credits</div>
-											<CreditsField
-												value={form.credits}
-												onChange={(credits) => setForm((current) => ({ ...current, credits }))}
-												talentOptions={talentOptions}
-												crewOptions={crewOptions}
-												placeholder="Add credit"
-											/>
-										</div>
-									</div>
-								</TabPanel>
-
-								<TabPanel header="Pieces">
-									<div className="admin-modal-grid">
-										<div className="admin-modal-field admin-modal-field-full">
-											<div className="admin-modal-label">Pieces</div>
-											<FashionPiecesField
-												value={form.pieces}
-												onChange={(pieces) => setForm((current) => ({ ...current, pieces }))}
-												token={token}
-												lookTitle={form.title}
-												talentOptions={talentOptions}
-												crewOptions={crewOptions}
-											/>
-										</div>
-									</div>
-								</TabPanel>
-							</TabView>
-						</div>
-						<div className="admin-modal-footer">
-							<button type="button" onClick={closeForm} className="admin-artists-page-ghost-btn">Cancel</button>
-							<button type="button" onClick={handleSave} className="admin-artists-page-primary-btn">Save</button>
-						</div>
-					</div>
-				</div>
-			)}
+            {form && (
+                <LookFormModal
+                    form={form}
+                    setForm={setForm}
+                    token={token}
+                    collections={collections}
+                    talentOptions={talentOptions}
+                    crewOptions={crewOptions}
+                    onClose={closeForm}
+                    onSave={handleSave}
+                />
+            )}
 		</div>
 	);
 }

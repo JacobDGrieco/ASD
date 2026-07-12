@@ -4,12 +4,14 @@ import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import '../../styles/AdminLoginPage.css'
 
 export default function AdminLoginPage() {
-  const { token, session, login } = useAdminAuth()
+  const { loading: authLoading, session, login } = useAdminAuth()
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  if (token) {
+  if (authLoading) return null
+
+  if (session) {
     return <Navigate to={session?.role === 'ARTIST' ? '/admin/albums' : '/admin/artists'} replace />
   }
 

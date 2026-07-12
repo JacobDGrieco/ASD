@@ -53,6 +53,19 @@ const columns = [
 	{ key: 'youtubeSocialProfile', label: <SiYoutube />, headerLabel: 'YouTube Social', placeholder: 'YouTube Social URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
 ];
 
+const artistLinkFields = [
+	{ key: 'soundcloudProfile', label: 'SoundCloud URL', icon: <FaSoundcloud /> },
+	{ key: 'spotifyProfile', label: 'Spotify URL', icon: <FaSpotify /> },
+	{ key: 'appleMusicProfile', label: 'Apple Music URL', icon: <FaApple /> },
+	{ key: 'youtubeProfile', label: 'YouTube Music URL', icon: <FaYoutube /> },
+	{ key: 'instagramProfile', label: 'Instagram URL', icon: <SiInstagram /> },
+	{ key: 'twitterProfile', label: 'X URL', icon: <SiX /> },
+	{ key: 'facebookProfile', label: 'Facebook URL', icon: <SiFacebook /> },
+	{ key: 'tiktokProfile', label: 'TikTok URL', icon: <SiTiktok /> },
+	{ key: 'snapchatProfile', label: 'Snapchat URL', icon: <SiSnapchat /> },
+	{ key: 'youtubeSocialProfile', label: 'YouTube Social URL', icon: <SiYoutube /> },
+];
+
 function primaryImage(images) {
 	if (!Array.isArray(images) || images.length === 0) return null;
 	return images.find((image) => image.isPrimary) ?? images[0];
@@ -65,6 +78,144 @@ function validateArtistForm(form) {
 
 function isArtistHidden(artist) {
 	return artist?.isVisible === false;
+}
+
+function renderDisplayValue(artist, column) {
+	const value = artist[column.key];
+	if (column.kind === 'images') {
+		const image = primaryImage(artist.images);
+		if (!image) return <span className="admin-artists-page-empty-value">-</span>;
+		return (
+			<div className="admin-artists-page-image-summary">
+				<div className={`admin-artists-page-thumb-frame ${isArtistHidden(artist) ? 'admin-artists-page-thumb-frame-hidden' : ''}`.trim()}>
+					<img src={image.previewUrl || image.url} alt={artist.name} className="admin-artists-page-thumb" />
+				</div>
+				<span className="admin-artists-page-image-count">{artist.imageCount ?? artist.images?.length ?? 1} image{(artist.imageCount ?? artist.images?.length ?? 1) === 1 ? '' : 's'}</span>
+			</div>
+		);
+	}
+	if (value === null || value === undefined || value === '') return <span className="admin-artists-page-empty-value">-</span>;
+	if (column.kind === 'link') {
+		return (
+			<a href={String(value)} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" aria-label={`Open ${column.headerLabel} link`} title="Open in new tab">
+				<FaExternalLinkAlt aria-hidden="true" />
+			</a>
+		);
+	}
+	return (
+		<span className={column.valueClassName ?? 'admin-artists-page-cell-value'} title={String(value)}>
+			{String(value)}
+		</span>
+	);
+}
+
+function renderHeader(column) {
+	if (column.kind !== 'link') return column.label;
+	return (
+		<span className="admin-artists-page-social-header" title={column.headerLabel}>
+			<span aria-hidden="true">{column.label}</span>
+			<span className="admin-artists-page-sr-only">{column.headerLabel}</span>
+		</span>
+	);
+}
+
+function MusicArtistFormModal({ form, setForm, token, onClose, onSave }) {
+	const updateField = (key) => (event) => {
+		setForm((current) => ({
+			...current,
+			[key]: event.target.value,
+			...(key === 'name' ? { slug: slugify(event.target.value) } : {}),
+		}));
+	};
+
+	return (
+		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+			<div className="admin-modal">
+				<div className="admin-modal-header">
+					<h2 className="admin-modal-title">{form.id ? 'Edit Artist' : 'New Artist'}</h2>
+					<button type="button" onClick={onClose} className="admin-modal-close" aria-label="Close">x</button>
+				</div>
+				<div className="admin-modal-body">
+					<TabView className="page-tabview admin-modal-tabs">
+						<TabPanel header="Artist">
+							<div className="admin-modal-grid">
+								<div className="admin-modal-field admin-modal-field-full">
+									<div className="admin-artists-page-name-field">
+										<button
+											type="button"
+											onClick={() => setForm((current) => ({ ...current, isVisible: !current.isVisible }))}
+											className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
+											aria-label={form.isVisible ? 'Artist is visible to the public. Click to hide.' : 'Artist is hidden from the public. Click to show.'}
+											title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
+										>
+											{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
+										</button>
+										<div className="admin-artists-page-name-field-main">
+											<label htmlFor="admin-music-artist-name" className="admin-modal-label">Name</label>
+											<input
+												id="admin-music-artist-name"
+												type="text"
+												placeholder="Name"
+												value={form.name}
+												onChange={updateField('name')}
+												className="admin-artists-page-input"
+											/>
+										</div>
+									</div>
+								</div>
+								<div className="admin-modal-field admin-modal-field-full">
+									<div className="admin-modal-label">Images</div>
+									<ImageCollectionField
+										value={form.images}
+										onChange={(images) => setForm((current) => ({ ...current, images }))}
+										token={token}
+										folder="artists"
+										entityLabel={form.name || 'Artist image'}
+									/>
+								</div>
+								<div className="admin-modal-field admin-modal-field-full">
+									<label htmlFor="admin-music-artist-bio" className="admin-modal-label">Bio</label>
+									<textarea
+										id="admin-music-artist-bio"
+										placeholder="Bio"
+										value={form.bio}
+										onChange={updateField('bio')}
+										className="admin-artists-page-input admin-modal-textarea"
+										rows={5}
+									/>
+								</div>
+								<div className="admin-modal-field admin-modal-field-full">
+									<label htmlFor="admin-music-artist-about-me" className="admin-modal-label">About Me</label>
+									<textarea
+										id="admin-music-artist-about-me"
+										placeholder="About Me"
+										value={form.aboutMe}
+										onChange={updateField('aboutMe')}
+										className="admin-artists-page-input admin-modal-textarea"
+										rows={5}
+									/>
+								</div>
+							</div>
+						</TabPanel>
+						<TabPanel header="Links">
+							<div className="admin-modal-grid">
+								{artistLinkFields.map((field) => (
+									<div key={field.key} className="admin-modal-field admin-modal-field-full">
+										<label className="admin-modal-label">{iconLabel(field.icon, field.label)}</label>
+										<input type="url" placeholder={field.label} value={form[field.key]} onChange={updateField(field.key)} className="admin-artists-page-input" />
+									</div>
+								))}
+							</div>
+						</TabPanel>
+					</TabView>
+				</div>
+				<div className="admin-modal-footer">
+					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
+					<button type="button" onClick={onSave} className="admin-artists-page-primary-btn">Save</button>
+				</div>
+			</div>
+		</div>
+	);
 }
 
 export default function AdminMusicArtistsPage() {
@@ -209,50 +360,11 @@ export default function AdminMusicArtistsPage() {
 		setDropTargetId(null);
 	};
 
-	const renderDisplayValue = (artist, column) => {
-		const value = artist[column.key];
-		if (column.kind === 'images') {
-			const image = primaryImage(artist.images);
-			if (!image) return <span className="admin-artists-page-empty-value">-</span>;
-			return (
-				<div className="admin-artists-page-image-summary">
-					<div className={`admin-artists-page-thumb-frame ${isArtistHidden(artist) ? 'admin-artists-page-thumb-frame-hidden' : ''}`.trim()}>
-						<img src={image.previewUrl || image.url} alt={artist.name} className="admin-artists-page-thumb" />
-					</div>
-					<span className="admin-artists-page-image-count">{artist.imageCount ?? artist.images?.length ?? 1} image{(artist.imageCount ?? artist.images?.length ?? 1) === 1 ? '' : 's'}</span>
-				</div>
-			);
-		}
-		if (value === null || value === undefined || value === '') return <span className="admin-artists-page-empty-value">-</span>;
-		if (column.kind === 'link') {
-			return (
-				<a href={String(value)} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" aria-label={`Open ${column.headerLabel} link`} title="Open in new tab">
-					<FaExternalLinkAlt aria-hidden="true" />
-				</a>
-			);
-		}
-		return (
-			<span className={column.valueClassName ?? 'admin-artists-page-cell-value'} title={String(value)}>
-				{String(value)}
-			</span>
-		);
-	};
-
-	const renderHeader = (column) => {
-		if (column.kind !== 'link') return column.label;
-		return (
-			<span className="admin-artists-page-social-header" title={column.headerLabel}>
-				<span aria-hidden="true">{column.label}</span>
-				<span className="admin-artists-page-sr-only">{column.headerLabel}</span>
-			</span>
-		);
-	};
-
 	return (
 		<div>
 			<div className="admin-artists-page-sticky-top">
 				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Music — Artists</h1>
+					<h1 className="admin-artists-page-title">Music â€” Artists</h1>
 					{isSuperAdmin && !isViewer && <button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Artist</button>}
 				</div>
 			</div>
@@ -326,128 +438,15 @@ export default function AdminMusicArtistsPage() {
 				</table>
 			</div>
 
-			{form && (
-				<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm(); }}>
-					<div className="admin-modal">
-						<div className="admin-modal-header">
-							<h2 className="admin-modal-title">{form.id ? 'Edit Artist' : 'New Artist'}</h2>
-							<button type="button" onClick={closeForm} className="admin-modal-close" aria-label="Close">×</button>
-						</div>
-						<div className="admin-modal-body">
-							<TabView className="page-tabview admin-modal-tabs">
-								<TabPanel header="Artist">
-									<div className="admin-modal-grid">
-										<div className="admin-modal-field admin-modal-field-full">
-											<div className="admin-artists-page-name-field">
-												<button
-													type="button"
-													onClick={() => setForm((current) => ({ ...current, isVisible: !current.isVisible }))}
-													className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
-													aria-label={form.isVisible ? 'Artist is visible to the public. Click to hide.' : 'Artist is hidden from the public. Click to show.'}
-													title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
-												>
-													{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
-												</button>
-												<div className="admin-artists-page-name-field-main">
-													<label htmlFor="admin-music-artist-name" className="admin-modal-label">Name</label>
-													<input
-														id="admin-music-artist-name"
-														type="text"
-														placeholder="Name"
-														value={form.name}
-														onChange={(event) => setForm((current) => ({ ...current, name: event.target.value, slug: slugify(event.target.value) }))}
-														className="admin-artists-page-input"
-													/>
-												</div>
-											</div>
-										</div>
-										<div className="admin-modal-field admin-modal-field-full">
-											<div className="admin-modal-label">Images</div>
-											<ImageCollectionField
-												value={form.images}
-												onChange={(images) => setForm((current) => ({ ...current, images }))}
-												token={token}
-												folder="artists"
-												entityLabel={form.name || 'Artist image'}
-											/>
-										</div>
-										<div className="admin-modal-field admin-modal-field-full">
-											<label htmlFor="admin-music-artist-bio" className="admin-modal-label">Bio</label>
-											<textarea
-												id="admin-music-artist-bio"
-												placeholder="Bio"
-												value={form.bio}
-												onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))}
-												className="admin-artists-page-input admin-modal-textarea"
-												rows={5}
-											/>
-										</div>
-										<div className="admin-modal-field admin-modal-field-full">
-											<label htmlFor="admin-music-artist-about-me" className="admin-modal-label">About Me</label>
-											<textarea
-												id="admin-music-artist-about-me"
-												placeholder="About Me"
-												value={form.aboutMe}
-												onChange={(event) => setForm((current) => ({ ...current, aboutMe: event.target.value }))}
-												className="admin-artists-page-input admin-modal-textarea"
-												rows={5}
-											/>
-										</div>
-									</div>
-								</TabPanel>
-								<TabPanel header="Links">
-									<div className="admin-modal-grid">
-										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">{iconLabel(<FaSoundcloud />, 'SoundCloud URL')}</label>
-											<input type="url" placeholder="SoundCloud URL" value={form.soundcloudProfile} onChange={(event) => setForm((current) => ({ ...current, soundcloudProfile: event.target.value }))} className="admin-artists-page-input" />
-										</div>
-										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">{iconLabel(<FaSpotify />, 'Spotify URL')}</label>
-											<input type="url" placeholder="Spotify URL" value={form.spotifyProfile} onChange={(event) => setForm((current) => ({ ...current, spotifyProfile: event.target.value }))} className="admin-artists-page-input" />
-										</div>
-										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">{iconLabel(<FaApple />, 'Apple Music URL')}</label>
-											<input type="url" placeholder="Apple Music URL" value={form.appleMusicProfile} onChange={(event) => setForm((current) => ({ ...current, appleMusicProfile: event.target.value }))} className="admin-artists-page-input" />
-										</div>
-										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">{iconLabel(<FaYoutube />, 'YouTube Music URL')}</label>
-											<input type="url" placeholder="YouTube Music URL" value={form.youtubeProfile} onChange={(event) => setForm((current) => ({ ...current, youtubeProfile: event.target.value }))} className="admin-artists-page-input" />
-										</div>
-										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">{iconLabel(<SiInstagram />, 'Instagram URL')}</label>
-											<input type="url" placeholder="Instagram URL" value={form.instagramProfile} onChange={(event) => setForm((current) => ({ ...current, instagramProfile: event.target.value }))} className="admin-artists-page-input" />
-										</div>
-										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">{iconLabel(<SiX />, 'X URL')}</label>
-											<input type="url" placeholder="X URL" value={form.twitterProfile} onChange={(event) => setForm((current) => ({ ...current, twitterProfile: event.target.value }))} className="admin-artists-page-input" />
-										</div>
-										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">{iconLabel(<SiFacebook />, 'Facebook URL')}</label>
-											<input type="url" placeholder="Facebook URL" value={form.facebookProfile} onChange={(event) => setForm((current) => ({ ...current, facebookProfile: event.target.value }))} className="admin-artists-page-input" />
-										</div>
-										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">{iconLabel(<SiTiktok />, 'TikTok URL')}</label>
-											<input type="url" placeholder="TikTok URL" value={form.tiktokProfile} onChange={(event) => setForm((current) => ({ ...current, tiktokProfile: event.target.value }))} className="admin-artists-page-input" />
-										</div>
-										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">{iconLabel(<SiSnapchat />, 'Snapchat URL')}</label>
-											<input type="url" placeholder="Snapchat URL" value={form.snapchatProfile} onChange={(event) => setForm((current) => ({ ...current, snapchatProfile: event.target.value }))} className="admin-artists-page-input" />
-										</div>
-										<div className="admin-modal-field admin-modal-field-full">
-											<label className="admin-modal-label">{iconLabel(<SiYoutube />, 'YouTube Social URL')}</label>
-											<input type="url" placeholder="YouTube Social URL" value={form.youtubeSocialProfile} onChange={(event) => setForm((current) => ({ ...current, youtubeSocialProfile: event.target.value }))} className="admin-artists-page-input" />
-										</div>
-									</div>
-								</TabPanel>
-							</TabView>
-						</div>
-						<div className="admin-modal-footer">
-							<button type="button" onClick={closeForm} className="admin-artists-page-ghost-btn">Cancel</button>
-							<button type="button" onClick={handleSave} className="admin-artists-page-primary-btn">Save</button>
-						</div>
-					</div>
-				</div>
-			)}
+            {form && (
+                <MusicArtistFormModal
+                    form={form}
+                    setForm={setForm}
+                    token={token}
+                    onClose={closeForm}
+                    onSave={handleSave}
+                />
+            )}
 		</div>
 	);
 }

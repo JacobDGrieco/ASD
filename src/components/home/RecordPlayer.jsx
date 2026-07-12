@@ -5,9 +5,6 @@ import { preloadImages } from '../../lib/publicPrefetch.js'
 import '../../styles/RecordPlayer.css'
 
 export default function RecordPlayer({ tracks, message = null }) {
-  const [activeTrack, setActiveTrack] = useState(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [pendingAutoPlay, setPendingAutoPlay] = useState(false)
   const hasTracks = Array.isArray(tracks) && tracks.length > 0
 
   useEffect(() => {
@@ -22,26 +19,31 @@ export default function RecordPlayer({ tracks, message = null }) {
     return undefined
   }, [hasTracks, tracks])
 
-  useEffect(() => {
-    if (hasTracks) return
+  if (!hasTracks) {
+    return (
+      <section className="record-player-section">
+        <div className="record-player-empty">
+          <p className="record-player-empty-eyebrow">Record Player</p>
+          <h2>No tracks are loaded right now.</h2>
+          <p>{message ?? 'Assign active songs in the admin record-player page to show the vinyl rack on the home page.'}</p>
+        </div>
+      </section>
+    )
+  }
 
-    setActiveTrack(null)
-    setIsPlaying(false)
-    setPendingAutoPlay(false)
-  }, [hasTracks])
+  return <RecordPlayerDeck tracks={tracks} />
+}
+
+function RecordPlayerDeck({ tracks }) {
+  const [activeTrack, setActiveTrack] = useState(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [pendingAutoPlay, setPendingAutoPlay] = useState(false)
 
   function handleSelect(track) {
-    setActiveTrack((prev) => {
-      if (prev?.id === track.id) {
-        setIsPlaying(false)
-        setPendingAutoPlay(false)
-        return null
-      }
-
-      setIsPlaying(false)
-      setPendingAutoPlay(Boolean(track.song.soundcloudUrl))
-      return track
-    })
+    const isDeselecting = activeTrack?.id === track.id
+    setIsPlaying(false)
+    setPendingAutoPlay(isDeselecting ? false : Boolean(track.song.soundcloudUrl))
+    setActiveTrack(isDeselecting ? null : track)
   }
 
   function handleTonearmToggle() {
@@ -64,18 +66,6 @@ export default function RecordPlayer({ tracks, message = null }) {
     setPendingAutoPlay(false)
     setIsPlaying(false)
     setActiveTrack(null)
-  }
-
-  if (!hasTracks) {
-    return (
-      <section className="record-player-section">
-        <div className="record-player-empty">
-          <p className="record-player-empty-eyebrow">Record Player</p>
-          <h2>No tracks are loaded right now.</h2>
-          <p>{message ?? 'Assign active songs in the admin record-player page to show the vinyl rack on the home page.'}</p>
-        </div>
-      </section>
-    )
   }
 
   return (

@@ -1,5 +1,5 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { ADMIN_ROLE_ARTIST, ADMIN_ROLE_SUPER, ADMIN_ROLE_VIEWER, signToken } from '../../src/lib/auth.js'
+import { ADMIN_ROLE_ARTIST, ADMIN_ROLE_SUPER, ADMIN_ROLE_VIEWER, requireAdmin, serializeAdminAuthCookie, serializeClearAdminAuthCookie, signToken } from '../../src/lib/auth.js'
 import { verifyPassword } from '../../src/lib/passwords.js'
 
 function createSuperAdminSession() {
@@ -29,7 +29,24 @@ function createViewerSession() {
   }
 }
 
+function sendLogin(res, session) {
+  const token = signToken(session)
+  res.setHeader('Set-Cookie', serializeAdminAuthCookie(token))
+  return res.status(200).json({ session })
+}
+
 export default async function handler(req, res) {
+  if (req.method === 'GET') {
+    const session = requireAdmin(req, res)
+    if (!session) return
+    return res.status(200).json({ session })
+  }
+
+  if (req.method === 'DELETE') {
+    res.setHeader('Set-Cookie', serializeClearAdminAuthCookie())
+    return res.status(200).json({ ok: true })
+  }
+
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { password } = req.body ?? {}
@@ -37,12 +54,12 @@ export default async function handler(req, res) {
 
   if (process.env.ADMIN_PASSWORD && password === process.env.ADMIN_PASSWORD) {
     const session = createSuperAdminSession()
-    return res.status(200).json({ token: signToken(session), session })
+    return sendLogin(res, session)
   }
 
   if (password === 'viewer') {
     const session = createViewerSession()
-    return res.status(200).json({ token: signToken(session), session })
+    return sendLogin(res, session)
   }
 
   const artistAccessList = await prisma.artistAdminAccess.findMany({
@@ -64,5 +81,5 @@ export default async function handler(req, res) {
   }
 
   const session = createArtistSession(match)
-  return res.status(200).json({ token: signToken(session), session })
+  return sendLogin(res, session)
 }

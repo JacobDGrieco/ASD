@@ -1,4 +1,4 @@
-import { isReleasedOnUtcDay, releaseVisibilityUpperBound } from './releaseSchedule.js'
+import { isReleasedOnUtcDay } from './releaseSchedule.js'
 
 export function defaultVisibilityForReleaseDate(releaseDate, now = new Date()) {
   if (releaseDate && !isReleasedOnUtcDay(releaseDate, now)) {
@@ -47,19 +47,4 @@ export function isEffectivelyVisible(entity, releaseDate, now = new Date()) {
     autoShowOnRelease: entity?.autoShowOnRelease,
     releaseDate,
   }, now).isVisible
-}
-
-export function releaseVisibilityWhere(now = new Date()) {
-  return {
-    OR: [
-      { isVisible: true },
-      {
-        AND: [
-          { isVisible: false },
-          { autoShowOnRelease: true },
-          { releaseDate: { lt: releaseVisibilityUpperBound(now) } },
-        ],
-      },
-    ],
-  }
 }
