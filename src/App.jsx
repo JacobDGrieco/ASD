@@ -9,6 +9,7 @@ import CrosshairPage from './pages/CrosshairPage.jsx';
 import SongPage from './pages/SongPage.jsx';
 import AlbumPage from './pages/AlbumPage.jsx';
 import BoardPage from './pages/BoardPage.jsx';
+import AboutPage from './pages/AboutPage.jsx';
 import LegalPage from './pages/LegalPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 import FashionHomePage from './pages/FashionHomePage.jsx';
@@ -28,6 +29,7 @@ import './styles/ViewTransitions.css';
 
 const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage.jsx'));
 const AdminAccountsPage = lazy(() => import('./pages/admin/AdminAccountsPage.jsx'));
+const AdminAboutPage = lazy(() => import('./pages/admin/AdminAboutPage.jsx'));
 const AdminMusicArtistsPage = lazy(() => import('./pages/admin/AdminMusicArtistsPage.jsx'));
 const AdminMusicAlbumsPage = lazy(() => import('./pages/admin/AdminMusicAlbumsPage.jsx'));
 const AdminMusicBoardPage = lazy(() => import('./pages/admin/AdminMusicBoardPage.jsx'));
@@ -141,6 +143,7 @@ export default function App() {
 					<Route element={<PublicLayout />}>
 						<Route path="/" element={<HomePage />} />
 						<Route path="/music" element={<MusicHomePage />} />
+						<Route path="/about" element={<AboutPage />} />
 						<Route path="/board" element={<BoardPage />} />
 						<Route path="/videos" element={<VideosPage />} />
 						<Route path="/crosshair" element={<CrosshairPage />} />
@@ -168,6 +171,7 @@ export default function App() {
 						<Route element={<AdminLayout />}>
 							<Route path="/admin" element={<AdminHomeRedirect />} />
 							<Route path="/admin/accounts" element={<AdminAccountsPage />} />
+							<Route path="/admin/about" element={<AdminAboutPage />} />
 							<Route path="/admin/artists" element={<AdminMusicArtistsPage />} />
 							<Route path="/admin/albums" element={<AdminMusicAlbumsPage />} />
 							<Route path="/admin/board" element={<AdminMusicBoardPage />} />

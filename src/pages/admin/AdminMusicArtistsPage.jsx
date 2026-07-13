@@ -364,7 +364,7 @@ export default function AdminMusicArtistsPage() {
 		<div>
 			<div className="admin-artists-page-sticky-top">
 				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Music â€” Artists</h1>
+					<h1 className="admin-artists-page-title">Music — Artists</h1>
 					{isSuperAdmin && !isViewer && <button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Artist</button>}
 				</div>
 			</div>
@@ -438,15 +438,15 @@ export default function AdminMusicArtistsPage() {
 				</table>
 			</div>
 
-            {form && (
-                <MusicArtistFormModal
-                    form={form}
-                    setForm={setForm}
-                    token={token}
-                    onClose={closeForm}
-                    onSave={handleSave}
-                />
-            )}
+			{form && (
+				<MusicArtistFormModal
+					form={form}
+					setForm={setForm}
+					token={token}
+					onClose={closeForm}
+					onSave={handleSave}
+				/>
+			)}
 		</div>
 	);
 }

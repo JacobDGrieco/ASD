@@ -15,14 +15,6 @@
 }
 
 @font-face {
-	font-family: 'Billo';
-	src: url('../../fonts/BILLO___.TTF') format('truetype');
-	font-style: normal;
-	font-weight: 400;
-	font-display: swap;
-}
-
-@font-face {
 	font-family: 'Disko';
 	src: url('../../fonts/Disko_OT.otf') format('opentype'),
 		url('../../fonts/Disko.ttf') format('truetype');
@@ -84,7 +76,7 @@
 	--transition: 0.2s ease;
 	--nav-height: 76px;
 	--font-body: 'Disko', Georgia, serif;
-	--font-display: 'Billo', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+	--font-display: 'Disko', Georgia, serif;
 	--font-description: 'Alba', Georgia, serif;
 	--font-nav-tab: 'Accessories', 'Segoe UI', sans-serif;
 	--font-readable: 'Mono55', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;

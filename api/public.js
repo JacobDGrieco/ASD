@@ -6,8 +6,10 @@ import { ARTIST_VIDEO_SOURCE, buildStaticArtistVideoPath, getStaticArtistVideoEx
 import { formatCrosshairVideo } from '../src/lib/crosshairVideos.js'
 import { hasPublicBoardSource, isOtherArtist, isReservedHiddenArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js'
 import { isReleasedOnUtcDay } from '../src/lib/releaseSchedule.js'
+import { COMPANY_LEADERS, COMPANY_SUMMARY } from '../src/lib/companyProfile.js'
 
 const VIDEO_BASE_URL = process.env.VIDEO_BASE_URL || process.env.VITE_VIDEO_BASE_URL || ''
+const DEFAULT_COMPANY_BIO = COMPANY_SUMMARY.description
 
 function formatArtistImages(artist) {
   return clientImages(
@@ -46,6 +48,87 @@ function normalizeSlug(value) {
 
 function setPublicCache(res) {
   res.setHeader('Cache-Control', 'no-store')
+}
+
+function formatCompanyMember(member) {
+  const image = member.imageUrl
+    ? clientImage({
+        id: `${member.id}-image`,
+        url: member.imageUrl,
+        pathname: member.imagePathname,
+        usage: 'portrait',
+        altText: member.name,
+        sortOrder: 0,
+        isPrimary: true,
+      })
+    : null
+
+  return {
+    id: member.id,
+    name: member.name,
+    role: member.role,
+    bio: member.bio,
+    imageUrl: image?.previewUrl ?? '',
+    image,
+    isVisible: member.isVisible,
+    sortOrder: member.sortOrder,
+  }
+}
+
+function fallbackCompanyAbout() {
+  return {
+    profile: {
+      bio: DEFAULT_COMPANY_BIO,
+    },
+    members: COMPANY_LEADERS.map((member, index) => ({
+      id: member.id,
+      name: member.name,
+      role: member.role,
+      bio: member.bio ?? member.blurb ?? '',
+      imageUrl: member.imageUrl,
+      image: {
+        id: `${member.id}-fallback-image`,
+        url: member.imageUrl,
+        pathname: null,
+        usage: 'portrait',
+        altText: member.name,
+        sortOrder: 0,
+        isPrimary: true,
+        previewUrl: member.imageUrl,
+      },
+      isVisible: true,
+      sortOrder: index,
+    })),
+  }
+}
+
+async function getCompanyAbout(res, includeHidden = false) {
+  setPublicCache(res)
+  let profile
+  let members
+
+  try {
+    ;[profile, members] = await Promise.all([
+      prisma.companyProfile.findUnique({ where: { id: 'main' } }),
+      prisma.companyMember.findMany({
+        where: includeHidden ? undefined : { isVisible: true },
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+      }),
+    ])
+  } catch (error) {
+    if (error?.code === 'P2021') {
+      return res.status(200).json(fallbackCompanyAbout())
+    }
+
+    throw error
+  }
+
+  return res.status(200).json({
+    profile: {
+      bio: profile?.bio || DEFAULT_COMPANY_BIO,
+    },
+    members: members.map(formatCompanyMember),
+  })
 }
 
 function readPreviewSession(req) {
@@ -1239,6 +1322,7 @@ export default async function handler(req, res) {
   if (resource === 'crosshair') return getCrosshairVideos(res)
   if (resource === 'recordPlayer') return getRecordPlayer(res, includeHidden)
   if (resource === 'boardPosts') return getBoardPosts(res)
+  if (resource === 'about') return getCompanyAbout(res, includeHidden)
   if (resource === 'fashionTalentList') return getFashionTalentList(res, includeHidden)
   if (resource === 'fashionTalent' && slug) return getFashionTalent(res, slug, includeHidden)
   if (resource === 'fashionLooksList') return getFashionLooksList(res, includeHidden)

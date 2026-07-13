@@ -311,6 +311,28 @@ model BoardPost {
   @@index([publishedAt])
 }
 
+model CompanyProfile {
+  id        String   @id @default("main")
+  bio       String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CompanyMember {
+  id            String   @id @default(cuid())
+  name          String
+  role          String   @default("")
+  bio           String   @default("")
+  imageUrl      String   @default("")
+  imagePathname String?
+  isVisible     Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([isVisible, sortOrder])
+}
+
 model FashionTalent {
   id               String               @id @default(cuid())
   name             String

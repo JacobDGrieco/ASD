@@ -362,7 +362,7 @@ export default function AdminMusicCrosshairPage() {
 	if (!isSuperAdmin) {
 		return (
 			<div className="admin-crosshair-page">
-				<h1 className="admin-artists-page-title">Music â€” Crosshair</h1>
+				<h1 className="admin-artists-page-title">Music — Crosshair</h1>
 				<p className="admin-crosshair-page-note">Only super admins can manage Crosshair videos.</p>
 			</div>
 		);
@@ -372,7 +372,7 @@ export default function AdminMusicCrosshairPage() {
 		<div className="admin-crosshair-page">
 			<div className="admin-artists-page-sticky-top">
 				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Music â€” The Crosshair</h1>
+					<h1 className="admin-artists-page-title">Music — The Crosshair</h1>
 					<div className="admin-crosshair-page-header-actions">
 						<button
 							type="button"
@@ -383,7 +383,7 @@ export default function AdminMusicCrosshairPage() {
 							<FaSyncAlt aria-hidden="true" /> {syncing ? 'Syncing...' : 'Sync YouTube'}
 						</button>
 						<button type="button" className="admin-artists-page-primary-btn admin-crosshair-page-new-btn" onClick={openCreate}>
-							<FaPlus aria-hidden="true" /> New Video
+							New Video
 						</button>
 					</div>
 				</div>
@@ -394,24 +394,24 @@ export default function AdminMusicCrosshairPage() {
 			</p>
 			{message && !modalOpen && <p className="admin-crosshair-page-message" role="alert">{message}</p>}
 
-            {loading ? (
-                <p className="admin-crosshair-page-note">Loading videos...</p>
-            ) : (
-                <CrosshairVideosTable videos={sortedVideos} onEdit={openEdit} onDelete={deleteVideo} />
-            )}
+			{loading ? (
+				<p className="admin-crosshair-page-note">Loading videos...</p>
+			) : (
+				<CrosshairVideosTable videos={sortedVideos} onEdit={openEdit} onDelete={deleteVideo} />
+			)}
 
-            {modalOpen && (
-                <CrosshairVideoModal
-                    form={form}
-                    setForm={setForm}
-                    token={token}
-                    editing={editing}
-                    message={message}
-                    saving={saving}
-                    onClose={closeModal}
-                    onSave={save}
-                />
-            )}
+			{modalOpen && (
+				<CrosshairVideoModal
+					form={form}
+					setForm={setForm}
+					token={token}
+					editing={editing}
+					message={message}
+					saving={saving}
+					onClose={closeModal}
+					onSave={save}
+				/>
+			)}
 		</div>
 	);
 }

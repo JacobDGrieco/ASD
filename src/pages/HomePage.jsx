@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { LazyMotion, domAnimation, m } from 'framer-motion';
 import MusicHomePreview from '../components/home/MusicHomePreview.jsx';
 import FashionHomePreview from '../components/home/FashionHomePreview.jsx';
+import { useCompanyProfile } from '../hooks/useCompanyProfile.js';
+import { getCompanyMemberImage } from '../lib/companyProfile.js';
 import '../styles/HomePortal.css';
 
 const EXPAND_MS = 820;
@@ -68,6 +70,7 @@ export default function HomePage() {
 	const panelRefs = useRef({});
 	const hasHover = useMediaQuery('(hover: hover)');
 	const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+	const { members } = useCompanyProfile();
 	const activeKey = expandingKey || hoveredKey;
 
 	const sections = useMemo(() => SECTIONS, []);
@@ -146,43 +149,59 @@ export default function HomePage() {
 
 	return (
 		<LazyMotion features={domAnimation}>
-		<main className={`portal-home ${expandingKey ? 'portal-home-expanding' : ''}`}>
-			{sections.map((section) => {
-				const Preview = section.Preview;
-				const isActive = activeKey === section.key;
-				const isCompressed = activeKey && activeKey !== section.key;
+			<>
+				<main className={`portal-home ${expandingKey ? 'portal-home-expanding' : ''}`}>
+					{sections.map((section) => {
+						const Preview = section.Preview;
+						const isActive = activeKey === section.key;
+						const isCompressed = activeKey && activeKey !== section.key;
 
-				return (
-					<m.div
-						key={section.key}
-						className={`portal-panel portal-panel-${section.key} ${isActive ? 'portal-panel-active' : ''} ${isCompressed ? 'portal-panel-compressed' : ''}`.trim()}
-						ref={(element) => {
-							panelRefs.current[section.key] = element;
-						}}
-						style={expandingKey === section.key && expandingFrame ? expandingFrame : undefined}
-						animate={{ flex: isActive ? 1.38 : isCompressed ? 0.62 : 1 }}
-						transition={{ duration: 0.46, ease: [0.16, 0.84, 0.26, 1] }}
-					>
-						<Preview />
-						<span className="portal-panel-shade" aria-hidden="true" />
-						<span className="portal-panel-content" aria-hidden="true">
-							<span className="portal-panel-label">{section.label}</span>
-							<span className="portal-panel-description">{section.description}</span>
-						</span>
-						<button
-							type="button"
-							className="portal-panel-overlay"
-							aria-label={`Enter ${section.label}`}
-							onMouseEnter={() => hasHover && !expandingKey && setHoveredKey(section.key)}
-							onMouseLeave={() => hasHover && !expandingKey && setHoveredKey(null)}
-							onFocus={() => hasHover && !expandingKey && setHoveredKey(section.key)}
-							onBlur={() => hasHover && !expandingKey && setHoveredKey(null)}
-							onClick={() => enterSection(section)}
-						/>
-					</m.div>
-				);
-			})}
-		</main>
+						return (
+							<m.div
+								key={section.key}
+								className={`portal-panel portal-panel-${section.key} ${isActive ? 'portal-panel-active' : ''} ${isCompressed ? 'portal-panel-compressed' : ''}`.trim()}
+								ref={(element) => {
+									panelRefs.current[section.key] = element;
+								}}
+								style={expandingKey === section.key && expandingFrame ? expandingFrame : undefined}
+								animate={{ flex: isActive ? 1.38 : isCompressed ? 0.62 : 1 }}
+								transition={{ duration: 0.46, ease: [0.16, 0.84, 0.26, 1] }}
+							>
+								<Preview />
+								<span className="portal-panel-shade" aria-hidden="true" />
+								<span className="portal-panel-content" aria-hidden="true">
+									<span className="portal-panel-label">{section.label}</span>
+									<span className="portal-panel-description">{section.description}</span>
+								</span>
+								<button
+									type="button"
+									className="portal-panel-overlay"
+									aria-label={`Enter ${section.label}`}
+									onMouseEnter={() => hasHover && !expandingKey && setHoveredKey(section.key)}
+									onMouseLeave={() => hasHover && !expandingKey && setHoveredKey(null)}
+									onFocus={() => hasHover && !expandingKey && setHoveredKey(section.key)}
+									onBlur={() => hasHover && !expandingKey && setHoveredKey(null)}
+									onClick={() => enterSection(section)}
+								/>
+							</m.div>
+						);
+					})}
+				</main>
+				<section className="portal-about-band" aria-labelledby="portal-about-title">
+					<div className="portal-about-copy">
+						<h2 id="portal-about-title">About Us</h2>
+					</div>
+					<div className="portal-about-portraits" aria-hidden="true">
+						{members.map((leader) => {
+							const imageSrc = getCompanyMemberImage(leader);
+							return imageSrc ? (
+								<img key={leader.id} src={imageSrc} alt="" className="portal-about-portrait" />
+							) : null;
+						})}
+					</div>
+					<Link to="/about" className="portal-about-link">Meet the company</Link>
+				</section>
+			</>
 		</LazyMotion>
 	);
 }

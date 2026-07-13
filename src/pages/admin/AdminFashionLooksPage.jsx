@@ -417,7 +417,7 @@ export default function AdminFashionLooksPage() {
 				setCrewOptions(crew.map(toCrewOption));
 				primeAdminResource('fashion-crew-list', token, crew);
 			})
-			.catch(() => {});
+			.catch(() => { });
 		closeForm();
 	};
 
@@ -499,7 +499,7 @@ export default function AdminFashionLooksPage() {
 		<div>
 			<div className="admin-artists-page-sticky-top">
 				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Fashion â€” Looks</h1>
+					<h1 className="admin-artists-page-title">Fashion — Looks</h1>
 					<button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Look</button>
 				</div>
 			</div>
@@ -517,18 +517,18 @@ export default function AdminFashionLooksPage() {
 				onDelete={handleDelete}
 			/>
 
-            {form && (
-                <LookFormModal
-                    form={form}
-                    setForm={setForm}
-                    token={token}
-                    collections={collections}
-                    talentOptions={talentOptions}
-                    crewOptions={crewOptions}
-                    onClose={closeForm}
-                    onSave={handleSave}
-                />
-            )}
+			{form && (
+				<LookFormModal
+					form={form}
+					setForm={setForm}
+					token={token}
+					collections={collections}
+					talentOptions={talentOptions}
+					crewOptions={crewOptions}
+					onClose={closeForm}
+					onSave={handleSave}
+				/>
+			)}
 		</div>
 	);
 }
