@@ -18,6 +18,7 @@ export function useCompanyProfile() {
 	return {
 		summary: {
 			...COMPANY_SUMMARY,
+			title: data?.profile?.title ?? COMPANY_SUMMARY.title,
 			description: data?.profile?.bio ?? COMPANY_SUMMARY.description,
 		},
 		members: data ? (data.members ?? []) : COMPANY_LEADERS,

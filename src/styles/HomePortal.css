@@ -87,6 +87,12 @@
 	transform: translateY(-2px);
 }
 
+.portal-about-link-loading {
+	cursor: progress;
+	opacity: 0.72;
+	pointer-events: none;
+}
+
 .portal-panel {
 	position: relative;
 	min-width: 0;

@@ -54,10 +54,15 @@ function validateMemberForm(form) {
 	return null;
 }
 
+function normalizeHeroTitle(value) {
+	return value.replace(/\\n/g, '\n');
+}
+
 export default function AdminAboutPage() {
 	const { token, session } = useAdminAuth();
 	const auth = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
-	const [profile, setProfile] = useState({ id: 'main', bio: '' });
+	const [profile, setProfile] = useState({ id: 'main', title: '', bio: '' });
+	const [titleDraft, setTitleDraft] = useState('');
 	const [bioDraft, setBioDraft] = useState('');
 	const [members, setMembers] = useState([]);
 	const [form, setForm] = useState(null);
@@ -73,7 +78,8 @@ export default function AdminAboutPage() {
 		loadAdminResource({ cacheKey: 'admin-about', url: '/api/admin/about', token })
 			.then((about) => {
 				if (ignore) return;
-				setProfile(about.profile ?? { id: 'main', bio: '' });
+				setProfile(about.profile ?? { id: 'main', title: '', bio: '' });
+				setTitleDraft(about.profile?.title ?? '');
 				setBioDraft(about.profile?.bio ?? '');
 				setMembers(about.members ?? []);
 			})
@@ -116,9 +122,14 @@ export default function AdminAboutPage() {
 	const closeForm = () => setForm(null);
 
 	const handleSaveBio = async () => {
+		const title = normalizeHeroTitle(titleDraft).trim();
 		const bio = bioDraft.trim();
+		if (!title) {
+			window.alert('About hero title is required.');
+			return;
+		}
 		if (!bio) {
-			window.alert('Company bio is required.');
+			window.alert('About hero bio is required.');
 			return;
 		}
 
@@ -127,16 +138,17 @@ export default function AdminAboutPage() {
 			const response = await fetch('/api/admin/about', {
 				method: 'PUT',
 				headers: { ...auth, 'Content-Type': 'application/json' },
-				body: JSON.stringify({ bio }),
+				body: JSON.stringify({ title, bio }),
 			});
 
 			const payload = await response.json().catch(() => ({}));
 			if (!response.ok) {
-				window.alert(payload.error ?? 'Failed to save company bio.');
+				window.alert(payload.error ?? 'Failed to save hero copy.');
 				return;
 			}
 
 			setProfile(payload);
+			setTitleDraft(payload.title ?? '');
 			setBioDraft(payload.bio ?? '');
 			primeAbout(payload, members);
 		} finally {
@@ -202,19 +214,30 @@ export default function AdminAboutPage() {
 				</div>
 			</div>
 
-			<section className="admin-about-profile-panel" aria-labelledby="admin-about-company-bio-title">
+			<section className="admin-about-profile-panel" aria-labelledby="admin-about-hero-copy-title">
 				<div className="admin-about-profile-heading">
 					<div>
-						<h2 id="admin-about-company-bio-title">Company Bio</h2>
-						<p>Required public bio used on the About Us page.</p>
+						<h2 id="admin-about-hero-copy-title">Hero Copy</h2>
+						<p>Required H1 and paragraph used at the top of the About Us page.</p>
 					</div>
 					<span className="admin-about-profile-updated">Updated {formatDate(profile.updatedAt)}</span>
 				</div>
-				<label htmlFor="admin-about-company-bio" className="admin-modal-label">
-					Company bio <span className="admin-modal-label-required">*</span>
+				<label htmlFor="admin-about-hero-title" className="admin-modal-label">
+					Hero title <span className="admin-modal-label-required">*</span>
 				</label>
 				<textarea
-					id="admin-about-company-bio"
+					id="admin-about-hero-title"
+					value={titleDraft}
+					onChange={(event) => setTitleDraft(normalizeHeroTitle(event.target.value))}
+					className="admin-artists-page-input admin-modal-textarea admin-about-title-input"
+					rows={2}
+					required
+				/>
+				<label htmlFor="admin-about-hero-bio" className="admin-modal-label">
+					Hero bio <span className="admin-modal-label-required">*</span>
+				</label>
+				<textarea
+					id="admin-about-hero-bio"
 					value={bioDraft}
 					onChange={(event) => setBioDraft(event.target.value)}
 					className="admin-artists-page-input admin-modal-textarea admin-about-bio-input"
@@ -222,11 +245,18 @@ export default function AdminAboutPage() {
 					required
 				/>
 				<div className="admin-about-profile-actions">
-					<button type="button" onClick={() => setBioDraft(profile.bio ?? '')} className="admin-artists-page-ghost-btn">
+					<button
+						type="button"
+						onClick={() => {
+							setTitleDraft(profile.title ?? '');
+							setBioDraft(profile.bio ?? '');
+						}}
+						className="admin-artists-page-ghost-btn"
+					>
 						Reset
 					</button>
 					<button type="button" onClick={() => void handleSaveBio()} className="admin-artists-page-primary-btn" disabled={savingBio}>
-						{savingBio ? 'Saving...' : 'Save Bio'}
+						{savingBio ? 'Saving...' : 'Save Copy'}
 					</button>
 				</div>
 			</section>

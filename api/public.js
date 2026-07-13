@@ -9,6 +9,7 @@ import { isReleasedOnUtcDay } from '../src/lib/releaseSchedule.js'
 import { COMPANY_LEADERS, COMPANY_SUMMARY } from '../src/lib/companyProfile.js'
 
 const VIDEO_BASE_URL = process.env.VIDEO_BASE_URL || process.env.VITE_VIDEO_BASE_URL || ''
+const DEFAULT_COMPANY_TITLE = COMPANY_SUMMARY.title
 const DEFAULT_COMPANY_BIO = COMPANY_SUMMARY.description
 
 function formatArtistImages(artist) {
@@ -78,6 +79,7 @@ function formatCompanyMember(member) {
 function fallbackCompanyAbout() {
   return {
     profile: {
+      title: DEFAULT_COMPANY_TITLE,
       bio: DEFAULT_COMPANY_BIO,
     },
     members: COMPANY_LEADERS.map((member, index) => ({
@@ -116,7 +118,7 @@ async function getCompanyAbout(res, includeHidden = false) {
       }),
     ])
   } catch (error) {
-    if (error?.code === 'P2021') {
+    if (error?.code === 'P2021' || error?.code === 'P2022') {
       return res.status(200).json(fallbackCompanyAbout())
     }
 
@@ -125,6 +127,7 @@ async function getCompanyAbout(res, includeHidden = false) {
 
   return res.status(200).json({
     profile: {
+      title: profile?.title || DEFAULT_COMPANY_TITLE,
       bio: profile?.bio || DEFAULT_COMPANY_BIO,
     },
     members: members.map(formatCompanyMember),

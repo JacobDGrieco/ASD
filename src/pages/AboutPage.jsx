@@ -4,7 +4,15 @@ import { getCompanyMemberImage } from '../lib/companyProfile.js';
 import '../styles/AboutPage.css';
 
 export default function AboutPage() {
-	const { summary, members } = useCompanyProfile();
+	const { summary, members, loading } = useCompanyProfile();
+
+	if (loading) {
+		return (
+			<div className="page aurora-page about-page about-page-loading" aria-busy="true">
+				<AuroraBackground />
+			</div>
+		);
+	}
 
 	return (
 		<div className="page aurora-page about-page">
@@ -14,17 +22,6 @@ export default function AboutPage() {
 					<h1>{summary.title}</h1>
 					<p>{summary.description}</p>
 				</header>
-
-				<section className="about-company" aria-labelledby="about-company-title">
-					<div className="about-company-label">Company</div>
-					<div className="about-company-copy">
-						<h2 id="about-company-title">A label, a fashion desk, and a creative system.</h2>
-						<p>
-							The company exists to give independent artists a sharper infrastructure: release strategy, music presentation,
-							visual direction, fashion storytelling, and a home for the work after launch. ASD is built around people, not lanes.
-						</p>
-					</div>
-				</section>
 
 				<section className="about-leadership" aria-label="Leadership">
 					{members.map((leader, index) => {

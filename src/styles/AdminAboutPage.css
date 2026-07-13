@@ -36,6 +36,10 @@
 	text-align: right;
 }
 
+.admin-about-title-input {
+	min-height: 76px;
+}
+
 .admin-about-bio-input {
 	min-height: 120px;
 }

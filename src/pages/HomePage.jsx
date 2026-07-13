@@ -67,13 +67,19 @@ export default function HomePage() {
 	const [hoveredKey, setHoveredKey] = useState(null);
 	const [expandingKey, setExpandingKey] = useState(null);
 	const [expandingFrame, setExpandingFrame] = useState(null);
+	const [pendingAboutNavigation, setPendingAboutNavigation] = useState(false);
 	const panelRefs = useRef({});
 	const hasHover = useMediaQuery('(hover: hover)');
 	const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
-	const { members } = useCompanyProfile();
+	const { members, loading: aboutLoading } = useCompanyProfile();
 	const activeKey = expandingKey || hoveredKey;
 
 	const sections = useMemo(() => SECTIONS, []);
+
+	useEffect(() => {
+		if (!pendingAboutNavigation || aboutLoading) return;
+		navigate('/about');
+	}, [aboutLoading, navigate, pendingAboutNavigation]);
 
 	const getExpansionFrame = (section) => {
 		const panel = panelRefs.current[section.key];
@@ -147,6 +153,12 @@ export default function HomePage() {
 		}, EXPAND_MS);
 	};
 
+	const handleAboutClick = (event) => {
+		if (!aboutLoading) return;
+		event.preventDefault();
+		setPendingAboutNavigation(true);
+	};
+
 	return (
 		<LazyMotion features={domAnimation}>
 			<>
@@ -199,7 +211,15 @@ export default function HomePage() {
 							) : null;
 						})}
 					</div>
-					<Link to="/about" className="portal-about-link">Meet the company</Link>
+					<Link
+						to="/about"
+						className={`portal-about-link ${pendingAboutNavigation ? 'portal-about-link-loading' : ''}`.trim()}
+						aria-busy={pendingAboutNavigation ? 'true' : undefined}
+						aria-disabled={pendingAboutNavigation ? 'true' : undefined}
+						onClick={handleAboutClick}
+					>
+						Meet the company
+					</Link>
 				</section>
 			</>
 		</LazyMotion>

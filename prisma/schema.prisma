@@ -313,6 +313,7 @@ model BoardPost {
 
 model CompanyProfile {
   id        String   @id @default("main")
+  title     String   @default("")
   bio       String   @default("")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

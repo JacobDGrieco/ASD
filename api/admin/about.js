@@ -1,12 +1,18 @@
 import { prisma } from '../../src/lib/prisma.js'
 import { requireSuperAdmin } from '../../src/lib/auth.js'
 import { buildClientImageUrl, normalizeImageInput } from '../../src/lib/images.js'
+import { COMPANY_SUMMARY } from '../../src/lib/companyProfile.js'
 
 const PROFILE_ID = 'main'
-const DEFAULT_COMPANY_BIO = 'ASD Records is a music label, fashion vertical, and creative operations company for artists who move outside the expected lane. The company pairs releases, visuals, editorial work, and live-facing media into one connected platform.'
+const DEFAULT_COMPANY_TITLE = COMPANY_SUMMARY.title
+const DEFAULT_COMPANY_BIO = COMPANY_SUMMARY.description
 
 function normalizeString(value) {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function normalizeMultilineTitle(value) {
+  return normalizeString(value).replace(/\\n/g, '\n')
 }
 
 function normalizeMemberImage(image) {
@@ -45,7 +51,11 @@ async function getProfile() {
   return prisma.companyProfile.upsert({
     where: { id: PROFILE_ID },
     update: {},
-    create: { id: PROFILE_ID, bio: DEFAULT_COMPANY_BIO },
+    create: {
+      id: PROFILE_ID,
+      title: DEFAULT_COMPANY_TITLE,
+      bio: DEFAULT_COMPANY_BIO,
+    },
   })
 }
 
@@ -60,6 +70,7 @@ async function getAboutPayload() {
   return {
     profile: {
       id: profile.id,
+      title: profile.title || DEFAULT_COMPANY_TITLE,
       bio: profile.bio,
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
@@ -69,9 +80,11 @@ async function getAboutPayload() {
 }
 
 function validateProfile(body) {
+  const title = normalizeMultilineTitle(body?.title)
   const bio = normalizeString(body?.bio)
-  if (!bio) return { error: 'Company bio is required.' }
-  return { bio }
+  if (!title) return { error: 'About hero title is required.' }
+  if (!bio) return { error: 'About hero bio is required.' }
+  return { title, bio }
 }
 
 function validateMember(body) {
@@ -113,12 +126,20 @@ export default async function handler(req, res) {
 
     const profile = await prisma.companyProfile.upsert({
       where: { id: PROFILE_ID },
-      update: { bio: validation.bio },
-      create: { id: PROFILE_ID, bio: validation.bio },
+      update: {
+        title: validation.title,
+        bio: validation.bio,
+      },
+      create: {
+        id: PROFILE_ID,
+        title: validation.title,
+        bio: validation.bio,
+      },
     })
 
     return res.status(200).json({
       id: profile.id,
+      title: profile.title,
       bio: profile.bio,
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,

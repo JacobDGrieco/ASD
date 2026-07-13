@@ -2,6 +2,10 @@
 	background: #060606;
 }
 
+.about-page-loading {
+	min-height: calc(100dvh - var(--nav-height));
+}
+
 .about-page-content {
 	position: relative;
 	z-index: 1;
@@ -18,7 +22,6 @@
 	text-align: center;
 }
 
-.about-company-label,
 .about-leader-role {
 	color: rgba(200, 169, 110, 0.88);
 	font-family: var(--font-nav-tab);
@@ -35,46 +38,14 @@
 	letter-spacing: 0.02em;
 	line-height: 0.84;
 	text-transform: uppercase;
+	white-space: pre-line;
 }
 
 .about-hero p:last-child {
 	max-width: 72ch;
 	margin: 0 auto;
 	color: rgba(232, 232, 232, 0.72);
-	font-family: var(--font-description);
 	font-size: clamp(1rem, 1.45vw, 1.28rem);
-	line-height: 1.9;
-}
-
-.about-company {
-	display: grid;
-	grid-template-columns: minmax(180px, 0.36fr) minmax(0, 1fr);
-	gap: clamp(24px, 5vw, 72px);
-	align-items: start;
-	padding: clamp(34px, 5vw, 60px) 0;
-	border-top: 1px solid rgba(255, 255, 255, 0.08);
-	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.about-company-copy {
-	max-width: 820px;
-}
-
-.about-company-copy h2 {
-	max-width: 18ch;
-	font-family: var(--font-display);
-	font-size: clamp(2.2rem, 4.8vw, 4.8rem);
-	font-weight: 400;
-	letter-spacing: 0.05rem;
-	line-height: 1;
-	text-transform: uppercase;
-}
-
-.about-company-copy p {
-	margin-top: 22px;
-	color: rgba(232, 232, 232, 0.68);
-	font-family: var(--font-description);
-	font-size: clamp(1rem, 1.3vw, 1.18rem);
 	line-height: 1.9;
 }
 
@@ -141,7 +112,6 @@
 .about-leader-copy p:last-child {
 	margin-top: 22px;
 	color: rgba(232, 232, 232, 0.7);
-	font-family: var(--font-description);
 	font-size: clamp(1rem, 1.25vw, 1.14rem);
 	line-height: 1.9;
 }
@@ -151,24 +121,13 @@
 		padding-top: 44px;
 	}
 
-	.about-company,
 	.about-leader,
 	.about-leader-reverse {
 		grid-template-columns: 1fr;
 	}
 
-	.about-company {
-		text-align: center;
-	}
-
-	.about-company-copy,
-	.about-company-copy h2,
 	.about-leader-copy {
 		max-width: none;
-	}
-
-	.about-company-copy h2 {
-		margin: 0 auto;
 	}
 
 	.about-leader,
