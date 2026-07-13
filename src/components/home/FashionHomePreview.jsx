@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useApi } from '../../hooks/useApi.js';
 import runwayBackdrop from '../../assets/fashion-runway-backdrop.png';
 import '../../styles/FashionPages.css';
@@ -27,8 +28,37 @@ export default function FashionHomePreview() {
 	const featuredLook = looks?.[0] ?? null;
 	const featuredImage = featuredLook?.images?.[0] ?? null;
 	const imageSrc = featuredImage?.previewUrl || featuredImage?.url || '';
+	const [readyImageSrc, setReadyImageSrc] = useState('');
 	const usage = typeof featuredImage?.usage === 'string' ? featuredImage.usage : '';
 	const presentation = usage === 'runway-cutout' ? 'model' : 'framed';
+	const runwayReady = Boolean(featuredLook && imageSrc && readyImageSrc === imageSrc);
+
+	useEffect(() => {
+		if (!imageSrc) {
+			setReadyImageSrc('');
+			return undefined;
+		}
+
+		let cancelled = false;
+		setReadyImageSrc('');
+
+		const image = new Image();
+		image.onload = () => {
+			if (!cancelled) setReadyImageSrc(imageSrc);
+		};
+		image.onerror = () => {
+			if (!cancelled) setReadyImageSrc('');
+		};
+		image.src = imageSrc;
+
+		if (image.complete && image.naturalWidth > 0) {
+			setReadyImageSrc(imageSrc);
+		}
+
+		return () => {
+			cancelled = true;
+		};
+	}, [imageSrc]);
 
 	return (
 		<div className="portal-preview portal-preview-fashion" aria-hidden="true">
@@ -62,23 +92,25 @@ export default function FashionHomePreview() {
 								/>
 							))}
 						</div>
-						<div className={`fashion-runway-feature fashion-runway-feature-${presentation}`}>
-							{featuredImage ? (
+						{runwayReady ? (
+							<div className={`fashion-runway-feature fashion-runway-feature-${presentation} fashion-runway-reveal`}>
 								<div className="fashion-runway-look-link">
 									<img src={imageSrc} alt="" className="fashion-runway-look-image" />
 								</div>
-							) : (
-								<div className="fashion-runway-look-empty" />
-							)}
-						</div>
-						<div className="fashion-home-hero-copy fashion-runway-copy">
-							<h2 className="fashion-home-hero-title">
-								{featuredLook ? featuredLook.title : 'New looks, new ideas.'}
-							</h2>
-							<p className="fashion-home-hero-description">
-								{featuredLook?.description || 'A live catalogue of looks, talent, and the pieces shaping the next ASD Fashion story.'}
-							</p>
-						</div>
+							</div>
+						) : null}
+						{runwayReady ? (
+							<div className="fashion-home-hero-copy fashion-runway-copy fashion-runway-reveal fashion-runway-reveal-copy">
+								<h2 className="fashion-home-hero-title">
+									{featuredLook.title}
+								</h2>
+								{featuredLook.description ? (
+									<p className="fashion-home-hero-description">
+										{featuredLook.description}
+									</p>
+								) : null}
+							</div>
+						) : null}
 					</section>
 				</div>
 			</div>

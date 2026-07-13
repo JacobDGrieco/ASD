@@ -1,9 +1,7 @@
-import { lazy, Suspense } from 'react';
 import { useApi } from '../../hooks/useApi.js';
+import musicStageBackdrop from '../../assets/music-tour-stage-backdrop.png';
 import '../../styles/ArtistSplash.css';
 import '../../styles/HomePortal.css';
-
-const SilkBackground = lazy(() => import('../shared/SilkBackground.jsx'));
 
 export default function MusicHomePreview() {
 	const { data: artists } = useApi('/api/artists');
@@ -29,9 +27,7 @@ export default function MusicHomePreview() {
 			<div className="portal-live-preview">
 				<div className="portal-live-preview-inner">
 					<section className="artist-splash-splash">
-						<Suspense fallback={<div className="artist-splash-silk" aria-hidden="true" />}>
-							<SilkBackground />
-						</Suspense>
+						<img src={musicStageBackdrop} alt="" className="artist-splash-stage-backdrop" aria-hidden="true" />
 						<div className="artist-splash-overlay" />
 						<div className="artist-splash-rail">
 							<div className="artist-splash-rail-window portal-rail-window">

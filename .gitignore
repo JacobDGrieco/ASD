@@ -35,4 +35,6 @@ docs/superpowers
 .claude
 .superpowers
 .vercel
+.github
+.agents
 .env*.local

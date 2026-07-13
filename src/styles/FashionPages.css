@@ -207,6 +207,15 @@
 	transform: translate(-50%, -50%);
 }
 
+.fashion-runway-reveal {
+	animation: fashion-runway-content-fade 1.05s cubic-bezier(0.16, 1, 0.3, 1) both;
+	will-change: opacity;
+}
+
+.fashion-runway-reveal-copy {
+	animation-delay: 140ms;
+}
+
 .fashion-runway-swap-btn {
 	position: absolute;
 	top: -14px;
@@ -753,6 +762,16 @@
 
 	to {
 		transform: translateX(100%);
+	}
+}
+
+@keyframes fashion-runway-content-fade {
+	from {
+		opacity: 0;
+	}
+
+	to {
+		opacity: 1;
 	}
 }
 
@@ -1665,6 +1684,11 @@ a.fashion-piece-credit-mini-card:focus-visible .fashion-piece-credit-mini-image 
 	.fashion-runway-look-empty::before {
 		animation: none;
 		transition: none;
+	}
+
+	.fashion-runway-reveal {
+		animation: none;
+		opacity: 1;
 	}
 
 	.fashion-home-card-placeholder {

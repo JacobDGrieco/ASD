@@ -20,6 +20,7 @@ import FashionCollectionPage from './pages/FashionCollectionPage.jsx';
 import AdminLayout from './components/admin/AdminLayout.jsx';
 import AdminRoute from './components/admin/AdminRoute.jsx';
 import SideRails from './components/shared/SideRails.jsx';
+import PublicLegalFooter from './components/shared/PublicLegalFooter.jsx';
 import { AdminProvider, useAdminAuth } from './lib/adminAuth.jsx';
 import { isAdminPreviewSession } from './lib/publicPreview.js';
 import './styles/PublicAdminPreview.css';
@@ -56,7 +57,9 @@ function ScrollToTop() {
 
 function PublicLayout() {
 	const { session, token, logout } = useAdminAuth();
+	const location = useLocation();
 	const adminPreview = isAdminPreviewSession(session, token);
+	const legalFooterVariant = location.pathname === '/board' ? 'board' : 'default';
 
 	useEffect(() => {
 		if (!window.navigation || !document.startViewTransition) return undefined;
@@ -87,6 +90,7 @@ function PublicLayout() {
 			<ScrollToTop />
 			<Nav />
 			<Outlet />
+			<PublicLegalFooter variant={legalFooterVariant} />
 			{adminPreview && (
 				<>
 					<button

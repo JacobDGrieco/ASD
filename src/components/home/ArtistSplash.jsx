@@ -1,9 +1,9 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { preloadImage, preloadImages, prefetchArtistPage } from '../../lib/publicPrefetch.js';
+import musicStageBackdrop from '../../assets/music-tour-stage-backdrop.png';
 import '../../styles/ArtistSplash.css';
 
-const SilkBackground = lazy(() => import('../shared/SilkBackground.jsx'));
 const AUTO_SWAP_INTERVAL_MS = 1400;
 const IMAGE_TRANSITION_MS = 480;
 const CARD_WAVE_DELAY_MS = 260;
@@ -485,9 +485,7 @@ export default function ArtistSplash({ artists }) {
 
 	return (
 		<section className="artist-splash-splash">
-			<Suspense fallback={<div className="artist-splash-silk" aria-hidden="true" />}>
-				<SilkBackground />
-			</Suspense>
+			<img src={musicStageBackdrop} alt="" className="artist-splash-stage-backdrop" aria-hidden="true" />
 			<div className="artist-splash-overlay" />
 			{isMobileSpotlight ? <ArtistSpotlightCarousel artists={artists} /> : <ArtistSplashRail artists={artists} />}
 		</section>

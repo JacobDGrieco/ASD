@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useApi } from '../hooks/useApi.js';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import CollectionCard from '../components/fashion/CollectionCard.jsx';
@@ -93,33 +93,29 @@ function FashionHomeCatalogueCard({ item }) {
 
 function FashionRunwayFeature({ featuredLook, featuredImage, canSwapPresentation, onSwapPresentation, saving }) {
 	const imageSrc = getImageSrc(featuredImage);
+	if (!featuredLook || !featuredImage || !imageSrc) return null;
+
 	const usage = typeof featuredImage?.usage === 'string' ? featuredImage.usage : '';
 	const presentation = usage === 'runway-cutout' ? 'model' : 'framed';
 	const nextPresentation = presentation === 'model' ? 'framed' : 'cutout';
 
 	return (
-		<div className={`fashion-runway-feature fashion-runway-feature-${presentation}`} aria-label={featuredLook ? `Featured look: ${featuredLook.title}` : 'Featured look'}>
-			{featuredImage ? (
-				<>
-					{canSwapPresentation ? (
-						<button
-							type="button"
-							className="fashion-runway-swap-btn"
-							onClick={onSwapPresentation}
-							disabled={saving}
-							aria-label={`Switch runway image to ${nextPresentation} mode`}
-							title={`Switch to ${nextPresentation} mode`}
-						>
-							{saving ? 'Saving' : 'Swap'}
-						</button>
-					) : null}
-					<Link to={`/fashion/looks/${featuredLook.slug}`} className="fashion-runway-look-link">
-						<img src={imageSrc} alt={featuredLook.title} className="fashion-runway-look-image" />
-					</Link>
-				</>
-			) : (
-				<div className="fashion-runway-look-empty" />
-			)}
+		<div className={`fashion-runway-feature fashion-runway-feature-${presentation} fashion-runway-reveal`} aria-label={`Featured look: ${featuredLook.title}`}>
+			{canSwapPresentation ? (
+				<button
+					type="button"
+					className="fashion-runway-swap-btn"
+					onClick={onSwapPresentation}
+					disabled={saving}
+					aria-label={`Switch runway image to ${nextPresentation} mode`}
+					title={`Switch to ${nextPresentation} mode`}
+				>
+					{saving ? 'Saving' : 'Swap'}
+				</button>
+			) : null}
+			<Link to={`/fashion/looks/${featuredLook.slug}`} className="fashion-runway-look-link">
+				<img src={imageSrc} alt={featuredLook.title} className="fashion-runway-look-image" />
+			</Link>
 		</div>
 	);
 }
@@ -138,9 +134,39 @@ export default function FashionHomePage() {
 	const featuredImage = rawFeaturedImage
 		? { ...rawFeaturedImage, usage: imageUsageOverrides[featuredImageKey] ?? rawFeaturedImage.usage }
 		: null;
+	const featuredImageSrc = getImageSrc(featuredImage);
+	const [readyFeaturedImageSrc, setReadyFeaturedImageSrc] = useState('');
 	const recentCatalogueItems = useMemo(() => getRecentItems(catalogueItems, 8), [catalogueItems]);
 	const recentTalent = useMemo(() => getRecentItems(talent, 8), [talent]);
 	const canSwapPresentation = Boolean(session?.role === 'SUPER_ADMIN' && token && featuredLook && featuredImage);
+	const runwayReady = Boolean(featuredLook && featuredImageSrc && readyFeaturedImageSrc === featuredImageSrc);
+
+	useEffect(() => {
+		if (!featuredImageSrc) {
+			setReadyFeaturedImageSrc('');
+			return undefined;
+		}
+
+		let cancelled = false;
+		setReadyFeaturedImageSrc('');
+
+		const image = new Image();
+		image.onload = () => {
+			if (!cancelled) setReadyFeaturedImageSrc(featuredImageSrc);
+		};
+		image.onerror = () => {
+			if (!cancelled) setReadyFeaturedImageSrc('');
+		};
+		image.src = featuredImageSrc;
+
+		if (image.complete && image.naturalWidth > 0) {
+			setReadyFeaturedImageSrc(featuredImageSrc);
+		}
+
+		return () => {
+			cancelled = true;
+		};
+	}, [featuredImageSrc]);
 
 	const handleSwapPresentation = async () => {
 		if (!canSwapPresentation || !featuredLook || !featuredImageKey) return;
@@ -174,7 +200,11 @@ export default function FashionHomePage() {
 		<div className="page aurora-page fashion-page">
 			<AuroraBackground />
 			<div className="aurora-page-content fashion-page-content">
-				<section className="fashion-home-runway" aria-labelledby="fashion-home-runway-title">
+				<section
+					className="fashion-home-runway"
+					aria-labelledby={runwayReady ? 'fashion-home-runway-title' : undefined}
+					aria-label={runwayReady ? undefined : 'Fashion runway'}
+				>
 					<img src={runwayBackdrop} alt="" className="fashion-runway-backdrop" aria-hidden="true" />
 					<div className="fashion-runway-vignette" aria-hidden="true" />
 					<div className="fashion-runway-light-rig" aria-hidden="true">
@@ -203,22 +233,28 @@ export default function FashionHomePage() {
 						))}
 					</div>
 
-					<FashionRunwayFeature
-						featuredLook={featuredLook}
-						featuredImage={featuredImage}
-						canSwapPresentation={canSwapPresentation}
-						onSwapPresentation={() => void handleSwapPresentation()}
-						saving={savingImageKey === featuredImageKey}
-					/>
+					{runwayReady ? (
+						<FashionRunwayFeature
+							featuredLook={featuredLook}
+							featuredImage={featuredImage}
+							canSwapPresentation={canSwapPresentation}
+							onSwapPresentation={() => void handleSwapPresentation()}
+							saving={savingImageKey === featuredImageKey}
+						/>
+					) : null}
 
-					<div className="fashion-home-hero-copy fashion-runway-copy">
-						<h1 id="fashion-home-runway-title" className="fashion-home-hero-title">
-							{featuredLook ? featuredLook.title : (looksLoading ? '' : '')}
-						</h1>
-						<p className="fashion-home-hero-description">
-							{featuredLook?.description || ''}
-						</p>
-					</div>
+					{runwayReady ? (
+						<div className="fashion-home-hero-copy fashion-runway-copy fashion-runway-reveal fashion-runway-reveal-copy">
+							<h1 id="fashion-home-runway-title" className="fashion-home-hero-title">
+								{featuredLook.title}
+							</h1>
+							{featuredLook.description ? (
+								<p className="fashion-home-hero-description">
+									{featuredLook.description}
+								</p>
+							) : null}
+						</div>
+					) : null}
 				</section>
 
 				{recentCatalogueItems.length > 0 || catalogueLoading ? (
