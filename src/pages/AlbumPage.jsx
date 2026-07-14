@@ -9,6 +9,7 @@ import SongPersonCard from '../components/song/SongPersonCard.jsx';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import ArtworkGallery from '../components/shared/ArtworkGallery.jsx';
 import { useAdminAuth } from '../lib/adminAuth.jsx';
+import { usePageTitle } from '../lib/pageTitle.js';
 import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js';
 import '../styles/SongHeader.css';
 import '../styles/SongPage.css';
@@ -24,6 +25,8 @@ export default function AlbumPage() {
 		headers: previewHeaders,
 		cacheKey: publicPreviewCacheKey(apiUrl, adminPreview),
 	});
+	const titleParts = useMemo(() => album ? [album.title, album.artist?.name] : null, [album]);
+	usePageTitle(titleParts);
 
 	if (!loading && (error || !album)) return <div className="page not-found"><h1>Album not found</h1></div>;
 

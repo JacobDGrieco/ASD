@@ -9,6 +9,7 @@ import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 import ArtworkGallery from '../components/shared/ArtworkGallery.jsx'
 import LookCard from '../components/fashion/LookCard.jsx'
 import { useAdminAuth } from '../lib/adminAuth.jsx'
+import { usePageTitle } from '../lib/pageTitle.js'
 import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js'
 import '../styles/Discography.css'
 import '../styles/FashionPages.css'
@@ -45,6 +46,8 @@ export default function FashionTalentProfilePage() {
       return !!(photo.previewUrl || photo.url)
     })
   }, [talent])
+  const titleParts = useMemo(() => talent ? [talent.name] : null, [talent])
+  usePageTitle(titleParts)
 
   if (!loading && (error || !talent)) return <div className="page not-found"><h1>Not found</h1></div>
   if (!talent) return null

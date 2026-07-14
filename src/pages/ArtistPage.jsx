@@ -6,6 +6,7 @@ import Discography from '../components/artist/Discography.jsx'
 import FeaturedOn from '../components/artist/FeaturedOn.jsx'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 import { useAdminAuth } from '../lib/adminAuth.jsx'
+import { usePageTitle } from '../lib/pageTitle.js'
 import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js'
 
 export default function ArtistPage() {
@@ -19,6 +20,8 @@ export default function ArtistPage() {
     headers: previewHeaders,
     cacheKey: publicPreviewCacheKey(apiUrl, adminPreview),
   })
+  const titleParts = useMemo(() => artist ? [artist.name] : null, [artist])
+  usePageTitle(titleParts)
 
   if (!loading && (error || !artist)) return <div className="page not-found"><h1>Artist not found</h1></div>
 

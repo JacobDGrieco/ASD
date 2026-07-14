@@ -4,6 +4,7 @@ import { FaShoppingBag, FaUsers, FaChevronLeft, FaChevronRight } from 'react-ico
 import { useApi } from '../hooks/useApi.js'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 import { useAdminAuth } from '../lib/adminAuth.jsx'
+import { usePageTitle } from '../lib/pageTitle.js'
 import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js'
 import '../styles/FashionPages.css'
 
@@ -421,6 +422,14 @@ export default function FashionLookPage() {
     getThumbsVisibleSnapshot,
     getServerThumbsVisibleSnapshot
   )
+  const titleParts = useMemo(() => {
+    if (!look) return null
+    const credits = sortCreditsByImportance(look.credits ?? [])
+    const primaryCredit = credits.find(isModelCredit) ?? credits[0]
+    const primaryName = primaryCredit?.creditName || primaryCredit?.talent?.name
+    return [look.title, primaryName]
+  }, [look])
+  usePageTitle(titleParts)
 
   if (!loading && (error || !look)) return <div className="page not-found"><h1>Look not found</h1></div>
   if (!look) return null

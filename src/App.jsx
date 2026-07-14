@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom';
 import Nav from './components/shared/Nav.jsx';
+import PageTitle from './components/shared/PageTitle.jsx';
 import HomePage from './pages/HomePage.jsx';
 import MusicHomePage from './pages/MusicHomePage.jsx';
 import ArtistPage from './pages/ArtistPage.jsx';
@@ -132,6 +133,7 @@ function AdminPageAccessRoute({ pageKey, children }) {
 export default function App() {
 	return (
 		<AdminProvider>
+			<PageTitle />
 			<Suspense fallback={<RouteFallback />}>
 				<Routes>
 					<Route element={<PublicLayout />}>

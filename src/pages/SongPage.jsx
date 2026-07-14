@@ -8,6 +8,7 @@ import SongAlbums from '../components/song/SongAlbums.jsx'
 import SongInfoLinks from '../components/song/SongInfoLinks.jsx'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 import { useAdminAuth } from '../lib/adminAuth.jsx'
+import { usePageTitle } from '../lib/pageTitle.js'
 import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js'
 import '../styles/SongPage.css'
 
@@ -37,6 +38,13 @@ export default function SongPage() {
     song?.meta?.tags?.length > 0 ||
     Object.values(song?.meta?.roleGroups ?? {}).some((group) => group?.length)
   )
+  const titleParts = useMemo(() => {
+    if (!song) return null
+    const artistName = song.album?.artist?.name
+      || song.placements?.find((placement) => placement.album?.artist?.name)?.album?.artist?.name
+    return [song.title, artistName]
+  }, [song])
+  usePageTitle(titleParts)
 
   useEffect(() => {
     if (!song) return

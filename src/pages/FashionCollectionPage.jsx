@@ -6,6 +6,7 @@ import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 import LookCard from '../components/fashion/LookCard.jsx'
 import { CreditsCarousel } from './FashionLookPage.jsx'
 import { useAdminAuth } from '../lib/adminAuth.jsx'
+import { usePageTitle } from '../lib/pageTitle.js'
 import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js'
 import '../styles/FashionPages.css'
 import '../styles/SongHeader.css'
@@ -25,6 +26,13 @@ export default function FashionCollectionPage() {
     headers: previewHeaders,
     cacheKey: publicPreviewCacheKey(apiUrl, adminPreview),
   })
+  const titleParts = useMemo(() => {
+    if (!collection) return null
+    const primaryCredit = collection.credits?.find((credit) => credit.creditName || credit.talent?.name)
+    const primaryName = primaryCredit?.creditName || primaryCredit?.talent?.name
+    return [collection.title, primaryName]
+  }, [collection])
+  usePageTitle(titleParts)
 
   if (!loading && (error || !collection)) {
     return <div className="page not-found"><h1>Collection not found</h1></div>

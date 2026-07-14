@@ -157,15 +157,37 @@
 	width: 100%;
 }
 
+.home-latest-row .album-card-info {
+	width: 100%;
+	min-width: 0;
+	align-items: center;
+	text-align: center;
+}
+
 .home-latest-row .album-card-cover-wrap {
 	width: 100%;
 	height: auto;
 	aspect-ratio: 1 / 1;
 }
 
-.home-latest-row .album-card-title,
+.home-latest-row .album-card-title {
+	display: -webkit-box;
+	max-width: 100%;
+	min-height: 2.28em;
+	overflow: hidden;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	overflow-wrap: anywhere;
+	text-align: center;
+	white-space: normal;
+	line-height: 1.14;
+}
+
 .home-latest-row .album-card-meta {
 	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .home-latest-row-loading {
