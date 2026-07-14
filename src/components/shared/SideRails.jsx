@@ -15,7 +15,7 @@ function getPublicSection(pathname) {
 	if (
 		pathname === '/music' ||
 		pathname.startsWith('/music/') ||
-		['/board', '/videos', '/crosshair'].some((path) => pathname === path || pathname.startsWith(`${path}/`)) ||
+		['/videos', '/crosshair'].some((path) => pathname === path || pathname.startsWith(`${path}/`)) ||
 		pathname.startsWith('/artists/') ||
 		pathname.startsWith('/albums/') ||
 		pathname.startsWith('/songs/')
