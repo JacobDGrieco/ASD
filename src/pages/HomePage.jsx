@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LazyMotion, domAnimation, m } from 'framer-motion';
 import MusicHomePreview from '../components/home/MusicHomePreview.jsx';
 import FashionHomePreview from '../components/home/FashionHomePreview.jsx';
+import { useApi } from '../hooks/useApi.js';
 import { useCompanyProfile } from '../hooks/useCompanyProfile.js';
 import { getCompanyMemberImage } from '../lib/companyProfile.js';
 import '../styles/HomePortal.css';
@@ -62,6 +63,15 @@ function getScrollbarWidth() {
 	return Math.max(scrollbarWidth, 0);
 }
 
+function getInitials(name = '') {
+	return name
+		.split(/\s+/)
+		.filter(Boolean)
+		.slice(0, 2)
+		.map((part) => part[0]?.toUpperCase())
+		.join('');
+}
+
 export default function HomePage() {
 	const navigate = useNavigate();
 	const [hoveredKey, setHoveredKey] = useState(null);
@@ -72,9 +82,15 @@ export default function HomePage() {
 	const hasHover = useMediaQuery('(hover: hover)');
 	const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
 	const { members, loading: aboutLoading } = useCompanyProfile();
+	const { data: boardPosts } = useApi('/api/public?resource=boardPosts', {
+		maxAge: 60 * 1000,
+		cacheKey: 'home-board-posts',
+	});
 	const activeKey = expandingKey || hoveredKey;
 
 	const sections = useMemo(() => SECTIONS, []);
+	const recentBoardPosts = useMemo(() => (boardPosts ?? []).slice(0, 3), [boardPosts]);
+	const featuredMembers = useMemo(() => members.slice(0, 3), [members]);
 
 	useEffect(() => {
 		if (!pendingAboutNavigation || aboutLoading) return;
@@ -159,6 +175,13 @@ export default function HomePage() {
 		setPendingAboutNavigation(true);
 	};
 
+	const handleMoreBelowClick = () => {
+		document.querySelector('.portal-about-band')?.scrollIntoView({
+			behavior: prefersReducedMotion ? 'auto' : 'smooth',
+			block: 'start',
+		});
+	};
+
 	return (
 		<LazyMotion features={domAnimation}>
 			<>
@@ -198,28 +221,74 @@ export default function HomePage() {
 							</m.div>
 						);
 					})}
+					<div className="portal-bottom-bar" aria-label="Scroll to more sections">
+						<button type="button" className="portal-bottom-arrow" onClick={handleMoreBelowClick} aria-label="See more below">
+							<span aria-hidden="true" />
+						</button>
+					</div>
 				</main>
-				<section className="portal-about-band" aria-labelledby="portal-about-title">
-					<div className="portal-about-copy">
-						<h2 id="portal-about-title">About Us</h2>
+				<section className="portal-about-band" aria-label="More ASD sections">
+					<div className="portal-band-section portal-board-section" aria-labelledby="portal-board-title">
+						<div className="portal-band-copy">
+							<h2 id="portal-board-title">The Board</h2>
+							<Link to="/board" className="portal-band-link">
+								Open the board
+							</Link>
+						</div>
+						<div className="portal-board-posts" aria-hidden="true">
+							{recentBoardPosts.map((post, index) => (
+								<article
+									key={post.id}
+									className="portal-board-post"
+									style={{ '--portal-board-post-index': index, zIndex: 3 - index }}
+								>
+									{post.imageUrl ? (
+										<img src={post.imageUrl} alt="" className="portal-board-post-image" />
+									) : (
+										<div className="portal-board-post-placeholder">{post.title}</div>
+									)}
+									<div className="portal-board-post-caption">
+										<span>{post.artist?.name || 'ASD'}</span>
+										<strong>{post.title}</strong>
+									</div>
+								</article>
+							))}
+						</div>
 					</div>
-					<div className="portal-about-portraits" aria-hidden="true">
-						{members.map((leader) => {
-							const imageSrc = getCompanyMemberImage(leader);
-							return imageSrc ? (
-								<img key={leader.id} src={imageSrc} alt="" className="portal-about-portrait" />
-							) : null;
-						})}
+					<div className="portal-band-section portal-about-section" aria-labelledby="portal-about-title">
+						<div className="portal-band-copy portal-about-copy">
+							<h2 id="portal-about-title">About Us</h2>
+							<Link
+								to="/about"
+								className={`portal-band-link portal-about-link ${pendingAboutNavigation ? 'portal-about-link-loading' : ''}`.trim()}
+								aria-busy={pendingAboutNavigation ? 'true' : undefined}
+								aria-disabled={pendingAboutNavigation ? 'true' : undefined}
+								onClick={handleAboutClick}
+							>
+								Meet the company
+							</Link>
+						</div>
+						<div className="portal-about-portraits" aria-hidden="true">
+							{featuredMembers.map((leader, index) => {
+								const imageSrc = getCompanyMemberImage(leader);
+								return imageSrc ? (
+									<img
+										key={leader.id}
+										src={imageSrc}
+										alt=""
+										className={`portal-about-portrait portal-about-portrait-${index + 1}`}
+									/>
+								) : (
+									<div
+										key={leader.id}
+										className={`portal-about-portrait portal-about-portrait-fallback portal-about-portrait-${index + 1}`}
+									>
+										{getInitials(leader.name)}
+									</div>
+								);
+							})}
+						</div>
 					</div>
-					<Link
-						to="/about"
-						className={`portal-about-link ${pendingAboutNavigation ? 'portal-about-link-loading' : ''}`.trim()}
-						aria-busy={pendingAboutNavigation ? 'true' : undefined}
-						aria-disabled={pendingAboutNavigation ? 'true' : undefined}
-						onClick={handleAboutClick}
-					>
-						Meet the company
-					</Link>
 				</section>
 			</>
 		</LazyMotion>
