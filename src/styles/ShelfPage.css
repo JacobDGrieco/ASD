@@ -1,0 +1,129 @@
+.shelf-page-shell {
+	position: relative;
+	z-index: 1;
+	width: min(1440px, 100%);
+	margin: 0 auto;
+	padding: clamp(108px, 14vh, 156px) clamp(20px, 5vw, 72px) clamp(72px, 9vw, 120px);
+}
+
+.shelf-page-header {
+	display: grid;
+	gap: 10px;
+	max-width: 760px;
+	margin-bottom: clamp(34px, 5vw, 64px);
+}
+
+.shelf-page-eyebrow {
+	color: var(--accent);
+	font-family: var(--font-nav-tab);
+	font-size: clamp(0.68rem, 0.9vw, 0.82rem);
+	letter-spacing: 0.22em;
+	line-height: 1;
+	text-transform: uppercase;
+}
+
+.shelf-page-title {
+	margin: 0;
+	color: rgba(247, 237, 220, 0.96);
+	font-family: var(--font-display);
+	font-size: clamp(4.8rem, 14vw, 12rem);
+	font-weight: 400;
+	letter-spacing: 0.02em;
+	line-height: 0.78;
+	text-transform: uppercase;
+}
+
+.shelf-page-copy {
+	max-width: 48rem;
+	color: rgba(232, 218, 190, 0.68);
+	font-family: var(--font-description);
+	font-size: clamp(1rem, 1.3vw, 1.28rem);
+	line-height: 1.65;
+}
+
+.shelf-page-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+	gap: clamp(12px, 1.8vw, 22px);
+	align-items: start;
+}
+
+.shelf-page-grid > .album-card-card {
+	width: 100%;
+	min-width: 0;
+	align-items: center;
+	background: rgba(10, 10, 10, 0.24);
+}
+
+.shelf-page-grid > .album-card-card .album-card-primary-action,
+.shelf-page-grid > .album-card-card .album-card-info {
+	width: 100%;
+	align-items: center;
+	text-align: center;
+}
+
+.shelf-page-grid > .album-card-card .album-card-cover-wrap {
+	width: min(100%, 208px);
+	height: auto;
+	aspect-ratio: 1;
+}
+
+.shelf-page-grid > .album-card-card .album-card-title {
+	max-width: 100%;
+}
+
+.shelf-page-grid > .album-card-card .album-card-stream-links {
+	justify-content: center;
+}
+
+.shelf-page-status {
+	display: grid;
+	gap: 12px;
+	max-width: 680px;
+	padding: clamp(26px, 4vw, 42px);
+	border: 1px solid var(--border);
+	background: rgba(10, 10, 10, 0.34);
+}
+
+.shelf-page-status h2 {
+	color: rgba(247, 237, 220, 0.92);
+	font-family: var(--font-display);
+	font-size: clamp(2.4rem, 5vw, 4.4rem);
+	font-weight: 400;
+	letter-spacing: 0.04em;
+	line-height: 0.9;
+	text-transform: uppercase;
+}
+
+.shelf-page-detail {
+	color: var(--text-muted);
+	font-family: var(--font-readable);
+	font-size: 0.95rem;
+}
+
+.shelf-page-album-placeholder {
+	aspect-ratio: 1 / 1.42;
+	border: 1px solid var(--border);
+	background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+}
+
+@media (max-width: 640px) {
+	.shelf-page-shell {
+		padding-top: 156px;
+	}
+
+	.shelf-page-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 10px;
+	}
+
+	.shelf-page-grid > .album-card-card {
+		padding: 8px;
+	}
+}
+
+@media (max-width: 380px) {
+	.shelf-page-grid {
+		grid-template-columns: 1fr;
+	}
+}

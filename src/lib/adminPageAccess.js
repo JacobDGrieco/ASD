@@ -5,7 +5,6 @@ export const ADMIN_PAGE_KEYS = {
   MUSIC_ALBUMS: 'music_albums',
   MUSIC_SONGS: 'music_songs',
   MUSIC_RECORD_PLAYER: 'music_record_player',
-  MUSIC_VIDEOS: 'music_videos',
   MUSIC_CROSSHAIR: 'music_crosshair',
   FASHION_TALENT: 'fashion_talent',
   FASHION_OUTSIDE_TALENT: 'fashion_outside_talent',
@@ -35,7 +34,6 @@ export const ADMIN_PAGE_GROUPS = [
       { key: ADMIN_PAGE_KEYS.MUSIC_ALBUMS, label: 'Albums' },
       { key: ADMIN_PAGE_KEYS.MUSIC_SONGS, label: 'Songs' },
       { key: ADMIN_PAGE_KEYS.MUSIC_RECORD_PLAYER, label: 'Record Player' },
-      { key: ADMIN_PAGE_KEYS.MUSIC_VIDEOS, label: 'Videos' },
       { key: ADMIN_PAGE_KEYS.MUSIC_CROSSHAIR, label: 'Crosshair' },
     ],
   },
@@ -58,7 +56,6 @@ export const ADMIN_PAGE_PATHS = {
   [ADMIN_PAGE_KEYS.MUSIC_ALBUMS]: '/admin/albums',
   [ADMIN_PAGE_KEYS.MUSIC_SONGS]: '/admin/songs',
   [ADMIN_PAGE_KEYS.MUSIC_RECORD_PLAYER]: '/admin/record-player',
-  [ADMIN_PAGE_KEYS.MUSIC_VIDEOS]: '/admin/videos',
   [ADMIN_PAGE_KEYS.MUSIC_CROSSHAIR]: '/admin/crosshair',
   [ADMIN_PAGE_KEYS.FASHION_TALENT]: '/admin/fashion/talent',
   [ADMIN_PAGE_KEYS.FASHION_OUTSIDE_TALENT]: '/admin/fashion/outside_talent',
@@ -82,7 +79,6 @@ export function getDefaultAdminPageAccess(accountType) {
     ADMIN_PAGE_KEYS.BOARD,
     ADMIN_PAGE_KEYS.MUSIC_ALBUMS,
     ADMIN_PAGE_KEYS.MUSIC_SONGS,
-    ADMIN_PAGE_KEYS.MUSIC_VIDEOS,
   ]
 }
 

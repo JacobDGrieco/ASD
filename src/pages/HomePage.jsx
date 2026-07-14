@@ -15,7 +15,7 @@ const SECTIONS = [
 		key: 'music',
 		label: 'Music',
 		path: '/music',
-		description: 'Artists, releases, videos, and the living record-player catalog.',
+		description: 'Artists, The Shelf, The Crosshair, and the living record-player catalog.',
 		Preview: MusicHomePreview,
 	},
 	{

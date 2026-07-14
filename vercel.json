@@ -25,10 +25,6 @@
 			"destination": "/api/public?resource=recordPlayer"
 		},
 		{
-			"source": "/api/videos",
-			"destination": "/api/public?resource=videos"
-		},
-		{
 			"source": "/api/crosshair",
 			"destination": "/api/public?resource=crosshair"
 		},
@@ -89,11 +85,11 @@
 			"destination": "/index.html"
 		},
 		{
-			"source": "/videos",
+			"source": "/crosshair",
 			"destination": "/index.html"
 		},
 		{
-			"source": "/crosshair",
+			"source": "/shelf",
 			"destination": "/index.html"
 		},
 		{

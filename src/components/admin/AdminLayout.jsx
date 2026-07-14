@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
-import { FaBullseye, FaBullhorn, FaChevronDown, FaChevronLeft, FaChevronRight, FaCompactDisc, FaInfoCircle, FaMicrophoneAlt, FaMusic, FaSignOutAlt, FaUserFriends, FaUserShield, FaVideo, FaRecordVinyl, FaTshirt, FaUsers } from 'react-icons/fa';
+import { FaBullseye, FaBullhorn, FaChevronDown, FaChevronLeft, FaChevronRight, FaCompactDisc, FaInfoCircle, FaMicrophoneAlt, FaMusic, FaSignOutAlt, FaUserFriends, FaUserShield, FaRecordVinyl, FaTshirt, FaUsers } from 'react-icons/fa';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import { ADMIN_PAGE_KEYS, hasAdminPageAccess } from '../../lib/adminPageAccess.js';
 import '../../styles/AdminLayout.css';
@@ -87,9 +87,6 @@ export default function AdminLayout() {
 		] : []),
 		...(hasAdminPageAccess(session, ADMIN_PAGE_KEYS.MUSIC_RECORD_PLAYER) ? [
 			{ to: '/admin/record-player', label: 'Record Player', icon: <FaRecordVinyl aria-hidden="true" /> },
-		] : []),
-		...(hasAdminPageAccess(session, ADMIN_PAGE_KEYS.MUSIC_VIDEOS) ? [
-			{ to: '/admin/videos', label: 'Videos', icon: <FaVideo aria-hidden="true" /> },
 		] : []),
 		...(hasAdminPageAccess(session, ADMIN_PAGE_KEYS.MUSIC_CROSSHAIR) ? [
 			{ to: '/admin/crosshair', label: 'Crosshair', icon: <FaBullseye aria-hidden="true" /> },

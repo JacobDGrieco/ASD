@@ -1,14 +1,12 @@
 import { prisma } from '../src/lib/prisma.js'
 import { isEffectivelyVisible } from '../src/lib/contentVisibility.js'
 import { readAdminTokenFromRequest, verifyToken } from '../src/lib/auth.js'
-import { buildClientImageUrl, clientImage, clientImages, mergeLegacyImages } from '../src/lib/images.js'
-import { ARTIST_VIDEO_SOURCE, buildStaticArtistVideoPath, getStaticArtistVideoExtension, getYouTubeEmbedUrl } from '../src/lib/artistVideos.js'
+import { clientImage, clientImages, mergeLegacyImages } from '../src/lib/images.js'
 import { formatCrosshairVideo } from '../src/lib/crosshairVideos.js'
 import { hasPublicBoardSource, isOtherArtist, isReservedHiddenArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js'
 import { isReleasedOnUtcDay } from '../src/lib/releaseSchedule.js'
 import { COMPANY_LEADERS, COMPANY_SUMMARY } from '../src/lib/companyProfile.js'
 
-const VIDEO_BASE_URL = process.env.VIDEO_BASE_URL || process.env.VITE_VIDEO_BASE_URL || ''
 const DEFAULT_COMPANY_TITLE = COMPANY_SUMMARY.title
 const DEFAULT_COMPANY_BIO = COMPANY_SUMMARY.description
 
@@ -383,26 +381,6 @@ function isPublicArtistVisible(artist) {
   return !isReservedHiddenArtist(artist) && artist?.isVisible !== false
 }
 
-function formatArtistVideo(video) {
-  const videoExtension = getStaticArtistVideoExtension(video.videoUrl)
-  const resolvedVideoUrl = video.sourceType === ARTIST_VIDEO_SOURCE.UPLOAD
-    ? buildStaticArtistVideoPath(video.artist?.slug, VIDEO_BASE_URL, videoExtension)
-    : video.videoUrl
-
-  return {
-    id: video.id,
-    title: video.title,
-    description: video.description,
-    posterUrl: buildClientImageUrl({ url: video.posterUrl, pathname: video.posterPathname }),
-    sourceType: video.sourceType,
-    youtubeUrl: video.youtubeUrl,
-    youtubeEmbedUrl: getYouTubeEmbedUrl(video.youtubeUrl),
-    videoUrl: resolvedVideoUrl,
-    videosPageUrl: video.videosPageUrl,
-    artist: video.artist,
-  }
-}
-
 function resolvePrimaryPlacement(placements) {
   return placements?.[0] ?? null
 }
@@ -654,72 +632,6 @@ async function getArtist(res, slug, includeHidden = false) {
     }, []),
     featuredIn,
   })
-}
-
-async function getVideos(res) {
-  setPublicCache(res)
-  const videos = await prisma.artistVideo.findMany({
-    where: {
-      artist: {
-        slug: {
-          not: OTHER_ARTIST_SLUG,
-        },
-      },
-    },
-    orderBy: [
-      { artist: { order: 'asc' } },
-      { artist: { name: 'asc' } },
-    ],
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      posterUrl: true,
-      posterPathname: true,
-      sourceType: true,
-      youtubeUrl: true,
-      videoUrl: true,
-      videosPageUrl: true,
-      artist: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          isVisible: true,
-          bio: true,
-          portrait: true,
-          images: {
-            orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
-            select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
-          },
-          order: true,
-        },
-      },
-    },
-  })
-
-  return res.status(200).json(
-    videos.reduce((publicVideos, video) => {
-      if (!isPublicArtistVisible(video.artist)) return publicVideos
-      if (
-        (video.sourceType !== 'YOUTUBE' || !video.youtubeUrl) &&
-        (video.sourceType !== 'UPLOAD' || !video.videoUrl)
-      ) {
-        return publicVideos
-      }
-
-        const artistImages = formatArtistImages(video.artist)
-        publicVideos.push(formatArtistVideo({
-          ...video,
-          artist: {
-            ...video.artist,
-            portrait: artistImages[0]?.previewUrl ?? video.artist.portrait,
-            images: artistImages,
-          },
-        }))
-        return publicVideos
-      }, [])
-  )
 }
 
 async function getCrosshairVideos(res) {
@@ -1508,7 +1420,6 @@ export default async function handler(req, res) {
   if (resource === 'artist' && slug) return getArtist(res, slug, includeHidden)
   if (resource === 'album' && id) return getAlbum(res, id, includeHidden)
   if (resource === 'song' && id) return getSong(res, id, includeHidden)
-  if (resource === 'videos') return getVideos(res)
   if (resource === 'crosshair') return getCrosshairVideos(res)
   if (resource === 'recordPlayer') return getRecordPlayer(res, includeHidden)
   if (resource === 'boardPosts') return getBoardPosts(res)

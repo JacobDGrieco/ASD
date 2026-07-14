@@ -118,7 +118,6 @@ export default async function handler(req, res) {
     ADMIN_PAGE_KEYS.MUSIC_ALBUMS,
     ADMIN_PAGE_KEYS.MUSIC_SONGS,
     ADMIN_PAGE_KEYS.MUSIC_RECORD_PLAYER,
-    ADMIN_PAGE_KEYS.MUSIC_VIDEOS,
   ].some((pageKey) => canAccessAdminPage(session, pageKey))
   if (!canReadArtists) return res.status(403).json({ error: 'Forbidden' })
 
@@ -287,9 +286,6 @@ export default async function handler(req, res) {
               },
             }
           : undefined,
-        videos: {
-          create: {},
-        },
         images: normalizedImages.length
           ? {
               createMany: {

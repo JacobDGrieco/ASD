@@ -4,7 +4,7 @@ import Nav from './components/shared/Nav.jsx';
 import HomePage from './pages/HomePage.jsx';
 import MusicHomePage from './pages/MusicHomePage.jsx';
 import ArtistPage from './pages/ArtistPage.jsx';
-import VideosPage from './pages/VideosPage.jsx';
+import ShelfPage from './pages/ShelfPage.jsx';
 import CrosshairPage from './pages/CrosshairPage.jsx';
 import SongPage from './pages/SongPage.jsx';
 import AlbumPage from './pages/AlbumPage.jsx';
@@ -35,7 +35,6 @@ const AdminMusicArtistsPage = lazy(() => import('./pages/admin/AdminMusicArtists
 const AdminMusicAlbumsPage = lazy(() => import('./pages/admin/AdminMusicAlbumsPage.jsx'));
 const AdminMusicOutsideArtistsPage = lazy(() => import('./pages/admin/AdminMusicOutsideArtistsPage.jsx'));
 const AdminMusicBoardPage = lazy(() => import('./pages/admin/AdminMusicBoardPage.jsx'));
-const AdminMusicVideosPage = lazy(() => import('./pages/admin/AdminMusicVideosPage.jsx'));
 const AdminMusicCrosshairPage = lazy(() => import('./pages/admin/AdminMusicCrosshairPage.jsx'));
 const AdminMusicSongsPage = lazy(() => import('./pages/admin/AdminMusicSongsPage.jsx'));
 const AdminMusicLyricsPage = lazy(() => import('./pages/admin/AdminMusicLyricsPage.jsx'));
@@ -140,7 +139,7 @@ export default function App() {
 						<Route path="/music" element={<MusicHomePage />} />
 						<Route path="/about" element={<AboutPage />} />
 						<Route path="/board" element={<BoardPage />} />
-						<Route path="/videos" element={<VideosPage />} />
+						<Route path="/shelf" element={<ShelfPage />} />
 						<Route path="/crosshair" element={<CrosshairPage />} />
 						<Route path="/artists/:slug" element={<ArtistPage />} />
 						<Route path="/albums/:albumId" element={<AlbumPage />} />
@@ -171,7 +170,6 @@ export default function App() {
 							<Route path="/admin/outside-artists" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_OUTSIDE_ARTISTS}><AdminMusicOutsideArtistsPage /></AdminPageAccessRoute>} />
 							<Route path="/admin/albums" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_ALBUMS}><AdminMusicAlbumsPage /></AdminPageAccessRoute>} />
 							<Route path="/admin/board" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.BOARD}><AdminMusicBoardPage /></AdminPageAccessRoute>} />
-							<Route path="/admin/videos" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_VIDEOS}><AdminMusicVideosPage /></AdminPageAccessRoute>} />
 							<Route path="/admin/crosshair" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_CROSSHAIR}><AdminMusicCrosshairPage /></AdminPageAccessRoute>} />
 							<Route path="/admin/songs" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_SONGS}><AdminMusicSongsPage /></AdminPageAccessRoute>} />
 							<Route path="/admin/lyrics/:songId" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_SONGS}><AdminMusicLyricsPage /></AdminPageAccessRoute>} />

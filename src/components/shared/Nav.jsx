@@ -4,7 +4,7 @@ import '../../styles/Nav.css';
 
 const SECTION_TABS = {
 	music: [
-		{ to: '/videos', label: 'The Stage' },
+		{ to: '/shelf', label: 'The Shelf' },
 		{ to: '/crosshair', label: 'The Crosshair' },
 	],
 	fashion: [
@@ -19,7 +19,7 @@ const SITE_SECTIONS = [
 ];
 
 function getSection(pathname) {
-	if (pathname === '/music' || pathname.startsWith('/music/') || ['/videos', '/crosshair'].some((p) => pathname === p || pathname.startsWith(`${p}/`)) || pathname.startsWith('/artists/') || pathname.startsWith('/albums/') || pathname.startsWith('/songs/')) {
+	if (pathname === '/music' || pathname.startsWith('/music/') || ['/shelf', '/crosshair'].some((p) => pathname === p || pathname.startsWith(`${p}/`)) || pathname.startsWith('/artists/') || pathname.startsWith('/albums/') || pathname.startsWith('/songs/')) {
 		return 'music';
 	}
 	if (pathname === '/fashion' || pathname.startsWith('/fashion/')) return 'fashion';
