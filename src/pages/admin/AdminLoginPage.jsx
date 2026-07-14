@@ -12,7 +12,7 @@ export default function AdminLoginPage() {
   if (authLoading) return null
 
   if (session) {
-    return <Navigate to={session?.role === 'ARTIST' ? '/admin/albums' : '/admin/artists'} replace />
+    return <Navigate to="/admin" replace />
   }
 
   const handleSubmit = async (e) => {

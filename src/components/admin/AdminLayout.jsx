@@ -74,6 +74,9 @@ export default function AdminLayout() {
 		...(!isArtistScoped ? [
 			{ to: '/admin/artists', label: 'Artists', icon: <FaMicrophoneAlt aria-hidden="true" />, matchPaths: ['/admin'] },
 		] : []),
+		...(!isArtistScoped && !isViewer ? [
+			{ to: '/admin/outside-artists', label: 'Outside Artists', icon: <FaUserFriends aria-hidden="true" /> },
+		] : []),
 		{ to: '/admin/albums', label: 'Albums', icon: <FaCompactDisc aria-hidden="true" />, matchPaths: isArtistScoped ? ['/admin'] : undefined },
 		{ to: '/admin/songs', label: 'Songs', icon: <FaMusic aria-hidden="true" />, matchPaths: ['/admin/lyrics'] },
 		...(!isArtistScoped ? [{ to: '/admin/record-player', label: 'Record Player', icon: <FaRecordVinyl aria-hidden="true" /> }] : []),

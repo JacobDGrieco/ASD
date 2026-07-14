@@ -6,6 +6,7 @@ import AdminDateInput from './AdminDateInput.jsx';
 import { isValidDateInput } from '../../lib/dateInput.js';
 import ImageCollectionField from './ImageCollectionField.jsx';
 import ChipInputField from './ChipInputField.jsx';
+import MusicRolePersonPickerField from './MusicRolePersonPickerField.jsx';
 import { SONG_ROLES } from '../../lib/songRoles.js';
 import {
 	createAlbumPlacement,
@@ -622,29 +623,48 @@ function SongAlbumsTab({
 	);
 }
 
-function SongRolesTab({ form, addRole, removeRole, updateRole }) {
+function selectedRoleImage(entry, artistOptions, outsideArtistOptions) {
+	const selected = entry.artistId
+		? artistOptions.find((artist) => artist.id === entry.artistId)
+		: entry.outsideArtistId
+			? outsideArtistOptions.find((artist) => artist.id === entry.outsideArtistId)
+			: null;
+
+	return selected?.image ?? null;
+}
+
+function SongRolesTab({ form, artistOptions, outsideArtistOptions, addRole, removeRole, updateRole }) {
 	return (
 		<div className="admin-song-tab-layout">
 			<div className="admin-song-tab-scroll">
 				<div className="admin-song-roles-list">
-					{form.roles.map((entry, index) => (
-						<div key={entry.clientKey ?? `${entry.role}:${entry.name}`} className="admin-song-role-row">
-							<select value={entry.role} onChange={(e) => updateRole(index, 'role', e.target.value)} className="admin-artists-page-input" aria-label={`Role type ${index + 1}`}>
-								{SONG_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
-							</select>
-							<input
-								type="text"
-								placeholder="Name"
-								value={entry.name}
-								onChange={(e) => updateRole(index, 'name', e.target.value)}
-								className="admin-artists-page-input"
-								aria-label={`Role name ${index + 1}`}
-							/>
-							<button type="button" onClick={() => removeRole(index)} className="admin-artists-page-danger-btn" aria-label="Remove role">
-								<FaTimes aria-hidden="true" />
-							</button>
-						</div>
-					))}
+					{form.roles.map((entry, index) => {
+						const image = selectedRoleImage(entry, artistOptions, outsideArtistOptions);
+
+						return (
+							<div key={entry.clientKey ?? `${entry.role}:${entry.name}`} className="admin-song-role-row">
+								<div className="admin-song-role-thumb" aria-hidden="true">
+									{image ? (
+										<img src={image.previewUrl || image.url} alt="" className="admin-song-role-thumb-img" />
+									) : null}
+								</div>
+								<MusicRolePersonPickerField
+									name={entry.name}
+									artistId={entry.artistId}
+									outsideArtistId={entry.outsideArtistId}
+									artistOptions={artistOptions}
+									outsideArtistOptions={outsideArtistOptions}
+									onChange={(patch) => updateRole(index, patch)}
+								/>
+								<select value={entry.role} onChange={(e) => updateRole(index, 'role', e.target.value)} className="admin-artists-page-input" aria-label={`Role type ${index + 1}`}>
+									{SONG_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
+								</select>
+								<button type="button" onClick={() => removeRole(index)} className="admin-artists-page-danger-btn admin-artists-page-icon-btn" aria-label="Remove role" title="Remove role">
+									<FaTimes aria-hidden="true" />
+								</button>
+							</div>
+						);
+					})}
 				</div>
 			</div>
 			<div className="admin-song-tab-actions">
@@ -687,6 +707,8 @@ export default function AdminSongFormModal({
 	prefill,
 	songs,
 	albums,
+	artists = [],
+	outsideArtists = [],
 	token,
 	session,
 	onSaved,
@@ -711,6 +733,16 @@ export default function AdminSongFormModal({
 	const sortedAlbums = useMemo(
 		() => albums.toSorted(compareAlbumOptions),
 		[albums]
+	);
+
+	const sortedArtists = useMemo(
+		() => artists.toSorted((left, right) => compareText(left.name, right.name)),
+		[artists]
+	);
+
+	const sortedOutsideArtists = useMemo(
+		() => outsideArtists.toSorted((left, right) => compareText(left.name, right.name)),
+		[outsideArtists]
 	);
 
 	const setForm = (updater) => dispatchModal({ type: 'set-form', updater });
@@ -747,10 +779,20 @@ export default function AdminSongFormModal({
 			roles: current.roles.filter((_, i) => i !== index),
 		}));
 
-	const updateRole = (index, key, value) =>
+	const updateRole = (index, keyOrPatch, value) =>
 		setForm((current) => ({
 			...current,
-			roles: current.roles.map((entry, i) => (i === index ? { ...entry, [key]: value } : entry)),
+			roles: current.roles.map((entry, i) => {
+				if (i !== index) return entry;
+
+				const patch = typeof keyOrPatch === 'string'
+					? { [keyOrPatch]: value }
+					: keyOrPatch;
+				const next = { ...entry, ...patch };
+				if (patch._prefillRole && (!entry.role || entry.role === 'Featured Artist')) next.role = patch._prefillRole;
+				delete next._prefillRole;
+				return next;
+			}),
 		}));
 
 	const setAlbumPlacement = (index, key) => (event) =>
@@ -801,7 +843,13 @@ export default function AdminSongFormModal({
 			albumIds: form.albumPlacements.map((p) => p.albumId),
 			discNumbers: form.albumPlacements.map((p) => Number(p.discNumber)),
 			trackNumbers: form.albumPlacements.map((p) => Number(p.trackNumber)),
-			roles: form.roles.map(({ role, name }) => ({ role, name })),
+			roles: form.roles.map(({ role, name, artistId, outsideArtistId, externalUrl }) => ({
+				role,
+				name,
+				artistId,
+				outsideArtistId,
+				externalUrl,
+			})),
 			albumPlacements: form.albumPlacements.map(({ albumId, trackNumber, discNumber }) => ({ albumId, trackNumber, discNumber })),
 		};
 
@@ -852,6 +900,8 @@ export default function AdminSongFormModal({
 							songFieldClassName={songFieldClassName}
 							visibilityTouchedRef={visibilityTouchedRef}
 							sortedAlbums={sortedAlbums}
+							artistOptions={sortedArtists}
+							outsideArtistOptions={sortedOutsideArtists}
 							isArtistScoped={isArtistScoped}
 							setAlbumPlacement={setAlbumPlacement}
 							placementFieldClassName={placementFieldClassName}

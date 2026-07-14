@@ -8,6 +8,7 @@ import AppleMusicPlayer from '../shared/AppleMusicPlayer.jsx'
 import SoundCloudPlayer from '../shared/SoundCloudPlayer.jsx'
 import SpotifyPlayer from '../shared/SpotifyPlayer.jsx'
 import ArtworkGallery from '../shared/ArtworkGallery.jsx'
+import SongPersonCard from './SongPersonCard.jsx'
 import '../../styles/SongHeader.css'
 
 function legacyImage(url, altText, id) {
@@ -130,33 +131,16 @@ export default function SongHeader({ song, adminPreview = false }) {
       <div className="song-header-info">
         {song.isPubliclyVisible === false && <span className="song-header-visibility-badge">Hidden in public view</span>}
         <div className="song-header-artist-links">
-          {showArtistPageLink ? (
-            <Link
-              to={`/artists/${song.album.artist.slug}`}
-              className="song-header-artist-link"
-              onMouseEnter={() => prefetchArtistPage(artistLinkData)}
-              onFocus={() => prefetchArtistPage(artistLinkData)}
-              onTouchStart={() => prefetchArtistPage(artistLinkData)}
-            >
-              {song.album.artist.name}
-            </Link>
-          ) : (
-            <span className="song-header-artist-link">{song.album.artist.name}</span>
-          )}
-          {featuredArtists.length > 0 && (
-            <span className="song-header-featured-artists">
-              {'feat. '}
-              {featuredArtists.map((artist, i) => (
-                <span key={artist.name}>
-                  {i > 0 && ', '}
-                  {artist.slug
-                    ? <Link to={`/artists/${artist.slug}`} className="song-header-featured-link">{artist.name}</Link>
-                    : artist.name
-                  }
-                </span>
-              ))}
-            </span>
-          )}
+          <span
+            onMouseEnter={() => showArtistPageLink && prefetchArtistPage(artistLinkData)}
+            onFocus={() => showArtistPageLink && prefetchArtistPage(artistLinkData)}
+            onTouchStart={() => showArtistPageLink && prefetchArtistPage(artistLinkData)}
+          >
+            <SongPersonCard person={showArtistPageLink ? song.album.artist : { name: song.album.artist.name, image: song.album.artist.image }} label="Artist" />
+          </span>
+          {featuredArtists.map((artist) => (
+            <SongPersonCard key={artist.slug || artist.externalUrl || artist.name} person={artist} label="Featured Artist" />
+          ))}
         </div>
         <h1 className="song-header-title">{song.title}</h1>
         {showAlbumMeta ? (

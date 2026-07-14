@@ -8,8 +8,15 @@ export function createAlbumPlacement() {
 	return { clientKey: createClientKey('placement'), albumId: '', trackNumber: '', discNumber: 1 };
 }
 
-export function createRoleEntry(role = 'Featured Artist', name = '') {
-	return { clientKey: createClientKey('role'), role, name };
+export function createRoleEntry(role = 'Featured Artist', name = '', extra = {}) {
+	return {
+		clientKey: createClientKey('role'),
+		role,
+		name,
+		artistId: extra.artistId ?? '',
+		outsideArtistId: extra.outsideArtistId ?? '',
+		externalUrl: extra.externalUrl ?? '',
+	};
 }
 
 export const emptySongForm = {
@@ -88,7 +95,11 @@ export function buildSongFormFromDetail(detail) {
 		images: detail.images ?? [],
 		aboutText: detail.meta?.aboutText ?? '',
 		roles: Array.isArray(detail.meta?.roles)
-			? detail.meta.roles.map((entry) => createRoleEntry(entry.role, entry.name))
+			? detail.meta.roles.map((entry) => createRoleEntry(entry.role, entry.name, {
+				artistId: entry.artistId,
+				outsideArtistId: entry.outsideArtistId,
+				externalUrl: entry.externalUrl,
+			}))
 			: [],
 		tags: detail.meta?.tags ?? [],
 		bpm: detail.meta?.bpm ?? '',

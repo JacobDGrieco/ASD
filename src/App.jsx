@@ -32,6 +32,7 @@ const AdminAccountsPage = lazy(() => import('./pages/admin/AdminAccountsPage.jsx
 const AdminAboutPage = lazy(() => import('./pages/admin/AdminAboutPage.jsx'));
 const AdminMusicArtistsPage = lazy(() => import('./pages/admin/AdminMusicArtistsPage.jsx'));
 const AdminMusicAlbumsPage = lazy(() => import('./pages/admin/AdminMusicAlbumsPage.jsx'));
+const AdminMusicOutsideArtistsPage = lazy(() => import('./pages/admin/AdminMusicOutsideArtistsPage.jsx'));
 const AdminMusicBoardPage = lazy(() => import('./pages/admin/AdminMusicBoardPage.jsx'));
 const AdminMusicVideosPage = lazy(() => import('./pages/admin/AdminMusicVideosPage.jsx'));
 const AdminMusicCrosshairPage = lazy(() => import('./pages/admin/AdminMusicCrosshairPage.jsx'));
@@ -113,8 +114,8 @@ function PublicLayout() {
 
 function AdminHomeRedirect() {
 	const { session } = useAdminAuth();
-	if (session?.role === 'ARTIST') return <AdminMusicAlbumsPage />;
-	return <AdminMusicArtistsPage />;
+	if (session?.role === 'SUPER_ADMIN') return <Navigate to="/admin/about" replace />;
+	return <Navigate to="/admin/albums" replace />;
 }
 
 function AdminVideosAccessRoute() {
@@ -173,6 +174,7 @@ export default function App() {
 							<Route path="/admin/accounts" element={<AdminAccountsPage />} />
 							<Route path="/admin/about" element={<AdminAboutPage />} />
 							<Route path="/admin/artists" element={<AdminMusicArtistsPage />} />
+							<Route path="/admin/outside-artists" element={<AdminMusicOutsideArtistsPage />} />
 							<Route path="/admin/albums" element={<AdminMusicAlbumsPage />} />
 							<Route path="/admin/board" element={<AdminMusicBoardPage />} />
 							<Route path="/admin/videos" element={<AdminVideosAccessRoute />} />

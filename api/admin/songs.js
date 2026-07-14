@@ -77,19 +77,129 @@ function validatePlacements(placements) {
   return null
 }
 
-function normalizeRoleInput(roles) {
+function normalizedRoleName(value) {
+  return String(value ?? '').trim().replace(/\s+/g, ' ').toLowerCase()
+}
+
+function normalizeExternalUrl(value) {
+  const url = typeof value === 'string' ? value.trim() : ''
+  if (!url) return ''
+
+  try {
+    const parsed = new URL(url.includes('://') ? url : `https://${url}`)
+    return ['http:', 'https:'].includes(parsed.protocol) ? parsed.toString() : ''
+  } catch {
+    return ''
+  }
+}
+
+async function normalizeLinkedRoleInput(roles) {
   if (!Array.isArray(roles)) return []
 
-  return roles.reduce((normalized, roleEntry) => {
+  const inputRoles = roles.reduce((normalized, roleEntry) => {
     if (!SONG_ROLES.includes(roleEntry.role)) return normalized
     if (typeof roleEntry.name !== 'string') return normalized
 
-    const name = roleEntry.name.trim()
+    const name = roleEntry.name.trim().replace(/\s+/g, ' ')
     if (!name) return normalized
 
-    normalized.push({ role: roleEntry.role, name })
+    normalized.push({
+      role: roleEntry.role,
+      name,
+      artistId: typeof roleEntry.artistId === 'string' ? roleEntry.artistId : '',
+      outsideArtistId: typeof roleEntry.outsideArtistId === 'string' ? roleEntry.outsideArtistId : '',
+      externalUrl: normalizeExternalUrl(roleEntry.externalUrl),
+    })
     return normalized
   }, [])
+
+  if (!inputRoles.length) return []
+
+  const artistIds = [...new Set(inputRoles.flatMap((entry) => (entry.artistId ? [entry.artistId] : [])))]
+  const outsideArtistIds = [...new Set(inputRoles.flatMap((entry) => (entry.outsideArtistId ? [entry.outsideArtistId] : [])))]
+  const names = [...new Set(inputRoles.map((entry) => entry.name))]
+
+  const [artists, outsideArtists] = await Promise.all([
+    prisma.artist.findMany({
+      where: {
+        OR: [
+          ...(artistIds.length ? [{ id: { in: artistIds } }] : []),
+          ...names.map((name) => ({ name: { equals: name, mode: 'insensitive' } })),
+        ],
+      },
+      select: { id: true, name: true },
+    }),
+    prisma.musicOutsideArtist.findMany({
+      where: {
+        OR: [
+          ...(outsideArtistIds.length ? [{ id: { in: outsideArtistIds } }] : []),
+          ...names.map((name) => ({ name: { equals: name, mode: 'insensitive' } })),
+        ],
+      },
+      select: { id: true, name: true, role: true, externalUrl: true },
+    }),
+  ])
+
+  const artistsById = new Map(artists.map((artist) => [artist.id, artist]))
+  const artistsByName = new Map(artists.map((artist) => [normalizedRoleName(artist.name), artist]))
+  const outsideArtistsById = new Map(outsideArtists.map((artist) => [artist.id, artist]))
+  const outsideArtistsByName = new Map(outsideArtists.map((artist) => [normalizedRoleName(artist.name), artist]))
+  const normalizedRoles = []
+
+  for (const entry of inputRoles) {
+    const artistById = entry.artistId ? artistsById.get(entry.artistId) : null
+    if (artistById) {
+      normalizedRoles.push({ role: entry.role, name: artistById.name, artistId: artistById.id })
+      continue
+    }
+
+    const outsideArtistById = entry.outsideArtistId ? outsideArtistsById.get(entry.outsideArtistId) : null
+    if (outsideArtistById) {
+      normalizedRoles.push({
+        role: entry.role,
+        name: outsideArtistById.name,
+        outsideArtistId: outsideArtistById.id,
+        externalUrl: outsideArtistById.externalUrl,
+      })
+      continue
+    }
+
+    const nameKey = normalizedRoleName(entry.name)
+    const artistByName = artistsByName.get(nameKey)
+    if (artistByName) {
+      normalizedRoles.push({ role: entry.role, name: artistByName.name, artistId: artistByName.id })
+      continue
+    }
+
+    const outsideArtistByName = outsideArtistsByName.get(nameKey)
+    if (outsideArtistByName) {
+      normalizedRoles.push({
+        role: entry.role,
+        name: outsideArtistByName.name,
+        outsideArtistId: outsideArtistByName.id,
+        externalUrl: outsideArtistByName.externalUrl,
+      })
+      continue
+    }
+
+    const createdOutsideArtist = await prisma.musicOutsideArtist.create({
+      data: {
+        name: entry.name,
+        role: entry.role,
+        externalUrl: entry.externalUrl,
+      },
+      select: { id: true, name: true, externalUrl: true },
+    })
+    outsideArtistsByName.set(nameKey, createdOutsideArtist)
+    normalizedRoles.push({
+      role: entry.role,
+      name: createdOutsideArtist.name,
+      outsideArtistId: createdOutsideArtist.id,
+      externalUrl: createdOutsideArtist.externalUrl,
+    })
+  }
+
+  return normalizedRoles
 }
 
 function normalizeSongDuplicateValue(value) {
@@ -461,7 +571,7 @@ export default async function handler(req, res) {
         },
       })
 
-      const normalizedRoles = normalizeRoleInput(roles)
+      const normalizedRoles = await normalizeLinkedRoleInput(roles)
 
       await prisma.songMeta.upsert({
         where: { songId: id },
@@ -586,7 +696,7 @@ export default async function handler(req, res) {
       },
     })
 
-    const normalizedRoles = normalizeRoleInput(roles)
+    const normalizedRoles = await normalizeLinkedRoleInput(roles)
 
     await prisma.songMeta.create({
       data: {

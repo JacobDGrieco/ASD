@@ -1,6 +1,6 @@
 import '../../styles/SongInfoLinks.css'
-import { Link } from 'react-router-dom'
 import { SONG_ROLES, ROLE_DISPLAY_LABELS } from '../../lib/songRoles.js'
+import SongPersonCard from './SongPersonCard.jsx'
 
 export default function SongInfoLinks({ song }) {
   const meta = song.meta ?? {}
@@ -56,7 +56,7 @@ export default function SongInfoLinks({ song }) {
       {hasPeopleInfo && (
         <div className="song-info-links-block">
           <h2 className="song-info-links-heading">People & Roles</h2>
-          <div className="song-info-links-list">
+          <div className="song-info-links-list song-info-links-list--people">
             {roleRows.map((row) => (
               <InfoRow key={row.label} label={row.label} links={row.links} />
             ))}
@@ -69,16 +69,17 @@ export default function SongInfoLinks({ song }) {
 
 function InfoRow({ label, value, links }) {
   return (
-    <div className="song-info-links-row">
+    <div className={`song-info-links-row${links ? ' song-info-links-row--people' : ''}`}>
       <span className="song-info-links-label">{label}</span>
       <span className="song-info-links-value">
         {links
-          ? links.map((item, index) => (
-              <span key={`${label}-${item.name}`}>
-                {index > 0 && ', '}
-                {item.slug ? <Link to={`/artists/${item.slug}`}>{item.name}</Link> : item.name}
-              </span>
-            ))
+          ? (
+            <span className="song-info-links-person-grid">
+              {links.map((item) => (
+                <SongPersonCard key={`${label}-${item.slug || item.externalUrl || item.name}`} person={item} />
+              ))}
+            </span>
+          )
           : value}
       </span>
     </div>

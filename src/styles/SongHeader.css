@@ -81,33 +81,78 @@
 .song-header-artist-links {
 	display: flex;
 	flex-wrap: wrap;
-	align-items: baseline;
-	gap: 6px 10px;
+	align-items: stretch;
+	gap: 10px;
 }
 
-.song-header-artist-link {
-	font-size: 0.98rem;
+.song-person-card {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	width: min(100%, 250px);
+	padding: 7px 10px 7px 7px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: rgba(10, 10, 10, 0.38);
+	color: #f2eadc;
+	text-decoration: none;
+}
+
+a.song-person-card:hover,
+a.song-person-card:focus-visible {
+	border-color: rgba(200, 169, 110, 0.5);
+	text-decoration: none;
+}
+
+.song-person-card-image-wrap,
+.song-person-card-image,
+.song-person-card-image-blank {
+	flex-shrink: 0;
+	width: 48px;
+	height: 48px;
+	border-radius: 50%;
+}
+
+.song-person-card-image-wrap {
+	overflow: hidden;
+	background: rgba(255, 255, 255, 0.05);
+}
+
+.song-person-card-image {
+	display: block;
+	object-fit: cover;
+}
+
+.song-person-card-image-blank {
+	display: block;
+	background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.018)), #101010;
+}
+
+.song-person-card-copy {
+	display: grid;
+	gap: 3px;
+	min-width: 0;
+}
+
+.song-person-card-role {
+	overflow: hidden;
+	color: rgba(242, 234, 220, 0.48);
+	font-family: var(--font-nav-tab);
+	font-size: 0.66rem;
 	letter-spacing: 0.12em;
+	line-height: 1;
+	text-overflow: ellipsis;
 	text-transform: uppercase;
-	color: var(--text-muted);
+	white-space: nowrap;
 }
 
-.song-header-featured-artists {
+.song-person-card-name {
+	overflow: hidden;
+	font-family: var(--font-description);
 	font-size: 0.92rem;
-	letter-spacing: 0.08em;
-	color: var(--text-muted);
-	opacity: 0.75;
-}
-
-.song-header-featured-link {
-	color: inherit;
-	text-decoration: underline;
-	text-underline-offset: 2px;
-}
-
-.song-header-featured-link:hover {
-	opacity: 1;
-	color: var(--text);
+	line-height: 1.2;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .song-header-title {
@@ -118,7 +163,7 @@
 
 .song-header-hidden .song-header-title,
 .song-header-hidden .song-header-meta,
-.song-header-hidden .song-header-artist-link {
+.song-header-hidden .song-person-card {
 	text-decoration: line-through;
 	text-decoration-color: rgba(228, 108, 108, 0.88);
 }
@@ -234,8 +279,11 @@
 	}
 
 	.song-header-meta,
-	.song-header-artist-link,
-	.song-header-featured-artists {
+	.song-person-card-name {
 		font-size: 0.88rem;
+	}
+
+	.song-person-card {
+		width: min(100%, 230px);
 	}
 }

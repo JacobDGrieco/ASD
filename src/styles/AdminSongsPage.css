@@ -224,9 +224,23 @@
 
 .admin-song-role-row {
 	display: grid;
-	grid-template-columns: 1fr 1fr auto;
+	grid-template-columns: 42px minmax(0, 1fr) minmax(180px, 0.54fr) auto;
 	gap: 0.5rem;
 	align-items: center;
+}
+
+.admin-song-role-thumb {
+	width: 38px;
+	height: 38px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.08);
+	overflow: hidden;
+}
+
+.admin-song-role-thumb-img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
 }
 
 .admin-song-add-role-btn {
@@ -246,6 +260,14 @@
 @media (max-width: 480px) {
 	.admin-song-metadata-grid {
 		grid-template-columns: 1fr;
+	}
+
+	.admin-song-role-row {
+		grid-template-columns: 38px minmax(0, 1fr) auto;
+	}
+
+	.admin-song-role-row select {
+		grid-column: 2 / 4;
 	}
 
 	.admin-song-album-select-option-content {

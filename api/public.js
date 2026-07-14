@@ -145,6 +145,23 @@ function publicArtistSelect() {
     name: true,
     slug: true,
     isVisible: true,
+    portrait: true,
+    images: {
+      take: 1,
+      orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+      select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+    },
+  }
+}
+
+function formatPublicArtistReference(artist) {
+  if (!artist) return artist
+  const images = formatArtistImages(artist)
+  return {
+    ...artist,
+    portrait: images[0]?.previewUrl ?? artist.portrait ?? '',
+    images,
+    image: images[0] ?? null,
   }
 }
 
@@ -213,6 +230,84 @@ async function resolveArtistLinksByName(names, includeHidden = false) {
   }, {})
 }
 
+async function resolveArtistRoleLinks(roles, includeHidden = false) {
+  const names = collectRoleCreditNames(roles)
+  const artistIds = [...new Set((Array.isArray(roles) ? roles : []).flatMap((role) => (
+    typeof role?.artistId === 'string' && role.artistId ? [role.artistId] : []
+  )))]
+
+  if (!names.length && !artistIds.length) return { slugByName: {}, slugById: {} }
+
+  const matched = await prisma.artist.findMany({
+    where: {
+      ...(includeHidden ? {} : { isVisible: true }),
+      OR: [
+        ...(artistIds.length ? [{ id: { in: artistIds } }] : []),
+        ...names.map((name) => ({
+          name: { equals: name, mode: 'insensitive' },
+        })),
+      ],
+    },
+    select: publicArtistSelect(),
+  })
+
+  return matched.reduce((links, artist) => {
+    if (includeHidden || isPublicArtistVisible(artist)) {
+      const formattedArtist = formatPublicArtistReference(artist)
+      const item = {
+        name: formattedArtist.name,
+        slug: formattedArtist.slug,
+        image: formattedArtist.image,
+        portrait: formattedArtist.portrait,
+      }
+      links.byName[artist.name.trim().toLowerCase()] = item
+      links.byId[artist.id] = item
+      links.slugByName[artist.name.trim().toLowerCase()] = artist.slug
+      links.slugById[artist.id] = artist.slug
+    }
+    return links
+  }, { byName: {}, byId: {}, slugByName: {}, slugById: {} })
+}
+
+async function resolveOutsideArtistRoleLinks(roles) {
+  const names = collectRoleCreditNames(roles)
+  const outsideArtistIds = [...new Set((Array.isArray(roles) ? roles : []).flatMap((role) => (
+    typeof role?.outsideArtistId === 'string' && role.outsideArtistId ? [role.outsideArtistId] : []
+  )))]
+
+  if (!names.length && !outsideArtistIds.length) return { outsideByName: {}, outsideById: {} }
+
+  const matched = await prisma.musicOutsideArtist.findMany({
+    where: {
+      OR: [
+        ...(outsideArtistIds.length ? [{ id: { in: outsideArtistIds } }] : []),
+        ...names.map((name) => ({
+          name: { equals: name, mode: 'insensitive' },
+        })),
+      ],
+    },
+    select: { id: true, name: true, externalUrl: true, imageUrl: true, pathname: true },
+  })
+
+  return matched.reduce((links, artist) => {
+    const image = artist.imageUrl
+      ? clientImage({
+          id: `${artist.id}-image`,
+          url: artist.imageUrl,
+          pathname: artist.pathname,
+          usage: 'portrait',
+          altText: artist.name,
+          sortOrder: 0,
+          isPrimary: true,
+        })
+      : null
+    const item = { name: artist.name, externalUrl: artist.externalUrl || '', image }
+    links.outsideByName[artist.name.trim().toLowerCase()] = item
+    links.outsideById[artist.id] = item
+    return links
+  }, { outsideByName: {}, outsideById: {} })
+}
+
 function applyPublicArtistName(album) {
   if (!album?.artist || !isOtherArtist(album.artist) || !album.otherArtistName?.trim()) return album
 
@@ -230,6 +325,7 @@ function formatAlbumSummary(album) {
   const albumImages = formatAlbumImages(displayAlbum)
   return {
     ...displayAlbum,
+    artist: formatPublicArtistReference(displayAlbum.artist),
     coverArt: albumImages[0]?.previewUrl ?? displayAlbum.coverArt,
     images: albumImages,
   }
@@ -691,6 +787,7 @@ async function getAlbum(res, id, includeHidden = false) {
   const albumImages = formatAlbumImages(album)
   return res.status(200).json({
     ...album,
+    artist: formatPublicArtistReference(album.artist),
     isPubliclyVisible: isPublicAlbumReleased(album, now) && isPublicArtistVisible(album.artist),
     coverArt: albumImages[0]?.previewUrl ?? album.coverArt,
     images: albumImages,
@@ -792,18 +889,41 @@ async function getSong(res, id, includeHidden = false) {
 
   if (song.meta) {
     const roles = Array.isArray(song.meta.roles) ? song.meta.roles : []
-    const allNames = collectRoleCreditNames(roles)
-    const slugByName = await resolveArtistLinksByName(allNames, includeHidden)
+    const { byName: artistByName, byId: artistById, slugByName, slugById } = await resolveArtistRoleLinks(roles, includeHidden)
+    const { outsideByName, outsideById } = await resolveOutsideArtistRoleLinks(roles)
 
     const roleGroups = {}
-    for (const { role, name } of roles) {
+    for (const { role, name, artistId, outsideArtistId, externalUrl } of roles) {
+      if (!roleGroups[role]) roleGroups[role] = []
+      const linkedArtistSlug = artistId ? slugById[artistId] ?? null : null
+      if (linkedArtistSlug) {
+        roleGroups[role].push(artistById[artistId] ?? { name, slug: linkedArtistSlug })
+        continue
+      }
+
+      const linkedOutsideArtist = outsideArtistId ? outsideById[outsideArtistId] ?? null : null
+      if (linkedOutsideArtist) {
+        roleGroups[role].push({
+          name: linkedOutsideArtist.name || name,
+          slug: null,
+          externalUrl: linkedOutsideArtist.externalUrl || externalUrl || '',
+          image: linkedOutsideArtist.image ?? null,
+        })
+        continue
+      }
+
       const names = getRoleCreditDisplayNames(name, slugByName)
       if (!names.length) continue
-      if (!roleGroups[role]) roleGroups[role] = []
       for (const displayName of names) {
+        const nameKey = displayName.trim().toLowerCase()
+        const artist = artistByName[nameKey] ?? null
+        const outsideArtist = outsideByName[nameKey] ?? null
         roleGroups[role].push({
           name: displayName,
-          slug: slugByName[displayName.trim().toLowerCase()] ?? null,
+          slug: artist?.slug ?? slugByName[nameKey] ?? null,
+          image: artist?.image ?? outsideArtist?.image ?? null,
+          portrait: artist?.portrait ?? '',
+          externalUrl: outsideArtist?.externalUrl || (displayName === name ? externalUrl : '') || '',
         })
       }
     }

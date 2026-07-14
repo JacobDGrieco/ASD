@@ -36,15 +36,33 @@
 .song-info-links-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+}
+
+.song-info-links-list--people {
+  display: grid;
+  grid-template-columns: 140px max-content;
+  column-gap: 20px;
+  row-gap: 10px;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.song-info-links-list--people .song-info-links-row {
+  display: contents;
 }
 
 .song-info-links-row {
   display: grid;
   grid-template-columns: 140px minmax(0, 1fr);
   column-gap: 20px;
-  align-items: baseline;
+  align-items: center;
   font: inherit;
+}
+
+.song-info-links-row--people {
+  grid-template-columns: 140px max-content;
 }
 
 .song-info-links-label {
@@ -55,6 +73,21 @@
 .song-info-links-value {
   color: var(--text);
   min-width: 0;
+}
+
+.song-info-links-person-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  width: 100%;
+  max-width: 100%;
+  justify-items: stretch;
+}
+
+.song-info-links-person-grid .song-person-card {
+  width: 100%;
+  max-width: none;
+  padding-right: 18px;
 }
 
 .song-info-links-tags {
@@ -83,8 +116,23 @@
   }
 
   .song-info-links-row {
-    grid-template-columns: 104px minmax(0, 1fr);
+    grid-template-columns: 1fr;
+    row-gap: 8px;
     column-gap: 14px;
+  }
+
+  .song-info-links-list--people {
+    display: flex;
+    width: 100%;
+  }
+
+  .song-info-links-list--people .song-info-links-row {
+    display: grid;
+  }
+
+  .song-info-links-person-grid {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: none;
   }
 
   .song-info-links-label {

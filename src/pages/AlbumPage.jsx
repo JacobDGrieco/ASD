@@ -1,11 +1,11 @@
 import { useParams } from 'react-router-dom';
-import { Link } from 'react-router-dom';
 import { useMemo } from 'react';
 import { FaApple, FaSoundcloud, FaSpotify, FaYoutube } from 'react-icons/fa';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { useApi } from '../hooks/useApi.js';
 import AlbumDetails from '../components/album/AlbumDetails.jsx';
 import TrackList from '../components/artist/TrackList.jsx';
+import SongPersonCard from '../components/song/SongPersonCard.jsx';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import ArtworkGallery from '../components/shared/ArtworkGallery.jsx';
 import { useAdminAuth } from '../lib/adminAuth.jsx';
@@ -89,9 +89,7 @@ function AlbumHeader({ album }) {
 			<div className="song-header-info">
 				{album.isPubliclyVisible === false && <span className="song-header-visibility-badge">Hidden in public view</span>}
 				<div className="song-header-artist-links">
-					<Link to={`/artists/${album.artist.slug}`} className="song-header-artist-link">
-						{album.artist.name}
-					</Link>
+					<SongPersonCard person={album.artist} label="Artist" />
 				</div>
 				<h1 className="song-header-title">{album.title}</h1>
 				<p className="song-header-meta">{year} · {album.type}</p>

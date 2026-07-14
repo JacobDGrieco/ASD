@@ -257,6 +257,7 @@ export default function AdminMusicSongsPage() {
 	const [songs, setSongs] = useState([]);
 	const [albums, setAlbums] = useState([]);
 	const [artists, setArtists] = useState([]);
+	const [outsideArtists, setOutsideArtists] = useState([]);
 	const [filterArtist, setFilterArtist] = useState(initialFilterState.filterArtist);
 	const [filterAlbum, setFilterAlbum] = useState(initialFilterState.filterAlbum);
 	const [filterTitle, setFilterTitle] = useState(initialFilterState.filterTitle);
@@ -278,6 +279,9 @@ export default function AdminMusicSongsPage() {
 		});
 		loadAdminResource({ cacheKey: 'artists-list', url: '/api/admin/artists', token }).then((artistList) => {
 			if (!ignore) setArtists(artistList);
+		});
+		loadAdminResource({ cacheKey: 'music-outside-artists-list', url: '/api/admin/outside-artists', token }).then((outsideArtistList) => {
+			if (!ignore) setOutsideArtists(outsideArtistList);
 		});
 		return () => { ignore = true; };
 	}, [token]);
@@ -459,6 +463,8 @@ export default function AdminMusicSongsPage() {
 					prefill={creatingWithPrefill}
 					songs={songs}
 					albums={albums}
+					artists={artists}
+					outsideArtists={outsideArtists}
 					token={token}
 					session={session}
 					onSaved={handleSongSaved}
