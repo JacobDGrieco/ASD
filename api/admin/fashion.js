@@ -375,7 +375,7 @@ function lookPlacementSortKey(look) {
     }
   }
 
-  const [placement] = [...placements].sort((left, right) => {
+  const [placement] = placements.toSorted((left, right) => {
     const collectionCompare = String(left.collection?.title ?? '').localeCompare(String(right.collection?.title ?? ''), undefined, { sensitivity: 'base', numeric: true })
     if (collectionCompare !== 0) return collectionCompare
     return (left.sortOrder ?? 0) - (right.sortOrder ?? 0)

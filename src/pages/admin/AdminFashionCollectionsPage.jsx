@@ -56,7 +56,7 @@ function compareCollectionsByReleaseDate(left, right) {
 }
 
 function sortCollectionsByReleaseDate(collections) {
-  return [...collections].sort(compareCollectionsByReleaseDate)
+  return collections.toSorted(compareCollectionsByReleaseDate)
 }
 
 function hasCreditValue(credit) {

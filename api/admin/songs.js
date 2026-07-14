@@ -145,8 +145,30 @@ async function normalizeLinkedRoleInput(roles) {
   const artistsByName = new Map(artists.map((artist) => [normalizedRoleName(artist.name), artist]))
   const outsideArtistsById = new Map(outsideArtists.map((artist) => [artist.id, artist]))
   const outsideArtistsByName = new Map(outsideArtists.map((artist) => [normalizedRoleName(artist.name), artist]))
-  const normalizedRoles = []
+  // Pre-scan: find entries that need a new DB record, deduplicated by name
+  const toCreateByKey = new Map()
+  for (const entry of inputRoles) {
+    if (entry.artistId && artistsById.has(entry.artistId)) continue
+    if (entry.outsideArtistId && outsideArtistsById.has(entry.outsideArtistId)) continue
+    const nameKey = normalizedRoleName(entry.name)
+    if (artistsByName.has(nameKey)) continue
+    if (outsideArtistsByName.has(nameKey)) continue
+    if (!toCreateByKey.has(nameKey)) toCreateByKey.set(nameKey, entry)
+  }
 
+  // Create all new outside artists in parallel (no sequential awaits)
+  const createdArtists = await Promise.all(
+    [...toCreateByKey.values()].map((entry) =>
+      prisma.musicOutsideArtist.create({
+        data: { name: entry.name, role: entry.role, externalUrl: entry.externalUrl },
+        select: { id: true, name: true, externalUrl: true },
+      })
+    )
+  )
+  const createdByKey = new Map([...toCreateByKey.keys()].map((key, i) => [key, createdArtists[i]]))
+
+  // Build normalizedRoles in original input order
+  const normalizedRoles = []
   for (const entry of inputRoles) {
     const artistById = entry.artistId ? artistsById.get(entry.artistId) : null
     if (artistById) {
@@ -172,31 +194,12 @@ async function normalizeLinkedRoleInput(roles) {
       continue
     }
 
-    const outsideArtistByName = outsideArtistsByName.get(nameKey)
-    if (outsideArtistByName) {
-      normalizedRoles.push({
-        role: entry.role,
-        name: outsideArtistByName.name,
-        outsideArtistId: outsideArtistByName.id,
-        externalUrl: outsideArtistByName.externalUrl,
-      })
-      continue
-    }
-
-    const createdOutsideArtist = await prisma.musicOutsideArtist.create({
-      data: {
-        name: entry.name,
-        role: entry.role,
-        externalUrl: entry.externalUrl,
-      },
-      select: { id: true, name: true, externalUrl: true },
-    })
-    outsideArtistsByName.set(nameKey, createdOutsideArtist)
+    const outsideArtistByName = outsideArtistsByName.get(nameKey) ?? createdByKey.get(nameKey)
     normalizedRoles.push({
       role: entry.role,
-      name: createdOutsideArtist.name,
-      outsideArtistId: createdOutsideArtist.id,
-      externalUrl: createdOutsideArtist.externalUrl,
+      name: outsideArtistByName.name,
+      outsideArtistId: outsideArtistByName.id,
+      externalUrl: outsideArtistByName.externalUrl,
     })
   }
 
