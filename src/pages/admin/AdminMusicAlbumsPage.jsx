@@ -1,6 +1,8 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import { FaApple, FaExternalLinkAlt, FaEye, FaEyeSlash, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash, FaYoutube } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaPencilAlt, FaTrash } from 'react-icons/fa';
 import { TabPanel, TabView } from 'primereact/tabview';
+import AdminProfileLinksField from '../../components/admin/AdminProfileLinksField.jsx';
+import AdminProfileLinksSummary from '../../components/admin/AdminProfileLinksSummary.jsx';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
 import AdminDateInput from '../../components/admin/AdminDateInput.jsx';
 import { isValidDateInput } from '../../lib/dateInput.js';
@@ -9,6 +11,7 @@ import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import { clearAdminResource, loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
 import AdminSongFormModal from '../../components/admin/AdminSongFormModal.jsx';
 import { defaultVisibilityForReleaseDate, isEffectivelyVisible } from '../../lib/contentVisibility.js';
+import { MUSIC_RELEASE_LEGACY_LINK_FIELDS, normalizeProfileLinks, profileLinksForSource } from '../../lib/profileLinks.js';
 import { isOtherArtist, OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID } from '../../lib/publicVisibility.js';
 import { slugify } from '../../lib/slugify.js';
 import '../../styles/AdminArtistsPage.css';
@@ -23,6 +26,7 @@ const empty = {
 	autoShowOnRelease: false,
 	type: '',
 	images: [],
+	links: [],
 	otherArtistName: '',
 	aboutText: '',
 	soundcloudUrl: '',
@@ -33,25 +37,13 @@ const empty = {
 	artistId: '',
 };
 
-function iconLabel(icon, text) {
-	return (
-		<span className="admin-modal-label-with-icon">
-			<span className="admin-modal-label-icon" aria-hidden="true">{icon}</span>
-			<span>{text}</span>
-		</span>
-	);
-}
-
 const columns = [
 	{ key: 'images', label: 'Images', kind: 'images', className: 'admin-artists-page-col-image' },
 	{ key: 'title', label: 'Title', placeholder: 'Title', className: 'admin-artists-page-col-wide' },
 	{ key: 'artistId', label: 'Artist', kind: 'artist', className: 'admin-artists-page-col-sm' },
 	{ key: 'type', label: 'Type', kind: 'select', className: 'admin-artists-page-col-sm' },
 	{ key: 'releaseDate', label: 'Release Date', type: 'date', placeholder: 'Release Date', className: 'admin-artists-page-col-sm' },
-	{ key: 'soundcloudUrl', label: 'SoundCloud', placeholder: 'SoundCloud URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
-	{ key: 'spotifyUrl', label: 'Spotify', placeholder: 'Spotify URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
-	{ key: 'appleMusicUrl', label: 'Apple Music', placeholder: 'Apple Music URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
-	{ key: 'youtubeUrl', label: 'YouTube', placeholder: 'YouTube URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
+	{ key: 'links', label: 'Links', kind: 'links', className: 'admin-artists-page-col-xl admin-links-col-centered' },
 ];
 
 function primaryImage(images) {
@@ -141,22 +133,8 @@ function renderValue(album, column) {
 		return value ? <span className="admin-artists-page-cell-value" title={value}>{value}</span> : <span className="admin-artists-page-empty-value">-</span>;
 	}
 
-	if (column.kind === 'link') {
-		const value = album[column.key];
-		return value
-			? (
-				<a
-					href={String(value)}
-					target="_blank"
-					rel="noreferrer"
-					className="admin-artists-page-link-btn"
-					aria-label={`Open ${column.label} in new tab`}
-					title="Open in new tab"
-				>
-					<FaExternalLinkAlt aria-hidden="true" />
-				</a>
-			)
-			: <span className="admin-artists-page-empty-value">-</span>;
+	if (column.kind === 'links') {
+		return <AdminProfileLinksSummary links={album.links} />;
 	}
 
 	if (column.kind === 'images') {
@@ -178,10 +156,6 @@ function renderValue(album, column) {
 }
 
 function renderHeader(column) {
-	if (column.key === 'soundcloudUrl') return <span className="admin-artists-page-social-header" aria-label="SoundCloud"><FaSoundcloud aria-hidden="true" /></span>;
-	if (column.key === 'spotifyUrl') return <span className="admin-artists-page-social-header" aria-label="Spotify"><FaSpotify aria-hidden="true" /></span>;
-	if (column.key === 'appleMusicUrl') return <span className="admin-artists-page-social-header" aria-label="Apple Music"><FaApple aria-hidden="true" /></span>;
-	if (column.key === 'youtubeUrl') return <span className="admin-artists-page-social-header" aria-label="YouTube"><FaYoutube aria-hidden="true" /></span>;
 	return column.label;
 }
 
@@ -364,20 +338,12 @@ function AlbumFormModal({
 						<TabPanel header="Links">
 							<div className="admin-modal-grid">
 								<div className="admin-modal-field admin-modal-field-full">
-									<label htmlFor="admin-music-album-soundcloud" className="admin-modal-label">{iconLabel(<FaSoundcloud />, 'SoundCloud URL')}</label>
-									<input id="admin-music-album-soundcloud" type="url" placeholder="SoundCloud URL" value={form.soundcloudUrl} onChange={set('soundcloudUrl')} className="admin-artists-page-input" />
-								</div>
-								<div className="admin-modal-field admin-modal-field-full">
-									<label htmlFor="admin-music-album-spotify" className="admin-modal-label">{iconLabel(<FaSpotify />, 'Spotify URL')}</label>
-									<input id="admin-music-album-spotify" type="url" placeholder="Spotify URL" value={form.spotifyUrl} onChange={set('spotifyUrl')} className="admin-artists-page-input" />
-								</div>
-								<div className="admin-modal-field admin-modal-field-full">
-									<label htmlFor="admin-music-album-apple-music" className="admin-modal-label">{iconLabel(<FaApple />, 'Apple Music URL')}</label>
-									<input id="admin-music-album-apple-music" type="url" placeholder="Apple Music URL" value={form.appleMusicUrl} onChange={set('appleMusicUrl')} className="admin-artists-page-input" />
-								</div>
-								<div className="admin-modal-field admin-modal-field-full">
-									<label htmlFor="admin-music-album-youtube" className="admin-modal-label">{iconLabel(<FaYoutube />, 'YouTube URL')}</label>
-									<input id="admin-music-album-youtube" type="url" placeholder="YouTube URL" value={form.youtubeUrl} onChange={set('youtubeUrl')} className="admin-artists-page-input" />
+									<label className="admin-modal-label">Links</label>
+									<AdminProfileLinksField
+										value={form.links}
+										onChange={(links) => setForm((current) => ({ ...current, links }))}
+										showTypeField={false}
+									/>
 								</div>
 							</div>
 						</TabPanel>
@@ -474,6 +440,7 @@ export default function AdminMusicAlbumsPage() {
 				artistId: isOtherArtist(detail.artist) ? OTHER_ARTIST_OPTION_ID : detail.artistId,
 				otherArtistName: detail.otherArtistName ?? '',
 				images: detail.images ?? [],
+				links: profileLinksForSource(detail, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
 				aboutText: detail.aboutText ?? '',
 				soundcloudUrl: detail.soundcloudUrl ?? '',
 				spotifyUrl: detail.spotifyUrl ?? '',
@@ -504,6 +471,7 @@ export default function AdminMusicAlbumsPage() {
 		const url = isEdit ? `/api/admin/albums?id=${form.id}` : '/api/admin/albums';
 		const payload = {
 			...form,
+			links: normalizeProfileLinks(form.links),
 			slug: slugify(form.title),
 			...(isArtistScoped ? { artistId: scopedArtistId } : {}),
 		};
@@ -533,6 +501,7 @@ export default function AdminMusicAlbumsPage() {
 				spotifyUrl: saved.spotifyUrl ?? '',
 				appleMusicUrl: saved.appleMusicUrl ?? '',
 				youtubeUrl: saved.youtubeUrl ?? '',
+				links: profileLinksForSource(saved, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
 			});
 		}
 	};

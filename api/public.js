@@ -2,6 +2,7 @@ import { prisma } from '../src/lib/prisma.js'
 import { isEffectivelyVisible } from '../src/lib/contentVisibility.js'
 import { readAdminTokenFromRequest, verifyToken } from '../src/lib/auth.js'
 import { clientImage, clientImages, mergeLegacyImages } from '../src/lib/images.js'
+import { ARTIST_LEGACY_LINK_FIELDS, FASHION_TALENT_LEGACY_LINK_FIELDS, MUSIC_RELEASE_LEGACY_LINK_FIELDS, profileLinksForSource } from '../src/lib/profileLinks.js'
 import { formatCrosshairVideo } from '../src/lib/crosshairVideos.js'
 import { hasPublicBoardSource, isOtherArtist, isReservedHiddenArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js'
 import { isReleasedOnUtcDay } from '../src/lib/releaseSchedule.js'
@@ -157,6 +158,7 @@ function formatPublicArtistReference(artist) {
   const images = formatArtistImages(artist)
   return {
     ...artist,
+    links: profileLinksForSource(artist, ARTIST_LEGACY_LINK_FIELDS),
     portrait: images[0]?.previewUrl ?? artist.portrait ?? '',
     images,
     image: images[0] ?? null,
@@ -323,6 +325,7 @@ function formatAlbumSummary(album) {
   const albumImages = formatAlbumImages(displayAlbum)
   return {
     ...displayAlbum,
+    links: profileLinksForSource(displayAlbum, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
     artist: formatPublicArtistReference(displayAlbum.artist),
     coverArt: albumImages[0]?.previewUrl ?? displayAlbum.coverArt,
     images: albumImages,
@@ -412,6 +415,7 @@ async function getArtists(res, includeHidden = false) {
       tiktokProfile: true,
       snapchatProfile: true,
       youtubeSocialProfile: true,
+      links: true,
       albums: {
         orderBy: { releaseDate: 'desc' },
         select: {
@@ -428,6 +432,7 @@ async function getArtists(res, includeHidden = false) {
           spotifyUrl: true,
           appleMusicUrl: true,
           youtubeUrl: true,
+          links: true,
           images: {
             orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
             select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
@@ -461,6 +466,7 @@ async function getArtists(res, includeHidden = false) {
       const images = formatArtistImages(artist)
       publicArtists.push({
         ...artist,
+        links: profileLinksForSource(artist, ARTIST_LEGACY_LINK_FIELDS),
         isPubliclyVisible: isPublicArtistVisible(artist),
         portrait: images[0]?.previewUrl ?? artist.portrait,
         images,
@@ -555,6 +561,11 @@ async function getArtist(res, slug, includeHidden = false) {
                   autoShowOnRelease: true,
                   coverArt: true,
                   otherArtistName: true,
+                  soundcloudUrl: true,
+                  spotifyUrl: true,
+                  appleMusicUrl: true,
+                  youtubeUrl: true,
+                  links: true,
                   releaseDate: true,
                   type: true,
                   images: {
@@ -617,6 +628,7 @@ async function getArtist(res, slug, includeHidden = false) {
 
   return res.status(200).json({
     ...artist,
+    links: profileLinksForSource(artist, ARTIST_LEGACY_LINK_FIELDS),
     isPubliclyVisible: isPublicArtistVisible(artist),
     portrait: images[0]?.previewUrl ?? artist.portrait,
     images,
@@ -699,6 +711,7 @@ async function getAlbum(res, id, includeHidden = false) {
   const albumImages = formatAlbumImages(album)
   return res.status(200).json({
     ...album,
+    links: profileLinksForSource(album, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
     artist: formatPublicArtistReference(album.artist),
     isPubliclyVisible: isPublicAlbumReleased(album, now) && isPublicArtistVisible(album.artist),
     coverArt: albumImages[0]?.previewUrl ?? album.coverArt,
@@ -732,6 +745,11 @@ async function getSong(res, id, includeHidden = false) {
               autoShowOnRelease: true,
               coverArt: true,
               otherArtistName: true,
+              soundcloudUrl: true,
+              spotifyUrl: true,
+              appleMusicUrl: true,
+              youtubeUrl: true,
+              links: true,
               releaseDate: true,
               images: {
                 orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
@@ -871,6 +889,7 @@ async function getSong(res, id, includeHidden = false) {
 
   return res.status(200).json({
     ...song,
+    links: profileLinksForSource(song, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
     isPubliclyVisible: isPublicSongReleased({ ...song, releaseDate: songReleaseDate }, requestedPlacement.album.releaseDate, now)
       && isPublicAlbumReleased(requestedPlacement.album, now)
       && isPublicArtistVisible(requestedPlacement.album.artist),
@@ -904,6 +923,7 @@ async function getRecordPlayer(res, includeHidden = false) {
             autoShowOnRelease: true,
             soundcloudUrl: true,
             youtubeUrl: true,
+            links: true,
             meta: {
               select: { releaseDate: true },
             },
@@ -917,6 +937,11 @@ async function getRecordPlayer(res, includeHidden = false) {
                     coverArt: true,
                     title: true,
                     otherArtistName: true,
+                    soundcloudUrl: true,
+                    spotifyUrl: true,
+                    appleMusicUrl: true,
+                    youtubeUrl: true,
+                    links: true,
                     releaseDate: true,
                     images: {
                       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
@@ -979,6 +1004,7 @@ function publicFashionTalentSelect() {
     facebookProfile: true,
     email: true,
     website: true,
+    links: true,
     agencyName: true,
     agencyContact: true,
     createdAt: true,
@@ -991,7 +1017,7 @@ function publicFashionTalentSelect() {
 }
 
 function formatFashionTalent(talent) {
-  return { ...talent, images: clientImages(talent.images ?? []) }
+  return { ...talent, links: profileLinksForSource(talent, FASHION_TALENT_LEGACY_LINK_FIELDS), images: clientImages(talent.images ?? []) }
 }
 
 function formatFashionCredit(credit) {

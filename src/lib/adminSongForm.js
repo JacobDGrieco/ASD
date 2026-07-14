@@ -1,4 +1,5 @@
 import { defaultVisibilityForReleaseDate } from './contentVisibility.js';
+import { MUSIC_RELEASE_LEGACY_LINK_FIELDS, profileLinksForSource } from './profileLinks.js';
 
 function createClientKey(prefix) {
 	return `${prefix}-${crypto.randomUUID()}`;
@@ -25,6 +26,7 @@ export const emptySongForm = {
 	isVisible: true,
 	autoShowOnRelease: false,
 	duration: '',
+	links: [],
 	soundcloudUrl: '',
 	spotifyUrl: '',
 	appleMusicUrl: '',
@@ -93,6 +95,7 @@ export function buildSongFormFromDetail(detail) {
 		...emptySongForm,
 		...detail,
 		images: detail.images ?? [],
+		links: profileLinksForSource(detail, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
 		aboutText: detail.meta?.aboutText ?? '',
 		roles: Array.isArray(detail.meta?.roles)
 			? detail.meta.roles.map((entry) => createRoleEntry(entry.role, entry.name, {
@@ -114,6 +117,7 @@ export function initSongFormFromPrefill(prefill = {}) {
 		...emptySongForm,
 		title: prefill.title ?? '',
 		releaseDate: prefill.releaseDate ?? '',
+		links: profileLinksForSource(prefill, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
 		soundcloudUrl: prefill.soundcloudUrl ?? '',
 		spotifyUrl: prefill.spotifyUrl ?? '',
 		appleMusicUrl: prefill.appleMusicUrl ?? '',

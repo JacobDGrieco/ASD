@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react';
-import { FaApple, FaSoundcloud, FaSpotify, FaYoutube } from 'react-icons/fa';
-import { SiFacebook, SiInstagram, SiSnapchat, SiTiktok, SiX, SiYoutube } from 'react-icons/si';
+import { PROFILE_LINK_PLATFORM_LABELS, hrefForProfileLink, normalizeProfileLinks } from '../../lib/profileLinks.js';
 import { preloadImage, preloadImages } from '../../lib/publicPrefetch.js';
 import ArtworkGallery from '../shared/ArtworkGallery.jsx';
+import ProfileLinkIcon from '../shared/ProfileLinkIcon.jsx';
 import '../../styles/ArtistHero.css';
 
 const AUTO_SWAP_INTERVAL_MS = 20000;
@@ -121,21 +121,24 @@ export default function ArtistHero({ artist }) {
 		return clearTimers;
 	}, [defaultImage, sequence]);
 
-	const musicLinks = [
-		artist.soundcloudProfile ? { href: artist.soundcloudProfile, label: 'SoundCloud', icon: <FaSoundcloud /> } : null,
-		artist.spotifyProfile ? { href: artist.spotifyProfile, label: 'Spotify', icon: <FaSpotify /> } : null,
-		artist.appleMusicProfile ? { href: artist.appleMusicProfile, label: 'Apple Music', icon: <FaApple /> } : null,
-		artist.youtubeProfile ? { href: artist.youtubeProfile, label: 'YouTube Music', icon: <FaYoutube /> } : null,
-	].filter(Boolean);
-
-	const socialLinks = [
-		artist.instagramProfile ? { href: artist.instagramProfile, label: 'Instagram', icon: <SiInstagram /> } : null,
-		artist.twitterProfile ? { href: artist.twitterProfile, label: 'X', icon: <SiX /> } : null,
-		artist.facebookProfile ? { href: artist.facebookProfile, label: 'Facebook', icon: <SiFacebook /> } : null,
-		artist.tiktokProfile ? { href: artist.tiktokProfile, label: 'TikTok', icon: <SiTiktok /> } : null,
-		artist.snapchatProfile ? { href: artist.snapchatProfile, label: 'Snapchat', icon: <SiSnapchat /> } : null,
-		artist.youtubeSocialProfile ? { href: artist.youtubeSocialProfile, label: 'YouTube', icon: <SiYoutube /> } : null,
-	].filter(Boolean);
+	const profileLinks = normalizeProfileLinks(artist.links);
+	const professionalLinks = profileLinks.filter((link) => link.type === 'professional');
+	const personalLinks = profileLinks.filter((link) => link.type === 'personal');
+	const renderProfileLink = (link, index) => {
+		const label = PROFILE_LINK_PLATFORM_LABELS[link.platform] ?? 'Link';
+		return (
+			<a
+				key={`${link.platform}-${link.type}-${link.url}-${index}`}
+				href={hrefForProfileLink(link)}
+				target={link.platform === 'email' ? undefined : '_blank'}
+				rel={link.platform === 'email' ? undefined : 'noopener noreferrer'}
+				aria-label={label}
+				title={label}
+			>
+				<ProfileLinkIcon platform={link.platform} />
+			</a>
+		);
+	};
 
 	return (
 		<section className={`artist-hero-hero ${artist.isPubliclyVisible === false ? 'artist-hero-hero-hidden' : ''}`.trim()}>
@@ -164,29 +167,21 @@ export default function ArtistHero({ artist }) {
 						/>
 					)}
 				</div>
-				{(musicLinks.length > 0 || socialLinks.length > 0) && (
+				{(professionalLinks.length > 0 || personalLinks.length > 0) && (
 					<div className="artist-hero-link-groups">
-						{musicLinks.length > 0 && (
+						{professionalLinks.length > 0 && (
 							<div className="artist-hero-link-group">
 								<span className="artist-hero-link-group-label">Music</span>
 								<div className="artist-hero-links">
-									{musicLinks.map((link) => (
-										<a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.label} title={link.label}>
-											{link.icon}
-										</a>
-									))}
+									{professionalLinks.map(renderProfileLink)}
 								</div>
 							</div>
 						)}
-						{socialLinks.length > 0 && (
+						{personalLinks.length > 0 && (
 							<div className="artist-hero-link-group">
-								<span className="artist-hero-link-group-label">Social</span>
+								<span className="artist-hero-link-group-label">Personal</span>
 								<div className="artist-hero-links">
-									{socialLinks.map((link) => (
-										<a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.label} title={link.label}>
-											{link.icon}
-										</a>
-									))}
+									{personalLinks.map(renderProfileLink)}
 								</div>
 							</div>
 						)}

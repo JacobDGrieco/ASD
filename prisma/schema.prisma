@@ -27,6 +27,7 @@ model Artist {
   tiktokProfile        String?
   snapchatProfile      String?
   youtubeSocialProfile String?
+  links                Json               @default(dbgenerated("'[]'::jsonb"))
   images               ArtistImage[]
   albums               Album[]
   boardPosts           BoardPost[]
@@ -115,6 +116,7 @@ model Album {
   spotifyUrl        String?
   appleMusicUrl     String?
   youtubeUrl        String?
+  links             Json         @default(dbgenerated("'[]'::jsonb"))
   releaseDate       DateTime
   artistId          String
   artist            Artist       @relation(fields: [artistId], references: [id], onDelete: Cascade)
@@ -187,6 +189,7 @@ model Song {
   spotifyUrl        String?
   appleMusicUrl     String?
   youtubeUrl        String?
+  links             Json                 @default(dbgenerated("'[]'::jsonb"))
   placements        SongAlbum[]
   images            SongImage[]
   meta              SongMeta?
@@ -364,12 +367,15 @@ model FashionTalent {
   facebookProfile  String?
   email            String?
   website          String?
+  links            Json                  @default(dbgenerated("'[]'::jsonb"))
   agencyName       String?
   agencyContact    String?
   images           FashionTalentImage[]
   lookCredits      FashionLookCredit[]
   pieceCredits     FashionPieceCredit[]
   collectionCredits FashionCollectionCredit[]
+  createdCollections FashionCollection[] @relation("FashionCollectionCreator")
+  createdLooks      FashionLook[]        @relation("FashionLookCreator")
   adminAccess      FashionTalentAdminAccess?
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
@@ -419,6 +425,8 @@ model FashionCollection {
   coverPathname String?
   isVisible     Boolean                   @default(true)
   order         Int                       @default(0)
+  creatorTalentId String?
+  creatorTalent FashionTalent?            @relation("FashionCollectionCreator", fields: [creatorTalentId], references: [id], onDelete: SetNull)
   lookPlacements FashionLookCollection[]
   credits       FashionCollectionCredit[]
   createdAt     DateTime                  @default(now())
@@ -426,6 +434,7 @@ model FashionCollection {
 
   @@index([isVisible, releaseDate])
   @@index([isVisible, order])
+  @@index([creatorTalentId])
 }
 
 enum FashionCollectionType {
@@ -471,6 +480,8 @@ model FashionLook {
   isVisible    Boolean             @default(true)
   releaseDate  DateTime?
   order        Int                 @default(0)
+  creatorTalentId String?
+  creatorTalent FashionTalent?     @relation("FashionLookCreator", fields: [creatorTalentId], references: [id], onDelete: SetNull)
   collectionPlacements FashionLookCollection[]
   images       FashionLookImage[]
   pieces       FashionPiece[]
@@ -480,6 +491,7 @@ model FashionLook {
 
   @@index([isVisible, order])
   @@index([isVisible, releaseDate])
+  @@index([creatorTalentId])
 }
 
 model FashionLookImage {

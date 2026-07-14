@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { FaArchive, FaPencilAlt, FaThumbtack, FaTrash } from 'react-icons/fa';
+import { FaArchive, FaThumbtack, FaTrash, FaUndo } from 'react-icons/fa';
 import BoardMarkdownEditor from '../../components/admin/BoardMarkdownEditor.jsx';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
 import AdminDateInput from '../../components/admin/AdminDateInput.jsx';
+import AdminEntityCard from '../../components/admin/AdminEntityCard.jsx';
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
@@ -103,6 +104,19 @@ function positionLabel(post) {
 	return `Pinned until ${new Date(post.positionPinnedUntil).toLocaleDateString()}`;
 }
 
+function publishDateSortValue(post) {
+	if (post.publishedAt) return new Date(post.publishedAt).getTime();
+	return Number.NEGATIVE_INFINITY;
+}
+
+function sortBoardPostsByPublishDate(posts) {
+	return [...posts].sort((a, b) => {
+		const publishDelta = publishDateSortValue(b) - publishDateSortValue(a);
+		if (publishDelta !== 0) return publishDelta;
+		return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
+	});
+}
+
 function BoardPostModal({
 	editing,
 	form,
@@ -117,7 +131,14 @@ function BoardPostModal({
 	setValidationErrors,
 	onClose,
 	onSave,
+	onArchive,
+	onDelete,
 }) {
+	const canArchive = Boolean(editing && isSuperAdmin);
+	const canDelete = Boolean(editing);
+	const archiveLabel = editing?.archivedAt ? 'Restore' : 'Archive';
+	const ArchiveIcon = editing?.archivedAt ? FaUndo : FaArchive;
+
 	return (
 		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
 			<div className="admin-modal">
@@ -296,92 +317,89 @@ function BoardPostModal({
 					</div>
 				</div>
 				<div className="admin-modal-footer">
-					<button type="button" className="admin-artists-page-ghost-btn" onClick={onClose}>Cancel</button>
-					<button type="button" className="admin-artists-page-primary-btn" onClick={onSave} disabled={saving}>
-						{saving
-							? 'Saving...'
-							: form.publishMode === 'draft'
-								? 'Save Draft'
-								: form.publishMode === 'publish'
-									? 'Publish Post'
-									: 'Schedule Post'}
-					</button>
+					<div className="admin-board-page-modal-actions">
+						{canArchive && (
+							<button
+								type="button"
+								className="admin-artists-page-ghost-btn"
+								onClick={() => onArchive(editing, !editing.archivedAt)}
+								disabled={saving}
+							>
+								<ArchiveIcon aria-hidden="true" />
+								{archiveLabel}
+							</button>
+						)}
+						{canDelete && (
+							<ConfirmActionButton
+								message="Delete this board post?"
+								buttonClassName="admin-artists-page-danger-btn"
+								buttonTitle="Delete"
+								buttonAriaLabel="Delete post"
+								onConfirm={() => onDelete(editing)}
+							>
+								<FaTrash aria-hidden="true" />
+								Delete
+							</ConfirmActionButton>
+						)}
+					</div>
+					<div className="admin-board-page-modal-save-actions">
+						<button type="button" className="admin-artists-page-ghost-btn" onClick={onClose}>Cancel</button>
+						<button type="button" className="admin-artists-page-primary-btn" onClick={onSave} disabled={saving}>
+							{saving
+								? 'Saving...'
+								: form.publishMode === 'draft'
+									? 'Save Draft'
+									: form.publishMode === 'publish'
+										? 'Publish Post'
+										: 'Schedule Post'}
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
 	);
 }
 
-function BoardPostRow({ post, canEdit, isViewer, isSuperAdmin, onEdit, onArchive, onDelete, onReleasePosition }) {
+function BoardPostCard({ post, canEdit, isViewer, isSuperAdmin, onEdit, onReleasePosition }) {
+	const publishedLabel = post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : 'Draft';
+
 	return (
-		<tr>
-			<td className="admin-board-page-col-thumb">
-				{post.imageUrl
-					? <img src={post.imageUrl} alt={post.title} className="admin-board-page-thumb" />
-					: <div className="admin-board-page-thumb-placeholder" />}
-			</td>
-			<td className="admin-board-page-col-title">{post.title}</td>
-			<td className="admin-board-page-col-sm">{post.artist?.name}</td>
-			<td className="admin-board-page-col-sm">
-				{post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : <span className="admin-board-page-badge-draft">Draft</span>}
-			</td>
-			<td className="admin-board-page-col-sm">
-				<span className={`admin-board-page-badge admin-board-page-badge-${statusLabel(post).toLowerCase()}`}>
-					{statusLabel(post)}
-				</span>
-			</td>
-			<td className="admin-board-page-col-pos">
-				<button
-					type="button"
-					className={`admin-board-page-pin-btn${post.posX != null ? ' admin-board-page-pin-btn-active' : ''}`}
-					onClick={isSuperAdmin && post.posX != null ? () => onReleasePosition(post) : undefined}
-					title={post.posX != null ? positionLabel(post) + ' - click to release' : 'Auto-placed'}
-					aria-label={post.posX != null ? 'Release pinned board position' : 'Board position is automatic'}
-					disabled={!isSuperAdmin || post.posX == null}
-				>
-					<FaThumbtack aria-hidden="true" />
-				</button>
-			</td>
-			<td className="admin-board-page-col-actions">
-				{canEdit && !isViewer && (
-					<button
-						type="button"
-						className="admin-artists-page-ghost-btn admin-artists-page-icon-btn"
-						onClick={() => onEdit(post)}
-						aria-label="Edit post"
-						title="Edit"
-					>
-						<FaPencilAlt aria-hidden="true" />
-					</button>
-				)}
-				{isSuperAdmin && !post.archivedAt && (
-					<button
-						type="button"
-						className="admin-artists-page-ghost-btn admin-artists-page-icon-btn"
-						onClick={() => onArchive(post, true)}
-						aria-label="Archive post"
-						title="Archive"
-					>
-						<FaArchive aria-hidden="true" />
-					</button>
-				)}
-				{canEdit && !isViewer && (
-					<ConfirmActionButton
-						message="Delete this board post?"
-						buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-						buttonTitle="Delete"
-						buttonAriaLabel="Delete post"
-						onConfirm={() => onDelete(post)}
-					>
-						<FaTrash aria-hidden="true" />
-					</ConfirmActionButton>
-				)}
-			</td>
-		</tr>
+		<AdminEntityCard
+			image={post.imageUrl}
+			title={post.title}
+			subtitle={publishedLabel}
+			showLinksSummary={false}
+			onEdit={canEdit && !isViewer ? () => onEdit(post) : undefined}
+			editAriaLabel="Edit post"
+			footer={(
+				<div className="admin-board-page-card-footer">
+					<div className="admin-board-page-card-meta">
+						<span className="admin-board-page-meta-label">Published by</span>
+						<span className="admin-board-page-meta-value">{post.artist?.name || 'Unknown'}</span>
+					</div>
+					<div className="admin-board-page-card-status-row">
+						<span className={`admin-board-page-badge admin-board-page-badge-${statusLabel(post).toLowerCase()}`}>
+							{statusLabel(post)}
+						</span>
+						<button
+							type="button"
+							className={`admin-board-page-pin-btn${post.posX != null ? ' admin-board-page-pin-btn-active' : ''}`}
+							onClick={isSuperAdmin && post.posX != null ? () => onReleasePosition(post) : undefined}
+							title={post.posX != null ? positionLabel(post) + ' - click to release' : 'Auto-placed'}
+							aria-label={post.posX != null ? 'Release pinned board position' : 'Board position is automatic'}
+							disabled={!isSuperAdmin || post.posX == null}
+						>
+							<FaThumbtack aria-hidden="true" />
+							<span>{positionLabel(post)}</span>
+						</button>
+					</div>
+				</div>
+			)}
+		/>
 	);
 }
 
-function ArchivedBoardPosts({ posts, isOpen, onToggleOpen, onRestore, onDelete }) {
+function ArchivedBoardPosts({ posts, isOpen, onToggleOpen, isViewer, isSuperAdmin, onEdit, onReleasePosition }) {
 	if (!posts.length) return null;
 
 	return (
@@ -394,77 +412,38 @@ function ArchivedBoardPosts({ posts, isOpen, onToggleOpen, onRestore, onDelete }
 				{isOpen ? 'v' : '>'} Archived ({posts.length})
 			</button>
 			{isOpen && (
-				<div className="admin-board-page-table-wrap">
-					<table className="admin-board-page-table">
-						<tbody>
-							{posts.map((post) => (
-								<tr key={post.id}>
-									<td className="admin-board-page-col-thumb">
-										{post.imageUrl
-											? <img src={post.imageUrl} alt={post.title} className="admin-board-page-thumb" />
-											: <div className="admin-board-page-thumb-placeholder" />}
-									</td>
-									<td className="admin-board-page-col-title">{post.title}</td>
-									<td className="admin-board-page-col-sm">{post.artist?.name}</td>
-									<td colSpan={3} />
-									<td className="admin-board-page-col-actions">
-										<button
-											type="button"
-											className="admin-artists-page-ghost-btn"
-											onClick={() => onRestore(post)}
-										>
-											Restore
-										</button>
-										<ConfirmActionButton
-											message="Delete this archived board post?"
-											buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-											buttonAriaLabel="Delete archived post"
-											onConfirm={() => onDelete(post)}
-										>
-											<FaTrash aria-hidden="true" />
-										</ConfirmActionButton>
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
+				<div className="admin-board-page-card-grid">
+					{posts.map((post) => (
+						<BoardPostCard
+							key={post.id}
+							post={post}
+							canEdit={isSuperAdmin}
+							isViewer={isViewer}
+							isSuperAdmin={isSuperAdmin}
+							onEdit={onEdit}
+							onReleasePosition={onReleasePosition}
+						/>
+					))}
 				</div>
 			)}
 		</div>
 	);
 }
 
-function ActiveBoardPostsTable({ posts, isViewer, isSuperAdmin, isArtist, sessionArtistId, onEdit, onArchive, onDelete, onReleasePosition }) {
+function ActiveBoardPostsCards({ posts, isViewer, isSuperAdmin, isArtist, sessionArtistId, onEdit, onReleasePosition }) {
 	return (
-		<div className="admin-board-page-table-wrap">
-			<table className="admin-board-page-table">
-				<thead>
-					<tr>
-						<th className="admin-board-page-col-thumb" />
-						<th className="admin-board-page-col-title">Title</th>
-						<th className="admin-board-page-col-sm">Artist</th>
-						<th className="admin-board-page-col-sm">Published</th>
-						<th className="admin-board-page-col-sm">Status</th>
-						<th className="admin-board-page-col-pos">Pin</th>
-						<th className="admin-board-page-col-actions">Actions</th>
-					</tr>
-				</thead>
-				<tbody>
-					{posts.map((post) => (
-						<BoardPostRow
-							key={post.id}
-							post={post}
-							canEdit={isSuperAdmin || (isArtist && post.artistId === sessionArtistId)}
-							isViewer={isViewer}
-							isSuperAdmin={isSuperAdmin}
-							onEdit={onEdit}
-							onArchive={onArchive}
-							onDelete={onDelete}
-							onReleasePosition={onReleasePosition}
-						/>
-					))}
-				</tbody>
-			</table>
+		<div className="admin-board-page-card-grid">
+			{posts.map((post) => (
+				<BoardPostCard
+					key={post.id}
+					post={post}
+					canEdit={isSuperAdmin || (isArtist && post.artistId === sessionArtistId)}
+					isViewer={isViewer}
+					isSuperAdmin={isSuperAdmin}
+					onEdit={onEdit}
+					onReleasePosition={onReleasePosition}
+				/>
+			))}
 		</div>
 	);
 }
@@ -487,8 +466,8 @@ export default function AdminMusicBoardPage() {
 	const setFormMessage = (message) => dispatchBoardModal({ type: 'set-form-message', message });
 	const setSaving = (saving) => dispatchBoardModal({ type: 'set-saving', saving });
 
-	const activePosts = useMemo(() => posts.filter((p) => !p.archivedAt), [posts]);
-	const archivedPosts = useMemo(() => posts.filter((p) => p.archivedAt), [posts]);
+	const activePosts = useMemo(() => sortBoardPostsByPublishDate(posts.filter((p) => !p.archivedAt)), [posts]);
+	const archivedPosts = useMemo(() => sortBoardPostsByPublishDate(posts.filter((p) => p.archivedAt)), [posts]);
 
 	useEffect(() => {
 		if (!token) return;
@@ -665,7 +644,9 @@ export default function AdminMusicBoardPage() {
 		if (res.ok) {
 			setPosts((prev) => prev.filter((p) => p.id !== post.id));
 			primeAdminResource('boardPosts', token, null);
+			return true;
 		}
+		return false;
 	}
 
 	async function toggleArchive(post, archive) {
@@ -678,7 +659,9 @@ export default function AdminMusicBoardPage() {
 			const updated = await res.json();
 			setPosts((prev) => prev.map((p) => (p.id === post.id ? updated : p)));
 			primeAdminResource('boardPosts', token, null);
+			return true;
 		}
+		return false;
 	}
 
 	async function releasePosition(post) {
@@ -708,46 +691,54 @@ export default function AdminMusicBoardPage() {
 			{loading ? (
 				<p className="admin-board-page-loading">Loading posts...</p>
 			) : (
-                <ActiveBoardPostsTable
-                    posts={activePosts}
-                    isViewer={isViewer}
-                    isSuperAdmin={isSuperAdmin}
-                    isArtist={isArtist}
-                    sessionArtistId={session?.artistId}
-                    onEdit={openEdit}
-                    onArchive={toggleArchive}
-                    onDelete={deletePost}
-                    onReleasePosition={releasePosition}
-                />
+				<ActiveBoardPostsCards
+					posts={activePosts}
+					isViewer={isViewer}
+					isSuperAdmin={isSuperAdmin}
+					isArtist={isArtist}
+					sessionArtistId={session?.artistId}
+					onEdit={openEdit}
+					onReleasePosition={releasePosition}
+				/>
 			)}
 
-            {isSuperAdmin && (
-                <ArchivedBoardPosts
-                    posts={archivedPosts}
-                    isOpen={archivedOpen}
-                    onToggleOpen={() => setArchivedOpen((value) => !value)}
-                    onRestore={(post) => toggleArchive(post, false)}
-                    onDelete={deletePost}
-                />
-            )}
+			{isSuperAdmin && (
+				<ArchivedBoardPosts
+					posts={archivedPosts}
+					isOpen={archivedOpen}
+					onToggleOpen={() => setArchivedOpen((value) => !value)}
+					isViewer={isViewer}
+					isSuperAdmin={isSuperAdmin}
+					onEdit={openEdit}
+					onReleasePosition={releasePosition}
+				/>
+			)}
 
-            {modalOpen && (
-                <BoardPostModal
-                    editing={editing}
-                    form={form}
-                    formMessage={formMessage}
-                    validationErrors={validationErrors}
-                    isSuperAdmin={isSuperAdmin}
-                    artists={artists}
-                    token={token}
-                    saving={saving}
-                    pendingBodyImagePathnamesRef={pendingBodyImagePathnamesRef}
-                    setForm={setForm}
-                    setValidationErrors={setValidationErrors}
-                    onClose={closeModal}
-                    onSave={save}
-                />
-            )}
+			{modalOpen && (
+				<BoardPostModal
+					editing={editing}
+					form={form}
+					formMessage={formMessage}
+					validationErrors={validationErrors}
+					isSuperAdmin={isSuperAdmin}
+					artists={artists}
+					token={token}
+					saving={saving}
+					pendingBodyImagePathnamesRef={pendingBodyImagePathnamesRef}
+					setForm={setForm}
+					setValidationErrors={setValidationErrors}
+					onClose={closeModal}
+					onSave={save}
+					onArchive={async (post, archive) => {
+						const ok = await toggleArchive(post, archive);
+						if (ok) closeModal();
+					}}
+					onDelete={async (post) => {
+						const ok = await deletePost(post);
+						if (ok) closeModal();
+					}}
+				/>
+			)}
 		</div>
 	);
 }

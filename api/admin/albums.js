@@ -4,6 +4,7 @@ import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
 import { normalizeVisibilityInput } from '../../src/lib/contentVisibility.js'
 import { releaseVisibilityUpperBound } from '../../src/lib/releaseSchedule.js'
 import { clientImages, mergeLegacyImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js'
+import { MUSIC_RELEASE_LEGACY_LINK_FIELDS, legacyFieldsFromProfileLinks, normalizeProfileLinks, profileLinksForSource } from '../../src/lib/profileLinks.js'
 import { OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID, OTHER_ARTIST_SLUG } from '../../src/lib/publicVisibility.js'
 import { slugify } from '../../src/lib/slugify.js'
 
@@ -16,6 +17,7 @@ function withImages(album) {
   const primaryImage = images.find((image) => image.isPrimary) ?? images[0]
   return {
     ...album,
+    links: profileLinksForSource(album, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
     coverArt: primaryImage?.previewUrl ?? album.coverArt,
     images,
   }
@@ -33,6 +35,7 @@ function withListImages(album) {
 
   return {
     ...album,
+    links: profileLinksForSource(album, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
     coverArt: images[0]?.previewUrl ?? album.coverArt,
     images,
     imageCount: album._count?.images ?? images.length,
@@ -60,6 +63,7 @@ function includeAlbumList() {
     spotifyUrl: true,
     appleMusicUrl: true,
     youtubeUrl: true,
+    links: true,
     releaseDate: true,
     artistId: true,
     artist: { select: { id: true, name: true, slug: true, isVisible: true } },
@@ -198,7 +202,7 @@ export default async function handler(req, res) {
     if (req.method === 'PUT') {
       if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_ALBUMS)) return res.status(403).json({ error: 'Forbidden' })
       if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
-      const { title, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, releaseDate, artistId, images } = req.body
+      const { title, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, links, releaseDate, artistId, images } = req.body
       const resolvedArtistId = await resolveAlbumArtistId(session, artistId)
       if (!resolvedArtistId) return res.status(400).json({ error: 'Artist is required.' })
       const duplicateAlbum = await findDuplicateAlbum({ id, title, releaseDate, resolvedArtistId, otherArtistName: artistId === OTHER_ARTIST_OPTION_ID ? otherArtistName : '' })
@@ -207,6 +211,8 @@ export default async function handler(req, res) {
       }
       const artistSlugPart = await resolveAlbumArtistSlugPart(artistId, otherArtistName, resolvedArtistId)
       const normalizedImages = normalizeImageInput(images, 'cover')
+      const normalizedLinks = links === undefined ? profileLinksForSource(req.body, MUSIC_RELEASE_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
+      const legacyLinkFields = legacyFieldsFromProfileLinks(normalizedLinks, MUSIC_RELEASE_LEGACY_LINK_FIELDS)
       const visibility = normalizeVisibilityInput({
         isVisible: req.body.isVisible,
         autoShowOnRelease: req.body.autoShowOnRelease,
@@ -227,6 +233,8 @@ export default async function handler(req, res) {
           spotifyUrl: spotifyUrl || null,
           appleMusicUrl: appleMusicUrl || null,
           youtubeUrl: youtubeUrl || null,
+          links: normalizedLinks,
+          ...legacyLinkFields,
           releaseDate: new Date(releaseDate),
           artistId: resolvedArtistId,
           images: {
@@ -263,7 +271,7 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_ALBUMS)) return res.status(403).json({ error: 'Forbidden' })
     if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
-    const { title, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, releaseDate, artistId, images } = req.body
+    const { title, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, links, releaseDate, artistId, images } = req.body
     const resolvedArtistId = await resolveAlbumArtistId(session, artistId)
     if (!resolvedArtistId) return res.status(400).json({ error: 'Artist is required.' })
     const duplicateAlbum = await findDuplicateAlbum({ title, releaseDate, resolvedArtistId, otherArtistName: artistId === OTHER_ARTIST_OPTION_ID ? otherArtistName : '' })
@@ -272,6 +280,8 @@ export default async function handler(req, res) {
     }
     const artistSlugPart = await resolveAlbumArtistSlugPart(artistId, otherArtistName, resolvedArtistId)
     const normalizedImages = normalizeImageInput(images, 'cover')
+    const normalizedLinks = links === undefined ? profileLinksForSource(req.body, MUSIC_RELEASE_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
+    const legacyLinkFields = legacyFieldsFromProfileLinks(normalizedLinks, MUSIC_RELEASE_LEGACY_LINK_FIELDS)
     const visibility = normalizeVisibilityInput({
       isVisible: req.body.isVisible,
       autoShowOnRelease: req.body.autoShowOnRelease,
@@ -291,6 +301,8 @@ export default async function handler(req, res) {
         spotifyUrl: spotifyUrl || null,
         appleMusicUrl: appleMusicUrl || null,
         youtubeUrl: youtubeUrl || null,
+        links: normalizedLinks,
+        ...legacyLinkFields,
         releaseDate: new Date(releaseDate),
         artistId: resolvedArtistId,
         images: normalizedImages.length

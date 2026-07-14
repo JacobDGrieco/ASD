@@ -1,8 +1,8 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaArrowLeft, FaArrowRight, FaExternalLinkAlt, FaPencilAlt, FaStickyNote, FaTrash } from 'react-icons/fa';
-import { SiApplemusic, SiSoundcloud, SiSpotify, SiYoutube } from 'react-icons/si';
+import { FaArrowLeft, FaArrowRight, FaPencilAlt, FaStickyNote, FaTrash } from 'react-icons/fa';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
+import AdminProfileLinksSummary from '../../components/admin/AdminProfileLinksSummary.jsx';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
 import { isEffectivelyVisible } from '../../lib/contentVisibility.js';
@@ -72,7 +72,7 @@ function albumTitles(song, albumById) {
 		const title = albumById[albumId]?.title ?? song.placements?.find((p) => p.albumId === albumId)?.album?.title ?? null;
 		return title ? [title] : [];
 	});
-	return titles.length ? titles.join(', ') : null;
+	return titles.length ? titles.join('; ') : null;
 }
 
 function imageCell(song, albumById) {
@@ -117,24 +117,6 @@ function wrapCell(value) {
 	);
 }
 
-function linkCell(song, key, label) {
-	const value = song[key];
-	return value ? (
-		<a
-			href={String(value)}
-			target="_blank"
-			rel="noreferrer"
-			className="admin-artists-page-link-btn"
-			aria-label={`Open ${label} link`}
-			title="Open in new tab"
-		>
-			<FaExternalLinkAlt aria-hidden="true" />
-		</a>
-	) : (
-		<span className="admin-artists-page-empty-value">-</span>
-	);
-}
-
 function SongsTable({ songs, albumById, isViewer, loadingEditSongId, onEdit, onDelete }) {
 	return (
 		<div className="admin-artists-page-table-wrap">
@@ -145,21 +127,9 @@ function SongsTable({ songs, albumById, isViewer, loadingEditSongId, onEdit, onD
 						<th className="admin-songs-col-track admin-artists-page-center-cell">#</th>
 						<th className="admin-songs-col-title">Title</th>
 						<th className="admin-songs-col-artist">Artist</th>
-						<th className="admin-songs-col-featured">Featured</th>
 						<th className="admin-songs-col-album">Album</th>
 						<th className="admin-songs-col-date">Release Date</th>
-						<th className="admin-artists-page-col-action admin-artists-page-center-cell">
-							<span className="admin-artists-page-social-header" title="SoundCloud"><SiSoundcloud aria-hidden="true" /><span className="admin-artists-page-sr-only">SoundCloud</span></span>
-						</th>
-						<th className="admin-artists-page-col-action admin-artists-page-center-cell">
-							<span className="admin-artists-page-social-header" title="Spotify"><SiSpotify aria-hidden="true" /><span className="admin-artists-page-sr-only">Spotify</span></span>
-						</th>
-						<th className="admin-artists-page-col-action admin-artists-page-center-cell">
-							<span className="admin-artists-page-social-header" title="Apple Music"><SiApplemusic aria-hidden="true" /><span className="admin-artists-page-sr-only">Apple Music</span></span>
-						</th>
-						<th className="admin-artists-page-col-action admin-artists-page-center-cell">
-							<span className="admin-artists-page-social-header" title="YouTube"><SiYoutube aria-hidden="true" /><span className="admin-artists-page-sr-only">YouTube</span></span>
-						</th>
+						<th className="admin-artists-page-col-xl admin-links-col-centered">Links</th>
 						<th className="admin-songs-col-actions admin-artists-page-sticky-right-0"></th>
 					</tr>
 				</thead>
@@ -173,13 +143,9 @@ function SongsTable({ songs, albumById, isViewer, loadingEditSongId, onEdit, onD
 								<td className="admin-songs-col-track admin-artists-page-center-cell">{cell(primaryTrackNumber(song))}</td>
 								<td className="admin-songs-col-title">{cell(song.title)}</td>
 								<td className="admin-songs-col-artist">{cell(displayArtistName(song, albumById))}</td>
-								<td className="admin-songs-col-featured">{cell(song.meta?.featuredArtists)}</td>
 								<td className="admin-songs-col-album">{wrapCell(albumTitles(song, albumById))}</td>
 								<td className="admin-songs-col-date">{cell(dateStr)}</td>
-								<td className="admin-artists-page-col-action admin-artists-page-center-cell">{linkCell(song, 'soundcloudUrl', 'SoundCloud')}</td>
-								<td className="admin-artists-page-col-action admin-artists-page-center-cell">{linkCell(song, 'spotifyUrl', 'Spotify')}</td>
-								<td className="admin-artists-page-col-action admin-artists-page-center-cell">{linkCell(song, 'appleMusicUrl', 'Apple Music')}</td>
-								<td className="admin-artists-page-col-action admin-artists-page-center-cell">{linkCell(song, 'youtubeUrl', 'YouTube')}</td>
+								<td className="admin-artists-page-col-xl admin-links-col-centered"><AdminProfileLinksSummary links={song.links} /></td>
 								<td className="admin-songs-col-actions admin-artists-page-sticky-right-0">
 									<div className="admin-songs-actions">
 										<Link

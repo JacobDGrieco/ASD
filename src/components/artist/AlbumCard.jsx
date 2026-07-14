@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { FaApple, FaSoundcloud, FaSpotify, FaYoutube } from 'react-icons/fa';
+import { PROFILE_LINK_PLATFORM_LABELS, hrefForProfileLink, normalizeProfileLinks } from '../../lib/profileLinks.js';
 import { prefetchSongPage } from '../../lib/publicPrefetch.js';
 import ArtworkGallery from '../shared/ArtworkGallery.jsx';
+import ProfileLinkIcon from '../shared/ProfileLinkIcon.jsx';
 import '../../styles/AlbumCard.css';
 
 function getSongIdFromPath(path) {
@@ -14,12 +15,7 @@ function getSongIdFromPath(path) {
 export default function AlbumCard({ album, isOpen, isUnreleased = false, isDisabled = false, onClick, to, subtitle }) {
 	const year = new Date(album.releaseDate).getFullYear();
 	const className = `album-card-card ${isOpen ? 'album-card-open' : ''} ${isDisabled ? 'album-card-disabled' : ''} ${album.isPubliclyVisible === false ? 'album-card-hidden' : ''}`.trim();
-	const streamLinks = [
-		{ href: album.soundcloudUrl, label: 'SoundCloud', icon: FaSoundcloud },
-		{ href: album.spotifyUrl, label: 'Spotify', icon: FaSpotify },
-		{ href: album.appleMusicUrl, label: 'Apple Music', icon: FaApple },
-		{ href: album.youtubeUrl, label: 'YouTube', icon: FaYoutube },
-	].filter((link) => link.href);
+	const streamLinks = normalizeProfileLinks(album.links);
 
 	const content = (
 		<>
@@ -62,19 +58,22 @@ export default function AlbumCard({ album, isOpen, isUnreleased = false, isDisab
 			)}
 			{streamLinks.length > 0 && (
 				<div className="album-card-stream-links">
-					{streamLinks.map((link) => (
+					{streamLinks.map((link, index) => {
+						const label = PROFILE_LINK_PLATFORM_LABELS[link.platform] ?? 'Link';
+						return (
 						<a
-							key={link.label}
-							href={link.href}
+							key={`${link.platform}-${link.type}-${link.url}-${index}`}
+							href={hrefForProfileLink(link)}
 							target="_blank"
 							rel="noreferrer"
 							className="album-card-stream-link"
-							aria-label={link.label}
-							title={link.label}
+							aria-label={label}
+							title={label}
 						>
-							<link.icon aria-hidden="true" />
+							<ProfileLinkIcon platform={link.platform} aria-hidden="true" />
 						</a>
-					))}
+						);
+					})}
 				</div>
 			)}
 		</div>

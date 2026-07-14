@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { track } from '@vercel/analytics'
-import { FaApple, FaSoundcloud, FaSpotify, FaYoutube } from 'react-icons/fa'
 import { prefetchArtistPage } from '../../lib/publicPrefetch.js'
+import { PROFILE_LINK_PLATFORM_LABELS, hrefForProfileLink, normalizeProfileLinks } from '../../lib/profileLinks.js'
 import { buildAlbumPath, isOtherArtist } from '../../lib/publicVisibility.js'
 import AppleMusicPlayer from '../shared/AppleMusicPlayer.jsx'
 import SoundCloudPlayer from '../shared/SoundCloudPlayer.jsx'
 import SpotifyPlayer from '../shared/SpotifyPlayer.jsx'
 import ArtworkGallery from '../shared/ArtworkGallery.jsx'
+import ProfileLinkIcon from '../shared/ProfileLinkIcon.jsx'
 import SongPersonCard from './SongPersonCard.jsx'
 import '../../styles/SongHeader.css'
 
@@ -77,12 +78,7 @@ export default function SongHeader({ song, adminPreview = false }) {
   const featuredArtists = song.meta?.featuredArtistLinks?.length
     ? song.meta.featuredArtistLinks
     : song.meta?.roleGroups?.['Featured Artist'] ?? []
-  const streamLinks = [
-    { href: song.soundcloudUrl, label: 'SoundCloud', icon: FaSoundcloud },
-    { href: song.spotifyUrl, label: 'Spotify', icon: FaSpotify },
-    { href: song.appleMusicUrl, label: 'Apple Music', icon: FaApple },
-    { href: song.youtubeUrl, label: 'YouTube', icon: FaYoutube },
-  ].filter((link) => link.href)
+  const streamLinks = normalizeProfileLinks(song.links)
   const playerUrl = song.soundcloudUrl || song.spotifyUrl || song.appleMusicUrl || null
   const handleFirstPlay = useCallback(() => {
     if (hasTrackedPlay.current) return
@@ -113,18 +109,22 @@ export default function SongHeader({ song, adminPreview = false }) {
         </div>
         {streamLinks.length > 0 && (
           <div className="song-header-stream-links">
-            {streamLinks.map((link) => (
+            {streamLinks.map((link, index) => {
+              const label = PROFILE_LINK_PLATFORM_LABELS[link.platform] ?? 'Link'
+              return (
               <a
-                key={link.label}
-                href={link.href}
+                key={`${link.platform}-${link.type}-${link.url}-${index}`}
+                href={hrefForProfileLink(link)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="song-header-stream-link"
-                aria-label={link.label}
+                aria-label={label}
+                title={label}
               >
-                <link.icon aria-hidden="true" />
+                <ProfileLinkIcon platform={link.platform} aria-hidden="true" />
               </a>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

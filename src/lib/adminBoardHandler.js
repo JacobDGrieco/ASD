@@ -175,7 +175,10 @@ export async function handleAdminBoard(req, res, session) {
   if (req.method === 'GET') {
     const posts = await prisma.boardPost.findMany({
       where: artistScopedWhere(session),
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { publishedAt: { sort: 'desc', nulls: 'last' } },
+        { createdAt: 'desc' },
+      ],
       include: { artist: includeArtist() },
     })
     return res.status(200).json(posts)

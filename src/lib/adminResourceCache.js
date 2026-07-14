@@ -56,3 +56,7 @@ export function primeAdminResource(cacheKey, token, data) {
 export function clearAdminResource(cacheKey, token) {
   resourceCache.delete(cacheId(cacheKey, token))
 }
+
+export function clearAdminResourceCache() {
+  resourceCache.clear()
+}

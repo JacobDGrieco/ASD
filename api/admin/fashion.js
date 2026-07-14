@@ -1,7 +1,8 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { canAccessAdminPage, requireAdmin } from '../../src/lib/auth.js'
+import { canAccessAdminPage, isSuperAdmin, isTalentAdmin, requireAdmin } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
 import { clientImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js'
+import { FASHION_TALENT_LEGACY_LINK_FIELDS, legacyFieldsFromProfileLinks, normalizeProfileLinks, profileLinksForSource } from '../../src/lib/profileLinks.js'
 import { slugify } from '../../src/lib/slugify.js'
 
 // ---------- shared helpers ----------
@@ -12,7 +13,7 @@ function includeTalentImages() {
 
 function withTalentImages(talent) {
   const images = clientImages(talent.images ?? [])
-  return { ...talent, images }
+  return { ...talent, links: profileLinksForSource(talent, FASHION_TALENT_LEGACY_LINK_FIELDS), images }
 }
 
 function selectTalentList() {
@@ -30,6 +31,7 @@ function selectTalentList() {
     facebookProfile: true,
     email: true,
     website: true,
+    links: true,
     agencyName: true,
     agencyContact: true,
     images: {
@@ -43,7 +45,7 @@ function selectTalentList() {
 
 function withTalentListImages(talent) {
   const images = clientImages(talent.images ?? [])
-  return { ...talent, images, imageCount: talent._count?.images ?? images.length }
+  return { ...talent, links: profileLinksForSource(talent, FASHION_TALENT_LEGACY_LINK_FIELDS), images, imageCount: talent._count?.images ?? images.length }
 }
 
 async function deleteFashionCreditsForPerson(tx, where) {
@@ -51,24 +53,41 @@ async function deleteFashionCreditsForPerson(tx, where) {
   await tx.fashionLookCredit.deleteMany({ where })
 }
 
-async function handleTalent(req, res) {
+function talentProfileWhere(session) {
+  if (isSuperAdmin(session)) return {}
+  if (isTalentAdmin(session)) return { AND: [{ id: session.talentId }] }
+  return { AND: [{ id: '__no_access__' }] }
+}
+
+function fashionProjectCreatorWhere(session) {
+  if (isSuperAdmin(session)) return {}
+  if (isTalentAdmin(session)) return { creatorTalentId: session.talentId }
+  return { AND: [{ id: '__no_access__' }] }
+}
+
+async function handleTalent(req, res, session) {
   const { id } = req.query
 
   if (id) {
-    const existing = await prisma.fashionTalent.findUnique({ where: { id }, select: { id: true } })
+    const existing = await prisma.fashionTalent.findFirst({
+      where: { id, ...talentProfileWhere(session) },
+      select: { id: true },
+    })
     if (!existing) return res.status(404).json({ error: 'Talent not found' })
 
     if (req.method === 'GET') {
-      const talent = await prisma.fashionTalent.findUnique({
-        where: { id },
+      const talent = await prisma.fashionTalent.findFirst({
+        where: { id, ...talentProfileWhere(session) },
         include: { images: includeTalentImages() },
       })
       return res.status(200).json(withTalentImages(talent))
     }
 
     if (req.method === 'PUT') {
-      const { name, slug, role, bio, order, isVisible, instagramProfile, tiktokProfile, twitterProfile, youtubeProfile, facebookProfile, email, website, agencyName, agencyContact, images } = req.body
+      const { name, slug, role, bio, order, isVisible, instagramProfile, tiktokProfile, twitterProfile, youtubeProfile, facebookProfile, email, website, links, agencyName, agencyContact, images } = req.body
       const normalizedImages = images === undefined ? null : normalizeImageInput(images, 'portrait')
+      const normalizedLinks = links === undefined ? undefined : normalizeProfileLinks(links)
+      const legacyLinkFields = normalizedLinks === undefined ? undefined : legacyFieldsFromProfileLinks(normalizedLinks, FASHION_TALENT_LEGACY_LINK_FIELDS)
       const talent = await prisma.fashionTalent.update({
         where: { id },
         data: {
@@ -76,7 +95,7 @@ async function handleTalent(req, res) {
           slug: slug !== undefined ? (slug || slugify(name)) : undefined,
           role,
           bio,
-          order,
+          order: isSuperAdmin(session) ? order : undefined,
           isVisible,
           instagramProfile: instagramProfile || null,
           tiktokProfile: tiktokProfile || null,
@@ -85,6 +104,8 @@ async function handleTalent(req, res) {
           facebookProfile: facebookProfile || null,
           email: email || null,
           website: website || null,
+          links: normalizedLinks,
+          ...(legacyLinkFields ?? {}),
           agencyName: agencyName || null,
           agencyContact: agencyContact || null,
           images: normalizedImages === null
@@ -100,6 +121,7 @@ async function handleTalent(req, res) {
     }
 
     if (req.method === 'DELETE') {
+      if (!isSuperAdmin(session)) return res.status(403).json({ error: 'Forbidden' })
       await prisma.$transaction(async (tx) => {
         await deleteFashionCreditsForPerson(tx, { talentId: id })
         await tx.fashionTalent.delete({ where: { id } })
@@ -112,6 +134,7 @@ async function handleTalent(req, res) {
 
   if (req.method === 'GET') {
     const talent = await prisma.fashionTalent.findMany({
+      where: talentProfileWhere(session),
       orderBy: { order: 'asc' },
       select: selectTalentList(),
     })
@@ -119,10 +142,13 @@ async function handleTalent(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { name, slug, role, bio, order, isVisible, instagramProfile, tiktokProfile, twitterProfile, youtubeProfile, facebookProfile, email, website, agencyName, agencyContact, images } = req.body
+    if (!isSuperAdmin(session)) return res.status(403).json({ error: 'Forbidden' })
+    const { name, slug, role, bio, order, isVisible, instagramProfile, tiktokProfile, twitterProfile, youtubeProfile, facebookProfile, email, website, links, agencyName, agencyContact, images } = req.body
     if (!name) return res.status(400).json({ error: 'Name is required.' })
     if (!role) return res.status(400).json({ error: 'Role is required.' })
     const normalizedImages = normalizeImageInput(images, 'portrait')
+    const normalizedLinks = links === undefined ? profileLinksForSource(req.body, FASHION_TALENT_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
+    const legacyLinkFields = legacyFieldsFromProfileLinks(normalizedLinks, FASHION_TALENT_LEGACY_LINK_FIELDS)
     const talent = await prisma.fashionTalent.create({
       data: {
         name,
@@ -138,6 +164,8 @@ async function handleTalent(req, res) {
         facebookProfile: facebookProfile || null,
         email: email || null,
         website: website || null,
+        links: normalizedLinks,
+        ...legacyLinkFields,
         agencyName: agencyName || null,
         agencyContact: agencyContact || null,
         images: normalizedImages.length
@@ -295,6 +323,7 @@ function selectLookList() {
     isVisible: true,
     releaseDate: true,
     order: true,
+    creatorTalentId: true,
     collectionPlacements: {
       orderBy: { sortOrder: 'asc' },
       include: {
@@ -404,6 +433,22 @@ function normalizeLookPlacements(body) {
     })
     return placements
   }, [])
+}
+
+async function validateLookCollectionOwnership(session, placements) {
+  if (isSuperAdmin(session) || !placements.length) return true
+  if (!isTalentAdmin(session)) return false
+
+  const collectionIds = [...new Set(placements.map((placement) => placement.collectionId))]
+  const ownedCollections = await prisma.fashionCollection.findMany({
+    where: {
+      id: { in: collectionIds },
+      creatorTalentId: session.talentId,
+    },
+    select: { id: true },
+  })
+
+  return ownedCollections.length === collectionIds.length
 }
 
 function hasAnyFashionPage(session, pageKeys) {
@@ -550,15 +595,21 @@ function piecesCreateData(pieces) {
   })
 }
 
-async function handleLooks(req, res) {
+async function handleLooks(req, res, session) {
   const { id } = req.query
 
   if (id) {
-    const existing = await prisma.fashionLook.findUnique({ where: { id }, select: { id: true } })
+    const existing = await prisma.fashionLook.findFirst({
+      where: { id, ...fashionProjectCreatorWhere(session) },
+      select: { id: true },
+    })
     if (!existing) return res.status(404).json({ error: 'Look not found' })
 
     if (req.method === 'GET') {
-      const look = await prisma.fashionLook.findUnique({ where: { id }, include: includeLook() })
+      const look = await prisma.fashionLook.findFirst({
+        where: { id, ...fashionProjectCreatorWhere(session) },
+        include: includeLook(),
+      })
       return res.status(200).json(withLookImages(look))
     }
 
@@ -567,6 +618,9 @@ async function handleLooks(req, res) {
       const placements = req.body.collectionPlacements !== undefined || req.body.collectionId !== undefined
         ? normalizeLookPlacements(req.body)
         : null
+      if (placements && !(await validateLookCollectionOwnership(session, placements))) {
+        return res.status(403).json({ error: 'You can only place looks in your own collections.' })
+      }
       const normalizedImages = images === undefined ? null : normalizeImageInput(images, 'lookbook')
 
       // Replace child collections (pieces, piece credits, look credits) wholesale to keep
@@ -634,6 +688,7 @@ async function handleLooks(req, res) {
 
   if (req.method === 'GET') {
     const looks = await prisma.fashionLook.findMany({
+      where: fashionProjectCreatorWhere(session),
       orderBy: [{ order: 'asc' }, { title: 'asc' }],
       select: selectLookList(),
     })
@@ -644,6 +699,9 @@ async function handleLooks(req, res) {
     const { title, slug, description, order, isVisible, releaseDate, images, pieces, credits } = req.body
     if (!title) return res.status(400).json({ error: 'Title is required.' })
     const placements = normalizeLookPlacements(req.body)
+    if (!(await validateLookCollectionOwnership(session, placements))) {
+      return res.status(403).json({ error: 'You can only place looks in your own collections.' })
+    }
     const normalizedImages = normalizeImageInput(images, 'lookbook')
     const look = await prisma.$transaction(async (tx) => {
       const resolved = await resolveTypedOutsideTalentCredits(tx, credits, pieces)
@@ -658,6 +716,7 @@ async function handleLooks(req, res) {
           order: order ?? 0,
           isVisible: isVisible ?? true,
           releaseDate: releaseDate ? new Date(releaseDate) : null,
+          creatorTalentId: isTalentAdmin(session) ? session.talentId : null,
           collectionPlacements: placements.length
             ? { createMany: { data: placements } }
             : undefined,
@@ -689,8 +748,8 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: 'Forbidden' })
   }
 
-  if (resource === 'talent') return handleTalent(req, res)
-  if (resource === 'looks') return handleLooks(req, res)
+  if (resource === 'talent') return handleTalent(req, res, session)
+  if (resource === 'looks') return handleLooks(req, res, session)
   if (resource === 'crew') return handleCrew(req, res)
 
   return res.status(400).json({ error: 'Unknown fashion resource' })

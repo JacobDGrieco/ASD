@@ -5,6 +5,7 @@ import { hashPassword } from '../../src/lib/passwords.js'
 import { validateUniqueArtistPassword } from '../../src/lib/adminAccounts.js'
 import { handleAdminBoard } from '../../src/lib/adminBoardHandler.js'
 import { clientImages, mergeLegacyImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js'
+import { ARTIST_LEGACY_LINK_FIELDS, legacyFieldsFromProfileLinks, normalizeProfileLinks, profileLinksForSource } from '../../src/lib/profileLinks.js'
 import { isReservedHiddenArtist } from '../../src/lib/publicVisibility.js'
 import { slugify } from '../../src/lib/slugify.js'
 
@@ -18,6 +19,7 @@ function withImages(artist) {
   const primaryImage = images.find((image) => image.isPrimary) ?? images[0]
   return {
     ...artist,
+    links: profileLinksForSource(artist, ARTIST_LEGACY_LINK_FIELDS),
     portrait: primaryImage?.previewUrl ?? artist.portrait,
     images,
     hasAdminPassword: Boolean(artist.adminAccess?.active),
@@ -53,6 +55,7 @@ function selectArtistList() {
     tiktokProfile: true,
     snapchatProfile: true,
     youtubeSocialProfile: true,
+    links: true,
     images: {
       take: 1,
       orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
@@ -81,6 +84,7 @@ function withListImages(artist) {
 
   return {
     ...artist,
+    links: profileLinksForSource(artist, ARTIST_LEGACY_LINK_FIELDS),
     portrait: images[0]?.previewUrl ?? artist.portrait,
     images,
     imageCount: artist._count?.images ?? images.length,
@@ -153,6 +157,7 @@ export default async function handler(req, res) {
         tiktokProfile,
         snapchatProfile,
         youtubeSocialProfile,
+        links,
         isVisible,
         images,
         adminPassword,
@@ -160,6 +165,8 @@ export default async function handler(req, res) {
       const passwordError = isSuperAdmin(session) ? await validateUniqueArtistPassword(adminPassword, id) : null
       if (passwordError) return res.status(400).json({ error: passwordError })
       const normalizedImages = images === undefined ? null : normalizeImageInput(images, 'portrait')
+      const normalizedLinks = links === undefined ? undefined : normalizeProfileLinks(links)
+      const legacyLinkFields = normalizedLinks === undefined ? undefined : legacyFieldsFromProfileLinks(normalizedLinks, ARTIST_LEGACY_LINK_FIELDS)
       const artist = await prisma.artist.update({
         where: { id },
         data: {
@@ -180,6 +187,8 @@ export default async function handler(req, res) {
           tiktokProfile,
           snapchatProfile,
           youtubeSocialProfile,
+          links: normalizedLinks,
+          ...(legacyLinkFields ?? {}),
           adminAccess: isSuperAdmin(session) ? buildAdminAccessUpdate(adminPassword) : undefined,
           images: normalizedImages === null
             ? undefined
@@ -251,6 +260,7 @@ export default async function handler(req, res) {
       tiktokProfile,
       snapchatProfile,
       youtubeSocialProfile,
+      links,
       isVisible,
       images,
       adminPassword,
@@ -259,6 +269,8 @@ export default async function handler(req, res) {
     const passwordError = await validateUniqueArtistPassword(adminPassword)
     if (passwordError) return res.status(400).json({ error: passwordError })
     const normalizedImages = normalizeImageInput(images, 'portrait')
+    const normalizedLinks = links === undefined ? profileLinksForSource(req.body, ARTIST_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
+    const legacyLinkFields = legacyFieldsFromProfileLinks(normalizedLinks, ARTIST_LEGACY_LINK_FIELDS)
     const artist = await prisma.artist.create({
       data: {
         name,
@@ -278,6 +290,8 @@ export default async function handler(req, res) {
         tiktokProfile,
         snapchatProfile,
         youtubeSocialProfile,
+        links: normalizedLinks,
+        ...legacyLinkFields,
         adminAccess: adminPassword
           ? {
               create: {

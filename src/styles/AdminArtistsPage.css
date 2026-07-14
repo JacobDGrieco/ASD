@@ -251,6 +251,14 @@
 	text-align: center;
 }
 
+.admin-artists-page-table th.admin-links-col-centered {
+	text-align: center;
+}
+
+.admin-artists-page-table .admin-fashion-collections-season-col {
+	text-align: center;
+}
+
 .admin-artists-page-col-action {
 	width: 56px;
 }
@@ -606,6 +614,121 @@
 	font-size: 0.95em;
 }
 
+.admin-profile-links-field {
+	display: grid;
+	gap: 10px;
+}
+
+.admin-profile-links-list {
+	display: grid;
+	gap: 8px;
+}
+
+.admin-profile-link-row {
+	display: grid;
+	grid-template-columns: 34px minmax(140px, 0.85fr) 132px minmax(180px, 1.2fr) 34px;
+	gap: 8px;
+	align-items: center;
+}
+
+.admin-profile-link-row-no-type {
+	grid-template-columns: 34px minmax(140px, 0.85fr) minmax(180px, 1.2fr) 34px;
+}
+
+.admin-profile-link-icon {
+	width: 34px;
+	height: 34px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--border);
+	background: var(--bg-raised);
+	color: var(--text-muted);
+	font-size: 1rem;
+}
+
+.admin-profile-link-platform,
+.admin-profile-link-type,
+.admin-profile-link-url {
+	height: 34px;
+	min-width: 0;
+}
+
+.admin-profile-links-empty {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: 0.85rem;
+}
+
+.admin-profile-links-actions {
+	display: flex;
+	align-items: stretch;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.admin-profile-links-add {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	width: 100%;
+}
+
+.admin-profile-links-note {
+	color: var(--text-muted);
+	font-size: 0.8rem;
+}
+
+.admin-profile-links-summary {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 5px;
+	min-width: 0;
+}
+
+.admin-profile-link-summary-item {
+	width: 24px;
+	height: 24px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--border);
+	color: var(--text-muted);
+	text-decoration: none;
+	font-size: 0.78rem;
+}
+
+.admin-profile-link-summary-item:hover {
+	color: var(--text);
+	border-color: var(--text-muted);
+}
+
+.admin-profile-link-summary-item-personal {
+	background: rgba(255, 255, 255, 0.03);
+}
+
+.admin-profile-link-summary-item-professional {
+	background: rgba(200, 169, 110, 0.08);
+}
+
+.admin-profile-link-summary-item-group-start {
+	margin-left: 8px;
+	position: relative;
+}
+
+.admin-profile-link-summary-item-group-start::before {
+	content: '';
+	position: absolute;
+	left: -6px;
+	top: 15%;
+	height: 70%;
+	width: 1px;
+	background: rgba(255, 255, 255, 0.25);
+}
+
 .admin-artists-page-primary-btn {
 	padding: 8px 16px;
 	background: var(--accent);
@@ -667,14 +790,9 @@
 	width: 160px;
 }
 
-.admin-songs-col-featured {
-	min-width: 180px;
-	width: 220px;
-}
-
 .admin-songs-col-album {
-	min-width: 240px;
-	width: 320px;
+	min-width: 300px;
+	width: 420px;
 }
 
 .admin-songs-col-date {
@@ -821,7 +939,7 @@
 }
 
 .admin-modal-body {
-	padding: 0px 20px;
+	padding: 10px 20px 0px 20px;
 	overflow-y: auto;
 	flex: 1;
 }
@@ -933,16 +1051,26 @@
 	box-shadow: 0 0 0 1px rgba(224, 96, 96, 0.45);
 }
 
-.admin-admin-account-toggle {
-	display: inline-flex;
-	align-items: center;
-	gap: 10px;
-	color: var(--text);
+.admin-account-editor {
+	display: grid;
+	gap: 18px;
+	padding-top: 16px;
 }
 
-.admin-admin-account-toggle input {
-	width: 16px;
-	height: 16px;
+.admin-account-editor-row {
+	display: grid;
+	grid-template-columns: 34px minmax(180px, 0.9fr) minmax(220px, 1.1fr);
+	gap: 10px;
+	align-items: end;
+}
+
+.admin-account-editor-row .admin-artists-page-visibility-toggle {
+	margin-bottom: 0;
+}
+
+.admin-account-name-field,
+.admin-account-password-field {
+	min-width: 0;
 }
 
 .admin-account-access-grid {
@@ -1088,6 +1216,24 @@
 	.admin-fashion-collection-season-date-row,
 	.admin-fashion-look-placement-row {
 		grid-template-columns: 1fr;
+	}
+
+	.admin-profile-link-row {
+		grid-template-columns: 34px minmax(0, 1fr) 34px;
+	}
+
+	.admin-profile-link-type,
+	.admin-profile-link-url {
+		grid-column: 2 / -1;
+	}
+
+	.admin-account-editor-row {
+		grid-template-columns: 34px minmax(0, 1fr);
+		align-items: end;
+	}
+
+	.admin-account-password-field {
+		grid-column: 1 / -1;
 	}
 
 	.admin-artists-page-form-actions,
@@ -1333,4 +1479,187 @@
 	font-size: 0.82rem;
 	color: rgba(255, 255, 255, 0.3);
 	text-align: center;
+}
+
+/* Entity card grid (Artists / Fashion Talent) */
+.admin-entity-card-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 14px;
+}
+
+@media (min-width: 768px) {
+	.admin-entity-card-grid {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+}
+
+@media (min-width: 1200px) {
+	.admin-entity-card-grid {
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+	}
+}
+
+.admin-entity-card {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var(--border);
+	background: var(--bg);
+}
+
+.admin-entity-card-draggable {
+	cursor: grab;
+}
+
+.admin-entity-card-draggable:active {
+	cursor: grabbing;
+}
+
+.admin-entity-card-drop-target {
+	border-color: var(--accent);
+	background: rgba(200, 169, 110, 0.08);
+}
+
+.admin-entity-card-image-wrap {
+	position: relative;
+	width: 100%;
+	aspect-ratio: 1 / 1;
+	background: var(--bg-raised);
+}
+
+.admin-entity-card-image {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	aspect-ratio: 1 / 1;
+}
+
+.admin-entity-card-image-placeholder {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	color: var(--text-muted);
+	font-size: 1.75rem;
+	background: var(--bg-raised);
+}
+
+.admin-entity-card-chip {
+	position: absolute;
+	top: 6px;
+	z-index: 3;
+	padding: 3px 7px;
+	font-size: 0.7rem;
+	color: #fff;
+	background: rgba(0, 0, 0, 0.65);
+	border: none;
+}
+
+.admin-entity-card-chip-left {
+	left: 6px;
+}
+
+.admin-entity-card-chip-right {
+	right: 6px;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+}
+
+.admin-entity-card-edit-btn:hover {
+	background: rgba(0, 0, 0, 0.85);
+}
+
+.admin-entity-card-edit-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.admin-entity-card-body {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: 4px;
+	padding: 8px;
+}
+
+.admin-entity-card-body .admin-profile-links-summary {
+	justify-content: center;
+}
+
+.admin-entity-card-title {
+	font-size: 0.85rem;
+	color: var(--text);
+}
+
+.admin-entity-card-subtitle {
+	font-size: 0.72rem;
+	color: var(--text-muted);
+}
+
+.admin-entity-card-link-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 7px;
+	width: 100%;
+	min-height: 32px;
+	margin-top: 4px;
+	padding: 6px 10px;
+	border: 1px solid var(--border);
+	color: var(--text-muted);
+	font-size: 0.76rem;
+	text-decoration: none;
+	background: var(--bg-raised);
+}
+
+.admin-entity-card-link-btn:hover {
+	color: var(--text);
+	border-color: var(--text-muted);
+}
+
+.admin-entity-card-hidden {
+	opacity: 0.55;
+}
+
+.admin-entity-card-hidden .admin-entity-card-title,
+.admin-entity-card-hidden .admin-entity-card-subtitle {
+	text-decoration: line-through;
+	text-decoration-thickness: 2.5px;
+	text-decoration-color: rgba(224, 96, 96, 0.9);
+}
+
+.admin-entity-card-hidden .admin-entity-card-image-wrap::before,
+.admin-entity-card-hidden .admin-entity-card-image-wrap::after {
+	content: '';
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: 145%;
+	height: 2px;
+	background: rgba(224, 96, 96, 0.92);
+	z-index: 2;
+	pointer-events: none;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.45);
+}
+
+.admin-entity-card-hidden .admin-entity-card-image-wrap::before {
+	transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.admin-entity-card-hidden .admin-entity-card-image-wrap::after {
+	transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.admin-modal-footer-start {
+	margin-right: auto;
+	display: flex;
 }

@@ -20,6 +20,7 @@ function makeSlots(tracks) {
 		position: index + 1,
 		songId: '',
 		songLabel: '',
+		songImageUrl: '',
 		active: true,
 	}));
 
@@ -30,6 +31,7 @@ function makeSlots(tracks) {
 			position: track.position,
 			songId: track.songId ?? track.song?.id ?? '',
 			songLabel: track.song?.title ?? '',
+			songImageUrl: track.song?.imageUrl ?? '',
 			active: track.active ?? true,
 		};
 	});
@@ -126,6 +128,7 @@ export default function AdminMusicRecordPlayerPage() {
 	const selectSong = (position, song) => {
 		updateSlot(position, 'songId', song.id);
 		updateSlot(position, 'songLabel', `${song.artistName ? `${song.artistName} - ` : ''}${song.title}`);
+		updateSlot(position, 'songImageUrl', song.imageUrl ?? '');
 		setActiveSearchPosition(null);
 		setSearchResults([]);
 		setSearchQuery('');
@@ -134,7 +137,7 @@ export default function AdminMusicRecordPlayerPage() {
 	const clearSong = (position) => {
 		setSlots((current) =>
 			current.map((slot) =>
-				slot.position === position ? { ...slot, songId: '', songLabel: '' } : slot
+				slot.position === position ? { ...slot, songId: '', songLabel: '', songImageUrl: '' } : slot
 			)
 		);
 		setSearchResults([]);
@@ -179,7 +182,16 @@ export default function AdminMusicRecordPlayerPage() {
 			<div className="admin-record-player-page-slots">
 				{slots.map((slot) => (
 					<div key={slot.position} className="admin-record-player-page-slot">
-						<span className="admin-record-player-page-slot-label">Slot {slot.position}</span>
+						<div className="admin-record-player-page-image-wrap">
+							{slot.songImageUrl ? (
+								<img
+									src={slot.songImageUrl}
+									alt={slot.songLabel || `Slot ${slot.position}`}
+									className="admin-record-player-page-image"
+								/>
+							) : null}
+							<span className="admin-record-player-page-slot-label">Slot {slot.position}</span>
+						</div>
 
 						<div className="admin-record-player-page-picker">
 							<input
@@ -229,6 +241,9 @@ export default function AdminMusicRecordPlayerPage() {
 											onClick={() => selectSong(slot.position, song)}
 											className="admin-record-player-page-result-btn"
 										>
+											{song.imageUrl ? (
+												<img src={song.imageUrl} alt="" className="admin-record-player-page-result-image" />
+											) : null}
 											{song.artistName ? `${song.artistName} - ` : ''}
 											{song.title}
 										</button>

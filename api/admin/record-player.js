@@ -1,6 +1,7 @@
 import { prisma } from '../../src/lib/prisma.js'
 import { canAccessAdminPage, isViewer, requireAdmin, viewerSongVisibilityWhere } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
+import { clientImages, mergeLegacyImages } from '../../src/lib/images.js'
 import { isOtherArtist, OTHER_ARTIST_NAME } from '../../src/lib/publicVisibility.js'
 
 function logTiming(label, startedAt) {
@@ -18,11 +19,42 @@ function displayArtistName(album) {
   return album.artist?.name ?? ''
 }
 
+function songImageUrl(song) {
+  const images = clientImages(mergeLegacyImages(song.images, song.artwork, {
+    fallbackUsage: 'artwork',
+    altText: song.title,
+    idPrefix: song.id,
+  }))
+  if (images[0]?.previewUrl) return images[0].previewUrl
+
+  const album = song.placements?.[0]?.album
+  const albumImages = clientImages(mergeLegacyImages(album?.images, album?.coverArt, {
+    fallbackUsage: 'cover',
+    altText: album?.title ?? song.title,
+    idPrefix: album?.id ?? `${song.id}-album`,
+  }))
+  return albumImages[0]?.previewUrl ?? ''
+}
+
 function toSongOption(song) {
   return {
     id: song.id,
     title: song.title,
     artistName: displayArtistName(song.placements[0]?.album),
+    imageUrl: songImageUrl(song),
+  }
+}
+
+function toRecordPlayerTrackPayload(track) {
+  return {
+    ...track,
+    song: {
+      id: track.song.id,
+      title: track.song.title,
+      slug: track.song.slug,
+      soundcloudUrl: track.song.soundcloudUrl,
+      imageUrl: songImageUrl(track.song),
+    },
   }
 }
 
@@ -74,13 +106,22 @@ export default async function handler(req, res) {
       select: {
         id: true,
         title: true,
+        artwork: true,
+        images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
         placements: {
           orderBy: [{ placementOrder: 'asc' }],
           take: 1,
           select: {
             album: {
               select: {
+                id: true,
+                title: true,
+                coverArt: true,
                 otherArtistName: true,
+                images: {
+                  orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+                  take: 1,
+                },
                 artist: {
                   select: {
                     name: true,
@@ -126,6 +167,25 @@ export default async function handler(req, res) {
             title: true,
             slug: true,
             soundcloudUrl: true,
+            artwork: true,
+            images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
+            placements: {
+              orderBy: [{ placementOrder: 'asc' }],
+              take: 1,
+              select: {
+                album: {
+                  select: {
+                    id: true,
+                    title: true,
+                    coverArt: true,
+                    images: {
+                      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+                      take: 1,
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -133,15 +193,7 @@ export default async function handler(req, res) {
     logTiming('slots prisma', prismaStartedAt)
 
     const mapStartedAt = Date.now()
-    const payload = tracks.map((track) => ({
-      ...track,
-      song: {
-        id: track.song.id,
-        title: track.song.title,
-        slug: track.song.slug,
-        soundcloudUrl: track.song.soundcloudUrl,
-      },
-    }))
+    const payload = tracks.map(toRecordPlayerTrackPayload)
     logTiming('slots map', mapStartedAt)
     logTiming(`request total ${req.method} ${req.url}`, requestStartedAt)
 
@@ -167,6 +219,25 @@ export default async function handler(req, res) {
             title: true,
             slug: true,
             soundcloudUrl: true,
+            artwork: true,
+            images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
+            placements: {
+              orderBy: [{ placementOrder: 'asc' }],
+              take: 1,
+              select: {
+                album: {
+                  select: {
+                    id: true,
+                    title: true,
+                    coverArt: true,
+                    images: {
+                      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+                      take: 1,
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -174,15 +245,7 @@ export default async function handler(req, res) {
     logTiming('save reload prisma', prismaStartedAt)
 
     const mapStartedAt = Date.now()
-    const payload = updated.map((track) => ({
-      ...track,
-      song: {
-        id: track.song.id,
-        title: track.song.title,
-        slug: track.song.slug,
-        soundcloudUrl: track.song.soundcloudUrl,
-      },
-    }))
+    const payload = updated.map(toRecordPlayerTrackPayload)
     logTiming('save reload map', mapStartedAt)
     logTiming(`request total ${req.method} ${req.url}`, requestStartedAt)
 

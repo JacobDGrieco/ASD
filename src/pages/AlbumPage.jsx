@@ -1,6 +1,5 @@
 import { useParams } from 'react-router-dom';
 import { useMemo } from 'react';
-import { FaApple, FaSoundcloud, FaSpotify, FaYoutube } from 'react-icons/fa';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { useApi } from '../hooks/useApi.js';
 import AlbumDetails from '../components/album/AlbumDetails.jsx';
@@ -8,8 +7,10 @@ import TrackList from '../components/artist/TrackList.jsx';
 import SongPersonCard from '../components/song/SongPersonCard.jsx';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import ArtworkGallery from '../components/shared/ArtworkGallery.jsx';
+import ProfileLinkIcon from '../components/shared/ProfileLinkIcon.jsx';
 import { useAdminAuth } from '../lib/adminAuth.jsx';
 import { usePageTitle } from '../lib/pageTitle.js';
+import { PROFILE_LINK_PLATFORM_LABELS, hrefForProfileLink, normalizeProfileLinks } from '../lib/profileLinks.js';
 import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js';
 import '../styles/SongHeader.css';
 import '../styles/SongPage.css';
@@ -54,12 +55,7 @@ export default function AlbumPage() {
 
 function AlbumHeader({ album }) {
 	const year = new Date(album.releaseDate).getFullYear();
-	const streamLinks = [
-		{ href: album.soundcloudUrl, label: 'SoundCloud', icon: FaSoundcloud },
-		{ href: album.spotifyUrl, label: 'Spotify', icon: FaSpotify },
-		{ href: album.appleMusicUrl, label: 'Apple Music', icon: FaApple },
-		{ href: album.youtubeUrl, label: 'YouTube', icon: FaYoutube },
-	].filter((link) => link.href);
+	const streamLinks = normalizeProfileLinks(album.links);
 
 	return (
 		<section className={`song-header-header song-header-album-header ${album.isPubliclyVisible === false ? 'song-header-hidden' : ''}`.trim()}>
@@ -73,19 +69,22 @@ function AlbumHeader({ album }) {
 				</div>
 				{streamLinks.length > 0 && (
 					<div className="song-header-stream-links">
-						{streamLinks.map((link) => (
+						{streamLinks.map((link, index) => {
+							const label = PROFILE_LINK_PLATFORM_LABELS[link.platform] ?? 'Link';
+							return (
 							<a
-								key={link.label}
-								href={link.href}
+								key={`${link.platform}-${link.type}-${link.url}-${index}`}
+								href={hrefForProfileLink(link)}
 								target="_blank"
 								rel="noreferrer"
 								className="song-header-stream-link"
-								aria-label={link.label}
-								title={link.label}
+								aria-label={label}
+								title={label}
 							>
-								<link.icon aria-hidden="true" />
+								<ProfileLinkIcon platform={link.platform} aria-hidden="true" />
 							</a>
-						))}
+							);
+						})}
 					</div>
 				)}
 			</div>

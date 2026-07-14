@@ -1,7 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
-import { TabPanel, TabView } from 'primereact/tabview'
-import { FaPencilAlt, FaTrash } from 'react-icons/fa'
+import { FaEye, FaEyeSlash, FaPencilAlt, FaTrash } from 'react-icons/fa'
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import { loadAdminResource } from '../../lib/adminResourceCache.js'
@@ -51,7 +50,6 @@ export default function AdminAccountsPage() {
   const auth = { Authorization: `Bearer ${token}` }
   const [rows, setRows] = useState([])
   const [form, setForm] = useState(null)
-  const [activeTabIndex, setActiveTabIndex] = useState(0)
 
   useEffect(() => {
     if (session?.role !== 'SUPER_ADMIN' || !token) return
@@ -67,15 +65,6 @@ export default function AdminAccountsPage() {
     }
   }, [session?.role, token])
 
-  const availableSubjects = useMemo(
-    () => rows.reduce((subjects, row) => {
-      if (row.accountType !== form?.accountType) return subjects
-      if (!row.hasAccount || row.subject.id === form?.subjectId) subjects.push(row.subject)
-      return subjects
-    }, []),
-    [rows, form?.accountType, form?.subjectId],
-  )
-
   const accessGroups = useMemo(
     () => getAllowedPageGroupsForAccountType(form?.accountType ?? ADMIN_ACCOUNT_TYPES.MUSIC_ARTIST),
     [form?.accountType],
@@ -85,14 +74,9 @@ export default function AdminAccountsPage() {
     return <Navigate to="/admin" replace />
   }
 
-  const openCreate = () => {
-    setActiveTabIndex(0)
-    setForm({ ...emptyForm })
-  }
-
   const openEdit = (row) => {
-    setActiveTabIndex(0)
     setForm({
+      ...emptyForm,
       id: row.account?.id ?? '',
       accountType: row.accountType,
       subjectId: row.subject.id,
@@ -110,14 +94,6 @@ export default function AdminAccountsPage() {
 
   const updateForm = (updates) => {
     setForm((current) => ({ ...current, ...updates }))
-  }
-
-  const handleAccountTypeChange = (accountType) => {
-    updateForm({
-      accountType,
-      subjectId: '',
-      pageAccess: getDefaultAdminPageAccess(accountType),
-    })
   }
 
   const togglePageAccess = (pageKey) => {
@@ -205,7 +181,6 @@ export default function AdminAccountsPage() {
       <div className="admin-artists-page-sticky-top">
         <div className="admin-artists-page-header">
           <h1 className="admin-artists-page-title">Admin - Accounts</h1>
-          <button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Account</button>
         </div>
       </div>
 
@@ -282,123 +257,65 @@ export default function AdminAccountsPage() {
               <button type="button" onClick={closeForm} className="admin-modal-close" aria-label="Close">x</button>
             </div>
             <div className="admin-modal-body">
-              <TabView
-                activeIndex={activeTabIndex}
-                onTabChange={(event) => setActiveTabIndex(event.index)}
-                className="page-tabview admin-modal-tabs"
-              >
-                <TabPanel header="Account">
-                  <div className="admin-modal-grid">
-                    <div className="admin-modal-field">
-                      <label htmlFor="admin-account-type" className="admin-modal-label">Type</label>
-                      {form.isSuperAdminAccount ? (
-                        <input
-                          id="admin-account-type"
-                          type="text"
-                          readOnly
-                          value="Admin"
-                          className="admin-artists-page-input"
-                        />
-                      ) : (
-                        <select
-                          id="admin-account-type"
-                          value={form.accountType}
-                          onChange={(event) => handleAccountTypeChange(event.target.value)}
-                          disabled={Boolean(form.id)}
-                          className="admin-artists-page-input"
-                        >
-                          <option value={ADMIN_ACCOUNT_TYPES.MUSIC_ARTIST}>Music Artist</option>
-                          <option value={ADMIN_ACCOUNT_TYPES.FASHION_TALENT}>Fashion Talent</option>
-                        </select>
-                      )}
-                    </div>
-                    <div className="admin-modal-field">
-                      <label htmlFor="admin-account-subject" className="admin-modal-label">
-                        {form.accountType === ADMIN_ACCOUNT_TYPES.FASHION_TALENT ? 'Fashion Talent' : 'Music Artist'}
-                      </label>
-                      {form.id ? (
-                        <input
-                          id="admin-account-subject"
-                          type="text"
-                          readOnly
-                          value={rows.find((row) => row.accountType === form.accountType && row.subject.id === form.subjectId)?.subject.name ?? ''}
-                          className="admin-artists-page-input"
-                        />
-                      ) : (
-                        <select
-                          id="admin-account-subject"
-                          value={form.subjectId}
-                          onChange={(event) => updateForm({ subjectId: event.target.value })}
-                          className="admin-artists-page-input"
-                        >
-                          <option value="">- Person -</option>
-                          {availableSubjects.map((subject) => (
-                            <option key={subject.id} value={subject.id}>{subject.name}</option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-                    <div className="admin-modal-field admin-modal-field-full">
-                      <label htmlFor="admin-account-name" className="admin-modal-label">Name</label>
-                      <input
-                        id="admin-account-name"
-                        type="text"
-                        value={form.name}
-                        onChange={(event) => updateForm({ name: event.target.value })}
-                        className="admin-artists-page-input"
-                      />
-                    </div>
-                    <div className="admin-modal-field admin-modal-field-full">
-                      <label htmlFor="admin-account-password" className="admin-modal-label">Password</label>
-                      <input
-                        id="admin-account-password"
-                        type="password"
-                        value={form.password}
-                        onChange={(event) => updateForm({ password: event.target.value })}
-                        placeholder={form.id ? 'Leave blank to keep current password' : 'Set password'}
-                        className="admin-artists-page-input"
-                      />
-                    </div>
-                    <div className="admin-modal-field admin-modal-field-full">
-                      <div className="admin-modal-label">Status</div>
-                      <label className="admin-admin-account-toggle">
-                        <input
-                          type="checkbox"
-                          checked={form.active}
-                          onChange={(event) => updateForm({ active: event.target.checked })}
-                        />
-                        <span>{form.active ? 'Active' : 'Inactive'}</span>
-                      </label>
-                    </div>
+              <div className="admin-account-editor">
+                <div className="admin-account-editor-row">
+                  <button
+                    type="button"
+                    onClick={() => updateForm({ active: !form.active })}
+                    className={`admin-artists-page-visibility-toggle ${form.active ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
+                    aria-label={form.active ? 'Account is active. Click to deactivate.' : 'Account is inactive. Click to activate.'}
+                    title={form.active ? 'Active account' : 'Inactive account'}
+                  >
+                    {form.active ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
+                  </button>
+                  <div className="admin-modal-field admin-account-name-field">
+                    <label htmlFor="admin-account-name" className="admin-modal-label">Name</label>
+                    <input
+                      id="admin-account-name"
+                      type="text"
+                      value={form.name}
+                      onChange={(event) => updateForm({ name: event.target.value })}
+                      className="admin-artists-page-input"
+                    />
                   </div>
-                </TabPanel>
-                <TabPanel header="Access">
-                  <div className="admin-account-access-grid">
-                    {form.isSuperAdminAccount ? (
-                      <section className="admin-account-access-group">
-                        <h3 className="admin-account-access-heading">Admin</h3>
-                        <p className="admin-account-access-note">Super admin accounts can use every admin page.</p>
-                      </section>
-                    ) : accessGroups.map((group) => (
-                      <section key={group.key} className="admin-account-access-group">
-                        <h3 className="admin-account-access-heading">{group.label}</h3>
-                        <div className="admin-account-access-options">
-                          {group.pages.map((page) => (
-                            <label key={page.key} className="admin-account-access-option">
-                              <input
-                                type="checkbox"
-                                checked={normalizeAdminPageAccess(form.pageAccess).includes(page.key)}
-                                onChange={() => togglePageAccess(page.key)}
-                              />
-                              <span>{page.label}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </section>
-                    ))}
+                  <div className="admin-modal-field admin-account-password-field">
+                    <label htmlFor="admin-account-password" className="admin-modal-label">Password</label>
+                    <input
+                      id="admin-account-password"
+                      type="password"
+                      value={form.password}
+                      onChange={(event) => updateForm({ password: event.target.value })}
+                      placeholder={form.id ? 'Leave blank to keep current password' : 'Set password'}
+                      className="admin-artists-page-input"
+                    />
                   </div>
-                </TabPanel>
-              </TabView>
+                </div>
+
+                <div className="admin-account-access-grid">
+                  {form.isSuperAdminAccount ? (
+                    <section className="admin-account-access-group">
+                      <h3 className="admin-account-access-heading">Admin</h3>
+                      <p className="admin-account-access-note">Super admin accounts can use every admin page.</p>
+                    </section>
+                  ) : accessGroups.map((group) => (
+                    <section key={group.key} className="admin-account-access-group">
+                      <h3 className="admin-account-access-heading">{group.label}</h3>
+                      <div className="admin-account-access-options">
+                        {group.pages.map((page) => (
+                          <label key={page.key} className="admin-account-access-option">
+                            <input
+                              type="checkbox"
+                              checked={normalizeAdminPageAccess(form.pageAccess).includes(page.key)}
+                              onChange={() => togglePageAccess(page.key)}
+                            />
+                            <span>{page.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="admin-modal-footer">
               <button type="button" onClick={closeForm} className="admin-artists-page-ghost-btn">Cancel</button>

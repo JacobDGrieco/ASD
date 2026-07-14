@@ -1,15 +1,15 @@
 import { useParams } from 'react-router-dom'
 import { useMemo } from 'react'
-import { FaEnvelope, FaGlobe } from 'react-icons/fa'
-import { SiFacebook, SiInstagram, SiTiktok, SiX, SiYoutube } from 'react-icons/si'
 import { Image } from 'primereact/image'
 import { TabPanel, TabView } from 'primereact/tabview'
 import { useApi } from '../hooks/useApi.js'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 import ArtworkGallery from '../components/shared/ArtworkGallery.jsx'
+import ProfileLinkIcon from '../components/shared/ProfileLinkIcon.jsx'
 import LookCard from '../components/fashion/LookCard.jsx'
 import { useAdminAuth } from '../lib/adminAuth.jsx'
 import { usePageTitle } from '../lib/pageTitle.js'
+import { PROFILE_LINK_PLATFORM_LABELS, hrefForProfileLink, normalizeProfileLinks } from '../lib/profileLinks.js'
 import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js'
 import '../styles/Discography.css'
 import '../styles/FashionPages.css'
@@ -53,15 +53,7 @@ export default function FashionTalentProfilePage() {
   if (!talent) return null
 
   const image = talent.images?.[0]
-  const contactLinks = [
-    talent.instagramProfile ? { href: talent.instagramProfile, label: 'Instagram', icon: <SiInstagram /> } : null,
-    talent.tiktokProfile ? { href: talent.tiktokProfile, label: 'TikTok', icon: <SiTiktok /> } : null,
-    talent.twitterProfile ? { href: talent.twitterProfile, label: 'Twitter', icon: <SiX /> } : null,
-    talent.youtubeProfile ? { href: talent.youtubeProfile, label: 'YouTube', icon: <SiYoutube /> } : null,
-    talent.facebookProfile ? { href: talent.facebookProfile, label: 'Facebook', icon: <SiFacebook /> } : null,
-    talent.website ? { href: talent.website, label: 'Website', icon: <FaGlobe /> } : null,
-    talent.email ? { href: `mailto:${talent.email}`, label: 'Email', icon: <FaEnvelope /> } : null,
-  ].filter(Boolean)
+  const contactLinks = normalizeProfileLinks(talent.links)
 
   const hasFeatured = talent.featuredIn?.length > 0
   const hasPhotos = photos.length > 0
@@ -79,11 +71,21 @@ export default function FashionTalentProfilePage() {
             </div>
             {contactLinks.length > 0 && (
               <div className="fashion-talent-hero-links">
-                {contactLinks.map((link) => (
-                  <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.label} title={link.label}>
-                    {link.icon}
+                {contactLinks.map((link, index) => {
+                  const label = PROFILE_LINK_PLATFORM_LABELS[link.platform] ?? 'Link'
+                  return (
+                  <a
+                    key={`${link.platform}-${link.type}-${link.url}-${index}`}
+                    href={hrefForProfileLink(link)}
+                    target={link.platform === 'email' ? undefined : '_blank'}
+                    rel={link.platform === 'email' ? undefined : 'noopener noreferrer'}
+                    aria-label={label}
+                    title={label}
+                  >
+                    <ProfileLinkIcon platform={link.platform} />
                   </a>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

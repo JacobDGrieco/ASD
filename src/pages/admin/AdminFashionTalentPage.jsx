@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { FaExternalLinkAlt, FaEye, FaEyeSlash, FaPencilAlt, FaTrash } from 'react-icons/fa';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { TabPanel, TabView } from 'primereact/tabview';
-import { SiFacebook, SiInstagram, SiTiktok, SiX, SiYoutube } from 'react-icons/si';
+import AdminEntityCard from '../../components/admin/AdminEntityCard.jsx';
+import AdminProfileLinksField from '../../components/admin/AdminProfileLinksField.jsx';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
+import { FASHION_TALENT_LEGACY_LINK_FIELDS, normalizeProfileLinks, profileLinksForSource } from '../../lib/profileLinks.js';
 import { slugify } from '../../lib/slugify.js';
 import '../../styles/AdminArtistsPage.css';
 
@@ -27,38 +29,13 @@ const empty = {
 	isVisible: true,
 	bio: '',
 	images: [],
+	links: [],
 	order: 0,
-	instagramProfile: '',
-	tiktokProfile: '',
-	twitterProfile: '',
-	youtubeProfile: '',
-	facebookProfile: '',
 	email: '',
 	website: '',
 	agencyName: '',
 	agencyContact: '',
 };
-
-function iconLabel(icon, text) {
-	return (
-		<span className="admin-modal-label-with-icon">
-			<span className="admin-modal-label-icon" aria-hidden="true">{icon}</span>
-			<span>{text}</span>
-		</span>
-	);
-}
-
-const columns = [
-	{ key: 'images', label: 'Image', kind: 'images', className: 'admin-artists-page-col-image' },
-	{ key: 'name', label: 'Name', className: 'admin-artists-page-col-lg' },
-	{ key: 'role', label: 'Role', kind: 'role', className: 'admin-artists-page-col-sm' },
-	{ key: 'agencyName', label: 'Agency', kind: 'agency', className: 'admin-artists-page-col-md admin-artists-page-center-cell' },
-	{ key: 'instagramProfile', label: <SiInstagram />, headerLabel: 'Instagram', kind: 'link', className: 'admin-artists-page-col-action admin-artists-page-center-cell' },
-	{ key: 'tiktokProfile', label: <SiTiktok />, headerLabel: 'TikTok', kind: 'link', className: 'admin-artists-page-col-action admin-artists-page-center-cell' },
-	{ key: 'twitterProfile', label: <SiX />, headerLabel: 'Twitter', kind: 'link', className: 'admin-artists-page-col-action admin-artists-page-center-cell' },
-	{ key: 'youtubeProfile', label: <SiYoutube />, headerLabel: 'YouTube', kind: 'link', className: 'admin-artists-page-col-action admin-artists-page-center-cell' },
-	{ key: 'facebookProfile', label: <SiFacebook />, headerLabel: 'Facebook', kind: 'link', className: 'admin-artists-page-col-action admin-artists-page-center-cell' },
-];
 
 function primaryImage(images) {
 	if (!Array.isArray(images) || images.length === 0) return null;
@@ -75,58 +52,7 @@ function isTalentHidden(talent) {
 	return talent?.isVisible === false;
 }
 
-function renderDisplayValue(person, column) {
-	if (column.kind === 'images') {
-		const image = primaryImage(person.images);
-		if (!image) return <span className="admin-artists-page-empty-value">-</span>;
-		return (
-			<div className="admin-artists-page-image-summary">
-				<div className={`admin-artists-page-thumb-frame ${isTalentHidden(person) ? 'admin-artists-page-thumb-frame-hidden' : ''}`.trim()}>
-					<img src={image.previewUrl || image.url} alt={person.name} className="admin-artists-page-thumb" />
-				</div>
-				<span className="admin-artists-page-image-count">{person.imageCount ?? person.images?.length ?? 1} image{(person.imageCount ?? person.images?.length ?? 1) === 1 ? '' : 's'}</span>
-			</div>
-		);
-	}
-
-	if (column.kind === 'role') {
-		return <span className="admin-artists-page-cell-value">{ROLE_LABEL_BY_VALUE[person.role] ?? person.role}</span>;
-	}
-
-	if (column.kind === 'agency') {
-		if (!person.agencyName && !person.agencyContact) return <span className="admin-artists-page-empty-value">-</span>;
-		return (
-			<span className="admin-artists-page-cell-value" title={[person.agencyName, person.agencyContact].filter(Boolean).join(' - ')}>
-				{person.agencyName || person.agencyContact}
-			</span>
-		);
-	}
-
-	const value = person[column.key];
-	if (value === null || value === undefined || value === '') return <span className="admin-artists-page-empty-value">-</span>;
-
-	if (column.kind === 'link') {
-		return (
-			<a href={String(value)} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" aria-label={`Open ${column.headerLabel} link`} title="Open in new tab">
-				<FaExternalLinkAlt aria-hidden="true" />
-			</a>
-		);
-	}
-
-	return <span className="admin-artists-page-cell-value" title={String(value)}>{String(value)}</span>;
-}
-
-function renderHeader(column) {
-	if (column.kind !== 'link') return column.label;
-	return (
-		<span className="admin-artists-page-social-header" title={column.headerLabel}>
-			<span aria-hidden="true">{column.label}</span>
-			<span className="admin-artists-page-sr-only">{column.headerLabel}</span>
-		</span>
-	);
-}
-
-function TalentFormModal({ form, setForm, token, onClose, onSave }) {
+function TalentFormModal({ form, setForm, token, onClose, onSave, onDelete, canDelete }) {
 	return (
 		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
 			<div className="admin-modal">
@@ -209,38 +135,30 @@ function TalentFormModal({ form, setForm, token, onClose, onSave }) {
 						<TabPanel header="Links">
 							<div className="admin-modal-grid">
 								<div className="admin-modal-field admin-modal-field-full">
-									<label htmlFor="admin-fashion-talent-instagram" className="admin-modal-label">{iconLabel(<SiInstagram />, 'Instagram URL')}</label>
-									<input id="admin-fashion-talent-instagram" type="url" placeholder="Instagram URL" value={form.instagramProfile} onChange={(event) => setForm((current) => ({ ...current, instagramProfile: event.target.value }))} className="admin-artists-page-input" />
-								</div>
-								<div className="admin-modal-field admin-modal-field-full">
-									<label htmlFor="admin-fashion-talent-tiktok" className="admin-modal-label">{iconLabel(<SiTiktok />, 'TikTok URL')}</label>
-									<input id="admin-fashion-talent-tiktok" type="url" placeholder="TikTok URL" value={form.tiktokProfile} onChange={(event) => setForm((current) => ({ ...current, tiktokProfile: event.target.value }))} className="admin-artists-page-input" />
-								</div>
-								<div className="admin-modal-field admin-modal-field-full">
-									<label htmlFor="admin-fashion-talent-twitter" className="admin-modal-label">{iconLabel(<SiX />, 'Twitter URL')}</label>
-									<input id="admin-fashion-talent-twitter" type="url" placeholder="Twitter URL" value={form.twitterProfile} onChange={(event) => setForm((current) => ({ ...current, twitterProfile: event.target.value }))} className="admin-artists-page-input" />
-								</div>
-								<div className="admin-modal-field admin-modal-field-full">
-									<label htmlFor="admin-fashion-talent-youtube" className="admin-modal-label">{iconLabel(<SiYoutube />, 'YouTube URL')}</label>
-									<input id="admin-fashion-talent-youtube" type="url" placeholder="YouTube URL" value={form.youtubeProfile} onChange={(event) => setForm((current) => ({ ...current, youtubeProfile: event.target.value }))} className="admin-artists-page-input" />
-								</div>
-								<div className="admin-modal-field admin-modal-field-full">
-									<label htmlFor="admin-fashion-talent-facebook" className="admin-modal-label">{iconLabel(<SiFacebook />, 'Facebook URL')}</label>
-									<input id="admin-fashion-talent-facebook" type="url" placeholder="Facebook URL" value={form.facebookProfile} onChange={(event) => setForm((current) => ({ ...current, facebookProfile: event.target.value }))} className="admin-artists-page-input" />
-								</div>
-								<div className="admin-modal-field admin-modal-field-full">
-									<label htmlFor="admin-fashion-talent-email" className="admin-modal-label">Email</label>
-									<input id="admin-fashion-talent-email" type="email" placeholder="Contact email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} className="admin-artists-page-input" />
-								</div>
-								<div className="admin-modal-field admin-modal-field-full">
-									<label htmlFor="admin-fashion-talent-website" className="admin-modal-label">Website</label>
-									<input id="admin-fashion-talent-website" type="url" placeholder="Personal or portfolio site" value={form.website} onChange={(event) => setForm((current) => ({ ...current, website: event.target.value }))} className="admin-artists-page-input" />
+									<label className="admin-modal-label">Links</label>
+									<AdminProfileLinksField
+										value={form.links}
+										onChange={(links) => setForm((current) => ({ ...current, links }))}
+									/>
 								</div>
 							</div>
 						</TabPanel>
 					</TabView>
 				</div>
 				<div className="admin-modal-footer">
+					<div className="admin-modal-footer-start">
+						{form.id && canDelete && (
+							<ConfirmActionButton
+								message="Delete this person? They will be removed from any Look credits."
+								onConfirm={onDelete}
+								buttonClassName="admin-artists-page-danger-btn"
+								buttonAriaLabel="Delete talent"
+								buttonTitle="Delete"
+							>
+								Delete
+							</ConfirmActionButton>
+						)}
+					</div>
 					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
 					<button type="button" onClick={onSave} className="admin-artists-page-primary-btn">Save</button>
 				</div>
@@ -250,7 +168,8 @@ function TalentFormModal({ form, setForm, token, onClose, onSave }) {
 }
 
 export default function AdminFashionTalentPage() {
-	const { token } = useAdminAuth();
+	const { token, session } = useAdminAuth();
+	const isSuperAdmin = session?.role === 'SUPER_ADMIN';
 	const auth = { Authorization: `Bearer ${token}` };
 	const [talent, setTalent] = useState([]);
 	const [form, setForm] = useState(null);
@@ -271,12 +190,12 @@ export default function AdminFashionTalentPage() {
 		};
 	}, [token]);
 
-	const openCreate = () => setForm({ ...empty });
+	const openCreate = () => setForm({ ...empty, links: [] });
 	const openEdit = async (person) => {
 		setLoadingEditId(person.id);
 		try {
 			const detail = await fetch(`/api/admin/fashion/talent?id=${person.id}`, { headers: auth }).then((r) => r.json());
-			setForm({ ...empty, ...detail, images: detail.images ?? [] });
+			setForm({ ...empty, ...detail, images: detail.images ?? [], links: profileLinksForSource(detail, FASHION_TALENT_LEGACY_LINK_FIELDS) });
 		} finally {
 			setLoadingEditId(null);
 		}
@@ -295,6 +214,7 @@ export default function AdminFashionTalentPage() {
 		const url = isEdit ? `/api/admin/fashion/talent?id=${form.id}` : '/api/admin/fashion/talent';
 		const payload = {
 			...form,
+			links: normalizeProfileLinks(form.links),
 			slug: slugify(form.name),
 			...(isEdit ? {} : { order: nextOrder }),
 		};
@@ -320,6 +240,7 @@ export default function AdminFashionTalentPage() {
 		const nextTalent = talent.filter((person) => person.id !== id);
 		setTalent(nextTalent);
 		primeAdminResource('fashion-talent-list', token, nextTalent);
+		closeForm();
 	};
 
 	const persistTalentOrder = async (nextTalent) => {
@@ -394,71 +315,37 @@ export default function AdminFashionTalentPage() {
 			<div className="admin-artists-page-sticky-top">
 				<div className="admin-artists-page-header">
 					<h1 className="admin-artists-page-title">Fashion — Talent</h1>
-					<button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Talent</button>
+					{isSuperAdmin && <button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Talent</button>}
 				</div>
 			</div>
 
-			<div className="admin-artists-page-table-wrap">
-				<table className="admin-artists-page-table">
-					<thead>
-						<tr>
-							<th className="admin-artists-page-drag-header"></th>
-							{columns.map((column) => <th key={column.key} className={column.className}>{renderHeader(column)}</th>)}
-							<th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
-						</tr>
-					</thead>
-					<tbody>
-						{talent.map((person) => (
-							<tr
-								key={person.id}
-								className={[
-									dropTargetId === person.id ? 'admin-artists-page-drop-target-row' : '',
-									isTalentHidden(person) ? 'admin-artists-page-hidden-row' : '',
-								].filter(Boolean).join(' ')}
-								onDragOver={(event) => handleDragOver(event, person.id)}
-								onDrop={(event) => {
-									event.preventDefault();
-									handleDrop(person.id);
-								}}
-							>
-								<td className="admin-artists-page-drag-cell">
-									<button
-										type="button"
-										draggable={!form}
-										onDragStart={(event) => handleDragStart(event, person.id)}
-										onDragEnd={handleDragEnd}
-										className="admin-artists-page-drag-handle"
-										aria-label={`Reorder ${person.name}`}
-										title="Drag to reorder"
-									>
-										::
-									</button>
-								</td>
-								{columns.map((column) => (
-									<td key={column.key} className={column.className ?? ''}>
-										{renderDisplayValue(person, column)}
-									</td>
-								))}
-								<td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
-									<div className="admin-artists-page-actions">
-										<button type="button" onClick={() => void openEdit(person)} disabled={loadingEditId === person.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit talent" title="Edit">
-											<FaPencilAlt aria-hidden="true" />
-										</button>
-										<ConfirmActionButton
-											message="Delete this person? They will be removed from any Look credits."
-											onConfirm={() => handleDelete(person.id)}
-											buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-											buttonAriaLabel="Delete talent"
-											buttonTitle="Delete"
-										>
-											<FaTrash aria-hidden="true" />
-										</ConfirmActionButton>
-									</div>
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
+			<div className="admin-entity-card-grid">
+				{talent.map((person) => {
+					const image = primaryImage(person.images);
+					return (
+						<AdminEntityCard
+							key={person.id}
+							image={image?.previewUrl || image?.url}
+							imageCount={person.imageCount ?? person.images?.length ?? 1}
+							isHidden={isTalentHidden(person)}
+							title={person.name}
+							subtitle={ROLE_LABEL_BY_VALUE[person.role] ?? person.role}
+							links={person.links}
+							onEdit={() => void openEdit(person)}
+							editDisabled={loadingEditId === person.id}
+							editAriaLabel={`Edit ${person.name}`}
+							draggable={isSuperAdmin && !form}
+							onDragStart={(event) => handleDragStart(event, person.id)}
+							onDragOver={(event) => handleDragOver(event, person.id)}
+							onDrop={(event) => {
+								event.preventDefault();
+								handleDrop(person.id);
+							}}
+							onDragEnd={handleDragEnd}
+							isDropTarget={dropTargetId === person.id}
+						/>
+					);
+				})}
 			</div>
 
 			{form && (
@@ -468,6 +355,8 @@ export default function AdminFashionTalentPage() {
 					token={token}
 					onClose={closeForm}
 					onSave={handleSave}
+					onDelete={() => handleDelete(form.id)}
+					canDelete={isSuperAdmin}
 				/>
 			)}
 		</div>

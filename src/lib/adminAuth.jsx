@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { clearAdminResourceCache } from './adminResourceCache.js'
 
 const AdminContext = createContext(null)
 const COOKIE_AUTH_SENTINEL = 'cookie'
@@ -30,6 +31,7 @@ export function AdminProvider({ children }) {
   }, [])
 
   const login = useCallback(async (password) => {
+    clearAdminResourceCache()
     const res = await fetch('/api/admin/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -44,6 +46,7 @@ export function AdminProvider({ children }) {
 
   const logout = useCallback(async () => {
     await fetch('/api/admin/login', { method: 'DELETE' }).catch(() => {})
+    clearAdminResourceCache()
     setToken(null)
     setSession(null)
   }, [])

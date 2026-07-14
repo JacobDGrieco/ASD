@@ -30,7 +30,7 @@ const empty = {
 const columns = [
   { key: 'coverImage', label: 'Cover', kind: 'image', className: 'admin-artists-page-col-image' },
   { key: 'title', label: 'Title', className: 'admin-artists-page-col-lg' },
-  { key: 'season', label: 'Season', className: 'admin-artists-page-col-sm' },
+  { key: 'season', label: 'Season', className: 'admin-artists-page-col-sm admin-fashion-collections-season-col' },
   { key: 'releaseDate', label: 'Release Date', kind: 'date', className: 'admin-artists-page-col-sm' },
   { key: 'lookCount', label: 'Looks', kind: 'lookCount', className: 'admin-artists-page-col-sm' },
 ]

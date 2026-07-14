@@ -1,8 +1,8 @@
 import { useEffect, useId, useMemo, useReducer, useRef, useState } from 'react';
 import { TabPanel, TabView } from 'primereact/tabview';
 import { FaEye, FaEyeSlash, FaPlus, FaTimes } from 'react-icons/fa';
-import { SiApplemusic, SiSoundcloud, SiSpotify, SiYoutube } from 'react-icons/si';
 import AdminDateInput from './AdminDateInput.jsx';
+import AdminProfileLinksField from './AdminProfileLinksField.jsx';
 import { isValidDateInput } from '../../lib/dateInput.js';
 import ImageCollectionField from './ImageCollectionField.jsx';
 import ChipInputField from './ChipInputField.jsx';
@@ -15,6 +15,7 @@ import {
 	initSongFormFromPrefill,
 } from '../../lib/adminSongForm.js';
 import { defaultVisibilityForReleaseDate } from '../../lib/contentVisibility.js';
+import { normalizeProfileLinks } from '../../lib/profileLinks.js';
 import { isOtherArtist, OTHER_ARTIST_NAME } from '../../lib/publicVisibility.js';
 import { slugify } from '../../lib/slugify.js';
 import '../../styles/AdminArtistsPage.css';
@@ -46,15 +47,6 @@ const SONG_KEYS = [
 	'B Major',
 	'B Minor',
 ];
-
-function iconLabel(icon, text) {
-	return (
-		<span className="admin-modal-label-with-icon">
-			<span className="admin-modal-label-icon" aria-hidden="true">{icon}</span>
-			<span>{text}</span>
-		</span>
-	);
-}
 
 function normalizeSongDuplicateValue(value) {
 	return String(value ?? '').trim().toLowerCase();
@@ -538,24 +530,16 @@ function SongInfoTab({
 	);
 }
 
-function SongLinksTab({ form, setField }) {
+function SongLinksTab({ form, setForm }) {
 	return (
 		<div className="admin-modal-grid">
 			<div className="admin-modal-field admin-modal-field-full">
-				<label className="admin-modal-label">{iconLabel(<SiSoundcloud />, 'SoundCloud URL')}</label>
-				<input type="text" placeholder="SoundCloud URL" value={form.soundcloudUrl} onChange={setField('soundcloudUrl')} className="admin-artists-page-input" />
-			</div>
-			<div className="admin-modal-field admin-modal-field-full">
-				<label className="admin-modal-label">{iconLabel(<SiSpotify />, 'Spotify URL')}</label>
-				<input type="text" placeholder="Spotify URL" value={form.spotifyUrl} onChange={setField('spotifyUrl')} className="admin-artists-page-input" />
-			</div>
-			<div className="admin-modal-field admin-modal-field-full">
-				<label className="admin-modal-label">{iconLabel(<SiApplemusic />, 'Apple Music URL')}</label>
-				<input type="text" placeholder="Apple Music URL" value={form.appleMusicUrl} onChange={setField('appleMusicUrl')} className="admin-artists-page-input" />
-			</div>
-			<div className="admin-modal-field admin-modal-field-full">
-				<label className="admin-modal-label">{iconLabel(<SiYoutube />, 'YouTube URL')}</label>
-				<input type="text" placeholder="YouTube URL" value={form.youtubeUrl} onChange={setField('youtubeUrl')} className="admin-artists-page-input" />
+				<label className="admin-modal-label">Links</label>
+				<AdminProfileLinksField
+					value={form.links}
+					onChange={(links) => setForm((current) => ({ ...current, links }))}
+					showTypeField={false}
+				/>
 			</div>
 		</div>
 	);
@@ -689,7 +673,7 @@ function SongEditorTabs(props) {
 				<SongInfoTab {...props} />
 			</TabPanel>
 			<TabPanel header="Links">
-				<SongLinksTab form={props.form} setField={props.setField} />
+				<SongLinksTab form={props.form} setForm={props.setForm} />
 			</TabPanel>
 			<TabPanel header="Albums">
 				<SongAlbumsTab {...props} />
@@ -839,6 +823,7 @@ export default function AdminSongFormModal({
 		const url = isEdit ? `/api/admin/songs?id=${form.id}` : '/api/admin/songs';
 		const payload = {
 			...form,
+			links: normalizeProfileLinks(form.links),
 			slug: slugify(form.title),
 			albumIds: form.albumPlacements.map((p) => p.albumId),
 			discNumbers: form.albumPlacements.map((p) => Number(p.discNumber)),

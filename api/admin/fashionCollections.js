@@ -1,5 +1,5 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { canAccessAdminPage, requireAdmin } from '../../src/lib/auth.js'
+import { canAccessAdminPage, isSuperAdmin, isTalentAdmin, requireAdmin } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
 import { clientImages, normalizeImageInput, primaryImageReference } from '../../src/lib/images.js'
 import { slugify } from '../../src/lib/slugify.js'
@@ -18,6 +18,7 @@ function selectCollectionList() {
     coverPathname: true,
     isVisible: true,
     order: true,
+    creatorTalentId: true,
     _count: { select: { lookPlacements: true } },
   }
 }
@@ -150,6 +151,12 @@ function collectionOrderBy() {
   ]
 }
 
+function fashionCollectionCreatorWhere(session) {
+  if (isSuperAdmin(session)) return {}
+  if (isTalentAdmin(session)) return { creatorTalentId: session.talentId }
+  return { AND: [{ id: '__no_access__' }] }
+}
+
 function collectionUpdateData(body, cover) {
   const { title, slug, type, description, about, season, releaseDate, location, isVisible, order } = body
   return {
@@ -179,12 +186,15 @@ export default async function handler(req, res) {
   const { id } = req.query
 
   if (id) {
-    const existing = await prisma.fashionCollection.findUnique({ where: { id }, select: { id: true } })
+    const existing = await prisma.fashionCollection.findFirst({
+      where: { id, ...fashionCollectionCreatorWhere(session) },
+      select: { id: true },
+    })
     if (!existing) return res.status(404).json({ error: 'Collection not found' })
 
     if (req.method === 'GET') {
-      const collection = await prisma.fashionCollection.findUnique({
-        where: { id },
+      const collection = await prisma.fashionCollection.findFirst({
+        where: { id, ...fashionCollectionCreatorWhere(session) },
         include: includeCollectionDetail(),
       })
       return res.status(200).json(withCollectionCover(collection))
@@ -233,6 +243,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const collections = await prisma.fashionCollection.findMany({
+      where: fashionCollectionCreatorWhere(session),
       orderBy: collectionOrderBy(),
       select: selectCollectionList(),
     })
@@ -261,6 +272,7 @@ export default async function handler(req, res) {
           location: location ?? '',
           isVisible: isVisible ?? true,
           order: order ?? 0,
+          creatorTalentId: isTalentAdmin(session) ? session.talentId : null,
           coverImage: cover.coverImage,
           coverPathname: cover.coverPathname,
           credits: creditData.length ? { createMany: { data: creditData } } : undefined,

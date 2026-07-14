@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { FaApple, FaExternalLinkAlt, FaEye, FaEyeSlash, FaPencilAlt, FaSoundcloud, FaSpotify, FaTrash, FaYoutube } from 'react-icons/fa';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { TabPanel, TabView } from 'primereact/tabview';
-import { SiFacebook, SiInstagram, SiSnapchat, SiTiktok, SiX, SiYoutube } from 'react-icons/si';
+import AdminEntityCard from '../../components/admin/AdminEntityCard.jsx';
+import AdminProfileLinksField from '../../components/admin/AdminProfileLinksField.jsx';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
+import { ARTIST_LEGACY_LINK_FIELDS, normalizeProfileLinks, profileLinksForSource } from '../../lib/profileLinks.js';
 import { slugify } from '../../lib/slugify.js';
 import '../../styles/AdminArtistsPage.css';
 
@@ -16,55 +18,9 @@ const empty = {
 	bio: '',
 	aboutMe: '',
 	images: [],
+	links: [],
 	order: 0,
-	soundcloudProfile: '',
-	spotifyProfile: '',
-	appleMusicProfile: '',
-	youtubeProfile: '',
-	instagramProfile: '',
-	twitterProfile: '',
-	facebookProfile: '',
-	tiktokProfile: '',
-	snapchatProfile: '',
-	youtubeSocialProfile: '',
 };
-
-function iconLabel(icon, text) {
-	return (
-		<span className="admin-modal-label-with-icon">
-			<span className="admin-modal-label-icon" aria-hidden="true">{icon}</span>
-			<span>{text}</span>
-		</span>
-	);
-}
-
-const columns = [
-	{ key: 'images', label: 'Images', kind: 'images', className: 'admin-artists-page-col-image' },
-	{ key: 'name', label: 'Name', placeholder: 'Name', className: 'admin-artists-page-col-lg' },
-	{ key: 'soundcloudProfile', label: <FaSoundcloud />, headerLabel: 'SoundCloud', placeholder: 'SoundCloud URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
-	{ key: 'spotifyProfile', label: <FaSpotify />, headerLabel: 'Spotify', placeholder: 'Spotify URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
-	{ key: 'appleMusicProfile', label: <FaApple />, headerLabel: 'Apple Music', placeholder: 'Apple Music URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
-	{ key: 'youtubeProfile', label: <FaYoutube />, headerLabel: 'YouTube Music', placeholder: 'YouTube Music URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
-	{ key: 'instagramProfile', label: <SiInstagram />, headerLabel: 'Instagram', placeholder: 'Instagram URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
-	{ key: 'twitterProfile', label: <SiX />, headerLabel: 'X', placeholder: 'X URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
-	{ key: 'facebookProfile', label: <SiFacebook />, headerLabel: 'Facebook', placeholder: 'Facebook URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
-	{ key: 'tiktokProfile', label: <SiTiktok />, headerLabel: 'TikTok', placeholder: 'TikTok URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
-	{ key: 'snapchatProfile', label: <SiSnapchat />, headerLabel: 'Snapchat', placeholder: 'Snapchat URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
-	{ key: 'youtubeSocialProfile', label: <SiYoutube />, headerLabel: 'YouTube Social', placeholder: 'YouTube Social URL', kind: 'link', className: `admin-artists-page-col-action admin-artists-page-center-cell` },
-];
-
-const artistLinkFields = [
-	{ key: 'soundcloudProfile', label: 'SoundCloud URL', icon: <FaSoundcloud /> },
-	{ key: 'spotifyProfile', label: 'Spotify URL', icon: <FaSpotify /> },
-	{ key: 'appleMusicProfile', label: 'Apple Music URL', icon: <FaApple /> },
-	{ key: 'youtubeProfile', label: 'YouTube Music URL', icon: <FaYoutube /> },
-	{ key: 'instagramProfile', label: 'Instagram URL', icon: <SiInstagram /> },
-	{ key: 'twitterProfile', label: 'X URL', icon: <SiX /> },
-	{ key: 'facebookProfile', label: 'Facebook URL', icon: <SiFacebook /> },
-	{ key: 'tiktokProfile', label: 'TikTok URL', icon: <SiTiktok /> },
-	{ key: 'snapchatProfile', label: 'Snapchat URL', icon: <SiSnapchat /> },
-	{ key: 'youtubeSocialProfile', label: 'YouTube Social URL', icon: <SiYoutube /> },
-];
 
 function primaryImage(images) {
 	if (!Array.isArray(images) || images.length === 0) return null;
@@ -80,46 +36,7 @@ function isArtistHidden(artist) {
 	return artist?.isVisible === false;
 }
 
-function renderDisplayValue(artist, column) {
-	const value = artist[column.key];
-	if (column.kind === 'images') {
-		const image = primaryImage(artist.images);
-		if (!image) return <span className="admin-artists-page-empty-value">-</span>;
-		return (
-			<div className="admin-artists-page-image-summary">
-				<div className={`admin-artists-page-thumb-frame ${isArtistHidden(artist) ? 'admin-artists-page-thumb-frame-hidden' : ''}`.trim()}>
-					<img src={image.previewUrl || image.url} alt={artist.name} className="admin-artists-page-thumb" />
-				</div>
-				<span className="admin-artists-page-image-count">{artist.imageCount ?? artist.images?.length ?? 1} image{(artist.imageCount ?? artist.images?.length ?? 1) === 1 ? '' : 's'}</span>
-			</div>
-		);
-	}
-	if (value === null || value === undefined || value === '') return <span className="admin-artists-page-empty-value">-</span>;
-	if (column.kind === 'link') {
-		return (
-			<a href={String(value)} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" aria-label={`Open ${column.headerLabel} link`} title="Open in new tab">
-				<FaExternalLinkAlt aria-hidden="true" />
-			</a>
-		);
-	}
-	return (
-		<span className={column.valueClassName ?? 'admin-artists-page-cell-value'} title={String(value)}>
-			{String(value)}
-		</span>
-	);
-}
-
-function renderHeader(column) {
-	if (column.kind !== 'link') return column.label;
-	return (
-		<span className="admin-artists-page-social-header" title={column.headerLabel}>
-			<span aria-hidden="true">{column.label}</span>
-			<span className="admin-artists-page-sr-only">{column.headerLabel}</span>
-		</span>
-	);
-}
-
-function MusicArtistFormModal({ form, setForm, token, onClose, onSave }) {
+function MusicArtistFormModal({ form, setForm, token, onClose, onSave, onDelete, canDelete }) {
 	const updateField = (key) => (event) => {
 		setForm((current) => ({
 			...current,
@@ -199,17 +116,31 @@ function MusicArtistFormModal({ form, setForm, token, onClose, onSave }) {
 						</TabPanel>
 						<TabPanel header="Links">
 							<div className="admin-modal-grid">
-								{artistLinkFields.map((field) => (
-									<div key={field.key} className="admin-modal-field admin-modal-field-full">
-										<label className="admin-modal-label">{iconLabel(field.icon, field.label)}</label>
-										<input type="url" placeholder={field.label} value={form[field.key]} onChange={updateField(field.key)} className="admin-artists-page-input" />
-									</div>
-								))}
+								<div className="admin-modal-field admin-modal-field-full">
+									<label className="admin-modal-label">Links</label>
+									<AdminProfileLinksField
+										value={form.links}
+										onChange={(links) => setForm((current) => ({ ...current, links }))}
+									/>
+								</div>
 							</div>
 						</TabPanel>
 					</TabView>
 				</div>
 				<div className="admin-modal-footer">
+					<div className="admin-modal-footer-start">
+						{form.id && canDelete && (
+							<ConfirmActionButton
+								message="Delete this artist and all their albums/songs?"
+								onConfirm={onDelete}
+								buttonClassName="admin-artists-page-danger-btn"
+								buttonAriaLabel="Delete artist"
+								buttonTitle="Delete"
+							>
+								Delete
+							</ConfirmActionButton>
+						)}
+					</div>
 					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
 					<button type="button" onClick={onSave} className="admin-artists-page-primary-btn">Save</button>
 				</div>
@@ -220,7 +151,7 @@ function MusicArtistFormModal({ form, setForm, token, onClose, onSave }) {
 
 export default function AdminMusicArtistsPage() {
 	const { token, session } = useAdminAuth();
-	const isSuperAdmin = session?.role !== 'ARTIST';
+	const isSuperAdmin = session?.role === 'SUPER_ADMIN';
 	const isViewer = session?.role === 'VIEWER';
 	const auth = { Authorization: `Bearer ${token}` };
 	const [artists, setArtists] = useState([]);
@@ -242,12 +173,12 @@ export default function AdminMusicArtistsPage() {
 		};
 	}, [token]);
 
-	const openCreate = () => setForm({ ...empty });
+	const openCreate = () => setForm({ ...empty, links: [] });
 	const openEdit = async (artist) => {
 		setLoadingEditId(artist.id);
 		try {
 			const detail = await fetch(`/api/admin/artists?id=${artist.id}`, { headers: auth }).then((r) => r.json());
-			setForm({ ...empty, ...detail, images: detail.images ?? [] });
+			setForm({ ...empty, ...detail, images: detail.images ?? [], links: profileLinksForSource(detail, ARTIST_LEGACY_LINK_FIELDS) });
 		} finally {
 			setLoadingEditId(null);
 		}
@@ -266,6 +197,7 @@ export default function AdminMusicArtistsPage() {
 		const url = isEdit ? `/api/admin/artists?id=${form.id}` : '/api/admin/artists';
 		const payload = {
 			...form,
+			links: normalizeProfileLinks(form.links),
 			slug: slugify(form.name),
 			...(isEdit ? {} : { order: nextOrder }),
 		};
@@ -291,6 +223,7 @@ export default function AdminMusicArtistsPage() {
 		const nextArtists = artists.filter((artist) => artist.id !== id);
 		setArtists(nextArtists);
 		primeAdminResource('artists-list', token, nextArtists);
+		closeForm();
 	};
 
 	const persistArtistOrder = async (nextArtists) => {
@@ -369,73 +302,32 @@ export default function AdminMusicArtistsPage() {
 				</div>
 			</div>
 
-			<div className="admin-artists-page-table-wrap">
-				<table className="admin-artists-page-table">
-					<thead>
-						<tr>
-							{isSuperAdmin && !isViewer && <th className="admin-artists-page-drag-header"></th>}
-							{columns.map((column) => <th key={column.key} className={column.className}>{renderHeader(column)}</th>)}
-							<th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
-						</tr>
-					</thead>
-					<tbody>
-						{artists.map((artist) => (
-							<tr
-								key={artist.id}
-								className={[
-									dropTargetId === artist.id ? 'admin-artists-page-drop-target-row' : '',
-									isArtistHidden(artist) ? 'admin-artists-page-hidden-row' : '',
-								].filter(Boolean).join(' ')}
-								onDragOver={(event) => handleDragOver(event, artist.id)}
-								onDrop={(event) => {
-									event.preventDefault();
-									handleDrop(artist.id);
-								}}
-							>
-								{isSuperAdmin && !isViewer && (
-									<td className="admin-artists-page-drag-cell">
-										<button
-											type="button"
-											draggable={!form}
-											onDragStart={(event) => handleDragStart(event, artist.id)}
-											onDragEnd={handleDragEnd}
-											className="admin-artists-page-drag-handle"
-											aria-label={`Reorder ${artist.name}`}
-											title="Drag to reorder"
-										>
-											::
-										</button>
-									</td>
-								)}
-								{columns.map((column) => (
-									<td key={column.key} className={column.className ?? ''}>
-										{renderDisplayValue(artist, column)}
-									</td>
-								))}
-								<td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
-									<div className="admin-artists-page-actions">
-										{!isViewer && (
-											<button type="button" onClick={() => void openEdit(artist)} disabled={loadingEditId === artist.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit artist" title="Edit">
-												<FaPencilAlt aria-hidden="true" />
-											</button>
-										)}
-										{isSuperAdmin && !isViewer && (
-											<ConfirmActionButton
-												message="Delete this artist and all their albums/songs?"
-												onConfirm={() => handleDelete(artist.id)}
-												buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-												buttonAriaLabel="Delete artist"
-												buttonTitle="Delete"
-											>
-												<FaTrash aria-hidden="true" />
-											</ConfirmActionButton>
-										)}
-									</div>
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
+			<div className="admin-entity-card-grid">
+				{artists.map((artist) => {
+					const image = primaryImage(artist.images);
+					return (
+						<AdminEntityCard
+							key={artist.id}
+							image={image?.previewUrl || image?.url}
+							imageCount={artist.imageCount ?? artist.images?.length ?? 1}
+							isHidden={isArtistHidden(artist)}
+							title={artist.name}
+							links={artist.links}
+							onEdit={isViewer ? undefined : () => void openEdit(artist)}
+							editDisabled={loadingEditId === artist.id}
+							editAriaLabel={`Edit ${artist.name}`}
+							draggable={isSuperAdmin && !isViewer && !form}
+							onDragStart={(event) => handleDragStart(event, artist.id)}
+							onDragOver={(event) => handleDragOver(event, artist.id)}
+							onDrop={(event) => {
+								event.preventDefault();
+								handleDrop(artist.id);
+							}}
+							onDragEnd={handleDragEnd}
+							isDropTarget={dropTargetId === artist.id}
+						/>
+					);
+				})}
 			</div>
 
 			{form && (
@@ -445,6 +337,8 @@ export default function AdminMusicArtistsPage() {
 					token={token}
 					onClose={closeForm}
 					onSave={handleSave}
+					onDelete={() => handleDelete(form.id)}
+					canDelete={isSuperAdmin && !isViewer}
 				/>
 			)}
 		</div>
