@@ -945,6 +945,54 @@
 	height: 16px;
 }
 
+.admin-account-access-grid {
+	display: grid;
+	gap: 16px;
+}
+
+.admin-account-access-group {
+	display: grid;
+	gap: 10px;
+	padding: 12px;
+	border: 1px solid var(--border);
+	background: var(--bg);
+}
+
+.admin-account-access-heading {
+	margin: 0;
+	color: var(--accent);
+	font-size: 0.85rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.admin-account-access-note {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: 0.9rem;
+	line-height: 1.45;
+}
+
+.admin-account-access-options {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 8px 12px;
+}
+
+.admin-account-access-option {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--text);
+	font-size: 0.9rem;
+}
+
+.admin-account-access-option input {
+	width: 16px;
+	height: 16px;
+}
+
 .admin-modal-textarea {
 	resize: vertical;
 	min-height: 100px;

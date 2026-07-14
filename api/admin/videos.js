@@ -1,5 +1,6 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { canAccessArtist, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
+import { canAccessAdminPage, canAccessArtist, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
+import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
 import { buildClientImageUrl } from '../../src/lib/images.js'
 import { buildStaticArtistVideoPath, getStaticArtistVideoExtension, normalizeArtistVideoInput, validateArtistVideoInput, ARTIST_VIDEO_SOURCE } from '../../src/lib/artistVideos.js'
 import { isOtherArtist } from '../../src/lib/publicVisibility.js'
@@ -78,6 +79,7 @@ async function ensureArtistVideoRows(session) {
 export default async function handler(req, res) {
   const session = requireAdmin(req, res)
   if (!session) return
+  if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_VIDEOS)) return res.status(403).json({ error: 'Forbidden' })
   if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
 
   if (req.method === 'GET') {

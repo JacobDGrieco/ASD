@@ -1,5 +1,6 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { artistScopedAlbumWhere, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
+import { artistScopedAlbumWhere, canAccessAdminPage, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
+import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
 import { normalizeVisibilityInput } from '../../src/lib/contentVisibility.js'
 import { releaseVisibilityUpperBound } from '../../src/lib/releaseSchedule.js'
 import { clientImages, mergeLegacyImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js'
@@ -177,6 +178,11 @@ async function resolveAlbumArtistSlugPart(artistId, otherArtistName, resolvedArt
 export default async function handler(req, res) {
   const session = requireAdmin(req, res)
   if (!session) return
+  const canReadAlbums = [
+    ADMIN_PAGE_KEYS.MUSIC_ALBUMS,
+    ADMIN_PAGE_KEYS.MUSIC_SONGS,
+  ].some((pageKey) => canAccessAdminPage(session, pageKey))
+  if (!canReadAlbums) return res.status(403).json({ error: 'Forbidden' })
   await syncAlbumReleaseVisibility()
 
   const { id } = req.query
@@ -190,6 +196,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT') {
+      if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_ALBUMS)) return res.status(403).json({ error: 'Forbidden' })
       if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
       const { title, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, releaseDate, artistId, images } = req.body
       const resolvedArtistId = await resolveAlbumArtistId(session, artistId)
@@ -235,6 +242,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
+      if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_ALBUMS)) return res.status(403).json({ error: 'Forbidden' })
       if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
       await prisma.album.delete({ where: { id } })
       return res.status(204).end()
@@ -253,6 +261,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
+    if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_ALBUMS)) return res.status(403).json({ error: 'Forbidden' })
     if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
     const { title, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, releaseDate, artistId, images } = req.body
     const resolvedArtistId = await resolveAlbumArtistId(session, artistId)

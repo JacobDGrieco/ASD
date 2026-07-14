@@ -112,6 +112,29 @@
 	border-right: 0;
 }
 
+.portal-panel-music::after {
+	content: "";
+	position: absolute;
+	top: clamp(28px, 6vh, 72px);
+	right: -7px;
+	bottom: clamp(28px, 6vh, 72px);
+	z-index: 4;
+	width: 14px;
+	pointer-events: none;
+	background:
+		linear-gradient(90deg, transparent, rgba(200, 169, 110, 0.16), transparent),
+		linear-gradient(180deg, transparent, rgba(242, 234, 220, 0.48) 18%, rgba(200, 169, 110, 0.68) 50%, rgba(242, 234, 220, 0.42) 82%, transparent),
+		linear-gradient(180deg, transparent 12%, rgba(200, 169, 110, 0.16) 12% 14%, transparent 14% 46%, rgba(242, 234, 220, 0.22) 46% 48%, transparent 48% 84%, rgba(200, 169, 110, 0.16) 84% 86%, transparent 86%);
+	background-size: 14px 100%, 2px 100%, 14px 100%;
+	background-position: center, center;
+	background-repeat: no-repeat;
+	filter: drop-shadow(0 0 10px rgba(200, 169, 110, 0.28));
+	opacity: 0.88;
+	transition:
+		opacity 0.32s ease,
+		filter 0.32s ease;
+}
+
 .portal-panel::before {
 	content: "";
 	position: absolute;
@@ -399,6 +422,15 @@
 	box-shadow: 2px 0 22px rgba(200, 169, 110, 0.1);
 }
 
+.portal-home:has(.portal-panel-active) .portal-panel-music::after {
+	opacity: 1;
+	filter: drop-shadow(0 0 18px rgba(200, 169, 110, 0.48));
+}
+
+.portal-home-expanding .portal-panel-music::after {
+	opacity: 0;
+}
+
 .portal-music-stage {
 	position: absolute;
 	inset: 0;
@@ -565,6 +597,22 @@
 		min-height: calc((100dvh - var(--nav-height)) * 0.5);
 		border-right: 0;
 		border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+	}
+
+	.portal-panel-music::after {
+		top: auto;
+		right: clamp(24px, 7vw, 72px);
+		bottom: -7px;
+		left: clamp(24px, 7vw, 72px);
+		width: auto;
+		height: 14px;
+		background:
+			linear-gradient(180deg, transparent, rgba(200, 169, 110, 0.16), transparent),
+			linear-gradient(90deg, transparent, rgba(242, 234, 220, 0.48) 18%, rgba(200, 169, 110, 0.68) 50%, rgba(242, 234, 220, 0.42) 82%, transparent),
+			linear-gradient(90deg, transparent 12%, rgba(200, 169, 110, 0.16) 12% 14%, transparent 14% 46%, rgba(242, 234, 220, 0.22) 46% 48%, transparent 48% 84%, rgba(200, 169, 110, 0.16) 84% 86%, transparent 86%);
+		background-size: 100% 14px, 100% 2px, 100% 14px;
+		background-position: center, center;
+		background-repeat: no-repeat;
 	}
 
 	.portal-panel:last-child {

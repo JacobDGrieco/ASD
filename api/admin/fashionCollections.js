@@ -1,5 +1,6 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { requireSuperAdmin } from '../../src/lib/auth.js'
+import { canAccessAdminPage, requireAdmin } from '../../src/lib/auth.js'
+import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
 import { clientImages, normalizeImageInput, primaryImageReference } from '../../src/lib/images.js'
 import { slugify } from '../../src/lib/slugify.js'
 
@@ -167,8 +168,13 @@ function collectionUpdateData(body, cover) {
 }
 
 export default async function handler(req, res) {
-  const session = requireSuperAdmin(req, res)
+  const session = requireAdmin(req, res)
   if (!session) return
+  const canReadCollections = [
+    ADMIN_PAGE_KEYS.FASHION_COLLECTIONS,
+    ADMIN_PAGE_KEYS.FASHION_LOOKS,
+  ].some((pageKey) => canAccessAdminPage(session, pageKey))
+  if (!canReadCollections) return res.status(403).json({ error: 'Forbidden' })
 
   const { id } = req.query
 
@@ -185,6 +191,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT') {
+      if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.FASHION_COLLECTIONS)) return res.status(403).json({ error: 'Forbidden' })
       const { credits, coverImage: coverInput } = req.body
       const cover = normalizeCoverInput(coverInput)
 
@@ -216,6 +223,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
+      if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.FASHION_COLLECTIONS)) return res.status(403).json({ error: 'Forbidden' })
       await prisma.fashionCollection.delete({ where: { id } })
       return res.status(204).end()
     }
@@ -232,6 +240,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
+    if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.FASHION_COLLECTIONS)) return res.status(403).json({ error: 'Forbidden' })
     const { title, slug, type, description, about, season, releaseDate, location, isVisible, order, coverImage: coverInput, credits } = req.body
     if (!title) return res.status(400).json({ error: 'Title is required.' })
     const cover = normalizeCoverInput(coverInput) ?? { coverImage: '', coverPathname: null }

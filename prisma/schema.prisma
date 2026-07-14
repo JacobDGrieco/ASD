@@ -93,8 +93,10 @@ model ArtistAdminAccess {
   id           String   @id @default(cuid())
   artistId     String   @unique
   artist       Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  name         String   @default("")
   passwordHash String
   active       Boolean  @default(true)
+  pageAccess   Json     @default(dbgenerated("'[]'::jsonb"))
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -368,10 +370,23 @@ model FashionTalent {
   lookCredits      FashionLookCredit[]
   pieceCredits     FashionPieceCredit[]
   collectionCredits FashionCollectionCredit[]
+  adminAccess      FashionTalentAdminAccess?
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
 
   @@index([isVisible, order])
+}
+
+model FashionTalentAdminAccess {
+  id           String        @id @default(cuid())
+  talentId     String        @unique
+  talent       FashionTalent @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  name         String        @default("")
+  passwordHash String
+  active       Boolean       @default(true)
+  pageAccess   Json          @default(dbgenerated("'[]'::jsonb"))
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 model FashionTalentImage {

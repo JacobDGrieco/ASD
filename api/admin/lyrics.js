@@ -1,5 +1,6 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { artistScopedSongWhere, isViewer, requireAdmin } from '../../src/lib/auth.js'
+import { artistScopedSongWhere, canAccessAdminPage, isViewer, requireAdmin } from '../../src/lib/auth.js'
+import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
 
 async function loadSongForLyrics(session, songId) {
   return prisma.song.findFirst({
@@ -14,6 +15,7 @@ async function loadSongForLyrics(session, songId) {
 export default async function handler(req, res) {
   const session = requireAdmin(req, res)
   if (!session) return
+  if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_SONGS)) return res.status(403).json({ error: 'Forbidden' })
 
   const { songId } = req.query
 

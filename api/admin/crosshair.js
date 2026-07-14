@@ -1,12 +1,13 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
+import { canAccessAdminPage, isViewer, requireAdmin } from '../../src/lib/auth.js'
+import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
 import { formatCrosshairVideo, normalizeCrosshairVideoInput, validateCrosshairVideoInput } from '../../src/lib/crosshairVideos.js'
 import { getYouTubeSyncConfigStatus, syncCrosshairFromYouTube } from '../../src/lib/youtubeChannelSync.js'
 
 function requireCrosshairAccess(req, res) {
   const session = requireAdmin(req, res)
   if (!session) return null
-  if (isViewer(session) || !isSuperAdmin(session)) {
+  if (isViewer(session) || !canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_CROSSHAIR)) {
     res.status(403).json({ error: 'Forbidden' })
     return null
   }

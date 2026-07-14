@@ -24,6 +24,7 @@ import SideRails from './components/shared/SideRails.jsx';
 import PublicLegalFooter from './components/shared/PublicLegalFooter.jsx';
 import { AdminProvider, useAdminAuth } from './lib/adminAuth.jsx';
 import { isAdminPreviewSession } from './lib/publicPreview.js';
+import { ADMIN_PAGE_KEYS, firstAccessibleAdminPath, hasAdminPageAccess } from './lib/adminPageAccess.js';
 import './styles/PublicAdminPreview.css';
 import './styles/ViewTransitions.css';
 
@@ -114,25 +115,18 @@ function PublicLayout() {
 
 function AdminHomeRedirect() {
 	const { session } = useAdminAuth();
-	if (session?.role === 'SUPER_ADMIN') return <Navigate to="/admin/about" replace />;
-	return <Navigate to="/admin/albums" replace />;
+	return <Navigate to={firstAccessibleAdminPath(session)} replace />;
 }
 
-function AdminVideosAccessRoute() {
+function AdminSuperRoute({ children }) {
 	const { session } = useAdminAuth();
-	if (session?.role === 'VIEWER') return <Navigate to="/admin" replace />;
-	return <AdminMusicVideosPage />;
+	if (session?.role !== 'SUPER_ADMIN') return <Navigate to={firstAccessibleAdminPath(session)} replace />;
+	return children;
 }
 
-function AdminCrosshairAccessRoute() {
+function AdminPageAccessRoute({ pageKey, children }) {
 	const { session } = useAdminAuth();
-	if (session?.role !== 'SUPER_ADMIN') return <Navigate to="/admin" replace />;
-	return <AdminMusicCrosshairPage />;
-}
-
-function AdminFashionAccessRoute({ children }) {
-	const { session } = useAdminAuth();
-	if (session?.role !== 'SUPER_ADMIN') return <Navigate to="/admin" replace />;
+	if (!hasAdminPageAccess(session, pageKey)) return <Navigate to={firstAccessibleAdminPath(session)} replace />;
 	return children;
 }
 
@@ -171,21 +165,21 @@ export default function App() {
 					<Route element={<AdminRoute />}>
 						<Route element={<AdminLayout />}>
 							<Route path="/admin" element={<AdminHomeRedirect />} />
-							<Route path="/admin/accounts" element={<AdminAccountsPage />} />
-							<Route path="/admin/about" element={<AdminAboutPage />} />
-							<Route path="/admin/artists" element={<AdminMusicArtistsPage />} />
-							<Route path="/admin/outside-artists" element={<AdminMusicOutsideArtistsPage />} />
-							<Route path="/admin/albums" element={<AdminMusicAlbumsPage />} />
-							<Route path="/admin/board" element={<AdminMusicBoardPage />} />
-							<Route path="/admin/videos" element={<AdminVideosAccessRoute />} />
-							<Route path="/admin/crosshair" element={<AdminCrosshairAccessRoute />} />
-							<Route path="/admin/songs" element={<AdminMusicSongsPage />} />
-							<Route path="/admin/lyrics/:songId" element={<AdminMusicLyricsPage />} />
-							<Route path="/admin/record-player" element={<AdminMusicRecordPlayerPage />} />
-							<Route path="/admin/fashion/talent" element={<AdminFashionAccessRoute><AdminFashionTalentPage /></AdminFashionAccessRoute>} />
-							<Route path="/admin/fashion/outside_talent" element={<AdminFashionAccessRoute><AdminFashionOutsideTalentPage /></AdminFashionAccessRoute>} />
-							<Route path="/admin/fashion/looks" element={<AdminFashionAccessRoute><AdminFashionLooksPage /></AdminFashionAccessRoute>} />
-							<Route path="/admin/fashion/collections" element={<AdminFashionAccessRoute><AdminFashionCollectionsPage /></AdminFashionAccessRoute>} />
+							<Route path="/admin/accounts" element={<AdminSuperRoute><AdminAccountsPage /></AdminSuperRoute>} />
+							<Route path="/admin/about" element={<AdminSuperRoute><AdminAboutPage /></AdminSuperRoute>} />
+							<Route path="/admin/artists" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_ARTISTS}><AdminMusicArtistsPage /></AdminPageAccessRoute>} />
+							<Route path="/admin/outside-artists" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_OUTSIDE_ARTISTS}><AdminMusicOutsideArtistsPage /></AdminPageAccessRoute>} />
+							<Route path="/admin/albums" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_ALBUMS}><AdminMusicAlbumsPage /></AdminPageAccessRoute>} />
+							<Route path="/admin/board" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.BOARD}><AdminMusicBoardPage /></AdminPageAccessRoute>} />
+							<Route path="/admin/videos" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_VIDEOS}><AdminMusicVideosPage /></AdminPageAccessRoute>} />
+							<Route path="/admin/crosshair" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_CROSSHAIR}><AdminMusicCrosshairPage /></AdminPageAccessRoute>} />
+							<Route path="/admin/songs" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_SONGS}><AdminMusicSongsPage /></AdminPageAccessRoute>} />
+							<Route path="/admin/lyrics/:songId" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_SONGS}><AdminMusicLyricsPage /></AdminPageAccessRoute>} />
+							<Route path="/admin/record-player" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_RECORD_PLAYER}><AdminMusicRecordPlayerPage /></AdminPageAccessRoute>} />
+							<Route path="/admin/fashion/talent" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.FASHION_TALENT}><AdminFashionTalentPage /></AdminPageAccessRoute>} />
+							<Route path="/admin/fashion/outside_talent" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.FASHION_OUTSIDE_TALENT}><AdminFashionOutsideTalentPage /></AdminPageAccessRoute>} />
+							<Route path="/admin/fashion/looks" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.FASHION_LOOKS}><AdminFashionLooksPage /></AdminPageAccessRoute>} />
+							<Route path="/admin/fashion/collections" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.FASHION_COLLECTIONS}><AdminFashionCollectionsPage /></AdminPageAccessRoute>} />
 						</Route>
 					</Route>
 				</Routes>

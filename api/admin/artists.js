@@ -1,5 +1,6 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { canAccessArtist, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
+import { canAccessAdminPage, canAccessArtist, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
+import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
 import { hashPassword } from '../../src/lib/passwords.js'
 import { validateUniqueArtistPassword } from '../../src/lib/adminAccounts.js'
 import { handleAdminBoard } from '../../src/lib/adminBoardHandler.js'
@@ -107,7 +108,19 @@ function buildAdminAccessUpdate(adminPassword) {
 export default async function handler(req, res) {
   const session = requireAdmin(req, res)
   if (!session) return
-  if (req.query.resource === 'board') return handleAdminBoard(req, res, session)
+  if (req.query.resource === 'board') {
+    if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.BOARD)) return res.status(403).json({ error: 'Forbidden' })
+    return handleAdminBoard(req, res, session)
+  }
+
+  const canReadArtists = [
+    ADMIN_PAGE_KEYS.MUSIC_ARTISTS,
+    ADMIN_PAGE_KEYS.MUSIC_ALBUMS,
+    ADMIN_PAGE_KEYS.MUSIC_SONGS,
+    ADMIN_PAGE_KEYS.MUSIC_RECORD_PLAYER,
+    ADMIN_PAGE_KEYS.MUSIC_VIDEOS,
+  ].some((pageKey) => canAccessAdminPage(session, pageKey))
+  if (!canReadArtists) return res.status(403).json({ error: 'Forbidden' })
 
   const { id } = req.query
 
@@ -122,6 +135,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT') {
+      if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_ARTISTS)) return res.status(403).json({ error: 'Forbidden' })
       if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
       if (isReservedHiddenArtist(existingArtist)) return res.status(403).json({ error: 'This reserved artist cannot be edited here.' })
       const {
@@ -183,6 +197,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
+      if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_ARTISTS)) return res.status(403).json({ error: 'Forbidden' })
       if (!isSuperAdmin(session)) return res.status(403).json({ error: 'Forbidden' })
       if (isReservedHiddenArtist(existingArtist)) return res.status(403).json({ error: 'This reserved artist cannot be deleted here.' })
       await prisma.artist.delete({ where: { id } })
@@ -217,6 +232,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
+    if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_ARTISTS)) return res.status(403).json({ error: 'Forbidden' })
     if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
     if (!isSuperAdmin(session)) return res.status(403).json({ error: 'Forbidden' })
 

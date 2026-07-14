@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import { FaBullseye, FaBullhorn, FaChevronDown, FaChevronLeft, FaChevronRight, FaCompactDisc, FaInfoCircle, FaMicrophoneAlt, FaMusic, FaSignOutAlt, FaUserFriends, FaUserShield, FaVideo, FaRecordVinyl, FaTshirt, FaUsers } from 'react-icons/fa';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
+import { ADMIN_PAGE_KEYS, hasAdminPageAccess } from '../../lib/adminPageAccess.js';
 import '../../styles/AdminLayout.css';
 
 const ADMIN_SIDEBAR_STATE_KEY = 'admin-sidebar-collapsed';
@@ -12,10 +13,6 @@ const DEFAULT_SECTION_STATE = {
 	music: true,
 	fashion: true,
 };
-const BOARD_LINKS = [
-	{ to: '/admin/board', label: 'Posts', icon: <FaBullhorn aria-hidden="true" /> },
-];
-
 function readStoredSectionState() {
 	if (typeof window === 'undefined') return DEFAULT_SECTION_STATE;
 
@@ -40,7 +37,6 @@ export default function AdminLayout() {
 	const { logout, session } = useAdminAuth();
 	const location = useLocation();
 	const isArtistScoped = session?.role === 'ARTIST';
-	const isViewer = session?.role === 'VIEWER';
 	const isSuperAdminSession = session?.role === 'SUPER_ADMIN';
 	const [isCollapsed, setIsCollapsed] = useState(() => {
 		if (typeof window === 'undefined') return false;
@@ -64,39 +60,61 @@ export default function AdminLayout() {
 	}, [openSections]);
 
 	const adminLinks = [
-		...(!isArtistScoped && !isViewer ? [
+		...(isSuperAdminSession ? [
 			{ to: '/admin/accounts', label: 'Accounts', icon: <FaUserShield aria-hidden="true" /> },
 			{ to: '/admin/about', label: 'About Us', icon: <FaInfoCircle aria-hidden="true" /> },
 		] : []),
 	];
 
+	const boardLinks = [
+		...(hasAdminPageAccess(session, ADMIN_PAGE_KEYS.BOARD) ? [
+			{ to: '/admin/board', label: 'Posts', icon: <FaBullhorn aria-hidden="true" /> },
+		] : []),
+	];
+
 	const musicLinks = [
-		...(!isArtistScoped ? [
+		...(hasAdminPageAccess(session, ADMIN_PAGE_KEYS.MUSIC_ARTISTS) ? [
 			{ to: '/admin/artists', label: 'Artists', icon: <FaMicrophoneAlt aria-hidden="true" />, matchPaths: ['/admin'] },
 		] : []),
-		...(!isArtistScoped && !isViewer ? [
+		...(hasAdminPageAccess(session, ADMIN_PAGE_KEYS.MUSIC_OUTSIDE_ARTISTS) ? [
 			{ to: '/admin/outside-artists', label: 'Outside Artists', icon: <FaUserFriends aria-hidden="true" /> },
 		] : []),
-		{ to: '/admin/albums', label: 'Albums', icon: <FaCompactDisc aria-hidden="true" />, matchPaths: isArtistScoped ? ['/admin'] : undefined },
-		{ to: '/admin/songs', label: 'Songs', icon: <FaMusic aria-hidden="true" />, matchPaths: ['/admin/lyrics'] },
-		...(!isArtistScoped ? [{ to: '/admin/record-player', label: 'Record Player', icon: <FaRecordVinyl aria-hidden="true" /> }] : []),
-		...(!isViewer ? [{ to: '/admin/videos', label: 'Videos', icon: <FaVideo aria-hidden="true" /> }] : []),
-		...(isSuperAdminSession ? [{ to: '/admin/crosshair', label: 'Crosshair', icon: <FaBullseye aria-hidden="true" /> }] : []),
+		...(hasAdminPageAccess(session, ADMIN_PAGE_KEYS.MUSIC_ALBUMS) ? [
+			{ to: '/admin/albums', label: 'Albums', icon: <FaCompactDisc aria-hidden="true" />, matchPaths: isArtistScoped ? ['/admin'] : undefined },
+		] : []),
+		...(hasAdminPageAccess(session, ADMIN_PAGE_KEYS.MUSIC_SONGS) ? [
+			{ to: '/admin/songs', label: 'Songs', icon: <FaMusic aria-hidden="true" />, matchPaths: ['/admin/lyrics'] },
+		] : []),
+		...(hasAdminPageAccess(session, ADMIN_PAGE_KEYS.MUSIC_RECORD_PLAYER) ? [
+			{ to: '/admin/record-player', label: 'Record Player', icon: <FaRecordVinyl aria-hidden="true" /> },
+		] : []),
+		...(hasAdminPageAccess(session, ADMIN_PAGE_KEYS.MUSIC_VIDEOS) ? [
+			{ to: '/admin/videos', label: 'Videos', icon: <FaVideo aria-hidden="true" /> },
+		] : []),
+		...(hasAdminPageAccess(session, ADMIN_PAGE_KEYS.MUSIC_CROSSHAIR) ? [
+			{ to: '/admin/crosshair', label: 'Crosshair', icon: <FaBullseye aria-hidden="true" /> },
+		] : []),
 	];
 
 	const fashionLinks = [
-		...(isSuperAdminSession ? [
+		...(hasAdminPageAccess(session, ADMIN_PAGE_KEYS.FASHION_TALENT) ? [
 			{ to: '/admin/fashion/talent', label: 'Talent', icon: <FaUsers aria-hidden="true" /> },
+		] : []),
+		...(hasAdminPageAccess(session, ADMIN_PAGE_KEYS.FASHION_OUTSIDE_TALENT) ? [
 			{ to: '/admin/fashion/outside_talent', label: 'Outside Talent', icon: <FaUserFriends aria-hidden="true" /> },
+		] : []),
+		...(hasAdminPageAccess(session, ADMIN_PAGE_KEYS.FASHION_COLLECTIONS) ? [
 			{ to: '/admin/fashion/collections', label: 'Collections', icon: <FaCompactDisc aria-hidden="true" /> },
+		] : []),
+		...(hasAdminPageAccess(session, ADMIN_PAGE_KEYS.FASHION_LOOKS) ? [
 			{ to: '/admin/fashion/looks', label: 'Looks', icon: <FaTshirt aria-hidden="true" /> },
 		] : []),
 	];
 
 	const navSections = [
 		...(adminLinks.length > 0 ? [{ key: 'admin', label: 'Admin', icon: <FaUserShield aria-hidden="true" />, links: adminLinks }] : []),
-		{ key: 'board', label: 'The Board', icon: <FaBullhorn aria-hidden="true" />, links: BOARD_LINKS },
-		{ key: 'music', label: 'Music', icon: <FaMusic aria-hidden="true" />, links: musicLinks },
+		...(boardLinks.length > 0 ? [{ key: 'board', label: 'The Board', icon: <FaBullhorn aria-hidden="true" />, links: boardLinks }] : []),
+		...(musicLinks.length > 0 ? [{ key: 'music', label: 'Music', icon: <FaMusic aria-hidden="true" />, links: musicLinks }] : []),
 		...(fashionLinks.length > 0 ? [{ key: 'fashion', label: 'Fashion', icon: <FaTshirt aria-hidden="true" />, links: fashionLinks }] : []),
 	];
 

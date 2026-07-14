@@ -1,5 +1,6 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { requireSuperAdmin } from '../../src/lib/auth.js'
+import { canAccessAdminPage, requireAdmin } from '../../src/lib/auth.js'
+import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
 import { clientImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js'
 import { slugify } from '../../src/lib/slugify.js'
 
@@ -405,6 +406,40 @@ function normalizeLookPlacements(body) {
   }, [])
 }
 
+function hasAnyFashionPage(session, pageKeys) {
+  return pageKeys.some((pageKey) => canAccessAdminPage(session, pageKey))
+}
+
+function canAccessFashionResource(session, resource, method) {
+  if (resource === 'talent') {
+    if (method === 'GET') {
+      return hasAnyFashionPage(session, [
+        ADMIN_PAGE_KEYS.FASHION_TALENT,
+        ADMIN_PAGE_KEYS.FASHION_COLLECTIONS,
+        ADMIN_PAGE_KEYS.FASHION_LOOKS,
+      ])
+    }
+    return canAccessAdminPage(session, ADMIN_PAGE_KEYS.FASHION_TALENT)
+  }
+
+  if (resource === 'crew') {
+    if (method === 'GET') {
+      return hasAnyFashionPage(session, [
+        ADMIN_PAGE_KEYS.FASHION_OUTSIDE_TALENT,
+        ADMIN_PAGE_KEYS.FASHION_COLLECTIONS,
+        ADMIN_PAGE_KEYS.FASHION_LOOKS,
+      ])
+    }
+    return canAccessAdminPage(session, ADMIN_PAGE_KEYS.FASHION_OUTSIDE_TALENT)
+  }
+
+  if (resource === 'looks') {
+    return canAccessAdminPage(session, ADMIN_PAGE_KEYS.FASHION_LOOKS)
+  }
+
+  return false
+}
+
 // credits: [{ talentId?, crewId?, creditName, roleLabel }]
 function creditsCreateManyData(credits) {
   const normalized = Array.isArray(credits) ? credits : []
@@ -646,10 +681,13 @@ async function handleLooks(req, res) {
 }
 
 export default async function handler(req, res) {
-  const session = requireSuperAdmin(req, res)
+  const session = requireAdmin(req, res)
   if (!session) return
 
   const resource = req.query.resource
+  if (!canAccessFashionResource(session, resource, req.method)) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
 
   if (resource === 'talent') return handleTalent(req, res)
   if (resource === 'looks') return handleLooks(req, res)

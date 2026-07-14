@@ -1,5 +1,6 @@
 import { prisma } from '../../src/lib/prisma.js'
-import { isViewer, requireAdmin } from '../../src/lib/auth.js'
+import { canAccessAdminPage, isViewer, requireAdmin } from '../../src/lib/auth.js'
+import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
 import { clientImages, normalizeImageInput, primaryImageReference } from '../../src/lib/images.js'
 
 function normalizeString(value) {
@@ -64,6 +65,11 @@ function validateOutsideArtist(body) {
 export default async function handler(req, res) {
   const session = requireAdmin(req, res)
   if (!session) return
+  const canReadOutsideArtists = [
+    ADMIN_PAGE_KEYS.MUSIC_OUTSIDE_ARTISTS,
+    ADMIN_PAGE_KEYS.MUSIC_SONGS,
+  ].some((pageKey) => canAccessAdminPage(session, pageKey))
+  if (!canReadOutsideArtists) return res.status(403).json({ error: 'Forbidden' })
 
   const id = typeof req.query.id === 'string' ? req.query.id : ''
 
@@ -80,6 +86,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT') {
+      if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_OUTSIDE_ARTISTS)) return res.status(403).json({ error: 'Forbidden' })
       if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
       const validation = validateOutsideArtist(req.body ?? {})
       if (validation.error) return res.status(400).json({ error: validation.error })
@@ -93,6 +100,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
+      if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_OUTSIDE_ARTISTS)) return res.status(403).json({ error: 'Forbidden' })
       if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
       await prisma.musicOutsideArtist.delete({ where: { id } })
       return res.status(204).end()
@@ -110,6 +118,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
+    if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_OUTSIDE_ARTISTS)) return res.status(403).json({ error: 'Forbidden' })
     if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
     const validation = validateOutsideArtist(req.body ?? {})
     if (validation.error) return res.status(400).json({ error: validation.error })

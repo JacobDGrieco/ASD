@@ -1,8 +1,10 @@
 import jwt from 'jsonwebtoken'
 import { releaseVisibilityUpperBound } from './releaseSchedule.js'
+import { hasAdminPageAccess, normalizeAdminPageAccess } from './adminPageAccess.js'
 
 export const ADMIN_ROLE_SUPER = 'SUPER_ADMIN'
 export const ADMIN_ROLE_ARTIST = 'ARTIST'
+export const ADMIN_ROLE_TALENT = 'TALENT'
 export const ADMIN_ROLE_VIEWER = 'VIEWER'
 export const ADMIN_AUTH_COOKIE_NAME = 'asd_admin_token'
 
@@ -52,6 +54,11 @@ export function signToken(session) {
       artistId: session.artistId ?? null,
       artistSlug: session.artistSlug ?? null,
       artistName: session.artistName ?? null,
+      talentId: session.talentId ?? null,
+      talentSlug: session.talentSlug ?? null,
+      talentName: session.talentName ?? null,
+      accountName: session.accountName ?? null,
+      pageAccess: normalizeAdminPageAccess(session.pageAccess),
     },
     secret(),
     { expiresIn: '8h' }
@@ -67,6 +74,11 @@ export function verifyToken(token) {
         artistId: null,
         artistSlug: null,
         artistName: null,
+        talentId: null,
+        talentSlug: null,
+        talentName: null,
+        accountName: null,
+        pageAccess: [],
       }
     }
 
@@ -75,6 +87,11 @@ export function verifyToken(token) {
       artistId: payload.artistId ?? null,
       artistSlug: payload.artistSlug ?? null,
       artistName: payload.artistName ?? null,
+      talentId: payload.talentId ?? null,
+      talentSlug: payload.talentSlug ?? null,
+      talentName: payload.talentName ?? null,
+      accountName: payload.accountName ?? null,
+      pageAccess: normalizeAdminPageAccess(payload.pageAccess),
     }
   } catch {
     return null
@@ -89,8 +106,16 @@ export function isArtistAdmin(session) {
   return session?.role === ADMIN_ROLE_ARTIST && Boolean(session.artistId)
 }
 
+export function isTalentAdmin(session) {
+  return session?.role === ADMIN_ROLE_TALENT && Boolean(session.talentId)
+}
+
 export function isViewer(session) {
   return session?.role === ADMIN_ROLE_VIEWER
+}
+
+export function canAccessAdminPage(session, pageKey) {
+  return hasAdminPageAccess(session, pageKey)
 }
 
 export function requireAdmin(req, res) {
@@ -208,12 +233,14 @@ export function viewerSongVisibilityWhere() {
 export function artistScopedAlbumWhere(session) {
   if (isSuperAdmin(session)) return {}
   if (isViewer(session)) return viewerAlbumVisibilityWhere()
+  if (!isArtistAdmin(session)) return { id: '__no_access__' }
   return { artistId: session.artistId }
 }
 
 export function artistScopedSongWhere(session) {
   if (isSuperAdmin(session)) return {}
   if (isViewer(session)) return viewerSongVisibilityWhere()
+  if (!isArtistAdmin(session)) return { id: '__no_access__' }
 
   return {
     AND: [
