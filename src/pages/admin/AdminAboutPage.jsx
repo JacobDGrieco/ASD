@@ -218,9 +218,7 @@ export default function AdminAboutPage() {
 				<div className="admin-about-profile-heading">
 					<div>
 						<h2 id="admin-about-hero-copy-title">Hero Copy</h2>
-						<p>Required H1 and paragraph used at the top of the About Us page.</p>
 					</div>
-					<span className="admin-about-profile-updated">Updated {formatDate(profile.updatedAt)}</span>
 				</div>
 				<label htmlFor="admin-about-hero-title" className="admin-modal-label">
 					Hero title <span className="admin-modal-label-required">*</span>
