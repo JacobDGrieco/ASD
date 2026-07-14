@@ -129,9 +129,9 @@ export default function AdminLayout() {
 		<div className="admin-layout-layout">
 			<nav className={`admin-layout-sidebar ${isCollapsed ? 'admin-layout-sidebar-collapsed' : ''}`.trim()}>
 				<div className="admin-layout-brand-row">
-					<Link to="/" className="admin-layout-brand" title="ASD Records" aria-label="ASD Records home">
+					<Link to="/" className="admin-layout-brand" title="A.S.D." aria-label="A.S.D. home">
 						<img src="/favicon.png" alt="" className="admin-layout-brand-icon" />
-						<span className="admin-layout-label">ASD RECORDS</span>
+						<span className="admin-layout-label">A.S.D.</span>
 					</Link>
 					<button
 						type="button"

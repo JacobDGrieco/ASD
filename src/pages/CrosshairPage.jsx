@@ -83,7 +83,7 @@ export default function CrosshairPage() {
 				<section className="crosshair-header">
 					<div>
 						<h1 className="crosshair-title">The Crosshair</h1>
-						<p className="crosshair-copy">Uncut interviews, edited sessions, and shorts from ASD Records.</p>
+						<p className="crosshair-copy">Uncut interviews, edited sessions, and shorts from A.S.D..</p>
 					</div>
 					<div className="crosshair-filters" aria-label="Filter Crosshair videos">
 						{FILTERS.map((filter) => (
@@ -153,7 +153,7 @@ export default function CrosshairPage() {
 								<span className="crosshair-card-body">
 									<span className="crosshair-card-type">{video.typeLabel}</span>
 									<strong>{video.title}</strong>
-									<span>{formatDate(video.publishedAt) || 'ASD Records'}</span>
+									<span>{formatDate(video.publishedAt) || 'A.S.D.'}</span>
 								</span>
 							</button>
 						);

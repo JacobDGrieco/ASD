@@ -4,7 +4,7 @@ export const COMPANY_LEADERS = [
 		name: 'Alex Rivers',
 		role: 'Founder / Executive Director',
 		imageUrl: 'https://picsum.photos/seed/asd-founder-alex/720/720',
-		blurb: 'Alex guides ASD Records as an independent house for artists who need room to build a complete world around their releases. Their work spans artist development, release planning, and the long-term shape of the company.',
+		blurb: 'Alex guides A.S.D. as an independent house for artists who need room to build a complete world around their releases. Their work spans artist development, release planning, and the long-term shape of the company.',
 	},
 	{
 		id: 'mara-vale',
@@ -23,8 +23,8 @@ export const COMPANY_LEADERS = [
 ];
 
 export const COMPANY_SUMMARY = {
-	title: 'ASD Records builds the world around independent artists.',
-	description: 'ASD Records is a music label, fashion vertical, and creative operations company for artists who move outside the expected lane. The company pairs releases, visuals, editorial work, and live-facing media into one connected platform.',
+	title: 'A.S.D. builds the world around independent artists.',
+	description: 'A.S.D. is a music label, fashion vertical, and creative operations company for artists who move outside the expected lane. The company pairs releases, visuals, editorial work, and live-facing media into one connected platform.',
 };
 
 export function getCompanyMemberImage(member) {

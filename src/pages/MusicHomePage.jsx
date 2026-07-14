@@ -125,7 +125,7 @@ export default function MusicHomePage() {
 					<div className="home-about-copy">
 						<h2 className="home-about-title">Independent music from the underground.</h2>
 						<p>
-							ASD Records is an independent collective built around artists who move outside the expected lane.
+							A.S.D. is an independent collective built around artists who move outside the expected lane.
 							Each release is shaped with a hands-on approach, from early demos to the final visual world around it.
 						</p>
 						<p>

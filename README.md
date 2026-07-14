@@ -1,6 +1,6 @@
-# ASD Records
+# A.S.D.
 
-The site for ASD Records — a music label/artist portal with a companion fashion vertical, backed by a shared admin CMS. React + Vite frontend, Vercel Functions in `api/`, Prisma-backed data access.
+The site for A.S.D. — a music label/artist portal with a companion fashion vertical, backed by a shared admin CMS. React + Vite frontend, Vercel Functions in `api/`, Prisma-backed data access.
 
 ## Site Structure
 

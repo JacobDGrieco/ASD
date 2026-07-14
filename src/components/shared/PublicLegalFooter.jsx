@@ -26,7 +26,7 @@ export default function PublicLegalFooter({ variant = 'default' }) {
 					</Link>
 				))}
 			</nav>
-			<p className="public-legal-copy">&copy; {currentYear} ASD Records | All site content &copy; respective artists | Built by HeadInTheCloudsHaven LLC</p>
+			<p className="public-legal-copy">&copy; {currentYear} A.S.D. | All site content &copy; respective artists | Built by HeadInTheCloudsHaven LLC</p>
 		</footer>
 	);
 }

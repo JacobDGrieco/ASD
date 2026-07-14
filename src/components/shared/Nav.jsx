@@ -55,9 +55,9 @@ function NavContent({ section }) {
 
 	return (
 		<>
-			<Link to="/" className="nav-logo" aria-label="ASD Records home">
+			<Link to="/" className="nav-logo" aria-label="A.S.D. home">
 				<img src="/favicon.png" alt="" className="nav-logo-mark" />
-				<span>ASD RECORDS</span>
+				<span>A.S.D.</span>
 			</Link>
 
 			{section === 'root' ? (
