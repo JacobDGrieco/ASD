@@ -128,12 +128,14 @@
 
 .artist-splash-rail-window {
 	--artist-splash-rail-x-pad: clamp(24px, 4vw, 72px);
+	--artist-splash-rail-top-pad: clamp(96px, 12dvh, 132px);
+	--artist-splash-rail-bottom-pad: 40px;
 	box-sizing: border-box;
 	width: 100%;
 	overflow-x: auto;
 	overflow-y: hidden;
-	padding: 40px var(--artist-splash-rail-x-pad);
-	margin: -40px 0;
+	padding: var(--artist-splash-rail-top-pad) var(--artist-splash-rail-x-pad) var(--artist-splash-rail-bottom-pad);
+	margin: calc(var(--artist-splash-rail-top-pad) * -1) 0 calc(var(--artist-splash-rail-bottom-pad) * -1);
 	scrollbar-width: none;
 	scroll-behavior: smooth;
 }
@@ -508,9 +510,8 @@
 @media (min-width: 1800px) {
 	.artist-splash-rail-window {
 		--artist-splash-rail-x-pad: clamp(72px, 5vw, 112px);
-		--artist-splash-rail-y-pad: clamp(96px, 13dvh, 144px);
-		padding-block: var(--artist-splash-rail-y-pad);
-		margin-block: calc(var(--artist-splash-rail-y-pad) * -1);
+		--artist-splash-rail-top-pad: clamp(160px, 20dvh, 232px);
+		--artist-splash-rail-bottom-pad: clamp(96px, 13dvh, 144px);
 	}
 
 	.artist-splash-grid {
