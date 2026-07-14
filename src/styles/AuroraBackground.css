@@ -20,9 +20,48 @@
     linear-gradient(180deg, rgba(8, 10, 14, 0.56) 0%, rgba(8, 10, 14, 0.78) 38%, rgba(8, 10, 14, 0.92) 100%);
 }
 
+.aurora-bg::before,
+.aurora-bg::after {
+  content: "";
+  position: absolute;
+  inset: -22%;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.aurora-bg::before {
+  z-index: 2;
+  background:
+    linear-gradient(112deg, transparent 10%, rgba(200, 169, 110, 0.12) 26%, transparent 43%),
+    linear-gradient(68deg, transparent 34%, rgba(80, 210, 180, 0.1) 48%, transparent 64%),
+    linear-gradient(134deg, transparent 52%, rgba(103, 150, 255, 0.12) 66%, transparent 80%);
+  filter: blur(18px);
+  mix-blend-mode: screen;
+  opacity: 0.66;
+  transform: translate3d(-4%, -2%, 0) rotate(-5deg);
+  animation: auroraCurrentSweep 38s ease-in-out infinite alternate;
+}
+
+.aurora-bg::after {
+  z-index: 1;
+  background:
+    repeating-linear-gradient(
+      102deg,
+      transparent 0 11%,
+      rgba(255, 244, 216, 0.045) 13%,
+      transparent 18% 29%
+    );
+  filter: blur(10px);
+  mix-blend-mode: soft-light;
+  opacity: 0.48;
+  transform: translate3d(5%, 4%, 0) rotate(4deg);
+  animation: auroraBandDrift 52s ease-in-out infinite alternate;
+}
+
 .aurora-bg-noise {
   position: absolute;
   inset: 0;
+  z-index: 4;
   opacity: 0.08;
   background-image:
     radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.5) 0 0.8px, transparent 1px),
@@ -30,10 +69,12 @@
     radial-gradient(circle at 60% 80%, rgba(255, 255, 255, 0.25) 0 0.8px, transparent 1px);
   background-size: 22px 22px, 26px 26px, 18px 18px;
   mix-blend-mode: soft-light;
+  animation: auroraNoiseDrift 34s steps(10, end) infinite;
 }
 
 .aurora-bg-layer {
   position: absolute;
+  z-index: 3;
   filter: blur(84px);
   opacity: 0.5;
   mix-blend-mode: screen;
@@ -78,6 +119,7 @@
 
 .aurora-bg-glow {
   position: absolute;
+  z-index: 0;
   border-radius: 999px;
   filter: blur(100px);
   opacity: 0.22;
@@ -140,8 +182,49 @@
   }
 }
 
+@keyframes auroraCurrentSweep {
+  from {
+    opacity: 0.42;
+    transform: translate3d(-8%, -3%, 0) rotate(-7deg) scale(1);
+  }
+
+  45% {
+    opacity: 0.72;
+  }
+
+  to {
+    opacity: 0.58;
+    transform: translate3d(6%, 5%, 0) rotate(3deg) scale(1.06);
+  }
+}
+
+@keyframes auroraBandDrift {
+  from {
+    opacity: 0.34;
+    transform: translate3d(7%, 5%, 0) rotate(5deg);
+  }
+
+  to {
+    opacity: 0.54;
+    transform: translate3d(-6%, -4%, 0) rotate(-2deg);
+  }
+}
+
+@keyframes auroraNoiseDrift {
+  from {
+    background-position: 0 0, 0 0, 0 0;
+  }
+
+  to {
+    background-position: 44px 22px, -52px 26px, 18px -36px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .aurora-bg-layer {
+  .aurora-bg::before,
+  .aurora-bg::after,
+  .aurora-bg-layer,
+  .aurora-bg-noise {
     animation: none;
   }
 }

@@ -42,7 +42,7 @@ export default function FashionCollectionPage() {
   return (
     <div className="page aurora-page fashion-page">
       <AuroraBackground />
-      <div className="aurora-page-content fashion-page-content">
+      <div className="aurora-page-content fashion-page-content fashion-collection-page-content">
         <CollectionHeader collection={collection} />
         <div className="song-page-body fashion-collection-tabs-body">
           <TabView className="page-tabview fashion-collection-tabview">
