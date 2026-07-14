@@ -57,6 +57,20 @@ function getRecentItems(items, limit = 8) {
 		.slice(0, limit);
 }
 
+function getRunwaySlidesFromCatalogueItem(item) {
+	const looks = item?.looks?.length ? item.looks : (item?.linkedLook ? [item.linkedLook] : []);
+
+	return looks.flatMap((look) => (
+		(look.images ?? [])
+			.map((image, index) => ({
+				id: `${look.id}-${getImageKey(image) || index}`,
+				look,
+				image,
+			}))
+			.filter((slide) => getImageSrc(slide.image))
+	));
+}
+
 function FashionHomeSection({ eyebrow, title, description, to, linkLabel, children }) {
 	const sectionId = `fashion-home-${eyebrow.toLowerCase().replace(/\s+/g, '-')}`;
 
@@ -85,7 +99,14 @@ function FashionHomeCardPlaceholders() {
 
 function FashionHomeCatalogueCard({ item }) {
 	if (item.type === 'collection') {
-		return <CollectionCard collection={item} to={`/fashion/collections/${item.slug}`} />;
+		const isLoose = item.collectionType === 'LOOSE_LOOK' || item.catalogueType === 'loose';
+		const to = isLoose && item.linkedLook?.slug
+			? `/fashion/looks/${item.linkedLook.slug}`
+			: `/fashion/collections/${item.slug}`;
+		const lookCount = item.looks?.length ?? (item.linkedLook ? 1 : 0);
+		const meta = `${lookCount} look${lookCount === 1 ? '' : 's'}`;
+
+		return <CollectionCard collection={item} to={to} metaOverride={meta} />;
 	}
 
 	return <LookCard look={item} />;
@@ -122,14 +143,19 @@ function FashionRunwayFeature({ featuredLook, featuredImage, canSwapPresentation
 
 export default function FashionHomePage() {
 	const { session, token } = useAdminAuth();
-	const { data: looks, loading: looksLoading } = useApi('/api/fashion/looks');
 	const { data: catalogueItems, loading: catalogueLoading } = useApi('/api/fashion/catalogue');
 	const { data: talent, loading: talentLoading } = useApi('/api/fashion/talent');
 	const [imageUsageOverrides, setImageUsageOverrides] = useState({});
 	const [savingImageKey, setSavingImageKey] = useState(null);
+	const [activeRunwayImageIndex, setActiveRunwayImageIndex] = useState(0);
 
-	const featuredLook = looks?.[0] ?? null;
-	const rawFeaturedImage = featuredLook?.images?.[0] ?? null;
+	const latestRunwayItem = catalogueItems?.[0] ?? null;
+	const runwaySlides = useMemo(() => getRunwaySlidesFromCatalogueItem(latestRunwayItem), [latestRunwayItem]);
+	const activeRunwaySlide = runwaySlides.length
+		? runwaySlides[activeRunwayImageIndex % runwaySlides.length]
+		: null;
+	const featuredLook = activeRunwaySlide?.look ?? null;
+	const rawFeaturedImage = activeRunwaySlide?.image ?? null;
 	const featuredImageKey = getImageKey(rawFeaturedImage);
 	const featuredImage = rawFeaturedImage
 		? { ...rawFeaturedImage, usage: imageUsageOverrides[featuredImageKey] ?? rawFeaturedImage.usage }
@@ -140,6 +166,20 @@ export default function FashionHomePage() {
 	const recentTalent = useMemo(() => getRecentItems(talent, 8), [talent]);
 	const canSwapPresentation = Boolean(session?.role === 'SUPER_ADMIN' && token && featuredLook && featuredImage);
 	const runwayReady = Boolean(featuredLook && featuredImageSrc && readyFeaturedImageSrc === featuredImageSrc);
+
+	useEffect(() => {
+		setActiveRunwayImageIndex(0);
+	}, [latestRunwayItem?.id, runwaySlides.length]);
+
+	useEffect(() => {
+		if (runwaySlides.length < 2) return undefined;
+
+		const interval = window.setInterval(() => {
+			setActiveRunwayImageIndex((current) => (current + 1) % runwaySlides.length);
+		}, 10000);
+
+		return () => window.clearInterval(interval);
+	}, [latestRunwayItem?.id, runwaySlides.length]);
 
 	useEffect(() => {
 		if (!featuredImageSrc) {
@@ -202,8 +242,7 @@ export default function FashionHomePage() {
 			<div className="aurora-page-content fashion-page-content">
 				<section
 					className="fashion-home-runway"
-					aria-labelledby={runwayReady ? 'fashion-home-runway-title' : undefined}
-					aria-label={runwayReady ? undefined : 'Fashion runway'}
+					aria-label="Fashion runway"
 				>
 					<img src={runwayBackdrop} alt="" className="fashion-runway-backdrop" aria-hidden="true" />
 					<div className="fashion-runway-vignette" aria-hidden="true" />
@@ -243,18 +282,6 @@ export default function FashionHomePage() {
 						/>
 					) : null}
 
-					{runwayReady ? (
-						<div className="fashion-home-hero-copy fashion-runway-copy fashion-runway-reveal fashion-runway-reveal-copy">
-							<h1 id="fashion-home-runway-title" className="fashion-home-hero-title">
-								{featuredLook.title}
-							</h1>
-							{featuredLook.description ? (
-								<p className="fashion-home-hero-description">
-									{featuredLook.description}
-								</p>
-							) : null}
-						</div>
-					) : null}
 				</section>
 
 				{recentCatalogueItems.length > 0 || catalogueLoading ? (
@@ -307,7 +334,7 @@ export default function FashionHomePage() {
 					</FashionHomeSection>
 				)}
 
-				{!looksLoading && !catalogueLoading && !talentLoading && !catalogueItems?.length && !talent?.length && (
+				{!catalogueLoading && !talentLoading && !catalogueItems?.length && !talent?.length && (
 					<p className="fashion-page-empty">Fashion content coming soon.</p>
 				)}
 			</div>

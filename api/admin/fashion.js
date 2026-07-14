@@ -256,6 +256,12 @@ async function handleCrew(req, res) {
 
 function includeLook() {
   return {
+    collectionPlacements: {
+      orderBy: { sortOrder: 'asc' },
+      include: {
+        collection: { select: { id: true, title: true, season: true, releaseDate: true } },
+      },
+    },
     images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
     pieces: {
       orderBy: { sortOrder: 'asc' },
@@ -286,8 +292,14 @@ function selectLookList() {
     slug: true,
     description: true,
     isVisible: true,
+    releaseDate: true,
     order: true,
-    collectionId: true,
+    collectionPlacements: {
+      orderBy: { sortOrder: 'asc' },
+      include: {
+        collection: { select: { id: true, title: true, season: true, releaseDate: true } },
+      },
+    },
     images: {
       take: 1,
       orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
@@ -300,6 +312,7 @@ function selectLookList() {
 function withLookImages(look) {
   return {
     ...look,
+    effectiveReleaseDate: effectiveLookReleaseDate(look),
     images: clientImages(look.images ?? []),
     pieces: (look.pieces ?? []).map((piece) => ({
       ...piece,
@@ -323,10 +336,73 @@ function withLookImages(look) {
 function withLookListImages(look) {
   return {
     ...look,
+    effectiveReleaseDate: effectiveLookReleaseDate(look),
     images: clientImages(look.images ?? []),
     imageCount: look._count?.images ?? 0,
     pieceCount: look._count?.pieces ?? 0,
   }
+}
+
+function effectiveLookReleaseDate(look) {
+  return look?.releaseDate ?? look?.collectionPlacements?.[0]?.collection?.releaseDate ?? null
+}
+
+function compareLooksForAdmin(left, right) {
+  const leftRelease = left.effectiveReleaseDate ? new Date(left.effectiveReleaseDate).getTime() : null
+  const rightRelease = right.effectiveReleaseDate ? new Date(right.effectiveReleaseDate).getTime() : null
+
+  if (leftRelease !== null && rightRelease !== null && leftRelease !== rightRelease) return rightRelease - leftRelease
+  if (leftRelease !== null) return -1
+  if (rightRelease !== null) return 1
+
+  const leftPlacement = lookPlacementSortKey(left)
+  const rightPlacement = lookPlacementSortKey(right)
+  const collectionCompare = leftPlacement.collectionName.localeCompare(rightPlacement.collectionName, undefined, { sensitivity: 'base', numeric: true })
+  if (collectionCompare !== 0) return collectionCompare
+
+  if (leftPlacement.sortOrder !== rightPlacement.sortOrder) return leftPlacement.sortOrder - rightPlacement.sortOrder
+
+  return String(left.title ?? '').localeCompare(String(right.title ?? ''), undefined, { sensitivity: 'base', numeric: true })
+}
+
+function lookPlacementSortKey(look) {
+  const placements = Array.isArray(look.collectionPlacements) ? look.collectionPlacements : []
+  if (!placements.length) {
+    return {
+      collectionName: '\uffff',
+      sortOrder: look.order ?? Number.MAX_SAFE_INTEGER,
+    }
+  }
+
+  const [placement] = [...placements].sort((left, right) => {
+    const collectionCompare = String(left.collection?.title ?? '').localeCompare(String(right.collection?.title ?? ''), undefined, { sensitivity: 'base', numeric: true })
+    if (collectionCompare !== 0) return collectionCompare
+    return (left.sortOrder ?? 0) - (right.sortOrder ?? 0)
+  })
+
+  return {
+    collectionName: String(placement.collection?.title ?? ''),
+    sortOrder: placement.sortOrder ?? 0,
+  }
+}
+
+function normalizeLookPlacements(body) {
+  const rawPlacements = Array.isArray(body.collectionPlacements)
+    ? body.collectionPlacements
+    : (body.collectionId ? [{ collectionId: body.collectionId, sortOrder: body.order ?? 0 }] : [])
+  const seen = new Set()
+
+  return rawPlacements.reduce((placements, placement) => {
+    const collectionId = placement?.collectionId || ''
+    if (!collectionId || seen.has(collectionId)) return placements
+    seen.add(collectionId)
+    const sortOrder = Number(placement.sortOrder)
+    placements.push({
+      collectionId,
+      sortOrder: Number.isFinite(sortOrder) ? sortOrder : placements.length,
+    })
+    return placements
+  }, [])
 }
 
 // credits: [{ talentId?, crewId?, creditName, roleLabel }]
@@ -452,7 +528,10 @@ async function handleLooks(req, res) {
     }
 
     if (req.method === 'PUT') {
-      const { title, slug, description, order, isVisible, images, pieces, credits, collectionId } = req.body
+      const { title, slug, description, order, isVisible, releaseDate, images, pieces, credits } = req.body
+      const placements = req.body.collectionPlacements !== undefined || req.body.collectionId !== undefined
+        ? normalizeLookPlacements(req.body)
+        : null
       const normalizedImages = images === undefined ? null : normalizeImageInput(images, 'lookbook')
 
       // Replace child collections (pieces, piece credits, look credits) wholesale to keep
@@ -462,6 +541,7 @@ async function handleLooks(req, res) {
       const look = await prisma.$transaction(async (tx) => {
         const shouldReplaceCredits = credits !== undefined
         const shouldReplacePieces = pieces !== undefined
+        const shouldReplacePlacements = placements !== null
         const resolved = await resolveTypedOutsideTalentCredits(
           tx,
           shouldReplaceCredits ? credits : undefined,
@@ -486,7 +566,13 @@ async function handleLooks(req, res) {
             description: description !== undefined ? description ?? '' : undefined,
             order,
             isVisible,
-            collectionId: collectionId !== undefined ? (collectionId || null) : undefined,
+            releaseDate: releaseDate !== undefined ? (releaseDate ? new Date(releaseDate) : null) : undefined,
+            collectionPlacements: shouldReplacePlacements
+              ? {
+                  deleteMany: {},
+                  ...(placements.length ? { createMany: { data: placements } } : {}),
+                }
+              : undefined,
             images: normalizedImages === null
               ? undefined
               : { deleteMany: {}, createMany: { data: toImageCreateManyData(normalizedImages) } },
@@ -513,15 +599,16 @@ async function handleLooks(req, res) {
 
   if (req.method === 'GET') {
     const looks = await prisma.fashionLook.findMany({
-      orderBy: { order: 'asc' },
+      orderBy: [{ order: 'asc' }, { title: 'asc' }],
       select: selectLookList(),
     })
-    return res.status(200).json(looks.map(withLookListImages))
+    return res.status(200).json(looks.map(withLookListImages).sort(compareLooksForAdmin))
   }
 
   if (req.method === 'POST') {
-    const { title, slug, description, order, isVisible, images, pieces, credits, collectionId } = req.body
+    const { title, slug, description, order, isVisible, releaseDate, images, pieces, credits } = req.body
     if (!title) return res.status(400).json({ error: 'Title is required.' })
+    const placements = normalizeLookPlacements(req.body)
     const normalizedImages = normalizeImageInput(images, 'lookbook')
     const look = await prisma.$transaction(async (tx) => {
       const resolved = await resolveTypedOutsideTalentCredits(tx, credits, pieces)
@@ -535,7 +622,10 @@ async function handleLooks(req, res) {
           description: description ?? '',
           order: order ?? 0,
           isVisible: isVisible ?? true,
-          collectionId: collectionId || null,
+          releaseDate: releaseDate ? new Date(releaseDate) : null,
+          collectionPlacements: placements.length
+            ? { createMany: { data: placements } }
+            : undefined,
           images: normalizedImages.length
             ? { createMany: { data: toImageCreateManyData(normalizedImages) } }
             : undefined,

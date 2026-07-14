@@ -651,6 +651,12 @@
 	table-layout: auto;
 }
 
+.admin-songs-col-track {
+	width: 3.5rem;
+	min-width: 3.5rem;
+	max-width: 3.5rem;
+}
+
 .admin-songs-col-title {
 	min-width: 260px;
 	width: 320px;
@@ -852,6 +858,49 @@
 	height: 44px;
 }
 
+.admin-modal-field.admin-fashion-collection-type-location-row,
+.admin-modal-field.admin-fashion-collection-season-date-row {
+	display: grid;
+	gap: 12px;
+	align-items: end;
+}
+
+.admin-modal-field.admin-fashion-collection-type-location-row {
+	grid-template-columns: minmax(150px, 0.42fr) minmax(0, 1fr);
+}
+
+.admin-modal-field.admin-fashion-collection-season-date-row {
+	grid-template-columns: minmax(120px, 0.45fr) minmax(150px, 0.55fr);
+}
+
+.admin-fashion-collection-type-location-row .admin-artists-page-input,
+.admin-fashion-collection-season-date-row .admin-artists-page-input {
+	height: 44px;
+}
+
+.admin-fashion-look-placements {
+	display: grid;
+	gap: 10px;
+}
+
+.admin-fashion-look-placement-row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 96px 40px;
+	gap: 10px;
+	align-items: end;
+}
+
+.admin-fashion-look-placement-row .admin-artists-page-input {
+	height: 40px;
+}
+
+.admin-fashion-look-placement-row .admin-artists-page-icon-btn {
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	align-self: end;
+}
+
 .admin-modal-grid {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
@@ -986,7 +1035,10 @@
 		grid-template-columns: 1fr;
 	}
 
-	.admin-fashion-talent-meta-row {
+	.admin-fashion-talent-meta-row,
+	.admin-fashion-collection-type-location-row,
+	.admin-fashion-collection-season-date-row,
+	.admin-fashion-look-placement-row {
 		grid-template-columns: 1fr;
 	}
 

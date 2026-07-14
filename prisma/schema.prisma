@@ -394,20 +394,41 @@ model FashionCollection {
   id            String                    @id @default(cuid())
   title         String
   slug          String                    @unique
+  type          FashionCollectionType     @default(COLLECTION)
   description   String                    @default("")
   about         String                    @default("")
   season        String                    @default("")
+  releaseDate   DateTime?
   location      String                    @default("")
   coverImage    String                    @default("")
   coverPathname String?
   isVisible     Boolean                   @default(true)
   order         Int                       @default(0)
-  looks         FashionLook[]
+  lookPlacements FashionLookCollection[]
   credits       FashionCollectionCredit[]
   createdAt     DateTime                  @default(now())
   updatedAt     DateTime                  @updatedAt
 
+  @@index([isVisible, releaseDate])
   @@index([isVisible, order])
+}
+
+enum FashionCollectionType {
+  COLLECTION
+  LOOSE_LOOK
+}
+
+model FashionLookCollection {
+  id           String            @id @default(cuid())
+  lookId       String
+  collectionId String
+  sortOrder    Int               @default(0)
+  look         FashionLook       @relation(fields: [lookId], references: [id], onDelete: Cascade)
+  collection   FashionCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([lookId, collectionId])
+  @@index([collectionId, sortOrder])
+  @@index([lookId])
 }
 
 model FashionCollectionCredit {
@@ -433,9 +454,9 @@ model FashionLook {
   slug         String              @unique
   description  String              @default("")
   isVisible    Boolean             @default(true)
+  releaseDate  DateTime?
   order        Int                 @default(0)
-  collectionId String?
-  collection   FashionCollection?  @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  collectionPlacements FashionLookCollection[]
   images       FashionLookImage[]
   pieces       FashionPiece[]
   credits      FashionLookCredit[]
@@ -443,7 +464,7 @@ model FashionLook {
   updatedAt    DateTime            @updatedAt
 
   @@index([isVisible, order])
-  @@index([collectionId])
+  @@index([isVisible, releaseDate])
 }
 
 model FashionLookImage {

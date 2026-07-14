@@ -642,9 +642,37 @@
 	aspect-ratio: 1 / 1;
 }
 
+.fashion-home-showcase-grid .album-card-info {
+	width: 100%;
+	min-width: 0;
+}
+
 .fashion-home-showcase-grid .album-card-title,
 .fashion-home-showcase-grid .album-card-meta {
 	max-width: 100%;
+}
+
+.fashion-home-showcase-grid .album-card-title {
+	display: -webkit-box;
+	width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	text-align: center;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	line-height: 1.15;
+	min-height: 2.3em;
+}
+
+.fashion-home-showcase-grid .album-card-meta {
+	display: block;
+	width: 100%;
+	overflow: hidden;
+	text-align: center;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .fashion-home-card-placeholder {

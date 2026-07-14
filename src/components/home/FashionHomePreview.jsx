@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useApi } from '../../hooks/useApi.js';
 import runwayBackdrop from '../../assets/fashion-runway-backdrop.png';
 import '../../styles/FashionPages.css';
@@ -23,15 +23,56 @@ const CAMERA_FLASHES = [
 	{ id: 'right-aisle-2', x: '76%', y: '58%', delay: '-1.8s', duration: '5.2s', size: '7px' },
 ];
 
+function getImageSrc(image) {
+	return image?.previewUrl || image?.url || '';
+}
+
+function getImageKey(image) {
+	return image?.id ?? image?.pathname ?? image?.url ?? '';
+}
+
+function getRunwaySlidesFromCatalogueItem(item) {
+	const looks = item?.looks?.length ? item.looks : (item?.linkedLook ? [item.linkedLook] : []);
+
+	return looks.flatMap((look) => (
+		(look.images ?? [])
+			.map((image, index) => ({
+				id: `${look.id}-${getImageKey(image) || index}`,
+				look,
+				image,
+			}))
+			.filter((slide) => getImageSrc(slide.image))
+	));
+}
+
 export default function FashionHomePreview() {
-	const { data: looks } = useApi('/api/fashion/looks');
-	const featuredLook = looks?.[0] ?? null;
-	const featuredImage = featuredLook?.images?.[0] ?? null;
-	const imageSrc = featuredImage?.previewUrl || featuredImage?.url || '';
+	const { data: catalogueItems } = useApi('/api/fashion/catalogue');
+	const [activeRunwayImageIndex, setActiveRunwayImageIndex] = useState(0);
 	const [readyImageSrc, setReadyImageSrc] = useState('');
+	const latestRunwayItem = catalogueItems?.[0] ?? null;
+	const runwaySlides = useMemo(() => getRunwaySlidesFromCatalogueItem(latestRunwayItem), [latestRunwayItem]);
+	const activeRunwaySlide = runwaySlides.length
+		? runwaySlides[activeRunwayImageIndex % runwaySlides.length]
+		: null;
+	const featuredImage = activeRunwaySlide?.image ?? null;
+	const imageSrc = getImageSrc(featuredImage);
 	const usage = typeof featuredImage?.usage === 'string' ? featuredImage.usage : '';
 	const presentation = usage === 'runway-cutout' ? 'model' : 'framed';
-	const runwayReady = Boolean(featuredLook && imageSrc && readyImageSrc === imageSrc);
+	const runwayReady = Boolean(activeRunwaySlide?.look && imageSrc && readyImageSrc === imageSrc);
+
+	useEffect(() => {
+		setActiveRunwayImageIndex(0);
+	}, [latestRunwayItem?.id, runwaySlides.length]);
+
+	useEffect(() => {
+		if (runwaySlides.length < 2) return undefined;
+
+		const interval = window.setInterval(() => {
+			setActiveRunwayImageIndex((current) => (current + 1) % runwaySlides.length);
+		}, 10000);
+
+		return () => window.clearInterval(interval);
+	}, [latestRunwayItem?.id, runwaySlides.length]);
 
 	useEffect(() => {
 		if (!imageSrc) {
@@ -97,18 +138,6 @@ export default function FashionHomePreview() {
 								<div className="fashion-runway-look-link">
 									<img src={imageSrc} alt="" className="fashion-runway-look-image" />
 								</div>
-							</div>
-						) : null}
-						{runwayReady ? (
-							<div className="fashion-home-hero-copy fashion-runway-copy fashion-runway-reveal fashion-runway-reveal-copy">
-								<h2 className="fashion-home-hero-title">
-									{featuredLook.title}
-								</h2>
-								{featuredLook.description ? (
-									<p className="fashion-home-hero-description">
-										{featuredLook.description}
-									</p>
-								) : null}
 							</div>
 						) : null}
 					</section>

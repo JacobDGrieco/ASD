@@ -1,13 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash, FaPencilAlt, FaTrash } from 'react-icons/fa';
 import { TabPanel, TabView } from 'primereact/tabview';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
+import AdminDateInput from '../../components/admin/AdminDateInput.jsx';
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx';
 import CreditsField from '../../components/admin/CreditsField.jsx';
 import FashionPiecesField from '../../components/admin/FashionPiecesField.jsx';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
 import { clientImage } from '../../lib/images.js';
+import { isValidDateInput } from '../../lib/dateInput.js';
 import { slugify } from '../../lib/slugify.js';
 import '../../styles/AdminArtistsPage.css';
 
@@ -16,16 +19,20 @@ const empty = {
 	slug: '',
 	description: '',
 	isVisible: true,
+	releaseDate: '',
 	images: [],
 	order: 0,
-	collectionId: '',
+	collectionPlacements: [],
 	credits: [],
 	pieces: [],
 };
 
 const columns = [
 	{ key: 'images', label: 'Cover', kind: 'images', className: 'admin-artists-page-col-image' },
+	{ key: 'placementOrder', label: '#', kind: 'placementOrder', className: 'admin-songs-col-track admin-artists-page-center-cell' },
 	{ key: 'title', label: 'Title', className: 'admin-artists-page-col-lg' },
+	{ key: 'collections', label: 'Collections', kind: 'collections', className: 'admin-artists-page-col-sm' },
+	{ key: 'effectiveReleaseDate', label: 'Release Date', kind: 'date', className: 'admin-artists-page-col-sm' },
 	{ key: 'pieceCount', label: 'Pieces', kind: 'pieceCount', className: 'admin-artists-page-col-sm' },
 ];
 
@@ -36,6 +43,7 @@ function primaryImage(images) {
 
 function validateLookForm(form) {
 	if (!form.title?.trim()) return 'Title is required.';
+	if (form.releaseDate && !isValidDateInput(form.releaseDate)) return 'Release date must use YYYY-MM-DD.';
 	return null;
 }
 
@@ -64,6 +72,29 @@ function renderDisplayValue(look, column) {
 	if (column.kind === 'pieceCount') {
 		const count = look.pieceCount ?? look.pieces?.length ?? 0;
 		return <span className="admin-artists-page-cell-value">{count} piece{count === 1 ? '' : 's'}</span>;
+	}
+
+	if (column.kind === 'collections') {
+		const labels = (look.collectionPlacements ?? [])
+			.map((placement) => placement.collection?.title)
+			.filter(Boolean);
+		if (!labels.length) return <span className="admin-artists-page-empty-value">Loose look</span>;
+		const value = labels.join(', ');
+		return <span className="admin-artists-page-cell-value" title={value}>{value}</span>;
+	}
+
+	if (column.kind === 'date') {
+		const value = look.effectiveReleaseDate ? String(look.effectiveReleaseDate).slice(0, 10) : '';
+		return value ? <span className="admin-artists-page-cell-value" title={value}>{value}</span> : <span className="admin-artists-page-empty-value">-</span>;
+	}
+
+	if (column.kind === 'placementOrder') {
+		const placements = Array.isArray(look.collectionPlacements) ? look.collectionPlacements : [];
+		if (!placements.length) return <span className="admin-artists-page-cell-value">{look.order ?? 0}</span>;
+		const value = placements
+			.map((placement) => placement.sortOrder ?? 0)
+			.join(', ');
+		return <span className="admin-artists-page-cell-value" title={value}>{value}</span>;
 	}
 
 	const value = look[column.key];
@@ -108,6 +139,75 @@ function toFormPieces(pieces) {
 	}));
 }
 
+function toFormCollectionPlacements(placements) {
+	return (Array.isArray(placements) ? placements : []).map((placement, index) => ({
+		collectionId: placement.collectionId ?? placement.collection?.id ?? '',
+		sortOrder: Number.isFinite(Number(placement.sortOrder)) ? Number(placement.sortOrder) : index,
+	}));
+}
+
+function lookReleaseDateValue(look) {
+	return look?.releaseDate ? String(look.releaseDate).slice(0, 10) : '';
+}
+
+function compareLooksByReleaseDate(left, right) {
+	const leftDate = left.effectiveReleaseDate ?? left.releaseDate;
+	const rightDate = right.effectiveReleaseDate ?? right.releaseDate;
+	const leftTime = leftDate ? new Date(leftDate).getTime() : null;
+	const rightTime = rightDate ? new Date(rightDate).getTime() : null;
+
+	if (leftTime !== null && rightTime !== null && leftTime !== rightTime) return rightTime - leftTime;
+	if (leftTime !== null) return -1;
+	if (rightTime !== null) return 1;
+
+	const leftPlacement = lookPlacementSortKey(left);
+	const rightPlacement = lookPlacementSortKey(right);
+	const collectionCompare = leftPlacement.collectionName.localeCompare(rightPlacement.collectionName, undefined, { sensitivity: 'base', numeric: true });
+	if (collectionCompare !== 0) return collectionCompare;
+
+	if (leftPlacement.sortOrder !== rightPlacement.sortOrder) return leftPlacement.sortOrder - rightPlacement.sortOrder;
+
+	return String(left.title ?? '').localeCompare(String(right.title ?? ''), undefined, { sensitivity: 'base', numeric: true });
+}
+
+function buildLookFromCollection(collection) {
+	return {
+		...empty,
+		title: collection.title ?? '',
+		slug: slugify(collection.title ?? ''),
+		description: collection.description || collection.about || '',
+		isVisible: collection.isVisible ?? true,
+		releaseDate: collection.releaseDate ? String(collection.releaseDate).slice(0, 10) : '',
+		images: collection.coverImage ? [collection.coverImage] : [],
+		collectionPlacements: collection.id ? [{ collectionId: collection.id, sortOrder: 0 }] : [],
+	};
+}
+
+function lookPlacementSortKey(look) {
+	const placements = Array.isArray(look.collectionPlacements) ? look.collectionPlacements : [];
+	if (!placements.length) {
+		return {
+			collectionName: '\uffff',
+			sortOrder: look.order ?? Number.MAX_SAFE_INTEGER,
+		};
+	}
+
+	const [placement] = [...placements].sort((left, right) => {
+		const collectionCompare = String(left.collection?.title ?? '').localeCompare(String(right.collection?.title ?? ''), undefined, { sensitivity: 'base', numeric: true });
+		if (collectionCompare !== 0) return collectionCompare;
+		return (left.sortOrder ?? 0) - (right.sortOrder ?? 0);
+	});
+
+	return {
+		collectionName: String(placement.collection?.title ?? ''),
+		sortOrder: placement.sortOrder ?? 0,
+	};
+}
+
+function sortLooksByReleaseDate(looks) {
+	return [...looks].sort(compareLooksByReleaseDate);
+}
+
 function toTalentOption(person) {
 	return {
 		id: person.id,
@@ -126,13 +226,12 @@ function toCrewOption(person) {
 	};
 }
 
-function LooksTable({ looks, isFormOpen, dropTargetId, loadingEditId, onDragStart, onDragOver, onDrop, onDragEnd, onEdit, onDelete }) {
+function LooksTable({ looks, loadingEditId, onEdit, onDelete }) {
 	return (
 		<div className="admin-artists-page-table-wrap">
 			<table className="admin-artists-page-table">
 				<thead>
 					<tr>
-						<th className="admin-artists-page-drag-header"></th>
 						{columns.map((column) => <th key={column.key} className={column.className}>{column.label}</th>)}
 						<th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
 					</tr>
@@ -141,29 +240,8 @@ function LooksTable({ looks, isFormOpen, dropTargetId, loadingEditId, onDragStar
 					{looks.map((look) => (
 						<tr
 							key={look.id}
-							className={[
-								dropTargetId === look.id ? 'admin-artists-page-drop-target-row' : '',
-								isLookHidden(look) ? 'admin-artists-page-hidden-row' : '',
-							].filter(Boolean).join(' ')}
-							onDragOver={(event) => onDragOver(event, look.id)}
-							onDrop={(event) => {
-								event.preventDefault();
-								onDrop(look.id);
-							}}
+							className={isLookHidden(look) ? 'admin-artists-page-hidden-row' : ''}
 						>
-							<td className="admin-artists-page-drag-cell">
-								<button
-									type="button"
-									draggable={!isFormOpen}
-									onDragStart={(event) => onDragStart(event, look.id)}
-									onDragEnd={onDragEnd}
-									className="admin-artists-page-drag-handle"
-									aria-label={`Reorder ${look.title}`}
-									title="Drag to reorder"
-								>
-									::
-								</button>
-							</td>
 							{columns.map((column) => (
 								<td key={column.key} className={column.className ?? ''}>
 									{renderDisplayValue(look, column)}
@@ -199,7 +277,7 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 			<div className="admin-modal">
 				<div className="admin-modal-header">
 					<h2 className="admin-modal-title">{form.id ? 'Edit Look' : 'New Look'}</h2>
-					<button type="button" onClick={onClose} className="admin-modal-close" aria-label="Close">Ã—</button>
+					<button type="button" onClick={onClose} className="admin-modal-close" aria-label="Close">x</button>
 				</div>
 				<div className="admin-modal-body">
 					<TabView className="page-tabview admin-modal-tabs">
@@ -231,23 +309,6 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 								</div>
 
 								<div className="admin-modal-field admin-modal-field-full">
-									<label htmlFor="admin-fashion-look-collection" className="admin-modal-label">Collection</label>
-									<select
-										id="admin-fashion-look-collection"
-										value={form.collectionId ?? ''}
-										onChange={(event) => setForm((current) => ({ ...current, collectionId: event.target.value || null }))}
-										className="admin-artists-page-input"
-									>
-										<option value="">No collection (loose look)</option>
-										{collections.map((collection) => (
-											<option key={collection.id} value={collection.id}>
-												{collection.title}{collection.season ? ` (${collection.season})` : ''}
-											</option>
-										))}
-									</select>
-								</div>
-
-								<div className="admin-modal-field admin-modal-field-full">
 									<div className="admin-modal-label">Lookbook Images</div>
 									<ImageCollectionField
 										value={form.images}
@@ -255,6 +316,17 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 										token={token}
 										folder="fashion-looks"
 										entityLabel={form.title || 'Look image'}
+									/>
+								</div>
+
+								<div className="admin-modal-field admin-modal-field-full">
+									<label htmlFor="admin-fashion-look-release-date" className="admin-modal-label">Look Release Date</label>
+									<AdminDateInput
+										id="admin-fashion-look-release-date"
+										ariaLabel="Look release date"
+										value={form.releaseDate}
+										onChange={(value) => setForm((current) => ({ ...current, releaseDate: value }))}
+										className="admin-artists-page-input"
 									/>
 								</div>
 
@@ -268,6 +340,81 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 										className="admin-artists-page-input admin-modal-textarea"
 										rows={6}
 									/>
+								</div>
+							</div>
+						</TabPanel>
+
+						<TabPanel header="Collection">
+							<div className="admin-modal-grid">
+								<div className="admin-modal-field admin-modal-field-full">
+									<div className="admin-modal-label">Collections</div>
+									<div className="admin-fashion-look-placements">
+										{form.collectionPlacements.map((placement, index) => (
+											<div key={`${placement.collectionId || 'new'}-${index}`} className="admin-fashion-look-placement-row">
+												<select
+													value={placement.collectionId}
+													onChange={(event) => setForm((current) => ({
+														...current,
+														collectionPlacements: current.collectionPlacements.map((item, itemIndex) => (
+															itemIndex === index ? { ...item, collectionId: event.target.value } : item
+														)),
+													}))}
+													className="admin-artists-page-input"
+													aria-label={`Collection ${index + 1}`}
+												>
+													<option value="">Select collection</option>
+													{collections.map((collection) => (
+														<option
+															key={collection.id}
+															value={collection.id}
+															disabled={form.collectionPlacements.some((item, itemIndex) => itemIndex !== index && item.collectionId === collection.id)}
+														>
+															{collection.title}{collection.season ? ` (${collection.season})` : ''}
+														</option>
+													))}
+												</select>
+												<input
+													type="number"
+													min="0"
+													step="1"
+													value={placement.sortOrder}
+													onChange={(event) => setForm((current) => ({
+														...current,
+														collectionPlacements: current.collectionPlacements.map((item, itemIndex) => (
+															itemIndex === index ? { ...item, sortOrder: Number(event.target.value) || 0 } : item
+														)),
+													}))}
+													className="admin-artists-page-input"
+													aria-label={`Order in collection ${index + 1}`}
+												/>
+												<button
+													type="button"
+													onClick={() => setForm((current) => ({
+														...current,
+														collectionPlacements: current.collectionPlacements.filter((_, itemIndex) => itemIndex !== index),
+													}))}
+													className="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+													aria-label="Remove collection placement"
+													title="Remove"
+												>
+													<FaTrash aria-hidden="true" />
+												</button>
+											</div>
+										))}
+										<button
+											type="button"
+											onClick={() => setForm((current) => ({
+												...current,
+												collectionPlacements: [
+													...current.collectionPlacements,
+													{ collectionId: '', sortOrder: current.collectionPlacements.length },
+												],
+											}))}
+											className="admin-artists-page-ghost-btn"
+										>
+											Add Collection
+										</button>
+									</div>
 								</div>
 							</div>
 						</TabPanel>
@@ -315,14 +462,15 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 
 export default function AdminFashionLooksPage() {
 	const { token } = useAdminAuth();
+	const location = useLocation();
+	const navigate = useNavigate();
 	const auth = { Authorization: `Bearer ${token}` };
 	const [looks, setLooks] = useState([]);
 	const [talentOptions, setTalentOptions] = useState([]);
 	const [crewOptions, setCrewOptions] = useState([]);
 	const [collections, setCollections] = useState([]);
 	const [form, setForm] = useState(null);
-	const draggedIdRef = useRef(null);
-	const [dropTargetId, setDropTargetId] = useState(null);
+	const [returnToAfterSave, setReturnToAfterSave] = useState(null);
 	const [loadingEditId, setLoadingEditId] = useState(null);
 
 	useEffect(() => {
@@ -330,7 +478,7 @@ export default function AdminFashionLooksPage() {
 
 		loadAdminResource({ cacheKey: 'fashion-looks-list', url: '/api/admin/fashion/looks', token })
 			.then((list) => {
-				if (!ignore) setLooks(list);
+				if (!ignore) setLooks(sortLooksByReleaseDate(list));
 			});
 
 		return () => {
@@ -357,6 +505,15 @@ export default function AdminFashionLooksPage() {
 		};
 	}, [token]);
 
+	useEffect(() => {
+		const prefill = location.state?.prefillLookFromCollection;
+		if (!prefill) return;
+
+		setForm(buildLookFromCollection(prefill));
+		setReturnToAfterSave(location.state?.returnTo || null);
+		navigate(location.pathname, { replace: true, state: {} });
+	}, [location.pathname, location.state, navigate]);
+
 	const openCreate = () => setForm({ ...empty });
 	const openEdit = async (look) => {
 		setLoadingEditId(look.id);
@@ -366,7 +523,8 @@ export default function AdminFashionLooksPage() {
 				...empty,
 				...detail,
 				images: detail.images ?? [],
-				collectionId: detail.collectionId ?? '',
+				releaseDate: lookReleaseDateValue(detail),
+				collectionPlacements: toFormCollectionPlacements(detail.collectionPlacements),
 				credits: toFormCredits(detail.credits),
 				pieces: toFormPieces(detail.pieces),
 			});
@@ -374,7 +532,10 @@ export default function AdminFashionLooksPage() {
 			setLoadingEditId(null);
 		}
 	};
-	const closeForm = () => setForm(null);
+	const closeForm = () => {
+		setForm(null);
+		setReturnToAfterSave(null);
+	};
 	const nextOrder = looks.reduce((maxOrder, look) => Math.max(maxOrder, look.order ?? 0), -1) + 1;
 
 	const handleSave = async () => {
@@ -389,6 +550,13 @@ export default function AdminFashionLooksPage() {
 		const payload = {
 			...form,
 			slug: slugify(form.title),
+			releaseDate: form.releaseDate || null,
+			collectionPlacements: form.collectionPlacements
+				.filter((placement) => placement.collectionId)
+				.map((placement, index) => ({
+					collectionId: placement.collectionId,
+					sortOrder: Number.isFinite(Number(placement.sortOrder)) ? Number(placement.sortOrder) : index,
+				})),
 			credits: form.credits.filter(hasCreditValue),
 			pieces: form.pieces.map((piece) => ({
 				...piece,
@@ -408,8 +576,9 @@ export default function AdminFashionLooksPage() {
 		}
 		const saved = await res.json();
 		const nextLooks = isEdit ? looks.map((look) => (look.id === saved.id ? saved : look)) : [...looks, saved];
-		setLooks(nextLooks);
-		primeAdminResource('fashion-looks-list', token, nextLooks);
+		const sortedLooks = sortLooksByReleaseDate(nextLooks);
+		setLooks(sortedLooks);
+		primeAdminResource('fashion-looks-list', token, sortedLooks);
 		fetch('/api/admin/fashion?resource=crew', { headers: auth })
 			.then((response) => (response.ok ? response.json() : null))
 			.then((crew) => {
@@ -419,6 +588,7 @@ export default function AdminFashionLooksPage() {
 			})
 			.catch(() => { });
 		closeForm();
+		if (returnToAfterSave) navigate(returnToAfterSave);
 	};
 
 	const handleDelete = async (id) => {
@@ -426,73 +596,6 @@ export default function AdminFashionLooksPage() {
 		const nextLooks = looks.filter((look) => look.id !== id);
 		setLooks(nextLooks);
 		primeAdminResource('fashion-looks-list', token, nextLooks);
-	};
-
-	const persistLookOrder = async (nextLooks) => {
-		const changed = nextLooks.filter((look, index) => look.order !== index);
-		if (!changed.length) return nextLooks;
-
-		const saved = await Promise.all(
-			changed.map((look) => {
-				const nextOrderValue = nextLooks.findIndex((candidate) => candidate.id === look.id);
-				return fetch(`/api/admin/fashion/looks?id=${look.id}`, {
-					method: 'PUT',
-					headers: { ...auth, 'Content-Type': 'application/json' },
-					body: JSON.stringify({ order: nextOrderValue }),
-				}).then((res) => res.json());
-			})
-		);
-
-		const savedById = new Map(saved.map((look) => [look.id, look]));
-		return nextLooks.map((look, index) => savedById.get(look.id) ?? { ...look, order: index });
-	};
-
-	const handleDragStart = (event, id) => {
-		if (form) return;
-		event.dataTransfer.effectAllowed = 'move';
-		event.dataTransfer.setData('text/plain', id);
-		draggedIdRef.current = id;
-	};
-
-	const handleDragOver = (event, id) => {
-		if (!draggedIdRef.current || draggedIdRef.current === id) return;
-		event.preventDefault();
-		setDropTargetId(id);
-	};
-
-	const handleDrop = async (id) => {
-		if (!draggedIdRef.current || draggedIdRef.current === id) {
-			draggedIdRef.current = null;
-			setDropTargetId(null);
-			return;
-		}
-
-		const draggedIndex = looks.findIndex((look) => look.id === draggedIdRef.current);
-		const targetIndex = looks.findIndex((look) => look.id === id);
-		if (draggedIndex === -1 || targetIndex === -1) {
-			draggedIdRef.current = null;
-			setDropTargetId(null);
-			return;
-		}
-
-		const reordered = [...looks];
-		const [moved] = reordered.splice(draggedIndex, 1);
-		reordered.splice(targetIndex, 0, moved);
-
-		const normalized = reordered.map((look, index) => ({ ...look, order: index }));
-		setLooks(normalized);
-		primeAdminResource('fashion-looks-list', token, normalized);
-		draggedIdRef.current = null;
-		setDropTargetId(null);
-
-		const persisted = await persistLookOrder(reordered);
-		setLooks(persisted);
-		primeAdminResource('fashion-looks-list', token, persisted);
-	};
-
-	const handleDragEnd = () => {
-		draggedIdRef.current = null;
-		setDropTargetId(null);
 	};
 
 	return (
@@ -506,13 +609,7 @@ export default function AdminFashionLooksPage() {
 
 			<LooksTable
 				looks={looks}
-				isFormOpen={Boolean(form)}
-				dropTargetId={dropTargetId}
 				loadingEditId={loadingEditId}
-				onDragStart={handleDragStart}
-				onDragOver={handleDragOver}
-				onDrop={handleDrop}
-				onDragEnd={handleDragEnd}
 				onEdit={openEdit}
 				onDelete={handleDelete}
 			/>

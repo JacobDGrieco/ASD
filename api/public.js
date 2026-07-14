@@ -1115,15 +1115,26 @@ function formatFashionPiece(piece) {
 
 function formatFashionLook(look) {
   const lookCredits = (look.credits ?? []).map(formatFashionCredit)
+  const effectiveReleaseDate = look.releaseDate ?? look.collectionPlacements?.[0]?.collection?.releaseDate ?? null
   return {
     id: look.id,
     title: look.title,
     slug: look.slug,
     description: look.description,
     isVisible: look.isVisible,
+    releaseDate: look.releaseDate,
+    effectiveReleaseDate,
     order: look.order,
     createdAt: look.createdAt,
     updatedAt: look.updatedAt,
+    collections: (look.collectionPlacements ?? []).map((placement) => ({
+      id: placement.collection.id,
+      title: placement.collection.title,
+      slug: placement.collection.slug,
+      season: placement.collection.season,
+      releaseDate: placement.collection.releaseDate,
+      sortOrder: placement.sortOrder,
+    })),
     images: clientImages(look.images ?? []),
     credits: lookCredits,
     pieces: (look.pieces ?? []).map(formatFashionPiece),
@@ -1195,6 +1206,12 @@ async function getFashionTalent(res, slug, includeHidden) {
 
 function includePublicLook() {
   return {
+    collectionPlacements: {
+      orderBy: { sortOrder: 'asc' },
+      include: {
+        collection: { select: { id: true, title: true, slug: true, season: true, releaseDate: true } },
+      },
+    },
     images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
     pieces: {
       orderBy: { sortOrder: 'asc' },
@@ -1221,24 +1238,25 @@ function includePublicLook() {
 function includePublicLookSummary() {
   return {
     images: {
-      take: 1,
       orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
     },
     _count: { select: { pieces: true } },
   }
 }
 
-function formatLookSummary(look) {
-  const primary = (look.images ?? [])[0]
+function formatLookSummary(look, fallbackReleaseDate = null) {
+  const effectiveReleaseDate = look.releaseDate ?? fallbackReleaseDate ?? look.collectionPlacements?.[0]?.collection?.releaseDate ?? null
   return {
     id: look.id,
     title: look.title,
     slug: look.slug,
     order: look.order,
     isVisible: look.isVisible,
+    releaseDate: look.releaseDate,
+    effectiveReleaseDate,
     createdAt: look.createdAt,
     updatedAt: look.updatedAt,
-    images: primary ? clientImages([primary]) : [],
+    images: clientImages(look.images ?? []),
     pieces: new Array(look._count?.pieces ?? 0),
   }
 }
@@ -1268,50 +1286,78 @@ function includePublicCollectionCredits() {
 async function getFashionCatalogue(res, includeHidden) {
   setPublicCache(res)
 
-  const [collections, looseLooks] = await Promise.all([
-    prisma.fashionCollection.findMany({
-      where: includeHidden ? undefined : { isVisible: true },
-      orderBy: { order: 'asc' },
-      include: {
-        looks: {
-          where: includeHidden ? undefined : { isVisible: true },
-          orderBy: { order: 'asc' },
-          include: includePublicLookSummary(),
+  const collections = await prisma.fashionCollection.findMany({
+    where: includeHidden ? undefined : { isVisible: true },
+    orderBy: [
+      { releaseDate: { sort: 'desc', nulls: 'last' } },
+      { order: 'asc' },
+      { createdAt: 'asc' },
+    ],
+    include: {
+      lookPlacements: {
+        where: includeHidden ? undefined : { look: { isVisible: true } },
+        orderBy: { sortOrder: 'asc' },
+        include: {
+          look: {
+            include: includePublicLookSummary(),
+          },
         },
       },
-    }),
-    prisma.fashionLook.findMany({
-      where: { collectionId: null, ...(includeHidden ? {} : { isVisible: true }) },
-      orderBy: { order: 'asc' },
-      include: includePublicLookSummary(),
-    }),
-  ])
+    },
+  })
 
-  const collectionItems = collections.map((collection) => ({
-    type: 'collection',
-    id: collection.id,
-    title: collection.title,
-    slug: collection.slug,
-    description: collection.description,
-    season: collection.season,
-    location: collection.location,
-    coverImage: collection.coverImage
-      ? clientImage({ url: collection.coverImage, pathname: collection.coverPathname })
-      : null,
-    isVisible: collection.isVisible,
-    order: collection.order,
-    createdAt: collection.createdAt,
-    updatedAt: collection.updatedAt,
-    looks: collection.looks.map(formatLookSummary),
-  }))
+  const collectionItems = collections.flatMap((collection) => {
+    const linkedLook = collection.lookPlacements[0]?.look
+      ? formatLookSummary(collection.lookPlacements[0].look, collection.releaseDate)
+      : null
 
-  const looseLookItems = looseLooks.map((look) => ({
-    type: 'look',
-    ...formatLookSummary(look),
-  }))
+    if (collection.type === 'LOOSE_LOOK' && !linkedLook) return []
 
-  const all = [...collectionItems, ...looseLookItems].sort((left, right) => left.order - right.order)
+    const looks = collection.type === 'LOOSE_LOOK'
+      ? [linkedLook]
+      : collection.lookPlacements.map((placement) => formatLookSummary(placement.look, collection.releaseDate))
+
+    return [{
+      type: 'collection',
+      collectionType: collection.type,
+      catalogueType: collection.type === 'LOOSE_LOOK' ? 'loose' : 'collection',
+      id: collection.id,
+      title: collection.title,
+      slug: collection.slug,
+      description: collection.description,
+      season: collection.season,
+      releaseDate: collection.releaseDate,
+      effectiveReleaseDate: collection.releaseDate ?? linkedLook?.effectiveReleaseDate ?? null,
+      location: collection.location,
+      coverImage: collection.coverImage
+        ? clientImage({ url: collection.coverImage, pathname: collection.coverPathname })
+        : linkedLook?.images?.[0] ?? null,
+      isVisible: collection.isVisible,
+      order: collection.order,
+      createdAt: collection.createdAt,
+      updatedAt: collection.updatedAt,
+      linkedLook,
+      looks,
+    }]
+  })
+
+  const all = collectionItems.sort(compareFashionCatalogueItems)
   return res.status(200).json(all)
+}
+
+function compareFashionCatalogueItems(left, right) {
+  const leftReleaseValue = left.effectiveReleaseDate ?? left.releaseDate
+  const rightReleaseValue = right.effectiveReleaseDate ?? right.releaseDate
+  const leftRelease = leftReleaseValue ? new Date(leftReleaseValue).getTime() : null
+  const rightRelease = rightReleaseValue ? new Date(rightReleaseValue).getTime() : null
+
+  if (leftRelease !== null && rightRelease !== null && leftRelease !== rightRelease) {
+    return rightRelease - leftRelease
+  }
+  if (leftRelease !== null) return -1
+  if (rightRelease !== null) return 1
+
+  return (left.order ?? 0) - (right.order ?? 0)
 }
 
 async function getFashionCollection(res, slug, includeHidden) {
@@ -1320,10 +1366,14 @@ async function getFashionCollection(res, slug, includeHidden) {
   const collection = await prisma.fashionCollection.findUnique({
     where: { slug },
     include: {
-      looks: {
-        where: includeHidden ? undefined : { isVisible: true },
-        orderBy: { order: 'asc' },
-        include: includePublicLook(),
+      lookPlacements: {
+        where: includeHidden ? undefined : { look: { isVisible: true } },
+        orderBy: { sortOrder: 'asc' },
+        include: {
+          look: {
+            include: includePublicLook(),
+          },
+        },
       },
       credits: includePublicCollectionCredits(),
     },
@@ -1345,8 +1395,8 @@ async function getFashionCollection(res, slug, includeHidden) {
   }
 
   for (const credit of (collection.credits ?? [])) addCredit(credit)
-  for (const look of (collection.looks ?? [])) {
-    for (const credit of (look.credits ?? [])) addCredit(credit)
+  for (const placement of (collection.lookPlacements ?? [])) {
+    for (const credit of (placement.look?.credits ?? [])) addCredit(credit)
   }
 
   return res.status(200).json({
@@ -1355,14 +1405,28 @@ async function getFashionCollection(res, slug, includeHidden) {
     slug: collection.slug,
     description: collection.description,
     about: collection.about,
+    type: collection.type,
     season: collection.season,
+    releaseDate: collection.releaseDate,
     location: collection.location,
     coverImage: collection.coverImage
       ? clientImage({ url: collection.coverImage, pathname: collection.coverPathname })
       : null,
     isVisible: collection.isVisible,
     order: collection.order,
-    looks: collection.looks.map(formatFashionLook),
+    looks: collection.lookPlacements.map((placement) => formatFashionLook({
+      ...placement.look,
+      collectionPlacements: [{
+        sortOrder: placement.sortOrder,
+        collection: {
+          id: collection.id,
+          title: collection.title,
+          slug: collection.slug,
+          season: collection.season,
+          releaseDate: collection.releaseDate,
+        },
+      }],
+    })),
     credits: mergedCredits,
   })
 }
@@ -1371,10 +1435,13 @@ async function getFashionLooksList(res, includeHidden) {
   setPublicCache(res)
   const looks = await prisma.fashionLook.findMany({
     where: includeHidden ? undefined : { isVisible: true },
-    orderBy: { order: 'asc' },
+    orderBy: [
+      { releaseDate: { sort: 'desc', nulls: 'last' } },
+      { order: 'asc' },
+    ],
     include: includePublicLook(),
   })
-  return res.status(200).json(looks.map(formatFashionLook))
+  return res.status(200).json(looks.map(formatFashionLook).sort(compareFashionCatalogueItems))
 }
 
 async function getFashionLook(res, slug, includeHidden) {

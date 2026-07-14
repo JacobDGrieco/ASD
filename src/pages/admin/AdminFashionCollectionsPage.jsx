@@ -1,20 +1,25 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { FaEye, FaEyeSlash, FaPencilAlt, FaTrash } from 'react-icons/fa'
 import { TabPanel, TabView } from 'primereact/tabview'
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
+import AdminDateInput from '../../components/admin/AdminDateInput.jsx'
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx'
 import CreditsField from '../../components/admin/CreditsField.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js'
+import { isValidDateInput } from '../../lib/dateInput.js'
 import { slugify } from '../../lib/slugify.js'
 import '../../styles/AdminArtistsPage.css'
 
 const empty = {
   title: '',
   slug: '',
+  type: 'COLLECTION',
   description: '',
   about: '',
   season: '',
+  releaseDate: '',
   location: '',
   coverImages: [],
   isVisible: true,
@@ -26,12 +31,32 @@ const columns = [
   { key: 'coverImage', label: 'Cover', kind: 'image', className: 'admin-artists-page-col-image' },
   { key: 'title', label: 'Title', className: 'admin-artists-page-col-lg' },
   { key: 'season', label: 'Season', className: 'admin-artists-page-col-sm' },
+  { key: 'releaseDate', label: 'Release Date', kind: 'date', className: 'admin-artists-page-col-sm' },
   { key: 'lookCount', label: 'Looks', kind: 'lookCount', className: 'admin-artists-page-col-sm' },
 ]
 
 function validateCollectionForm(form) {
   if (!form.title?.trim()) return 'Title is required.'
+  if (form.releaseDate && !isValidDateInput(form.releaseDate)) return 'Release date must use YYYY-MM-DD.'
   return null
+}
+
+function collectionReleaseDateValue(collection) {
+  return collection?.releaseDate ? String(collection.releaseDate).slice(0, 10) : ''
+}
+
+function compareCollectionsByReleaseDate(left, right) {
+  const leftTime = left.releaseDate ? new Date(left.releaseDate).getTime() : null
+  const rightTime = right.releaseDate ? new Date(right.releaseDate).getTime() : null
+
+  if (leftTime !== null && rightTime !== null && leftTime !== rightTime) return rightTime - leftTime
+  if (leftTime !== null) return -1
+  if (rightTime !== null) return 1
+  return (left.order ?? 0) - (right.order ?? 0)
+}
+
+function sortCollectionsByReleaseDate(collections) {
+  return [...collections].sort(compareCollectionsByReleaseDate)
 }
 
 function hasCreditValue(credit) {
@@ -88,6 +113,11 @@ function renderDisplayValue(collection, column) {
     return <span className="admin-artists-page-cell-value">{count} look{count === 1 ? '' : 's'}</span>
   }
 
+  if (column.kind === 'date') {
+    const value = collectionReleaseDateValue(collection)
+    return value ? <span className="admin-artists-page-cell-value" title={value}>{value}</span> : <span className="admin-artists-page-empty-value">-</span>
+  }
+
   const value = collection[column.key]
   if (value === null || value === undefined || value === '') return <span className="admin-artists-page-empty-value">-</span>
   return <span className="admin-artists-page-cell-value" title={String(value)}>{String(value)}</span>
@@ -95,13 +125,7 @@ function renderDisplayValue(collection, column) {
 
 function CollectionsTable({
   collections,
-  isFormOpen,
-  dropTargetId,
   loadingEditId,
-  onDragStart,
-  onDragOver,
-  onDrop,
-  onDragEnd,
   onEdit,
   onDelete,
 }) {
@@ -110,7 +134,6 @@ function CollectionsTable({
       <table className="admin-artists-page-table">
         <thead>
           <tr>
-            <th className="admin-artists-page-drag-header"></th>
             {columns.map((column) => <th key={column.key} className={column.className}>{column.label}</th>)}
             <th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
           </tr>
@@ -119,29 +142,8 @@ function CollectionsTable({
           {collections.map((collection) => (
             <tr
               key={collection.id}
-              className={[
-                dropTargetId === collection.id ? 'admin-artists-page-drop-target-row' : '',
-                isCollectionHidden(collection) ? 'admin-artists-page-hidden-row' : '',
-              ].filter(Boolean).join(' ')}
-              onDragOver={(event) => onDragOver(event, collection.id)}
-              onDrop={(event) => {
-                event.preventDefault()
-                onDrop(collection.id)
-              }}
+              className={isCollectionHidden(collection) ? 'admin-artists-page-hidden-row' : ''}
             >
-              <td className="admin-artists-page-drag-cell">
-                <button
-                  type="button"
-                  draggable={!isFormOpen}
-                  onDragStart={(event) => onDragStart(event, collection.id)}
-                  onDragEnd={onDragEnd}
-                  className="admin-artists-page-drag-handle"
-                  aria-label={`Reorder ${collection.title}`}
-                  title="Drag to reorder"
-                >
-                  ::
-                </button>
-              </td>
               {columns.map((column) => (
                 <td key={column.key} className={column.className ?? ''}>
                   {renderDisplayValue(collection, column)}
@@ -208,15 +210,6 @@ function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions,
                   </div>
                 </div>
 
-                <div className="admin-modal-field">
-                  <label htmlFor="admin-fashion-collection-season" className="admin-modal-label">Season</label>
-                  <input id="admin-fashion-collection-season" type="text" placeholder="SS25" value={form.season} onChange={(event) => setForm((current) => ({ ...current, season: event.target.value }))} className="admin-artists-page-input" />
-                </div>
-                <div className="admin-modal-field">
-                  <label htmlFor="admin-fashion-collection-location" className="admin-modal-label">Location</label>
-                  <input id="admin-fashion-collection-location" type="text" placeholder="Paris Fashion Week" value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} className="admin-artists-page-input" />
-                </div>
-
                 <div className="admin-modal-field admin-modal-field-full">
                   <div className="admin-modal-label">Cover Image</div>
                   <ImageCollectionField
@@ -226,6 +219,42 @@ function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions,
                     folder="fashion-collections"
                     entityLabel={form.title || 'Collection cover'}
                   />
+                </div>
+
+                <div className="admin-modal-field admin-modal-field-full admin-fashion-collection-type-location-row">
+                  <div className="admin-modal-field">
+                    <label htmlFor="admin-fashion-collection-type" className="admin-modal-label">Type</label>
+                    <select
+                      id="admin-fashion-collection-type"
+                      value={form.type}
+                      onChange={(event) => setForm((current) => ({ ...current, type: event.target.value }))}
+                      className="admin-artists-page-input"
+                    >
+                      <option value="COLLECTION">Collection</option>
+                      <option value="LOOSE_LOOK">Loose Look</option>
+                    </select>
+                  </div>
+                  <div className="admin-modal-field">
+                    <label htmlFor="admin-fashion-collection-location" className="admin-modal-label">Location</label>
+                    <input id="admin-fashion-collection-location" type="text" placeholder="Paris Fashion Week" value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} className="admin-artists-page-input" />
+                  </div>
+                </div>
+
+                <div className="admin-modal-field admin-modal-field-full admin-fashion-collection-season-date-row">
+                  <div className="admin-modal-field">
+                    <label htmlFor="admin-fashion-collection-season" className="admin-modal-label">Season</label>
+                    <input id="admin-fashion-collection-season" type="text" placeholder="SS25" value={form.season} onChange={(event) => setForm((current) => ({ ...current, season: event.target.value }))} className="admin-artists-page-input" />
+                  </div>
+                  <div className="admin-modal-field">
+                    <label htmlFor="admin-fashion-collection-release-date" className="admin-modal-label">Release Date</label>
+                    <AdminDateInput
+                      id="admin-fashion-collection-release-date"
+                      ariaLabel="Collection release date"
+                      value={form.releaseDate}
+                      onChange={(value) => setForm((current) => ({ ...current, releaseDate: value }))}
+                      className="admin-artists-page-input"
+                    />
+                  </div>
                 </div>
 
                 <div className="admin-modal-field admin-modal-field-full">
@@ -281,13 +310,12 @@ function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions,
 
 export default function AdminFashionCollectionsPage() {
   const { token } = useAdminAuth()
+  const navigate = useNavigate()
   const auth = { Authorization: `Bearer ${token}` }
   const [collections, setCollections] = useState([])
   const [talentOptions, setTalentOptions] = useState([])
   const [crewOptions, setCrewOptions] = useState([])
   const [form, setForm] = useState(null)
-  const draggedIdRef = useRef(null)
-  const [dropTargetId, setDropTargetId] = useState(null)
   const [loadingEditId, setLoadingEditId] = useState(null)
 
   useEffect(() => {
@@ -295,7 +323,7 @@ export default function AdminFashionCollectionsPage() {
 
     loadAdminResource({ cacheKey: 'fashion-collections-list', url: '/api/admin/fashion/collections', token })
       .then((list) => {
-        if (!ignore) setCollections(list)
+        if (!ignore) setCollections(sortCollectionsByReleaseDate(list))
       })
 
     return () => {
@@ -328,6 +356,7 @@ export default function AdminFashionCollectionsPage() {
       setForm({
         ...empty,
         ...detail,
+        releaseDate: collectionReleaseDateValue(detail),
         coverImages: detail.coverImage ? [detail.coverImage] : [],
         credits: toFormCredits(detail.credits),
       })
@@ -350,9 +379,11 @@ export default function AdminFashionCollectionsPage() {
     const payload = {
       title: form.title,
       slug: slugify(form.title),
+      type: form.type,
       description: form.description,
       about: form.about,
       season: form.season,
+      releaseDate: form.releaseDate || null,
       location: form.location,
       coverImage: form.coverImages?.[0] ?? null,
       isVisible: form.isVisible,
@@ -373,8 +404,9 @@ export default function AdminFashionCollectionsPage() {
     const nextCollections = isEdit
       ? collections.map((collection) => (collection.id === saved.id ? saved : collection))
       : [...collections, saved]
-    setCollections(nextCollections)
-    primeAdminResource('fashion-collections-list', token, nextCollections)
+    const sortedCollections = sortCollectionsByReleaseDate(nextCollections)
+    setCollections(sortedCollections)
+    primeAdminResource('fashion-collections-list', token, sortedCollections)
     fetch('/api/admin/fashion?resource=crew', { headers: auth })
       .then((response) => (response.ok ? response.json() : null))
       .then((crew) => {
@@ -384,6 +416,15 @@ export default function AdminFashionCollectionsPage() {
       })
       .catch(() => {})
     closeForm()
+
+    if (!isEdit && saved.type === 'LOOSE_LOOK') {
+      navigate('/admin/fashion/looks', {
+        state: {
+          prefillLookFromCollection: saved,
+          returnTo: '/admin/fashion/collections',
+        },
+      })
+    }
   }
 
   const handleDelete = async (id) => {
@@ -391,73 +432,6 @@ export default function AdminFashionCollectionsPage() {
     const nextCollections = collections.filter((collection) => collection.id !== id)
     setCollections(nextCollections)
     primeAdminResource('fashion-collections-list', token, nextCollections)
-  }
-
-  const persistCollectionOrder = async (nextCollections) => {
-    const changed = nextCollections.filter((collection, index) => collection.order !== index)
-    if (!changed.length) return nextCollections
-
-    const saved = await Promise.all(
-      changed.map((collection) => {
-        const nextOrderValue = nextCollections.findIndex((candidate) => candidate.id === collection.id)
-        return fetch(`/api/admin/fashion/collections/${collection.id}`, {
-          method: 'PUT',
-          headers: { ...auth, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ order: nextOrderValue }),
-        }).then((res) => res.json())
-      })
-    )
-
-    const savedById = new Map(saved.map((collection) => [collection.id, collection]))
-    return nextCollections.map((collection, index) => savedById.get(collection.id) ?? { ...collection, order: index })
-  }
-
-  const handleDragStart = (event, id) => {
-    if (form) return
-    event.dataTransfer.effectAllowed = 'move'
-    event.dataTransfer.setData('text/plain', id)
-    draggedIdRef.current = id
-  }
-
-  const handleDragOver = (event, id) => {
-    if (!draggedIdRef.current || draggedIdRef.current === id) return
-    event.preventDefault()
-    setDropTargetId(id)
-  }
-
-  const handleDrop = async (id) => {
-    if (!draggedIdRef.current || draggedIdRef.current === id) {
-      draggedIdRef.current = null
-      setDropTargetId(null)
-      return
-    }
-
-    const draggedIndex = collections.findIndex((collection) => collection.id === draggedIdRef.current)
-    const targetIndex = collections.findIndex((collection) => collection.id === id)
-    if (draggedIndex === -1 || targetIndex === -1) {
-      draggedIdRef.current = null
-      setDropTargetId(null)
-      return
-    }
-
-    const reordered = [...collections]
-    const [moved] = reordered.splice(draggedIndex, 1)
-    reordered.splice(targetIndex, 0, moved)
-
-    const normalized = reordered.map((collection, index) => ({ ...collection, order: index }))
-    setCollections(normalized)
-    primeAdminResource('fashion-collections-list', token, normalized)
-    draggedIdRef.current = null
-    setDropTargetId(null)
-
-    const persisted = await persistCollectionOrder(reordered)
-    setCollections(persisted)
-    primeAdminResource('fashion-collections-list', token, persisted)
-  }
-
-  const handleDragEnd = () => {
-    draggedIdRef.current = null
-    setDropTargetId(null)
   }
 
   return (
@@ -471,13 +445,7 @@ export default function AdminFashionCollectionsPage() {
 
       <CollectionsTable
         collections={collections}
-        isFormOpen={Boolean(form)}
-        dropTargetId={dropTargetId}
         loadingEditId={loadingEditId}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        onDragEnd={handleDragEnd}
         onEdit={openEdit}
         onDelete={handleDelete}
       />

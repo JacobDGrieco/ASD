@@ -8,14 +8,16 @@ function selectCollectionList() {
     id: true,
     title: true,
     slug: true,
+    type: true,
     description: true,
     season: true,
+    releaseDate: true,
     location: true,
     coverImage: true,
     coverPathname: true,
     isVisible: true,
     order: true,
-    _count: { select: { looks: true } },
+    _count: { select: { lookPlacements: true } },
   }
 }
 
@@ -31,7 +33,7 @@ function withCollectionCover(collection) {
         isPrimary: true,
       }])[0]
     : null
-  return { ...collection, coverImage, lookCount: collection._count?.looks ?? 0 }
+  return { ...collection, coverImage, lookCount: collection._count?.lookPlacements ?? 0 }
 }
 
 function creditsCreateManyData(credits) {
@@ -114,7 +116,7 @@ async function resolveTypedOutsideTalentCredits(tx, credits) {
 
 function includeCollectionDetail() {
   return {
-    _count: { select: { looks: true } },
+    _count: { select: { lookPlacements: true } },
     credits: {
       orderBy: { sortOrder: 'asc' },
       include: {
@@ -133,14 +135,30 @@ function normalizeCoverInput(coverInput) {
   return { coverImage: coverImage || '', coverPathname: coverPathname || null }
 }
 
+function normalizeReleaseDateInput(value) {
+  if (value === undefined) return undefined
+  if (!value) return null
+  return new Date(value)
+}
+
+function collectionOrderBy() {
+  return [
+    { releaseDate: { sort: 'desc', nulls: 'last' } },
+    { order: 'asc' },
+    { createdAt: 'asc' },
+  ]
+}
+
 function collectionUpdateData(body, cover) {
-  const { title, slug, description, about, season, location, isVisible, order } = body
+  const { title, slug, type, description, about, season, releaseDate, location, isVisible, order } = body
   return {
     title,
     slug: slug !== undefined ? (slug || slugify(title)) : undefined,
+    type: type !== undefined ? type : undefined,
     description: description !== undefined ? description ?? '' : undefined,
     about: about !== undefined ? about ?? '' : undefined,
     season: season !== undefined ? season ?? '' : undefined,
+    releaseDate: normalizeReleaseDateInput(releaseDate),
     location: location !== undefined ? location ?? '' : undefined,
     isVisible,
     order,
@@ -207,14 +225,14 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const collections = await prisma.fashionCollection.findMany({
-      orderBy: { order: 'asc' },
+      orderBy: collectionOrderBy(),
       select: selectCollectionList(),
     })
     return res.status(200).json(collections.map(withCollectionCover))
   }
 
   if (req.method === 'POST') {
-    const { title, slug, description, about, season, location, isVisible, order, coverImage: coverInput, credits } = req.body
+    const { title, slug, type, description, about, season, releaseDate, location, isVisible, order, coverImage: coverInput, credits } = req.body
     if (!title) return res.status(400).json({ error: 'Title is required.' })
     const cover = normalizeCoverInput(coverInput) ?? { coverImage: '', coverPathname: null }
 
@@ -226,9 +244,11 @@ export default async function handler(req, res) {
         data: {
           title,
           slug: slug || slugify(title),
+          type: type || 'COLLECTION',
           description: description ?? '',
           about: about ?? '',
           season: season ?? '',
+          releaseDate: releaseDate ? new Date(releaseDate) : null,
           location: location ?? '',
           isVisible: isVisible ?? true,
           order: order ?? 0,

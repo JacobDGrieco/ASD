@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom'
 import CollectionCard from './CollectionCard.jsx'
 import LookCard from './LookCard.jsx'
 
+function isLooseCollection(item) {
+  return item.collectionType === 'LOOSE_LOOK' || item.catalogueType === 'loose'
+}
+
 export default function FashionCatalogueGrid({ items }) {
   const gridRef = useRef(null)
   const [openCollectionId, setOpenCollectionId] = useState(null)
@@ -27,7 +31,7 @@ export default function FashionCatalogueGrid({ items }) {
   }, [])
 
   const openIndex = items.findIndex(
-    (item) => item.type === 'collection' && item.id === openCollectionId,
+    (item) => item.type === 'collection' && !isLooseCollection(item) && item.id === openCollectionId,
   )
   const openItem = openIndex === -1 ? null : items[openIndex]
   const openRowEndIndex = openItem
@@ -42,7 +46,8 @@ export default function FashionCatalogueGrid({ items }) {
             <CollectionCard
               collection={item}
               isOpen={openCollectionId === item.id}
-              onClick={() =>
+              to={isLooseCollection(item) && item.linkedLook?.slug ? `/fashion/looks/${item.linkedLook.slug}` : undefined}
+              onClick={isLooseCollection(item) ? undefined : () =>
                 setOpenCollectionId((current) => (current === item.id ? null : item.id))
               }
             />

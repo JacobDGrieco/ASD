@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom'
 import '../../styles/AlbumCard.css'
 
-export default function CollectionCard({ collection, isOpen, onClick, to }) {
+export default function CollectionCard({ collection, isOpen, onClick, to, metaOverride }) {
   const coverImg = collection.coverImage
+  const isLoose = collection.collectionType === 'LOOSE_LOOK' || collection.catalogueType === 'loose'
   const lookCount = collection.looks?.length ?? 0
-  const meta = [
+  const meta = metaOverride ?? [
+    isLoose ? 'Loose' : 'Collection',
     collection.season,
-    `${lookCount} look${lookCount === 1 ? '' : 's'}`,
+    isLoose ? null : `${lookCount} look${lookCount === 1 ? '' : 's'}`,
   ].filter(Boolean).join(' - ')
 
   const content = (
