@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { useApi } from '../hooks/useApi.js';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import CollectionCard from '../components/fashion/CollectionCard.jsx';
@@ -112,27 +113,63 @@ function FashionHomeCatalogueCard({ item }) {
 	return <LookCard look={item} />;
 }
 
-function FashionRunwayFeature({ featuredLook, featuredImage, canSwapPresentation, onSwapPresentation, saving }) {
+function FashionRunwayFeature({
+	featuredLook,
+	featuredImage,
+	canSwapPresentation,
+	canNavigatePresentation,
+	onPreviousImage,
+	onNextImage,
+	onSwapPresentation,
+	saving,
+	currentImagePosition,
+	totalImages,
+}) {
 	const imageSrc = getImageSrc(featuredImage);
 	if (!featuredLook || !featuredImage || !imageSrc) return null;
 
 	const usage = typeof featuredImage?.usage === 'string' ? featuredImage.usage : '';
 	const presentation = usage === 'runway-cutout' ? 'model' : 'framed';
-	const nextPresentation = presentation === 'model' ? 'framed' : 'cutout';
+	const nextPresentation = presentation === 'model' ? 'frame' : 'no-back';
 
 	return (
 		<div className={`fashion-runway-feature fashion-runway-feature-${presentation} fashion-runway-reveal`} aria-label={`Featured look: ${featuredLook.title}`}>
 			{canSwapPresentation ? (
-				<button
-					type="button"
-					className="fashion-runway-swap-btn"
-					onClick={onSwapPresentation}
-					disabled={saving}
-					aria-label={`Switch runway image to ${nextPresentation} mode`}
-					title={`Switch to ${nextPresentation} mode`}
-				>
-					{saving ? 'Saving' : 'Swap'}
-				</button>
+				<div className="fashion-runway-admin-controls" aria-label="Runway image controls">
+					<button
+						type="button"
+						className="fashion-runway-step-btn"
+						onClick={onPreviousImage}
+						disabled={!canNavigatePresentation || saving}
+						aria-label="Previous runway image"
+						title="Previous image"
+					>
+						<FaChevronLeft aria-hidden="true" />
+					</button>
+					<button
+						type="button"
+						className="fashion-runway-swap-btn"
+						onClick={onSwapPresentation}
+						disabled={saving}
+						aria-label={`Switch runway image to ${nextPresentation} mode`}
+						title={`Switch to ${nextPresentation} mode`}
+					>
+						{saving ? 'Saving' : 'Swap'}
+						{totalImages > 1 ? (
+							<span className="fashion-runway-control-count">{currentImagePosition}/{totalImages}</span>
+						) : null}
+					</button>
+					<button
+						type="button"
+						className="fashion-runway-step-btn"
+						onClick={onNextImage}
+						disabled={!canNavigatePresentation || saving}
+						aria-label="Next runway image"
+						title="Next image"
+					>
+						<FaChevronRight aria-hidden="true" />
+					</button>
+				</div>
 			) : null}
 			<Link to={`/fashion/looks/${featuredLook.slug}`} className="fashion-runway-look-link">
 				<img src={imageSrc} alt={featuredLook.title} className="fashion-runway-look-image" />
@@ -165,6 +202,10 @@ export default function FashionHomePage() {
 	const recentCatalogueItems = useMemo(() => getRecentItems(catalogueItems, 8), [catalogueItems]);
 	const recentTalent = useMemo(() => getRecentItems(talent, 8), [talent]);
 	const canSwapPresentation = Boolean(session?.role === 'SUPER_ADMIN' && token && featuredLook && featuredImage);
+	const canNavigatePresentation = Boolean(canSwapPresentation && runwaySlides.length > 1);
+	const activeRunwayImagePosition = runwaySlides.length
+		? (activeRunwayImageIndex % runwaySlides.length) + 1
+		: 0;
 	const runwayReady = Boolean(featuredLook && featuredImageSrc && readyFeaturedImageSrc === featuredImageSrc);
 
 	useEffect(() => {
@@ -172,14 +213,14 @@ export default function FashionHomePage() {
 	}, [latestRunwayItem?.id, runwaySlides.length]);
 
 	useEffect(() => {
-		if (runwaySlides.length < 2) return undefined;
+		if (canSwapPresentation || runwaySlides.length < 2) return undefined;
 
 		const interval = window.setInterval(() => {
 			setActiveRunwayImageIndex((current) => (current + 1) % runwaySlides.length);
 		}, 10000);
 
 		return () => window.clearInterval(interval);
-	}, [latestRunwayItem?.id, runwaySlides.length]);
+	}, [canSwapPresentation, latestRunwayItem?.id, runwaySlides.length]);
 
 	useEffect(() => {
 		if (!featuredImageSrc) {
@@ -236,6 +277,30 @@ export default function FashionHomePage() {
 		}
 	};
 
+	const handleRunwayImageStep = (direction) => {
+		if (!canNavigatePresentation) return;
+
+		setActiveRunwayImageIndex((current) => (
+			(current + direction + runwaySlides.length) % runwaySlides.length
+		));
+	};
+
+	const handleScrollCue = (event) => {
+		const section = event.currentTarget.closest('.fashion-home-runway');
+		const target = section?.nextElementSibling;
+		const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+		if (target) {
+			target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+			return;
+		}
+
+		window.scrollBy({
+			top: Math.max(window.innerHeight - 80, 320),
+			behavior: prefersReducedMotion ? 'auto' : 'smooth',
+		});
+	};
+
 	return (
 		<div className="page aurora-page fashion-page">
 			<AuroraBackground />
@@ -277,11 +342,24 @@ export default function FashionHomePage() {
 							featuredLook={featuredLook}
 							featuredImage={featuredImage}
 							canSwapPresentation={canSwapPresentation}
+							canNavigatePresentation={canNavigatePresentation}
+							onPreviousImage={() => handleRunwayImageStep(-1)}
+							onNextImage={() => handleRunwayImageStep(1)}
 							onSwapPresentation={() => void handleSwapPresentation()}
 							saving={savingImageKey === featuredImageKey}
+							currentImagePosition={activeRunwayImagePosition}
+							totalImages={runwaySlides.length}
 						/>
 					) : null}
 
+					<button
+						type="button"
+						className="fashion-home-scroll-cue"
+						aria-label="Scroll to more fashion content"
+						onClick={handleScrollCue}
+					>
+						<span aria-hidden="true" />
+					</button>
 				</section>
 
 				{recentCatalogueItems.length > 0 || catalogueLoading ? (

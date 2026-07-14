@@ -198,6 +198,47 @@
 	animation-delay: var(--flash-delay);
 }
 
+.fashion-home-scroll-cue {
+	position: absolute;
+	right: auto;
+	bottom: clamp(22px, 4vh, 44px);
+	left: 50%;
+	z-index: 6;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 48px;
+	height: 48px;
+	padding: 0;
+	border: 1px solid rgba(255, 248, 232, 0.38);
+	border-radius: 50%;
+	background: rgba(8, 8, 8, 0.38);
+	box-shadow: 0 18px 44px rgba(0, 0, 0, 0.34);
+	backdrop-filter: blur(10px);
+	cursor: pointer;
+	transform: translateX(-50%);
+	animation: fashion-home-scroll-cue-bounce 2.2s ease-in-out infinite;
+	transition:
+		border-color 0.24s ease,
+		background 0.24s ease,
+		transform 0.24s ease;
+}
+
+.fashion-home-scroll-cue span {
+	width: 16px;
+	height: 16px;
+	border-right: 2px solid rgba(255, 248, 232, 0.88);
+	border-bottom: 2px solid rgba(255, 248, 232, 0.88);
+	transform: translateY(-3px) rotate(45deg);
+}
+
+.fashion-home-scroll-cue:hover,
+.fashion-home-scroll-cue:focus-visible {
+	border-color: rgba(255, 248, 232, 0.72);
+	background: rgba(18, 15, 12, 0.56);
+	transform: translateX(-50%) translateY(-2px);
+}
+
 .fashion-runway-feature {
 	position: absolute;
 	top: 45%;
@@ -216,17 +257,23 @@
 	animation-delay: 140ms;
 }
 
-.fashion-runway-swap-btn {
+.fashion-runway-admin-controls {
 	position: absolute;
 	top: -14px;
 	right: -14px;
 	z-index: 8;
 	display: inline-flex;
 	align-items: center;
+	gap: 6px;
+}
+
+.fashion-runway-swap-btn,
+.fashion-runway-step-btn {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
 	justify-content: center;
-	min-width: 58px;
 	min-height: 32px;
-	padding: 8px 10px;
 	border: 1px solid rgba(255, 248, 232, 0.62);
 	background: rgba(8, 8, 8, 0.82);
 	box-shadow:
@@ -238,6 +285,7 @@
 	letter-spacing: 0.08em;
 	line-height: 1;
 	text-transform: uppercase;
+	cursor: pointer;
 	transition:
 		background var(--transition),
 		border-color var(--transition),
@@ -245,18 +293,44 @@
 		transform var(--transition);
 }
 
+.fashion-runway-swap-btn {
+	min-width: 74px;
+	gap: 6px;
+	padding: 8px 10px;
+}
+
+.fashion-runway-step-btn {
+	width: 32px;
+	padding: 0;
+	font-size: 0.72rem;
+	letter-spacing: 0;
+}
+
+.fashion-runway-control-count {
+	color: rgba(255, 244, 218, 0.58);
+	font-size: 0.58rem;
+	letter-spacing: 0.04em;
+}
+
 .fashion-runway-swap-btn:hover,
-.fashion-runway-swap-btn:focus-visible {
+.fashion-runway-swap-btn:focus-visible,
+.fashion-runway-step-btn:hover,
+.fashion-runway-step-btn:focus-visible {
 	border-color: rgba(255, 248, 232, 0.92);
 	background: rgba(20, 18, 14, 0.92);
 	color: #fff;
 	transform: translateY(-1px);
 }
 
-.fashion-runway-swap-btn:disabled {
+.fashion-runway-swap-btn:disabled,
+.fashion-runway-step-btn:disabled {
 	cursor: progress;
 	opacity: 0.62;
 	transform: none;
+}
+
+.fashion-runway-step-btn:disabled {
+	cursor: default;
 }
 
 .fashion-runway-feature::after {
@@ -800,6 +874,17 @@
 
 	to {
 		opacity: 1;
+	}
+}
+
+@keyframes fashion-home-scroll-cue-bounce {
+	0%,
+	100% {
+		transform: translateX(-50%) translateY(-4px);
+	}
+
+	50% {
+		transform: translateX(-50%) translateY(4px);
 	}
 }
 
@@ -1717,6 +1802,10 @@ a.fashion-piece-credit-mini-card:focus-visible .fashion-piece-credit-mini-image 
 	.fashion-runway-reveal {
 		animation: none;
 		opacity: 1;
+	}
+
+	.fashion-home-scroll-cue {
+		animation: none;
 	}
 
 	.fashion-home-card-placeholder {

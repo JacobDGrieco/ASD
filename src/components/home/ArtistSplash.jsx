@@ -482,12 +482,35 @@ function ArtistSpotlightCarousel({ artists }) {
 
 export default function ArtistSplash({ artists }) {
 	const isMobileSpotlight = useMediaQuery(MOBILE_SPOTLIGHT_QUERY);
+	const handleScrollCue = (event) => {
+		const section = event.currentTarget.closest('.artist-splash-splash');
+		const target = section?.nextElementSibling;
+		const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+		if (target) {
+			target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+			return;
+		}
+
+		window.scrollBy({
+			top: Math.max(window.innerHeight - 80, 320),
+			behavior: prefersReducedMotion ? 'auto' : 'smooth',
+		});
+	};
 
 	return (
 		<section className="artist-splash-splash">
 			<img src={musicStageBackdrop} alt="" className="artist-splash-stage-backdrop" aria-hidden="true" />
 			<div className="artist-splash-overlay" />
 			{isMobileSpotlight ? <ArtistSpotlightCarousel artists={artists} /> : <ArtistSplashRail artists={artists} />}
+			<button
+				type="button"
+				className="artist-splash-scroll-cue"
+				aria-label="Scroll to more music content"
+				onClick={handleScrollCue}
+			>
+				<span aria-hidden="true" />
+			</button>
 		</section>
 	);
 }
