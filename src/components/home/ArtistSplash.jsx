@@ -410,73 +410,215 @@ function ArtistSplashRail({ artists }) {
 }
 
 function ArtistSpotlightCarousel({ artists }) {
-	const [activeIndex, setActiveIndex] = useState(0);
-	const touchStartXRef = useRef(null);
-	const didSwipeRef = useRef(false);
-	const navigate = useNavigate();
 	const artistCount = artists.length;
+	const shouldLoop = artistCount > 1;
+	const carouselArtists = useMemo(() => (
+		shouldLoop
+			? [...artists, ...artists, ...artists]
+			: artists
+	), [artists, shouldLoop]);
+	const [activeIndex, setActiveIndex] = useState(0);
+	const [activeCarouselIndex, setActiveCarouselIndex] = useState(shouldLoop ? artistCount : 0);
+	const scrollRef = useRef(null);
+	const pointerStartRef = useRef(null);
+	const didSwipeRef = useRef(false);
+	const scrollFrameRef = useRef(null);
+	const snapTimeoutRef = useRef(null);
+	const activeIndexRef = useRef(0);
+	const isNormalizingLoopRef = useRef(false);
+	const navigate = useNavigate();
 
-	const goToIndex = (index) => {
-		if (artistCount === 0) return;
-		setActiveIndex((index + artistCount) % artistCount);
-	};
+	const safeActiveIndex = artistCount > 0 ? Math.min(activeIndex, artistCount - 1) : 0;
+	const safeActiveCarouselIndex = carouselArtists.length > 0
+		? Math.min(activeCarouselIndex, carouselArtists.length - 1)
+		: 0;
 
-	const safeActiveIndex = artistCount > 0 ? activeIndex % artistCount : 0;
-	const activeArtist = artists[safeActiveIndex];
+	const getRealIndex = useCallback((carouselIndex) => {
+		if (!shouldLoop || artistCount === 0) return carouselIndex;
+		return ((carouselIndex % artistCount) + artistCount) % artistCount;
+	}, [artistCount, shouldLoop]);
 
-	const getSpotlightPosition = (index) => {
-		if (index === safeActiveIndex) return 'center';
-		if (artistCount <= 1) return 'hidden';
+	const getCarouselIndex = useCallback((realIndex) => (
+		shouldLoop ? realIndex + artistCount : realIndex
+	), [artistCount, shouldLoop]);
 
-		let offset = index - safeActiveIndex;
-		if (offset > artistCount / 2) offset -= artistCount;
-		if (offset < artistCount / -2) offset += artistCount;
+	useEffect(() => {
+		activeIndexRef.current = safeActiveIndex;
+	}, [safeActiveIndex]);
 
-		if (offset === -1) return 'prev';
-		if (offset === 1) return 'next';
-		return 'hidden';
-	};
+	const getNearestCarouselIndex = useCallback(() => {
+		const element = scrollRef.current;
+		if (!element) return safeActiveCarouselIndex;
+
+		const cards = Array.from(element.querySelectorAll('.artist-splash-spotlight-card'));
+		if (cards.length === 0) return safeActiveCarouselIndex;
+
+		const containerRect = element.getBoundingClientRect();
+		const containerCenter = containerRect.left + containerRect.width / 2;
+		let nearestIndex = safeActiveCarouselIndex;
+		let nearestDistance = Number.POSITIVE_INFINITY;
+
+		cards.forEach((card, index) => {
+			const cardRect = card.getBoundingClientRect();
+			const cardCenter = cardRect.left + cardRect.width / 2;
+			const distance = Math.abs(cardCenter - containerCenter);
+
+			if (distance < nearestDistance) {
+				nearestDistance = distance;
+				nearestIndex = index;
+			}
+		});
+
+		return nearestIndex;
+	}, [safeActiveCarouselIndex]);
+
+	const scrollToCarouselIndex = useCallback((index, behavior = 'smooth') => {
+		const element = scrollRef.current;
+		const target = element?.querySelectorAll('.artist-splash-spotlight-card')[index];
+		if (!target) return;
+
+		const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		target.scrollIntoView({
+			behavior: prefersReducedMotion ? 'auto' : behavior,
+			block: 'nearest',
+			inline: 'center',
+		});
+	}, []);
+
+	const updateActiveFromCarouselIndex = useCallback((carouselIndex) => {
+		setActiveCarouselIndex(carouselIndex);
+		setActiveIndex(getRealIndex(carouselIndex));
+	}, [getRealIndex]);
+
+	const normalizeLoopIndex = useCallback((carouselIndex) => {
+		if (!shouldLoop) return carouselIndex;
+		if (carouselIndex < artistCount || carouselIndex >= artistCount * 2) {
+			return getCarouselIndex(getRealIndex(carouselIndex));
+		}
+		return carouselIndex;
+	}, [artistCount, getCarouselIndex, getRealIndex, shouldLoop]);
+
+	const normalizeLoopPosition = useCallback((carouselIndex) => {
+		const element = scrollRef.current;
+		const normalizedIndex = normalizeLoopIndex(carouselIndex);
+		if (!element || normalizedIndex === carouselIndex) return false;
+
+		const cards = element.querySelectorAll('.artist-splash-spotlight-card');
+		const currentCard = cards[carouselIndex];
+		const normalizedCard = cards[normalizedIndex];
+		if (!currentCard || !normalizedCard) return false;
+
+		isNormalizingLoopRef.current = true;
+		updateActiveFromCarouselIndex(normalizedIndex);
+		element.scrollLeft += normalizedCard.offsetLeft - currentCard.offsetLeft;
+
+		window.requestAnimationFrame(() => {
+			isNormalizingLoopRef.current = false;
+		});
+
+		return true;
+	}, [normalizeLoopIndex, updateActiveFromCarouselIndex]);
+
+	const snapToNearest = useCallback((behavior = 'smooth') => {
+		const nearestCarouselIndex = getNearestCarouselIndex();
+
+		if (normalizeLoopPosition(nearestCarouselIndex)) return;
+		updateActiveFromCarouselIndex(nearestCarouselIndex);
+		scrollToCarouselIndex(nearestCarouselIndex, behavior);
+	}, [getNearestCarouselIndex, normalizeLoopPosition, scrollToCarouselIndex, updateActiveFromCarouselIndex]);
+
+	const handleScroll = useCallback(() => {
+		if (isNormalizingLoopRef.current) return;
+		if (scrollFrameRef.current) window.cancelAnimationFrame(scrollFrameRef.current);
+		if (snapTimeoutRef.current) window.clearTimeout(snapTimeoutRef.current);
+
+		scrollFrameRef.current = window.requestAnimationFrame(() => {
+			const nearestCarouselIndex = getNearestCarouselIndex();
+
+			if (normalizeLoopPosition(nearestCarouselIndex)) return;
+			updateActiveFromCarouselIndex(nearestCarouselIndex);
+		});
+
+		snapTimeoutRef.current = window.setTimeout(() => {
+			snapToNearest('smooth');
+		}, 80);
+	}, [getNearestCarouselIndex, normalizeLoopPosition, snapToNearest, updateActiveFromCarouselIndex]);
+
+	useEffect(() => {
+		if (artistCount === 0) return undefined;
+		const nextIndex = Math.min(activeIndexRef.current, artistCount - 1);
+		const nextCarouselIndex = getCarouselIndex(nextIndex);
+		const frameId = window.requestAnimationFrame(() => {
+			setActiveIndex(nextIndex);
+			setActiveCarouselIndex(nextCarouselIndex);
+			scrollToCarouselIndex(nextCarouselIndex, 'auto');
+		});
+
+		return () => window.cancelAnimationFrame(frameId);
+	}, [artistCount, getCarouselIndex, scrollToCarouselIndex]);
+
+	useEffect(() => () => {
+		if (scrollFrameRef.current) window.cancelAnimationFrame(scrollFrameRef.current);
+		if (snapTimeoutRef.current) window.clearTimeout(snapTimeoutRef.current);
+	}, []);
 
 	const handlePointerDown = (event) => {
-		touchStartXRef.current = event.clientX;
+		pointerStartRef.current = { x: event.clientX, y: event.clientY };
+		didSwipeRef.current = false;
 	};
 
-	const handlePointerUp = (event) => {
-		if (touchStartXRef.current === null) return;
+	const handlePointerMove = (event) => {
+		if (!pointerStartRef.current) return;
 
-		const deltaX = event.clientX - touchStartXRef.current;
-		touchStartXRef.current = null;
+		const deltaX = Math.abs(event.clientX - pointerStartRef.current.x);
+		const deltaY = Math.abs(event.clientY - pointerStartRef.current.y);
 
-		if (Math.abs(deltaX) < 36) return;
-		didSwipeRef.current = true;
-		goToIndex(deltaX > 0 ? activeIndex - 1 : activeIndex + 1);
-		window.setTimeout(() => {
-			didSwipeRef.current = false;
-		}, 120);
+		if (deltaX > 8 && deltaX > deltaY) {
+			didSwipeRef.current = true;
+		}
 	};
 
-	if (!activeArtist) return null;
+	const handlePointerUp = () => {
+		pointerStartRef.current = null;
+
+		if (didSwipeRef.current) {
+			window.setTimeout(() => {
+				didSwipeRef.current = false;
+			}, 160);
+		}
+	};
+
+	if (artistCount === 0) return null;
 
 	return (
 		<div
 			className="artist-splash-spotlight"
+			ref={scrollRef}
+			onScroll={handleScroll}
 			onPointerDown={handlePointerDown}
+			onPointerMove={handlePointerMove}
 			onPointerUp={handlePointerUp}
 			onPointerCancel={() => {
-				touchStartXRef.current = null;
+				pointerStartRef.current = null;
 			}}
 		>
-			{artists.map((artist, index) => {
-				const position = getSpotlightPosition(index);
-				const isCenter = position === 'center';
-				const isSide = position === 'prev' || position === 'next';
+			{carouselArtists.map((artist, carouselIndex) => {
+				const realIndex = getRealIndex(carouselIndex);
+				const isClone = shouldLoop && (carouselIndex < artistCount || carouselIndex >= artistCount * 2);
+				const isCenter = carouselIndex === safeActiveCarouselIndex;
+				const isSide = Math.abs(carouselIndex - safeActiveCarouselIndex) === 1;
+				const depthClass = isCenter
+					? 'artist-splash-spotlight-card-center'
+					: isSide
+						? 'artist-splash-spotlight-card-side'
+						: 'artist-splash-spotlight-card-away';
 
 				return (
 					<ArtistCard
-						key={artist.id}
+						key={`${artist.id}-${carouselIndex}`}
 						artist={artist}
 						as="button"
-						className={`artist-splash-spotlight-card artist-splash-spotlight-card-${position} ${isSide ? 'artist-splash-spotlight-card-side' : ''}`.trim()}
+						className={`artist-splash-spotlight-card ${depthClass} ${isClone ? 'artist-splash-spotlight-card-clone' : ''}`.trim()}
 						imagePriority={isCenter ? 'high' : 'auto'}
 						forcedActive={isCenter}
 						autoPreview={isCenter}
@@ -487,7 +629,9 @@ function ArtistSpotlightCarousel({ artists }) {
 								navigate(`/artists/${artist.slug}`);
 								return;
 							}
-							goToIndex(index);
+							updateActiveFromCarouselIndex(carouselIndex);
+							scrollToCarouselIndex(carouselIndex);
+							if (!normalizeLoopPosition(carouselIndex)) setActiveIndex(realIndex);
 						}}
 					/>
 				);
