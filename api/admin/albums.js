@@ -3,6 +3,7 @@ import { artistScopedAlbumWhere, canAccessAdminPage, isSuperAdmin, isViewer, req
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
 import { normalizeVisibilityInput } from '../../src/lib/contentVisibility.js'
 import { releaseVisibilityUpperBound } from '../../src/lib/releaseSchedule.js'
+import { collectBlobPathnames, deleteRemovedBlobPathnames, deleteUnusedBlobPathnames } from '../../src/lib/blobCleanup.js'
 import { clientImages, mergeLegacyImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js'
 import { MUSIC_RELEASE_LEGACY_LINK_FIELDS, legacyFieldsFromProfileLinks, normalizeProfileLinks, profileLinksForSource } from '../../src/lib/profileLinks.js'
 import { OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID, OTHER_ARTIST_SLUG } from '../../src/lib/publicVisibility.js'
@@ -246,13 +247,16 @@ export default async function handler(req, res) {
         },
         include: includeAlbum(),
       })
+      await deleteRemovedBlobPathnames([existingAlbum.images, existingAlbum.coverArt], normalizedImages)
       return res.status(200).json(withImages(album))
     }
 
     if (req.method === 'DELETE') {
       if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_ALBUMS)) return res.status(403).json({ error: 'Forbidden' })
       if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
+      const blobPathnames = collectBlobPathnames(existingAlbum.images, existingAlbum.coverArt)
       await prisma.album.delete({ where: { id } })
+      await deleteUnusedBlobPathnames(blobPathnames)
       return res.status(204).end()
     }
 

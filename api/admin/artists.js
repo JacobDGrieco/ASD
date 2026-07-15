@@ -4,6 +4,8 @@ import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
 import { hashPassword } from '../../src/lib/passwords.js'
 import { validateUniqueArtistPassword } from '../../src/lib/adminAccounts.js'
 import { handleAdminBoard } from '../../src/lib/adminBoardHandler.js'
+import { collectBlobPathnames, deleteRemovedBlobPathnames, deleteUnusedBlobPathnames } from '../../src/lib/blobCleanup.js'
+import { extractBoardBodyImagePathnames } from '../../src/lib/boardMarkdown.js'
 import { clientImages, mergeLegacyImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js'
 import { ARTIST_LEGACY_LINK_FIELDS, legacyFieldsFromProfileLinks, normalizeProfileLinks, profileLinksForSource } from '../../src/lib/profileLinks.js'
 import { isReservedHiddenArtist } from '../../src/lib/publicVisibility.js'
@@ -130,7 +132,21 @@ export default async function handler(req, res) {
   if (id) {
     const existingArtist = await prisma.artist.findUnique({
       where: { id },
-      select: { id: true, name: true, slug: true },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        portrait: true,
+        images: { select: { url: true, pathname: true } },
+        videos: { select: { posterUrl: true, posterPathname: true } },
+        albums: {
+          select: {
+            coverArt: true,
+            images: { select: { url: true, pathname: true } },
+          },
+        },
+        boardPosts: { select: { imageUrl: true, body: true } },
+      },
     })
 
     if (!existingArtist || !canAccessArtist(session, existingArtist.id)) {
@@ -201,6 +217,9 @@ export default async function handler(req, res) {
         },
         include: includeArtist(),
       })
+      if (normalizedImages !== null) {
+        await deleteRemovedBlobPathnames([existingArtist.images, existingArtist.portrait], normalizedImages)
+      }
       return res.status(200).json(withImages(artist))
     }
 
@@ -208,7 +227,18 @@ export default async function handler(req, res) {
       if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_ARTISTS)) return res.status(403).json({ error: 'Forbidden' })
       if (!isSuperAdmin(session)) return res.status(403).json({ error: 'Forbidden' })
       if (isReservedHiddenArtist(existingArtist)) return res.status(403).json({ error: 'This reserved artist cannot be deleted here.' })
+      const blobPathnames = collectBlobPathnames(
+        existingArtist.images,
+        existingArtist.portrait,
+        existingArtist.videos.map((video) => [video.posterPathname, video.posterUrl]),
+        existingArtist.albums.map((album) => [album.images, album.coverArt]),
+        existingArtist.boardPosts.map((post) => [
+          post.imageUrl,
+          [...extractBoardBodyImagePathnames(post.body)],
+        ]),
+      )
       await prisma.artist.delete({ where: { id } })
+      await deleteUnusedBlobPathnames(blobPathnames)
       return res.status(204).end()
     }
 

@@ -1,5 +1,6 @@
 import { prisma } from '../../src/lib/prisma.js'
 import { requireSuperAdmin } from '../../src/lib/auth.js'
+import { collectBlobPathnames, deleteRemovedBlobPathnames, deleteUnusedBlobPathnames } from '../../src/lib/blobCleanup.js'
 import { buildClientImageUrl, normalizeImageInput } from '../../src/lib/images.js'
 import { COMPANY_SUMMARY } from '../../src/lib/companyProfile.js'
 
@@ -171,11 +172,17 @@ export default async function handler(req, res) {
       data: validation,
     })
 
+    await deleteRemovedBlobPathnames(
+      [existing.imagePathname, existing.imageUrl],
+      [validation.imagePathname, validation.imageUrl],
+    )
     return res.status(200).json(formatMember(member))
   }
 
   if (req.method === 'DELETE') {
+    const blobPathnames = collectBlobPathnames(existing.imagePathname, existing.imageUrl)
     await prisma.companyMember.delete({ where: { id } })
+    await deleteUnusedBlobPathnames(blobPathnames)
     return res.status(204).end()
   }
 

@@ -3,6 +3,7 @@ import { artistScopedSongWhere, canAccessAdminPage, isSuperAdmin, isViewer, requ
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
 import { normalizeVisibilityInput } from '../../src/lib/contentVisibility.js'
 import { releaseVisibilityUpperBound } from '../../src/lib/releaseSchedule.js'
+import { collectBlobPathnames, deleteRemovedBlobPathnames, deleteUnusedBlobPathnames } from '../../src/lib/blobCleanup.js'
 import { slugify } from '../../src/lib/slugify.js'
 import {
   clientImages,
@@ -607,12 +608,15 @@ export default async function handler(req, res) {
         },
       })
 
+      await deleteRemovedBlobPathnames([existingSong.images, existingSong.artwork], normalizedImages)
       return res.status(200).json(await loadSong(session, id))
     }
 
     if (req.method === 'DELETE') {
       if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
+      const blobPathnames = collectBlobPathnames(existingSong.images, existingSong.artwork)
       await prisma.song.delete({ where: { id } })
+      await deleteUnusedBlobPathnames(blobPathnames)
       return res.status(204).end()
     }
 

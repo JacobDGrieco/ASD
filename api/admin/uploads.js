@@ -2,6 +2,7 @@ import { Buffer } from 'node:buffer'
 import { del, put } from '@vercel/blob'
 import { handleUpload } from '@vercel/blob/client'
 import { isViewer, requireAdmin } from '../../src/lib/auth.js'
+import { blobPathnameFromReference } from '../../src/lib/blobCleanup.js'
 
 const ALLOWED_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024
@@ -36,16 +37,6 @@ function sanitizeSegment(value) {
 
 function normalizeFolder(value) {
   return ALLOWED_FOLDERS.has(value) ? value : 'artists'
-}
-
-function normalizeBlobPathname(value) {
-  const pathname = typeof value === 'string' ? value.trim().replace(/^\/+/, '') : ''
-  if (!pathname) return ''
-
-  const folder = pathname.split('/')[0]
-  if (!ALLOWED_FOLDERS.has(folder)) return ''
-
-  return pathname
 }
 
 function extensionFromUrl(url) {
@@ -145,7 +136,7 @@ export default async function handler(req, res) {
     if (req.method === 'DELETE') {
       const requestedPathnames = Array.isArray(body?.pathnames) ? body.pathnames : [body?.pathname]
       const pathnames = [...new Set(requestedPathnames.flatMap((pathname) => {
-        const normalized = normalizeBlobPathname(pathname)
+        const normalized = blobPathnameFromReference(pathname)
         return normalized ? [normalized] : []
       }))]
 

@@ -1,6 +1,7 @@
 import { prisma } from '../../src/lib/prisma.js'
 import { canAccessAdminPage, isViewer, requireAdmin } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
+import { collectBlobPathnames, deleteRemovedBlobPathnames, deleteUnusedBlobPathnames } from '../../src/lib/blobCleanup.js'
 import { formatCrosshairVideo, normalizeCrosshairVideoInput, validateCrosshairVideoInput } from '../../src/lib/crosshairVideos.js'
 import { getYouTubeSyncConfigStatus, syncCrosshairFromYouTube } from '../../src/lib/youtubeChannelSync.js'
 
@@ -58,6 +59,11 @@ export default async function handler(req, res) {
 
   if (req.method === 'PUT') {
     if (!id) return res.status(400).json({ error: 'Video id is required.' })
+    const existing = await prisma.crosshairVideo.findUnique({
+      where: { id },
+      select: { thumbnailUrl: true, thumbnailPathname: true },
+    })
+    if (!existing) return res.status(404).json({ error: 'Video not found.' })
     const normalized = normalizeCrosshairVideoInput(req.body)
     const validationError = validateCrosshairVideoInput(normalized)
     if (validationError) return res.status(400).json({ error: validationError })
@@ -66,12 +72,23 @@ export default async function handler(req, res) {
       where: { id },
       data: normalized,
     })
+    await deleteRemovedBlobPathnames(
+      [existing.thumbnailPathname, existing.thumbnailUrl],
+      [normalized.thumbnailPathname, normalized.thumbnailUrl],
+    )
     return res.status(200).json(formatCrosshairVideo(video))
   }
 
   if (req.method === 'DELETE') {
     if (!id) return res.status(400).json({ error: 'Video id is required.' })
+    const existing = await prisma.crosshairVideo.findUnique({
+      where: { id },
+      select: { thumbnailUrl: true, thumbnailPathname: true },
+    })
+    if (!existing) return res.status(404).json({ error: 'Video not found.' })
+    const blobPathnames = collectBlobPathnames(existing.thumbnailPathname, existing.thumbnailUrl)
     await prisma.crosshairVideo.delete({ where: { id } })
+    await deleteUnusedBlobPathnames(blobPathnames)
     return res.status(204).end()
   }
 

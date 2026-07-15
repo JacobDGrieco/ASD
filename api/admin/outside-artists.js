@@ -1,6 +1,7 @@
 import { prisma } from '../../src/lib/prisma.js'
 import { canAccessAdminPage, isViewer, requireAdmin } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
+import { collectBlobPathnames, deleteRemovedBlobPathnames, deleteUnusedBlobPathnames } from '../../src/lib/blobCleanup.js'
 import { clientImages, normalizeImageInput, primaryImageReference } from '../../src/lib/images.js'
 
 function normalizeString(value) {
@@ -74,7 +75,7 @@ export default async function handler(req, res) {
   const id = typeof req.query.id === 'string' ? req.query.id : ''
 
   if (id) {
-    const existing = await prisma.musicOutsideArtist.findUnique({ where: { id }, select: { id: true } })
+    const existing = await prisma.musicOutsideArtist.findUnique({ where: { id }, select: selectOutsideArtist() })
     if (!existing) return res.status(404).json({ error: 'Outside artist not found.' })
 
     if (req.method === 'GET') {
@@ -96,13 +97,19 @@ export default async function handler(req, res) {
         data: validation,
         select: selectOutsideArtist(),
       })
+      await deleteRemovedBlobPathnames(
+        [existing.pathname, existing.imageUrl],
+        [validation.pathname, validation.imageUrl],
+      )
       return res.status(200).json(withOutsideArtistImage(outsideArtist))
     }
 
     if (req.method === 'DELETE') {
       if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_OUTSIDE_ARTISTS)) return res.status(403).json({ error: 'Forbidden' })
       if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
+      const blobPathnames = collectBlobPathnames(existing.pathname, existing.imageUrl)
       await prisma.musicOutsideArtist.delete({ where: { id } })
+      await deleteUnusedBlobPathnames(blobPathnames)
       return res.status(204).end()
     }
 

@@ -1,6 +1,7 @@
 import { prisma } from '../../src/lib/prisma.js'
 import { canAccessAdminPage, isSuperAdmin, isTalentAdmin, requireAdmin } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
+import { collectBlobPathnames, deleteRemovedBlobPathnames, deleteUnusedBlobPathnames } from '../../src/lib/blobCleanup.js'
 import { clientImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js'
 import { FASHION_TALENT_LEGACY_LINK_FIELDS, legacyFieldsFromProfileLinks, normalizeProfileLinks, profileLinksForSource } from '../../src/lib/profileLinks.js'
 import { slugify } from '../../src/lib/slugify.js'
@@ -71,7 +72,7 @@ async function handleTalent(req, res, session) {
   if (id) {
     const existing = await prisma.fashionTalent.findFirst({
       where: { id, ...talentProfileWhere(session) },
-      select: { id: true },
+      select: { id: true, images: { select: { url: true, pathname: true } } },
     })
     if (!existing) return res.status(404).json({ error: 'Talent not found' })
 
@@ -117,6 +118,9 @@ async function handleTalent(req, res, session) {
         },
         include: { images: includeTalentImages() },
       })
+      if (normalizedImages !== null) {
+        await deleteRemovedBlobPathnames(existing.images, normalizedImages)
+      }
       return res.status(200).json(withTalentImages(talent))
     }
 
@@ -126,6 +130,7 @@ async function handleTalent(req, res, session) {
         await deleteFashionCreditsForPerson(tx, { talentId: id })
         await tx.fashionTalent.delete({ where: { id } })
       })
+      await deleteUnusedBlobPathnames(collectBlobPathnames(existing.images))
       return res.status(204).end()
     }
 
@@ -227,7 +232,7 @@ async function handleCrew(req, res) {
   const { id } = req.query
 
   if (id) {
-    const existing = await prisma.fashionCrew.findUnique({ where: { id }, select: { id: true } })
+    const existing = await prisma.fashionCrew.findUnique({ where: { id }, select: selectCrewList() })
     if (!existing) return res.status(404).json({ error: 'Outside talent not found' })
 
     if (req.method === 'GET') {
@@ -245,6 +250,10 @@ async function handleCrew(req, res) {
         data: { name, role: role ?? '', externalUrl: normalizeExternalUrl(externalUrl), imageUrl, pathname: pathname || null },
         select: selectCrewList(),
       })
+      await deleteRemovedBlobPathnames(
+        [existing.pathname, existing.imageUrl],
+        [pathname, imageUrl],
+      )
       return res.status(200).json(withCrewImage(crew))
     }
 
@@ -253,6 +262,7 @@ async function handleCrew(req, res) {
         await deleteFashionCreditsForPerson(tx, { crewId: id })
         await tx.fashionCrew.delete({ where: { id } })
       })
+      await deleteUnusedBlobPathnames(collectBlobPathnames(existing.pathname, existing.imageUrl))
       return res.status(204).end()
     }
 
@@ -601,7 +611,11 @@ async function handleLooks(req, res, session) {
   if (id) {
     const existing = await prisma.fashionLook.findFirst({
       where: { id, ...fashionProjectCreatorWhere(session) },
-      select: { id: true },
+      select: {
+        id: true,
+        images: { select: { url: true, pathname: true } },
+        pieces: { select: { imageUrl: true, pathname: true } },
+      },
     })
     if (!existing) return res.status(404).json({ error: 'Look not found' })
 
@@ -622,6 +636,11 @@ async function handleLooks(req, res, session) {
         return res.status(403).json({ error: 'You can only place looks in your own collections.' })
       }
       const normalizedImages = images === undefined ? null : normalizeImageInput(images, 'lookbook')
+      const normalizedPieceImages = pieces === undefined
+        ? null
+        : (Array.isArray(pieces) ? pieces : [])
+            .map((piece) => normalizeImageInput(piece?.image ? [piece.image] : [], 'piece')[0])
+            .filter(Boolean)
 
       // Replace child collections (pieces, piece credits, look credits) wholesale to keep
       // the form-driven CMS simple, matching the same pattern used for Album/Artist image
@@ -675,11 +694,25 @@ async function handleLooks(req, res, session) {
           include: includeLook(),
         })
       })
+      if (normalizedImages !== null) {
+        await deleteRemovedBlobPathnames(existing.images, normalizedImages)
+      }
+      if (normalizedPieceImages !== null) {
+        await deleteRemovedBlobPathnames(
+          existing.pieces.map((piece) => [piece.pathname, piece.imageUrl]),
+          normalizedPieceImages,
+        )
+      }
       return res.status(200).json(withLookImages(look))
     }
 
     if (req.method === 'DELETE') {
+      const blobPathnames = collectBlobPathnames(
+        existing.images,
+        existing.pieces.map((piece) => [piece.pathname, piece.imageUrl]),
+      )
       await prisma.fashionLook.delete({ where: { id } })
+      await deleteUnusedBlobPathnames(blobPathnames)
       return res.status(204).end()
     }
 

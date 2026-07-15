@@ -1,6 +1,7 @@
 import { prisma } from './prisma.js'
 import { isArtistAdmin, isSuperAdmin, isViewer } from './auth.js'
-import { validateBoardBodyMarkdown } from './boardMarkdown.js'
+import { collectBlobPathnames, deleteRemovedBlobPathnames, deleteUnusedBlobPathnames } from './blobCleanup.js'
+import { extractBoardBodyImagePathnames, validateBoardBodyMarkdown } from './boardMarkdown.js'
 import { ASD_RECORDS_ARTIST_NAME, ASD_RECORDS_ARTIST_OPTION_ID, ASD_RECORDS_ARTIST_SLUG, OTHER_ARTIST_SLUG } from './publicVisibility.js'
 
 const BOARD_COUNT_CAP = 25
@@ -126,6 +127,10 @@ export async function handleAdminBoard(req, res, session) {
       })
 
       if (updated.publishedAt) await autoArchiveOldest()
+      await deleteRemovedBlobPathnames(
+        [post.imageUrl, [...extractBoardBodyImagePathnames(post.body)]],
+        [imageUrl, [...extractBoardBodyImagePathnames(body)]],
+      )
       return res.status(200).json(updated)
     }
 
@@ -134,7 +139,12 @@ export async function handleAdminBoard(req, res, session) {
       if (isArtistAdmin(session) && post.artistId !== session.artistId) {
         return res.status(403).json({ error: 'Forbidden' })
       }
+      const blobPathnames = collectBlobPathnames(
+        post.imageUrl,
+        [...extractBoardBodyImagePathnames(post.body)],
+      )
       await prisma.boardPost.delete({ where: { id } })
+      await deleteUnusedBlobPathnames(blobPathnames)
       return res.status(204).end()
     }
 

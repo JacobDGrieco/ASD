@@ -1,6 +1,7 @@
 import { prisma } from '../../src/lib/prisma.js'
 import { canAccessAdminPage, isSuperAdmin, isTalentAdmin, requireAdmin } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
+import { collectBlobPathnames, deleteRemovedBlobPathnames, deleteUnusedBlobPathnames } from '../../src/lib/blobCleanup.js'
 import { clientImages, normalizeImageInput, primaryImageReference } from '../../src/lib/images.js'
 import { slugify } from '../../src/lib/slugify.js'
 
@@ -188,7 +189,7 @@ export default async function handler(req, res) {
   if (id) {
     const existing = await prisma.fashionCollection.findFirst({
       where: { id, ...fashionCollectionCreatorWhere(session) },
-      select: { id: true },
+      select: { id: true, coverImage: true, coverPathname: true },
     })
     if (!existing) return res.status(404).json({ error: 'Collection not found' })
 
@@ -229,12 +230,20 @@ export default async function handler(req, res) {
         })
       })
 
+      if (cover !== null) {
+        await deleteRemovedBlobPathnames(
+          [existing.coverPathname, existing.coverImage],
+          [cover.coverPathname, cover.coverImage],
+        )
+      }
       return res.status(200).json(withCollectionCover(collection))
     }
 
     if (req.method === 'DELETE') {
       if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.FASHION_COLLECTIONS)) return res.status(403).json({ error: 'Forbidden' })
+      const blobPathnames = collectBlobPathnames(existing.coverPathname, existing.coverImage)
       await prisma.fashionCollection.delete({ where: { id } })
+      await deleteUnusedBlobPathnames(blobPathnames)
       return res.status(204).end()
     }
 
