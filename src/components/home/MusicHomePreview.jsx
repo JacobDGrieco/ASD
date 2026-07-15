@@ -3,10 +3,51 @@ import musicStageBackdrop from '../../assets/music-tour-stage-backdrop.png';
 import '../../styles/ArtistSplash.css';
 import '../../styles/HomePortal.css';
 
+function ArtistPreviewCard({ artist, index, className = '', active = false }) {
+	return (
+		<div
+			className={`artist-splash-card ${active ? 'artist-splash-card-active' : ''} ${className}`.trim()}
+			style={{ '--artist-splash-enter-delay': `${index * 120}ms` }}
+		>
+			<span className="artist-splash-name-art" data-text={artist.name}>
+				<span className="artist-splash-name-outline">{artist.name}</span>
+			</span>
+			<div className="artist-splash-card-frame">
+				<div className="artist-splash-card-image-window">
+					{artist.portrait && (
+						<img
+							src={artist.portrait}
+							alt={artist.name}
+							className="artist-splash-portrait artist-splash-portrait-current"
+							loading={index < 3 ? 'eager' : 'lazy'}
+							decoding="async"
+						/>
+					)}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function buildMobileSpotlightArtists(artists) {
+	if (artists.length <= 1) {
+		return {
+			artists,
+			activeIndex: 0,
+		};
+	}
+
+	return {
+		artists: [-2, -1, 0, 1, 2].map((offset) => artists[(offset + artists.length) % artists.length]),
+		activeIndex: 2,
+	};
+}
+
 export default function MusicHomePreview() {
 	const { data: artists } = useApi('/api/artists');
 	const visibleArtists = (artists ?? []).filter((a) => a.isPubliclyVisible !== false);
 	const previewArtists = visibleArtists.slice(0, 8);
+	const { artists: mobilePreviewArtists, activeIndex: activeMobileIndex } = buildMobileSpotlightArtists(previewArtists);
 	const rowCount = previewArtists.length >= 5 ? 2 : 1;
 	const columnCount = Math.max(1, Math.ceil(previewArtists.length / rowCount));
 	const cardMaxWidth = rowCount === 2 ? 280 : 320;
@@ -36,31 +77,35 @@ export default function MusicHomePreview() {
 									style={gridStyle}
 								>
 									{previewArtists.map((artist, index) => (
-										<div
+										<ArtistPreviewCard
 											key={artist.id}
-											className="artist-splash-card"
-											style={{ '--artist-splash-enter-delay': `${index * 120}ms` }}
-										>
-											<span className="artist-splash-name-art" data-text={artist.name}>
-												<span className="artist-splash-name-outline">{artist.name}</span>
-											</span>
-											<div className="artist-splash-card-frame">
-												<div className="artist-splash-card-image-window">
-													{artist.portrait && (
-														<img
-															src={artist.portrait}
-															alt={artist.name}
-															className="artist-splash-portrait artist-splash-portrait-current"
-															loading={index < 3 ? 'eager' : 'lazy'}
-															decoding="async"
-														/>
-													)}
-												</div>
-											</div>
-										</div>
+											artist={artist}
+											index={index}
+										/>
 									))}
 								</div>
 							</div>
+						</div>
+						<div className="artist-splash-spotlight portal-music-spotlight-preview">
+							{mobilePreviewArtists.map((artist, index) => {
+								const isCenter = index === activeMobileIndex;
+								const isSide = Math.abs(index - activeMobileIndex) === 1;
+								const depthClass = isCenter
+									? 'artist-splash-spotlight-card-center'
+									: isSide
+										? 'artist-splash-spotlight-card-side'
+										: 'artist-splash-spotlight-card-away';
+
+								return (
+									<ArtistPreviewCard
+										key={`mobile-${artist.id}-${index}`}
+										artist={artist}
+										index={index}
+										active={isCenter}
+										className={`artist-splash-spotlight-card ${depthClass}`}
+									/>
+								);
+							})}
 						</div>
 					</section>
 				</div>

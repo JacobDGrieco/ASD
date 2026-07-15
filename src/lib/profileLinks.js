@@ -34,6 +34,10 @@ export const PROFILE_LINK_PLATFORM_LABELS = Object.fromEntries(
 
 const PLATFORM_VALUES = new Set(PROFILE_LINK_PLATFORM_OPTIONS.map((option) => option.value));
 const LINK_TYPE_VALUES = new Set(PROFILE_LINK_TYPES.map((option) => option.value));
+const LINK_TYPE_ORDER = {
+	professional: 0,
+	personal: 1,
+};
 
 export const ARTIST_LEGACY_LINK_FIELDS = [
 	{ field: 'soundcloudProfile', platform: 'soundcloud', type: 'professional' },
@@ -65,37 +69,51 @@ export const MUSIC_RELEASE_LEGACY_LINK_FIELDS = [
 	{ field: 'youtubeUrl', platform: 'youtube', type: 'professional' },
 ];
 
+export function sortProfileLinks(value) {
+	if (!Array.isArray(value)) return [];
+
+	return [...value].sort((a, b) => {
+		const aOrder = LINK_TYPE_ORDER[a?.type] ?? LINK_TYPE_ORDER.personal;
+		const bOrder = LINK_TYPE_ORDER[b?.type] ?? LINK_TYPE_ORDER.personal;
+		return aOrder - bOrder;
+	});
+}
+
 export function normalizeProfileLinks(value) {
 	if (!Array.isArray(value)) return [];
 
-	return value.reduce((links, item, index) => {
+	const links = value.reduce((normalizedLinks, item, index) => {
 		const platform = PLATFORM_VALUES.has(item?.platform) ? item.platform : 'website';
 		const type = LINK_TYPE_VALUES.has(item?.type) ? item.type : 'personal';
 		const url = typeof item?.url === 'string' ? item.url.trim() : '';
-		if (!url) return links;
+		if (!url) return normalizedLinks;
 
-		links.push({
+		normalizedLinks.push({
 			id: typeof item?.id === 'string' && item.id ? item.id : `${platform}-${type}-${index}`,
 			platform,
 			type,
 			url,
 		});
-		return links;
+		return normalizedLinks;
 	}, []);
+
+	return sortProfileLinks(links);
 }
 
 export function profileLinksFromLegacy(source, fields) {
-	return fields.reduce((links, field, index) => {
+	const links = fields.reduce((legacyLinks, field, index) => {
 		const url = typeof source?.[field.field] === 'string' ? source[field.field].trim() : '';
-		if (!url) return links;
-		links.push({
+		if (!url) return legacyLinks;
+		legacyLinks.push({
 			id: `${field.platform}-${field.type}-${index}`,
 			platform: field.platform,
 			type: field.type,
 			url,
 		});
-		return links;
+		return legacyLinks;
 	}, []);
+
+	return sortProfileLinks(links);
 }
 
 export function profileLinksForSource(source, fields) {

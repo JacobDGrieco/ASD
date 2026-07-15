@@ -4,10 +4,6 @@
 	padding: 0 clamp(32px, 6vw, 72px);
 }
 
-.page-tabview.p-tabview {
-	padding: 10px 0px;
-}
-
 .page-tabs-shell {
 	position: relative;
 }
@@ -163,10 +159,6 @@
 	.page-tabs-arrow:disabled {
 		visibility: hidden;
 		pointer-events: none;
-	}
-
-	.page-tabview.p-tabview {
-		padding: 18px 0 40px;
 	}
 
 	.page-tabview .p-tabview-nav {

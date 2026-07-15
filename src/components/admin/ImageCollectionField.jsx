@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { upload } from '@vercel/blob/client';
-import { FaLink, FaUpload } from 'react-icons/fa';
+import { FaLink, FaTrash, FaUpload } from 'react-icons/fa';
 import { buildClientImageUrl } from '../../lib/images.js';
 import '../../styles/AdminArtistsPage.css';
 
@@ -248,7 +248,7 @@ export default function ImageCollectionField({ value, onChange, token, folder, e
 								title="Remove image"
 								aria-label="Remove image"
 							>
-								✕
+								<FaTrash aria-hidden="true" />
 							</button>
 						</div>
 					))}

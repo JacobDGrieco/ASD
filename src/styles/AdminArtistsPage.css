@@ -329,9 +329,14 @@
 	gap: 10px;
 }
 
+.admin-artists-page-upload-controls .admin-artists-page-input {
+	min-width: 0;
+}
+
 .admin-artists-page-upload-btn {
 	display: inline-flex;
 	align-items: center;
+	justify-content: center;
 	gap: 8px;
 	width: fit-content;
 }
@@ -621,21 +626,24 @@
 
 .admin-profile-links-list {
 	display: grid;
-	gap: 8px;
+	gap: 14px;
 }
 
 .admin-profile-link-row {
 	display: grid;
-	grid-template-columns: 34px minmax(140px, 0.85fr) 132px minmax(180px, 1.2fr) 34px;
+	grid-template-columns: 34px minmax(120px, 180px) minmax(110px, 130px) minmax(0, 1fr) 34px;
+	grid-template-areas: "icon platform type url delete";
 	gap: 8px;
 	align-items: center;
 }
 
 .admin-profile-link-row-no-type {
-	grid-template-columns: 34px minmax(140px, 0.85fr) minmax(180px, 1.2fr) 34px;
+	grid-template-columns: 34px minmax(120px, 180px) minmax(0, 1fr) 34px;
+	grid-template-areas: "icon platform url delete";
 }
 
 .admin-profile-link-icon {
+	grid-area: icon;
 	width: 34px;
 	height: 34px;
 	display: inline-flex;
@@ -645,6 +653,22 @@
 	background: var(--bg-raised);
 	color: var(--text-muted);
 	font-size: 1rem;
+}
+
+.admin-profile-link-platform {
+	grid-area: platform;
+}
+
+.admin-profile-link-type {
+	grid-area: type;
+}
+
+.admin-profile-link-url {
+	grid-area: url;
+}
+
+.admin-profile-link-row .admin-artists-page-danger-btn {
+	grid-area: delete;
 }
 
 .admin-profile-link-platform,
@@ -948,6 +972,10 @@
 	padding: 0;
 }
 
+.admin-modal-body .page-tabs-shell {
+	min-width: 0;
+}
+
 .admin-modal-tabs.page-tabview .p-tabview-nav {
 	margin-bottom: 16px;
 }
@@ -1225,13 +1253,45 @@ fieldset.admin-modal-field {
 		grid-template-columns: 1fr;
 	}
 
-	.admin-profile-link-row {
-		grid-template-columns: 34px minmax(0, 1fr) 34px;
+	.admin-fashion-look-placement-row {
+		grid-template-columns: 40px minmax(0, 1fr) 58px;
+		grid-template-areas: "delete collection order";
+		gap: 8px;
+		align-items: end;
 	}
 
-	.admin-profile-link-type,
-	.admin-profile-link-url {
-		grid-column: 2 / -1;
+	.admin-fashion-look-placement-collection {
+		grid-area: collection;
+	}
+
+	.admin-fashion-look-placement-order {
+		grid-area: order;
+		min-width: 0;
+		padding-left: 8px;
+		padding-right: 6px;
+		text-align: center;
+	}
+
+	.admin-fashion-look-placement-row .admin-artists-page-icon-btn {
+		grid-area: delete;
+	}
+
+	.admin-profile-link-row {
+		grid-template-columns: 34px minmax(0, 0.78fr) minmax(108px, 0.54fr);
+		grid-template-areas:
+			"icon platform type"
+			"delete url url";
+	}
+
+	.admin-profile-link-row-no-type {
+		grid-template-columns: 34px minmax(0, 0.72fr) minmax(0, 0.28fr);
+		grid-template-areas:
+			"icon platform platform"
+			"delete url url";
+	}
+
+	.admin-profile-links-list {
+		gap: 16px;
 	}
 
 	.admin-account-editor-row {
@@ -1243,15 +1303,23 @@ fieldset.admin-modal-field {
 		grid-column: 1 / -1;
 	}
 
-	.admin-artists-page-form-actions,
-	.admin-modal-footer {
+	.admin-artists-page-form-actions {
 		flex-direction: column;
 		align-items: stretch;
 	}
 
-	.admin-artists-page-form-actions>*,
-	.admin-modal-footer>* {
+	.admin-modal-footer {
+		flex-direction: row;
+		align-items: center;
+		flex-wrap: wrap;
+	}
+
+	.admin-artists-page-form-actions>* {
 		width: 100%;
+	}
+
+	.admin-modal-footer>* {
+		width: auto;
 	}
 
 	.admin-modal-overlay {
@@ -1270,11 +1338,24 @@ fieldset.admin-modal-field {
 	}
 
 	.admin-artists-page-upload-controls {
-		flex-direction: column;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 44px 44px;
+		align-items: stretch;
+		gap: 8px;
 	}
 
-	.admin-artists-page-url-import {
-		grid-template-columns: 1fr;
+	.admin-artists-page-upload-controls .admin-artists-page-input {
+		width: 100%;
+		padding-left: 10px;
+		padding-right: 10px;
+	}
+
+	.admin-artists-page-upload-btn {
+		width: 44px;
+		min-width: 44px;
+		min-height: 40px;
+		padding-left: 0;
+		padding-right: 0;
 	}
 
 	.admin-filter-bar {
@@ -1284,6 +1365,25 @@ fieldset.admin-modal-field {
 	.admin-filter-select {
 		width: 100%;
 		min-width: 0;
+	}
+
+	.admin-modal-body .page-tabs-arrow {
+		top: 0;
+		height: 42px;
+	}
+
+	.admin-modal-body .admin-modal-tabs.page-tabview.p-tabview {
+		padding: 0 0 16px;
+	}
+
+	.admin-modal-tabs.page-tabview .p-tabview-nav {
+		margin-bottom: 14px;
+	}
+
+	.admin-modal-tabs.page-tabview .p-tabview-nav li .p-tabview-nav-link {
+		padding-left: 42px;
+		padding-right: 42px;
+		white-space: nowrap;
 	}
 }
 
@@ -1297,17 +1397,19 @@ fieldset.admin-modal-field {
 .admin-credits-field-list {
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
+	gap: 12px;
 }
 
 .admin-credits-field-row {
 	display: grid;
 	grid-template-columns: 34px minmax(0, 1fr) 170px auto;
+	grid-template-areas: "thumb name role delete";
 	gap: 8px;
 	align-items: center;
 }
 
 .admin-credits-person-thumb {
+	grid-area: thumb;
 	width: 34px;
 	height: 34px;
 	border: 1px solid var(--border);
@@ -1323,14 +1425,39 @@ fieldset.admin-modal-field {
 	object-fit: cover;
 }
 
+.admin-credits-person-name {
+	grid-area: name;
+	min-width: 0;
+}
+
 .admin-credits-role-select {
+	grid-area: role;
 	flex-shrink: 0;
 	width: 170px;
+	min-width: 0;
+}
+
+.admin-credits-field-row .admin-artists-page-danger-btn {
+	grid-area: delete;
 }
 
 @media (max-width: 720px) {
 	.admin-credits-field-row {
-		grid-template-columns: 1fr;
+		grid-template-columns: 34px minmax(0, 1fr);
+		grid-template-areas:
+			"thumb name"
+			"delete role";
+		gap: 10px;
+	}
+
+	.admin-credits-role-select {
+		width: 100%;
+	}
+
+	.admin-credits-field-row .admin-artists-page-danger-btn {
+		width: 34px;
+		height: 34px;
+		padding: 0;
 	}
 }
 

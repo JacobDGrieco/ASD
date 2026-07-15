@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
-import { FaEye, FaEyeSlash, FaPencilAlt, FaTrash } from 'react-icons/fa'
+import { FaEye, FaEyeSlash, FaPencilAlt } from 'react-icons/fa'
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import { loadAdminResource } from '../../lib/adminResourceCache.js'
@@ -155,10 +155,10 @@ export default function AdminAccountsPage() {
     closeForm()
   }
 
-  const handleDelete = async (row) => {
-    if (!row.account?.id) return
+  const handleDelete = async (accountForm) => {
+    if (!accountForm?.id) return false
 
-    const response = await fetch(`/api/admin/accounts?id=${row.account.id}`, {
+    const response = await fetch(`/api/admin/accounts?id=${accountForm.id}`, {
       method: 'DELETE',
       headers: auth,
     })
@@ -166,14 +166,15 @@ export default function AdminAccountsPage() {
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Failed to delete account.' }))
       window.alert(error.error ?? 'Failed to delete account.')
-      return
+      return false
     }
 
     setRows((current) => current.map((candidate) => (
-      candidate.accountType !== row.accountType || candidate.subject.id !== row.subject.id
+      candidate.accountType !== accountForm.accountType || candidate.subject.id !== accountForm.subjectId
         ? candidate
         : { ...candidate, hasAccount: false, account: null }
     )))
+    return true
   }
 
   return (
@@ -229,18 +230,6 @@ export default function AdminAccountsPage() {
                     >
                       <FaPencilAlt aria-hidden="true" />
                     </button>
-                    {row.hasAccount ? (
-                      <ConfirmActionButton
-                        message={`Remove login access for ${row.subject.name}?`}
-                        confirmLabel="Remove"
-                        onConfirm={() => handleDelete(row)}
-                        buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-                        buttonAriaLabel="Delete account"
-                        buttonTitle="Delete account"
-                      >
-                        <FaTrash aria-hidden="true" />
-                      </ConfirmActionButton>
-                    ) : null}
                   </div>
                 </td>
               </tr>
@@ -318,6 +307,23 @@ export default function AdminAccountsPage() {
               </div>
             </div>
             <div className="admin-modal-footer">
+              <div className="admin-modal-footer-start">
+                {form.id ? (
+                  <ConfirmActionButton
+                    message={`Remove login access for ${form.name}?`}
+                    confirmLabel="Remove"
+                    onConfirm={async () => {
+                      const deleted = await handleDelete(form)
+                      if (deleted) closeForm()
+                    }}
+                    buttonClassName="admin-artists-page-danger-btn"
+                    buttonAriaLabel="Delete account"
+                    buttonTitle="Delete account"
+                  >
+                    Remove
+                  </ConfirmActionButton>
+                ) : null}
+              </div>
               <button type="button" onClick={closeForm} className="admin-artists-page-ghost-btn">Cancel</button>
               <button type="button" onClick={handleSave} className="admin-artists-page-primary-btn">Save</button>
             </div>

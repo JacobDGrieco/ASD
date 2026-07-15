@@ -5,15 +5,11 @@ export default function AdminProfileLinksSummary({ links }) {
 	const normalizedLinks = normalizeProfileLinks(links);
 	if (!normalizedLinks.length) return <span className="admin-artists-page-empty-value">-</span>;
 
-	const sortedLinks = normalizedLinks.toSorted((a, b) => {
-		if (a.type === b.type) return 0;
-		return a.type === 'professional' ? -1 : 1;
-	});
-	const firstPersonalIndex = sortedLinks.findIndex((link) => link.type === 'personal');
+	const firstPersonalIndex = normalizedLinks.findIndex((link) => link.type === 'personal');
 
 	return (
 		<div className="admin-profile-links-summary">
-			{sortedLinks.map((link, index) => {
+			{normalizedLinks.map((link, index) => {
 				const label = PROFILE_LINK_PLATFORM_LABELS[link.platform] ?? 'Link';
 				const startsPersonalGroup = index === firstPersonalIndex && firstPersonalIndex > 0;
 				return (

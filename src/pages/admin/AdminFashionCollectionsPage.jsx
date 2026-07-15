@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FaEye, FaEyeSlash, FaPencilAlt, FaTrash } from 'react-icons/fa'
-import { TabPanel, TabView } from 'primereact/tabview'
+import { FaEye, FaEyeSlash, FaPencilAlt } from 'react-icons/fa'
+import { TabPanel } from 'primereact/tabview'
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
 import AdminDateInput from '../../components/admin/AdminDateInput.jsx'
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx'
 import CreditsField from '../../components/admin/CreditsField.jsx'
+import PageTabs from '../../components/shared/PageTabs.jsx'
 import { useAdminAuth } from '../../lib/adminAuth.jsx'
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js'
 import { isValidDateInput } from '../../lib/dateInput.js'
@@ -127,7 +128,6 @@ function CollectionsTable({
   collections,
   loadingEditId,
   onEdit,
-  onDelete,
 }) {
   return (
     <div className="admin-artists-page-table-wrap">
@@ -154,15 +154,6 @@ function CollectionsTable({
                   <button type="button" onClick={() => void onEdit(collection)} disabled={loadingEditId === collection.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit collection" title="Edit">
                     <FaPencilAlt aria-hidden="true" />
                   </button>
-                  <ConfirmActionButton
-                    message="Delete this collection? Assigned looks will become loose looks."
-                    onConfirm={() => onDelete(collection.id)}
-                    buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-                    buttonAriaLabel="Delete collection"
-                    buttonTitle="Delete"
-                  >
-                    <FaTrash aria-hidden="true" />
-                  </ConfirmActionButton>
                 </div>
               </td>
             </tr>
@@ -173,7 +164,7 @@ function CollectionsTable({
   )
 }
 
-function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions, onClose, onSave }) {
+function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions, onClose, onSave, onDelete }) {
   return (
     <div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
       <div className="admin-modal">
@@ -182,7 +173,7 @@ function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions,
           <button type="button" onClick={onClose} className="admin-modal-close" aria-label="Close">x</button>
         </div>
         <div className="admin-modal-body">
-          <TabView className="page-tabview admin-modal-tabs">
+          <PageTabs className="admin-modal-tabs" tabCount={2}>
             <TabPanel header="Collection">
               <div className="admin-modal-grid">
                 <div className="admin-modal-field admin-modal-field-full">
@@ -297,9 +288,22 @@ function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions,
                 </div>
               </div>
             </TabPanel>
-          </TabView>
+          </PageTabs>
         </div>
         <div className="admin-modal-footer">
+          <div className="admin-modal-footer-start">
+            {form.id && (
+              <ConfirmActionButton
+                message="Delete this collection? Assigned looks will become loose looks."
+                onConfirm={onDelete}
+                buttonClassName="admin-artists-page-danger-btn"
+                buttonAriaLabel="Delete collection"
+                buttonTitle="Delete"
+              >
+                Delete
+              </ConfirmActionButton>
+            )}
+          </div>
           <button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
           <button type="button" onClick={onSave} className="admin-artists-page-primary-btn">Save</button>
         </div>
@@ -447,7 +451,6 @@ export default function AdminFashionCollectionsPage() {
         collections={collections}
         loadingEditId={loadingEditId}
         onEdit={openEdit}
-        onDelete={handleDelete}
       />
 
       {form && (
@@ -459,6 +462,10 @@ export default function AdminFashionCollectionsPage() {
           crewOptions={crewOptions}
           onClose={closeForm}
           onSave={handleSave}
+          onDelete={async () => {
+            await handleDelete(form.id)
+            closeForm()
+          }}
         />
       )}
     </div>

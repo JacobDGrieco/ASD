@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { FaTrash } from 'react-icons/fa'
 import CrewPickerField from './CrewPickerField.jsx'
 
 const fashionCreditRoles = [
@@ -87,14 +88,16 @@ export default function CreditsField({ value, onChange, talentOptions = EMPTY_OP
                     <img src={image.previewUrl || image.url} alt="" className="admin-credits-person-thumb-img" />
                   ) : null}
                 </div>
-                <CrewPickerField
-                  creditName={credit.creditName ?? ''}
-                  talentId={credit.talentId ?? ''}
-                  crewId={credit.crewId ?? ''}
-                  talentOptions={talentOptions}
-                  crewOptions={crewOptions}
-                  onChange={(patch) => updateCredit(index, patch)}
-                />
+                <div className="admin-credits-person-name">
+                  <CrewPickerField
+                    creditName={credit.creditName ?? ''}
+                    talentId={credit.talentId ?? ''}
+                    crewId={credit.crewId ?? ''}
+                    talentOptions={talentOptions}
+                    crewOptions={crewOptions}
+                    onChange={(patch) => updateCredit(index, patch)}
+                  />
+                </div>
                 <select
                   id={index === 0 ? selectId : undefined}
                   value={credit.roleLabel ?? ''}
@@ -114,7 +117,7 @@ export default function CreditsField({ value, onChange, talentOptions = EMPTY_OP
                   aria-label="Remove credit"
                   title="Remove credit"
                 >
-                  &times;
+                  <FaTrash aria-hidden="true" />
                 </button>
               </div>
             )

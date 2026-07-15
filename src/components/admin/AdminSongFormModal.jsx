@@ -1,12 +1,14 @@
 import { useEffect, useId, useMemo, useReducer, useRef, useState } from 'react';
-import { TabPanel, TabView } from 'primereact/tabview';
-import { FaEye, FaEyeSlash, FaPlus, FaTimes } from 'react-icons/fa';
+import { TabPanel } from 'primereact/tabview';
+import { FaEye, FaEyeSlash, FaPlus, FaTimes, FaTrash } from 'react-icons/fa';
 import AdminDateInput from './AdminDateInput.jsx';
 import AdminProfileLinksField from './AdminProfileLinksField.jsx';
 import { isValidDateInput } from '../../lib/dateInput.js';
 import ImageCollectionField from './ImageCollectionField.jsx';
 import ChipInputField from './ChipInputField.jsx';
 import MusicRolePersonPickerField from './MusicRolePersonPickerField.jsx';
+import ConfirmActionButton from './ConfirmActionButton.jsx';
+import PageTabs from '../shared/PageTabs.jsx';
 import { SONG_ROLES } from '../../lib/songRoles.js';
 import {
 	createAlbumPlacement,
@@ -581,13 +583,15 @@ function SongAlbumsTab({
 										invalid={Boolean(validationErrors?.albumPlacements?.[index]?.albumId)}
 									/>
 								</div>
-								<div className="admin-modal-field">
-									<label htmlFor={`admin-song-${placement.clientKey}-track-number`} className="admin-modal-label">Track # <span className="admin-modal-label-required">*</span></label>
-									<input id={`admin-song-${placement.clientKey}-track-number`} type="number" placeholder="Track #" value={placement.trackNumber} onChange={setAlbumPlacement(index, 'trackNumber')} className={placementFieldClassName(index, 'trackNumber')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.trackNumber)} />
-								</div>
-								<div className="admin-modal-field">
-									<label htmlFor={`admin-song-${placement.clientKey}-disc-number`} className="admin-modal-label">Disc # <span className="admin-modal-label-required">*</span></label>
-									<input id={`admin-song-${placement.clientKey}-disc-number`} type="number" placeholder="Disc #" value={placement.discNumber} onChange={setAlbumPlacement(index, 'discNumber')} className={placementFieldClassName(index, 'discNumber')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.discNumber)} />
+								<div className="admin-song-album-number-row admin-modal-field-full">
+									<div className="admin-modal-field">
+										<label htmlFor={`admin-song-${placement.clientKey}-track-number`} className="admin-modal-label">Track # <span className="admin-modal-label-required">*</span></label>
+										<input id={`admin-song-${placement.clientKey}-track-number`} type="number" placeholder="Track #" value={placement.trackNumber} onChange={setAlbumPlacement(index, 'trackNumber')} className={placementFieldClassName(index, 'trackNumber')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.trackNumber)} />
+									</div>
+									<div className="admin-modal-field">
+										<label htmlFor={`admin-song-${placement.clientKey}-disc-number`} className="admin-modal-label">Disc # <span className="admin-modal-label-required">*</span></label>
+										<input id={`admin-song-${placement.clientKey}-disc-number`} type="number" placeholder="Disc #" value={placement.discNumber} onChange={setAlbumPlacement(index, 'discNumber')} className={placementFieldClassName(index, 'discNumber')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.discNumber)} />
+									</div>
 								</div>
 							</div>
 						</div>
@@ -634,19 +638,21 @@ function SongRolesTab({ form, artistOptions, outsideArtistOptions, addRole, remo
 										<img src={image.previewUrl || image.url} alt="" className="admin-song-role-thumb-img" />
 									) : null}
 								</div>
-								<MusicRolePersonPickerField
-									name={entry.name}
-									artistId={entry.artistId}
-									outsideArtistId={entry.outsideArtistId}
-									artistOptions={artistOptions}
-									outsideArtistOptions={outsideArtistOptions}
-									onChange={(patch) => updateRole(index, patch)}
-								/>
-								<select value={entry.role} onChange={(e) => updateRole(index, 'role', e.target.value)} className="admin-artists-page-input" aria-label={`Role type ${index + 1}`}>
+								<div className="admin-song-role-name">
+									<MusicRolePersonPickerField
+										name={entry.name}
+										artistId={entry.artistId}
+										outsideArtistId={entry.outsideArtistId}
+										artistOptions={artistOptions}
+										outsideArtistOptions={outsideArtistOptions}
+										onChange={(patch) => updateRole(index, patch)}
+									/>
+								</div>
+								<select value={entry.role} onChange={(e) => updateRole(index, 'role', e.target.value)} className="admin-artists-page-input admin-song-role-select" aria-label={`Role type ${index + 1}`}>
 									{SONG_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
 								</select>
 								<button type="button" onClick={() => removeRole(index)} className="admin-artists-page-danger-btn admin-artists-page-icon-btn" aria-label="Remove role" title="Remove role">
-									<FaTimes aria-hidden="true" />
+									<FaTrash aria-hidden="true" />
 								</button>
 							</div>
 						);
@@ -670,7 +676,12 @@ function SongRolesTab({ form, artistOptions, outsideArtistOptions, addRole, remo
 
 function SongEditorTabs(props) {
 	return (
-		<TabView activeIndex={props.activeTabIndex} onTabChange={props.onTabChange} className="page-tabview admin-song-editor-tabs">
+		<PageTabs
+			activeIndex={props.activeTabIndex}
+			onTabChange={props.onTabChange}
+			className="admin-song-editor-tabs"
+			tabCount={4}
+		>
 			<TabPanel header="Song">
 				<SongInfoTab {...props} />
 			</TabPanel>
@@ -683,7 +694,7 @@ function SongEditorTabs(props) {
 			<TabPanel header="Roles">
 				<SongRolesTab {...props} />
 			</TabPanel>
-		</TabView>
+		</PageTabs>
 	);
 }
 
@@ -699,6 +710,7 @@ export default function AdminSongFormModal({
 	session,
 	onSaved,
 	onClose,
+	onDelete,
 }) {
 	const isArtistScoped = session?.role === 'ARTIST';
 	const isViewer = session?.role === 'VIEWER';
@@ -901,6 +913,19 @@ export default function AdminSongFormModal({
 					)}
 				</div>
 				<div className="admin-modal-footer">
+					<div className="admin-modal-footer-start">
+						{form?.id && !isViewer && onDelete && (
+							<ConfirmActionButton
+								message="Delete this song and all its lyrics/annotations?"
+								onConfirm={() => onDelete(form)}
+								buttonClassName="admin-artists-page-danger-btn"
+								buttonAriaLabel="Delete song"
+								buttonTitle="Delete"
+							>
+								Delete
+							</ConfirmActionButton>
+						)}
+					</div>
 					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
 					{!isViewer && (
 						<button type="button" onClick={handleSave} disabled={!form} className="admin-artists-page-primary-btn">Save</button>

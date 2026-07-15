@@ -1,4 +1,4 @@
-import { FaArrowDown, FaArrowUp } from 'react-icons/fa';
+import { FaArrowDown, FaArrowUp, FaTrash } from 'react-icons/fa';
 import ImageCollectionField from './ImageCollectionField.jsx';
 import CreditsField from './CreditsField.jsx';
 
@@ -74,7 +74,7 @@ export default function FashionPiecesField({ value, onChange, token, lookTitle, 
 							aria-label={`Remove piece ${index + 1}`}
 							title="Remove piece"
 						>
-							✕
+							<FaTrash aria-hidden="true" />
 						</button>
 					</div>
 

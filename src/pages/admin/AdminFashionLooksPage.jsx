@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash, FaPencilAlt, FaTrash } from 'react-icons/fa';
-import { TabPanel, TabView } from 'primereact/tabview';
+import { TabPanel } from 'primereact/tabview';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
 import AdminDateInput from '../../components/admin/AdminDateInput.jsx';
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx';
 import CreditsField from '../../components/admin/CreditsField.jsx';
 import FashionPiecesField from '../../components/admin/FashionPiecesField.jsx';
+import PageTabs from '../../components/shared/PageTabs.jsx';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
 import { clientImage } from '../../lib/images.js';
@@ -226,7 +227,7 @@ function toCrewOption(person) {
 	};
 }
 
-function LooksTable({ looks, loadingEditId, onEdit, onDelete }) {
+function LooksTable({ looks, loadingEditId, onEdit }) {
 	return (
 		<div className="admin-artists-page-table-wrap">
 			<table className="admin-artists-page-table">
@@ -252,15 +253,6 @@ function LooksTable({ looks, loadingEditId, onEdit, onDelete }) {
 									<button type="button" onClick={() => void onEdit(look)} disabled={loadingEditId === look.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit look" title="Edit">
 										<FaPencilAlt aria-hidden="true" />
 									</button>
-									<ConfirmActionButton
-										message="Delete this Look and all its pieces and credits?"
-										onConfirm={() => onDelete(look.id)}
-										buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-										buttonAriaLabel="Delete look"
-										buttonTitle="Delete"
-									>
-										<FaTrash aria-hidden="true" />
-									</ConfirmActionButton>
 								</div>
 							</td>
 						</tr>
@@ -271,7 +263,7 @@ function LooksTable({ looks, loadingEditId, onEdit, onDelete }) {
 	);
 }
 
-function LookFormModal({ form, setForm, token, collections, talentOptions, crewOptions, onClose, onSave }) {
+function LookFormModal({ form, setForm, token, collections, talentOptions, crewOptions, onClose, onSave, onDelete }) {
 	return (
 		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
 			<div className="admin-modal">
@@ -280,7 +272,7 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 					<button type="button" onClick={onClose} className="admin-modal-close" aria-label="Close">x</button>
 				</div>
 				<div className="admin-modal-body">
-					<TabView className="page-tabview admin-modal-tabs">
+					<PageTabs className="admin-modal-tabs" tabCount={4}>
 						<TabPanel header="Look">
 							<div className="admin-modal-grid">
 								<div className="admin-modal-field admin-modal-field-full">
@@ -359,7 +351,7 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 															itemIndex === index ? { ...item, collectionId: event.target.value } : item
 														)),
 													}))}
-													className="admin-artists-page-input"
+													className="admin-artists-page-input admin-fashion-look-placement-collection"
 													aria-label={`Collection ${index + 1}`}
 												>
 													<option value="">Select collection</option>
@@ -384,7 +376,7 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 															itemIndex === index ? { ...item, sortOrder: Number(event.target.value) || 0 } : item
 														)),
 													}))}
-													className="admin-artists-page-input"
+													className="admin-artists-page-input admin-fashion-look-placement-order"
 													aria-label={`Order in collection ${index + 1}`}
 												/>
 												<button
@@ -449,9 +441,22 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 								</div>
 							</div>
 						</TabPanel>
-					</TabView>
+					</PageTabs>
 				</div>
 				<div className="admin-modal-footer">
+					<div className="admin-modal-footer-start">
+						{form.id && (
+							<ConfirmActionButton
+								message="Delete this Look and all its pieces and credits?"
+								onConfirm={onDelete}
+								buttonClassName="admin-artists-page-danger-btn"
+								buttonAriaLabel="Delete look"
+								buttonTitle="Delete"
+							>
+								Delete
+							</ConfirmActionButton>
+						)}
+					</div>
 					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
 					<button type="button" onClick={onSave} className="admin-artists-page-primary-btn">Save</button>
 				</div>
@@ -614,7 +619,6 @@ export default function AdminFashionLooksPage() {
 				looks={looks}
 				loadingEditId={loadingEditId}
 				onEdit={openEdit}
-				onDelete={handleDelete}
 			/>
 
 			{form && (
@@ -627,6 +631,10 @@ export default function AdminFashionLooksPage() {
 					crewOptions={crewOptions}
 					onClose={closeForm}
 					onSave={handleSave}
+					onDelete={async () => {
+						await handleDelete(form.id);
+						closeForm();
+					}}
 				/>
 			)}
 		</div>

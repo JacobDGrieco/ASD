@@ -98,6 +98,16 @@
   border-color: var(--text-muted);
 }
 
+.admin-layout-collapse-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-layout-collapse-icon-mobile {
+  display: none;
+}
+
 .admin-layout-nav {
   display: flex;
   flex-direction: column;
@@ -213,19 +223,20 @@
   margin-right: 12px;
   margin-bottom: 8px;
   padding: 10px 12px;
-  border: 0;
-  background: transparent;
+  border: 1px solid oklch(56% 0.14 28 / 0.28);
+  background: oklch(22% 0.035 28 / 0.16);
   box-sizing: border-box;
   text-align: left;
-  color: var(--text-muted);
+  color: oklch(72% 0.13 28);
   font-size: 0.9rem;
   cursor: pointer;
   border-radius: 12px;
 }
 
 .admin-layout-logout:hover {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.04);
+  color: oklch(82% 0.14 28);
+  border-color: oklch(62% 0.16 28 / 0.42);
+  background: oklch(28% 0.05 28 / 0.28);
 }
 
 .admin-layout-sidebar-collapsed .admin-layout-brand-row {
@@ -310,6 +321,12 @@
     overflow: visible;
   }
 
+  .admin-layout-sidebar-collapsed {
+    display: flex;
+    align-items: flex-end;
+    padding: 10px 16px;
+  }
+
   .admin-layout-brand-row,
   .admin-layout-sidebar-collapsed .admin-layout-brand-row {
     flex-direction: row;
@@ -318,15 +335,43 @@
     margin-bottom: 12px;
   }
 
+  .admin-layout-sidebar-collapsed .admin-layout-brand-row {
+    width: 100%;
+    justify-content: space-between;
+    padding: 0;
+    margin-bottom: 0;
+    border-bottom: 0;
+  }
+
   .admin-layout-brand,
   .admin-layout-sidebar-collapsed .admin-layout-brand {
+    width: auto;
     justify-content: flex-start;
+    gap: 10px;
     padding-left: 0;
     padding-right: 0;
   }
 
+  .admin-layout-sidebar-collapsed .admin-layout-brand {
+    display: flex;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
   .admin-layout-collapse-btn {
+    display: inline-flex;
+  }
+
+  .admin-layout-sidebar-collapsed .admin-layout-collapse-btn {
+    margin-left: auto;
+  }
+
+  .admin-layout-collapse-icon-desktop {
     display: none;
+  }
+
+  .admin-layout-collapse-icon-mobile {
+    display: inline-flex;
   }
 
   .admin-layout-nav,
@@ -337,6 +382,11 @@
     padding: 0;
     overflow: visible;
     scrollbar-width: none;
+  }
+
+  .admin-layout-sidebar-collapsed .admin-layout-nav,
+  .admin-layout-sidebar-collapsed .admin-layout-logout {
+    display: none;
   }
 
   .admin-layout-nav::-webkit-scrollbar {
@@ -361,22 +411,24 @@
   .admin-layout-nav-section-links,
   .admin-layout-sidebar-collapsed .admin-layout-nav-section-links {
     flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: stretch;
     gap: 8px;
     padding-left: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .admin-layout-nav-section-links::-webkit-scrollbar {
-    display: none;
+    overflow: visible;
   }
 
   .admin-layout-link,
   .admin-layout-sidebar-collapsed .admin-layout-link {
-    flex: 0 0 auto;
+    --admin-mobile-link-width: min(11rem, calc((100vw - 48px) / 2));
+    flex: 0 0 var(--admin-mobile-link-width);
+    width: var(--admin-mobile-link-width);
+    justify-content: center;
     min-height: 40px;
     padding: 10px 14px;
     gap: 8px;
+    text-align: center;
   }
 
   .admin-layout-sidebar-collapsed .admin-layout-label,
@@ -396,8 +448,9 @@
 
   .admin-layout-logout,
   .admin-layout-sidebar-collapsed .admin-layout-logout {
-    margin: 12px 0 0;
-    width: fit-content;
+    margin: 16px auto 0;
+    width: min(11rem, 100%);
+    justify-content: center;
     min-height: 40px;
     gap: 8px;
     padding: 10px 14px;

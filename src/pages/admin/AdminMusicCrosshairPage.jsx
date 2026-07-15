@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FaExternalLinkAlt, FaEye, FaEyeSlash, FaPencilAlt, FaPlus, FaSyncAlt, FaTrash } from 'react-icons/fa';
+import { FaExternalLinkAlt, FaEye, FaEyeSlash, FaPencilAlt, FaPlus, FaSyncAlt } from 'react-icons/fa';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
@@ -70,7 +70,7 @@ function buildPayload(form) {
 	};
 }
 
-function CrosshairVideosTable({ videos, onEdit, onDelete }) {
+function CrosshairVideosTable({ videos, onEdit }) {
 	return (
 		<div className="admin-artists-page-table-wrap">
 			<table className="admin-artists-page-table admin-crosshair-page-table">
@@ -106,15 +106,6 @@ function CrosshairVideosTable({ videos, onEdit, onDelete }) {
 									<button type="button" onClick={() => onEdit(video)} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit video" title="Edit">
 										<FaPencilAlt aria-hidden="true" />
 									</button>
-									<ConfirmActionButton
-										message="Delete this Crosshair video?"
-										buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-										buttonTitle="Delete"
-										buttonAriaLabel="Delete video"
-										onConfirm={() => onDelete(video)}
-									>
-										<FaTrash aria-hidden="true" />
-									</ConfirmActionButton>
 								</div>
 							</td>
 						</tr>
@@ -130,7 +121,7 @@ function CrosshairVideosTable({ videos, onEdit, onDelete }) {
 	);
 }
 
-function CrosshairVideoModal({ form, setForm, token, editing, message, saving, onClose, onSave }) {
+function CrosshairVideoModal({ form, setForm, token, editing, message, saving, onClose, onSave, onDelete }) {
 	return (
 		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
 			<div className="admin-modal admin-crosshair-page-modal">
@@ -191,6 +182,19 @@ function CrosshairVideoModal({ form, setForm, token, editing, message, saving, o
 					</div>
 				</div>
 				<div className="admin-modal-footer">
+					<div className="admin-modal-footer-start">
+						{editing && (
+							<ConfirmActionButton
+								message="Delete this Crosshair video?"
+								buttonClassName="admin-artists-page-danger-btn"
+								buttonTitle="Delete"
+								buttonAriaLabel="Delete video"
+								onConfirm={onDelete}
+							>
+								Delete
+							</ConfirmActionButton>
+						)}
+					</div>
 					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
 					<button type="button" onClick={onSave} className="admin-artists-page-primary-btn" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
 				</div>
@@ -352,11 +356,12 @@ export default function AdminMusicCrosshairPage() {
 		});
 		if (!response.ok) {
 			setMessage('Failed to delete Crosshair video.');
-			return;
+			return false;
 		}
 		const nextVideos = videos.filter((candidate) => candidate.id !== video.id);
 		setVideos(nextVideos);
 		primeAdminResource('crosshair-videos', token, nextVideos);
+		return true;
 	}
 
 	if (!isSuperAdmin) {
@@ -397,7 +402,7 @@ export default function AdminMusicCrosshairPage() {
 			{loading ? (
 				<p className="admin-crosshair-page-note">Loading videos...</p>
 			) : (
-				<CrosshairVideosTable videos={sortedVideos} onEdit={openEdit} onDelete={deleteVideo} />
+				<CrosshairVideosTable videos={sortedVideos} onEdit={openEdit} />
 			)}
 
 			{modalOpen && (
@@ -410,6 +415,11 @@ export default function AdminMusicCrosshairPage() {
 					saving={saving}
 					onClose={closeModal}
 					onSave={save}
+					onDelete={async () => {
+						if (!editing) return;
+						const deleted = await deleteVideo(editing);
+						if (deleted) closeModal();
+					}}
 				/>
 			)}
 		</div>

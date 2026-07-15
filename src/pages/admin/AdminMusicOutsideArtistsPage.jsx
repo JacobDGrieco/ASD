@@ -187,7 +187,10 @@ export default function AdminMusicOutsideArtistsPage() {
 								{form.id && (
 									<ConfirmActionButton
 										message="Delete this outside artist? Existing song role credits will keep their typed name, but the saved external link will no longer resolve."
-										onConfirm={() => handleDelete(form.id)}
+										onConfirm={async () => {
+											await handleDelete(form.id);
+											closeForm();
+										}}
 										buttonClassName="admin-artists-page-danger-btn"
 										buttonAriaLabel="Delete outside artist"
 										buttonTitle="Delete"

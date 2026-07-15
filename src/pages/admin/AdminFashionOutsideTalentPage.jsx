@@ -210,7 +210,10 @@ export default function AdminFashionOutsideTalentPage() {
 								{form.id && (
 									<ConfirmActionButton
 										message="Delete this outside talent? They will be removed from any Look credits."
-										onConfirm={() => handleDelete(form.id)}
+										onConfirm={async () => {
+											await handleDelete(form.id);
+											closeForm();
+										}}
 										buttonClassName="admin-artists-page-danger-btn"
 										buttonAriaLabel="Delete outside talent"
 										buttonTitle="Delete"

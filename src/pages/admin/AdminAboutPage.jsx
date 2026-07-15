@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { FaEye, FaEyeSlash, FaPencilAlt, FaTrash } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaPencilAlt } from 'react-icons/fa';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
@@ -100,7 +100,7 @@ function AboutHeroCopyPanel({ titleDraft, bioDraft, setTitleDraft, setBioDraft, 
 	);
 }
 
-function AboutMembersTable({ members, loading, onEdit, onDelete }) {
+function AboutMembersTable({ members, loading, onEdit }) {
 	return (
 		<div className="admin-artists-page-table-wrap">
 			<table className="admin-artists-page-table">
@@ -147,15 +147,6 @@ function AboutMembersTable({ members, loading, onEdit, onDelete }) {
 									>
 										<FaPencilAlt aria-hidden="true" />
 									</button>
-									<ConfirmActionButton
-										message={`Delete ${member.name}?`}
-										onConfirm={() => onDelete(member)}
-										buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-										buttonAriaLabel={`Delete ${member.name}`}
-										buttonTitle="Delete"
-									>
-										<FaTrash aria-hidden="true" />
-									</ConfirmActionButton>
 								</div>
 							</td>
 						</tr>
@@ -173,7 +164,7 @@ function AboutMembersTable({ members, loading, onEdit, onDelete }) {
 	);
 }
 
-function AboutMemberFormModal({ form, setForm, token, onClose, onSave }) {
+function AboutMemberFormModal({ form, setForm, token, onClose, onSave, onDelete }) {
 	if (!form) return null;
 
 	return (
@@ -263,6 +254,19 @@ function AboutMemberFormModal({ form, setForm, token, onClose, onSave }) {
 					</div>
 				</div>
 				<div className="admin-modal-footer">
+					<div className="admin-modal-footer-start">
+						{form.id && (
+							<ConfirmActionButton
+								message={`Delete ${form.name}?`}
+								onConfirm={onDelete}
+								buttonClassName="admin-artists-page-danger-btn"
+								buttonAriaLabel={`Delete ${form.name}`}
+								buttonTitle="Delete"
+							>
+								Delete
+							</ConfirmActionButton>
+						)}
+					</div>
 					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
 					<button type="button" onClick={() => void onSave()} className="admin-artists-page-primary-btn">Save</button>
 				</div>
@@ -446,7 +450,6 @@ export default function AdminAboutPage() {
 				members={members}
 				loading={loading}
 				onEdit={openEdit}
-				onDelete={handleDeleteMember}
 			/>
 
 			<AboutMemberFormModal
@@ -455,6 +458,10 @@ export default function AdminAboutPage() {
 				token={token}
 				onClose={closeForm}
 				onSave={handleSaveMember}
+				onDelete={async () => {
+					await handleDeleteMember(form);
+					closeForm();
+				}}
 			/>
 		</div>
 	);

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import { TabPanel, TabView } from 'primereact/tabview';
+import { TabPanel } from 'primereact/tabview';
 import AdminEntityCard from '../../components/admin/AdminEntityCard.jsx';
 import AdminProfileLinksField from '../../components/admin/AdminProfileLinksField.jsx';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx';
+import PageTabs from '../../components/shared/PageTabs.jsx';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
 import { ARTIST_LEGACY_LINK_FIELDS, normalizeProfileLinks, profileLinksForSource } from '../../lib/profileLinks.js';
@@ -53,7 +54,7 @@ function MusicArtistFormModal({ form, setForm, token, onClose, onSave, onDelete,
 					<button type="button" onClick={onClose} className="admin-modal-close" aria-label="Close">x</button>
 				</div>
 				<div className="admin-modal-body">
-					<TabView className="page-tabview admin-modal-tabs">
+					<PageTabs className="admin-modal-tabs" tabCount={2}>
 						<TabPanel header="Artist">
 							<div className="admin-modal-grid">
 								<div className="admin-modal-field admin-modal-field-full">
@@ -125,7 +126,7 @@ function MusicArtistFormModal({ form, setForm, token, onClose, onSave, onDelete,
 								</fieldset>
 							</div>
 						</TabPanel>
-					</TabView>
+					</PageTabs>
 				</div>
 				<div className="admin-modal-footer">
 					<div className="admin-modal-footer-start">
@@ -337,7 +338,10 @@ export default function AdminMusicArtistsPage() {
 					token={token}
 					onClose={closeForm}
 					onSave={handleSave}
-					onDelete={() => handleDelete(form.id)}
+					onDelete={async () => {
+						await handleDelete(form.id);
+						closeForm();
+					}}
 					canDelete={isSuperAdmin && !isViewer}
 				/>
 			)}

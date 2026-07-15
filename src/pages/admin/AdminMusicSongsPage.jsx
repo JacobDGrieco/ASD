@@ -1,9 +1,8 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaArrowLeft, FaArrowRight, FaPencilAlt, FaStickyNote, FaTrash } from 'react-icons/fa';
+import { FaArrowLeft, FaArrowRight, FaPencilAlt, FaStickyNote } from 'react-icons/fa';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import AdminProfileLinksSummary from '../../components/admin/AdminProfileLinksSummary.jsx';
-import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
 import { isEffectivelyVisible } from '../../lib/contentVisibility.js';
 import { isOtherArtist, OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID } from '../../lib/publicVisibility.js';
@@ -117,7 +116,7 @@ function wrapCell(value) {
 	);
 }
 
-function SongsTable({ songs, albumById, isViewer, loadingEditSongId, onEdit, onDelete }) {
+function SongsTable({ songs, albumById, isViewer, loadingEditSongId, onEdit }) {
 	return (
 		<div className="admin-artists-page-table-wrap">
 			<table className="admin-artists-page-table admin-songs-table">
@@ -162,17 +161,6 @@ function SongsTable({ songs, albumById, isViewer, loadingEditSongId, onEdit, onD
 											<button type="button" onClick={() => void onEdit(song)} disabled={loadingEditSongId === song.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit song" title="Edit">
 												<FaPencilAlt aria-hidden="true" />
 											</button>
-										)}
-										{!isViewer && (
-											<ConfirmActionButton
-												message="Delete this song and all its lyrics/annotations?"
-												onConfirm={() => onDelete(song.id)}
-												buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-												buttonAriaLabel="Delete song"
-												buttonTitle="Delete"
-											>
-												<FaTrash aria-hidden="true" />
-											</ConfirmActionButton>
 										)}
 									</div>
 								</td>
@@ -414,7 +402,6 @@ export default function AdminMusicSongsPage() {
 					isViewer={isViewer}
 					loadingEditSongId={loadingEditSongId}
 					onEdit={openEdit}
-					onDelete={handleDelete}
 				/>
 			)}
 
@@ -435,6 +422,10 @@ export default function AdminMusicSongsPage() {
 					session={session}
 					onSaved={handleSongSaved}
 					onClose={closeModal}
+					onDelete={async (song) => {
+						await handleDelete(song.id);
+						closeModal();
+					}}
 				/>
 			)}
 		</div>

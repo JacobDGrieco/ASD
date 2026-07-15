@@ -182,16 +182,43 @@
     align-items: stretch;
   }
 
+  .admin-record-player-page-hint {
+    margin-bottom: 16px;
+  }
+
   .admin-record-player-page-slots {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
 
   .admin-record-player-page-slot {
     align-items: stretch;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .admin-record-player-page-slot-label {
+    top: 5px;
+    left: 5px;
+    padding: 2px 5px;
+    font-size: 0.66rem;
+  }
+
+  .admin-record-player-page-select {
+    min-height: 34px;
+    padding: 7px 36px 7px 8px;
+    font-size: 0.78rem;
+  }
+
+  .admin-record-player-page-clear-btn {
+    right: 6px;
+    font-size: 0.68rem;
   }
 
   .admin-record-player-page-active-label {
     justify-self: start;
+    gap: 5px;
+    font-size: 0.78rem;
   }
 }
 

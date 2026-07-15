@@ -4,6 +4,7 @@ import {
 	PROFILE_LINK_PLATFORM_OPTIONS,
 	PROFILE_LINK_TYPES,
 	normalizeProfileLinks,
+	sortProfileLinks,
 } from '../../lib/profileLinks.js';
 import ProfileLinkIcon from '../shared/ProfileLinkIcon.jsx';
 
@@ -19,6 +20,7 @@ function createLinkRow() {
 
 export default function AdminProfileLinksField({ value, onChange, showTypeField = true }) {
 	const links = Array.isArray(value) ? value : [];
+	const sortedLinks = sortProfileLinks(links);
 
 	const updateLink = (id, patch) => {
 		onChange(links.map((link) => (link.id === id ? { ...link, ...patch } : link)));
@@ -37,7 +39,7 @@ export default function AdminProfileLinksField({ value, onChange, showTypeField 
 	return (
 		<div className="admin-profile-links-field">
 			<div className="admin-profile-links-list">
-				{links.map((link) => {
+				{sortedLinks.map((link) => {
 					const platformLabel = PROFILE_LINK_PLATFORM_LABELS[link.platform] ?? 'Link';
 					return (
 						<div key={link.id} className={`admin-profile-link-row ${showTypeField ? '' : 'admin-profile-link-row-no-type'}`.trim()}>

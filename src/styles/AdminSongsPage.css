@@ -8,6 +8,14 @@
 	min-height: 0;
 }
 
+.admin-song-modal .page-tabs-shell,
+.admin-song-modal .page-tabs-panel {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-height: 0;
+}
+
 .admin-song-modal-error {
 	margin: 20px 0;
 	padding: 14px 16px;
@@ -110,6 +118,12 @@
 
 .admin-song-album-grid {
 	margin-bottom: 0;
+}
+
+.admin-song-album-number-row {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px;
 }
 
 .admin-song-album-select {
@@ -219,22 +233,38 @@
 
 .admin-song-roles-list {
 	display: grid;
-	gap: 0.5rem;
+	gap: 0.75rem;
 }
 
 .admin-song-role-row {
 	display: grid;
 	grid-template-columns: 42px minmax(0, 1fr) minmax(180px, 0.54fr) auto;
+	grid-template-areas: "thumb name role delete";
 	gap: 0.5rem;
 	align-items: center;
 }
 
 .admin-song-role-thumb {
+	grid-area: thumb;
 	width: 38px;
 	height: 38px;
 	border-radius: 50%;
 	background: rgba(255, 255, 255, 0.08);
 	overflow: hidden;
+}
+
+.admin-song-role-name {
+	grid-area: name;
+	min-width: 0;
+}
+
+.admin-song-role-select {
+	grid-area: role;
+	min-width: 0;
+}
+
+.admin-song-role-row .admin-artists-page-danger-btn {
+	grid-area: delete;
 }
 
 .admin-song-role-thumb-img {
@@ -262,12 +292,22 @@
 		grid-template-columns: 1fr;
 	}
 
-	.admin-song-role-row {
-		grid-template-columns: 38px minmax(0, 1fr) auto;
+	.admin-song-album-number-row {
+		gap: 10px;
 	}
 
-	.admin-song-role-row select {
-		grid-column: 2 / 4;
+	.admin-song-role-row {
+		grid-template-columns: 38px minmax(0, 1fr);
+		grid-template-areas:
+			"thumb name"
+			"delete role";
+		gap: 10px;
+	}
+
+	.admin-song-role-row .admin-artists-page-danger-btn {
+		width: 38px;
+		height: 38px;
+		padding: 0;
 	}
 
 	.admin-song-album-select-option-content {

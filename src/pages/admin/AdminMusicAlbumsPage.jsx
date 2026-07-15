@@ -1,12 +1,13 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import { FaEye, FaEyeSlash, FaPencilAlt, FaTrash } from 'react-icons/fa';
-import { TabPanel, TabView } from 'primereact/tabview';
+import { FaEye, FaEyeSlash, FaPencilAlt } from 'react-icons/fa';
+import { TabPanel } from 'primereact/tabview';
 import AdminProfileLinksField from '../../components/admin/AdminProfileLinksField.jsx';
 import AdminProfileLinksSummary from '../../components/admin/AdminProfileLinksSummary.jsx';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
 import AdminDateInput from '../../components/admin/AdminDateInput.jsx';
 import { isValidDateInput } from '../../lib/dateInput.js';
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx';
+import PageTabs from '../../components/shared/PageTabs.jsx';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import { clearAdminResource, loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
 import AdminSongFormModal from '../../components/admin/AdminSongFormModal.jsx';
@@ -159,7 +160,7 @@ function renderHeader(column) {
 	return column.label;
 }
 
-function AlbumsTable({ albums, isViewer, loadingEditId, onEdit, onDelete }) {
+function AlbumsTable({ albums, isViewer, loadingEditId, onEdit }) {
 	return (
 		<div className="admin-artists-page-table-wrap">
 			<table className="admin-artists-page-table">
@@ -184,17 +185,6 @@ function AlbumsTable({ albums, isViewer, loadingEditId, onEdit, onDelete }) {
 											<FaPencilAlt aria-hidden="true" />
 										</button>
 									)}
-									{!isViewer && (
-										<ConfirmActionButton
-											message="Delete this album and all its songs?"
-											onConfirm={() => onDelete(album.id)}
-											buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-											buttonAriaLabel="Delete album"
-											buttonTitle="Delete"
-										>
-											<FaTrash aria-hidden="true" />
-										</ConfirmActionButton>
-									)}
 								</div>
 							</td>
 						</tr>
@@ -216,7 +206,7 @@ function AlbumsPagination({ currentPage, totalPages, onPageChange }) {
 				onClick={() => onPageChange(currentPage - 1)}
 				disabled={currentPage === 1}
 			>
-				Ã¢â€ Â Prev
+				Prev
 			</button>
 			<span className="admin-pagination-info">Page {currentPage} of {totalPages}</span>
 			<button
@@ -225,7 +215,7 @@ function AlbumsPagination({ currentPage, totalPages, onPageChange }) {
 				onClick={() => onPageChange(currentPage + 1)}
 				disabled={currentPage === totalPages}
 			>
-				Next Ã¢â€ â€™
+				Next
 			</button>
 		</div>
 	);
@@ -245,6 +235,8 @@ function AlbumFormModal({
 	setReleaseDate,
 	onClose,
 	onSave,
+	onDelete,
+	canDelete,
 }) {
 	return (
 		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
@@ -254,7 +246,7 @@ function AlbumFormModal({
 					<button type="button" onClick={onClose} className="admin-modal-close" aria-label="Close">x</button>
 				</div>
 				<div className="admin-modal-body">
-					<TabView className="page-tabview admin-modal-tabs">
+					<PageTabs className="admin-modal-tabs" tabCount={2}>
 						<TabPanel header="Album">
 							<div className="admin-modal-grid">
 								<div className="admin-modal-field admin-modal-field-full">
@@ -347,9 +339,22 @@ function AlbumFormModal({
 								</fieldset>
 							</div>
 						</TabPanel>
-					</TabView>
+					</PageTabs>
 				</div>
 				<div className="admin-modal-footer">
+					<div className="admin-modal-footer-start">
+						{form.id && canDelete && (
+							<ConfirmActionButton
+								message="Delete this album and all its songs?"
+								onConfirm={onDelete}
+								buttonClassName="admin-artists-page-danger-btn"
+								buttonAriaLabel="Delete album"
+								buttonTitle="Delete"
+							>
+								Delete
+							</ConfirmActionButton>
+						)}
+					</div>
 					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
 					<button type="button" onClick={onSave} className="admin-artists-page-primary-btn">Save</button>
 				</div>
@@ -614,7 +619,6 @@ export default function AdminMusicAlbumsPage() {
 					isViewer={isViewer}
 					loadingEditId={loadingEditId}
 					onEdit={openEdit}
-					onDelete={handleDelete}
 				/>
 			)}
 
@@ -649,6 +653,11 @@ export default function AdminMusicAlbumsPage() {
 					setReleaseDate={setReleaseDate}
 					onClose={closeForm}
 					onSave={handleSave}
+					onDelete={async () => {
+						await handleDelete(form.id);
+						closeForm();
+					}}
+					canDelete={!isViewer}
 				/>
 			)}
 		</div>

@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
-import { FaBullseye, FaBullhorn, FaChevronDown, FaChevronLeft, FaChevronRight, FaCompactDisc, FaInfoCircle, FaMicrophoneAlt, FaMusic, FaSignOutAlt, FaUserFriends, FaUserShield, FaRecordVinyl, FaTshirt, FaUsers } from 'react-icons/fa';
+import { FaBars, FaBullseye, FaBullhorn, FaChevronDown, FaChevronLeft, FaChevronRight, FaCompactDisc, FaInfoCircle, FaMicrophoneAlt, FaMusic, FaSignOutAlt, FaTimes, FaUserFriends, FaUserShield, FaRecordVinyl, FaTshirt, FaUsers } from 'react-icons/fa';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import { ADMIN_PAGE_KEYS, hasAdminPageAccess } from '../../lib/adminPageAccess.js';
 import '../../styles/AdminLayout.css';
 
 const ADMIN_SIDEBAR_STATE_KEY = 'admin-sidebar-collapsed';
-const ADMIN_SECTION_STATE_KEY = 'admin-sidebar-sections';
+const ADMIN_SECTION_STATE_KEY = 'admin-sidebar-sections-v2';
 const DEFAULT_SECTION_STATE = {
-	admin: true,
-	board: true,
-	music: true,
-	fashion: true,
+	admin: false,
+	board: false,
+	music: false,
+	fashion: false,
 };
 function readStoredSectionState() {
 	if (typeof window === 'undefined') return DEFAULT_SECTION_STATE;
@@ -118,8 +118,15 @@ export default function AdminLayout() {
 	const toggleSection = (sectionKey) => {
 		setOpenSections((current) => ({
 			...current,
-			[sectionKey]: !(current[sectionKey] ?? true),
+			[sectionKey]: !(current[sectionKey] ?? false),
 		}));
+	};
+
+	const closeSidebarOnMobile = () => {
+		if (typeof window === 'undefined') return;
+		if (window.matchMedia('(max-width: 900px)').matches) {
+			setIsCollapsed(true);
+		}
 	};
 
 	return (
@@ -137,12 +144,17 @@ export default function AdminLayout() {
 						aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
 						title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
 					>
-						{isCollapsed ? <FaChevronRight aria-hidden="true" /> : <FaChevronLeft aria-hidden="true" />}
+						<span className="admin-layout-collapse-icon admin-layout-collapse-icon-desktop">
+							{isCollapsed ? <FaChevronRight aria-hidden="true" /> : <FaChevronLeft aria-hidden="true" />}
+						</span>
+						<span className="admin-layout-collapse-icon admin-layout-collapse-icon-mobile">
+							{isCollapsed ? <FaBars aria-hidden="true" /> : <FaTimes aria-hidden="true" />}
+						</span>
 					</button>
 				</div>
 				<div className="admin-layout-nav">
 					{navSections.map((section) => {
-						const isOpen = openSections[section.key] ?? true;
+						const isOpen = openSections[section.key] ?? false;
 						const hasActiveLink = section.links.some((link) => isLinkActive(link, location.pathname));
 
 						return (
@@ -170,6 +182,7 @@ export default function AdminLayout() {
 												to={link.to}
 												title={link.label}
 												aria-label={link.label}
+												onClick={closeSidebarOnMobile}
 												className={({ isActive }) => (isActive || isLinkActive(link, location.pathname)) ? 'admin-layout-link admin-layout-active' : 'admin-layout-link'}
 											>
 												<span className="admin-layout-link-icon">{link.icon}</span>

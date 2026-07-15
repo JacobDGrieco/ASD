@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { TabView } from 'primereact/tabview';
+import '../../styles/SongPage.css';
 
 export default function PageTabs({
 	children,

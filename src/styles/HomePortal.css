@@ -832,7 +832,18 @@
 	}
 
 	.portal-panel-content {
+		position: absolute;
+		inset: 0;
+		max-width: none;
 		min-height: calc((100dvh - var(--nav-height)) * 0.5 - 56px);
+		padding: clamp(22px, 5vw, 42px);
+		pointer-events: none;
+	}
+
+	.portal-panel-shade {
+		background:
+			linear-gradient(180deg, rgba(0, 0, 0, 0.34) 0%, rgba(0, 0, 0, 0.08) 42%, rgba(0, 0, 0, 0.68) 100%),
+			linear-gradient(90deg, rgba(0, 0, 0, 0.2), transparent 46%, rgba(0, 0, 0, 0.16));
 	}
 
 	.portal-panel-label {
@@ -913,7 +924,7 @@
 	}
 
 	.portal-panel-action {
-		font-size: 0.68rem;
+		display: none;
 	}
 
 	.portal-music-artist-card {
@@ -932,7 +943,115 @@
 
 @media (max-width: 860px) {
 	.portal-live-preview {
+		display: block;
+	}
+
+	.portal-live-preview-inner {
+		top: 50%;
+		width: var(--portal-preview-width, 100vw);
+		height: calc(100dvh - var(--nav-height));
+		transform: translate(-50%, -50%);
+	}
+
+	.portal-preview-fashion .portal-live-preview-inner {
+		top: 57%;
+	}
+
+	.portal-live-preview-inner .fashion-page-content {
+		padding-top: 40px;
+	}
+
+	.portal-live-preview .artist-splash-rail {
 		display: none;
+	}
+
+	.portal-live-preview .portal-music-spotlight-preview {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		--artist-splash-spotlight-card-width: min(46vw, 180px);
+		--artist-splash-spotlight-gap: clamp(12px, 4vw, 24px);
+		align-items: center;
+		justify-content: center;
+		gap: var(--artist-splash-spotlight-gap);
+		box-sizing: border-box;
+		width: 100%;
+		height: min(72dvh, 560px);
+		margin-left: 0;
+		margin-right: 0;
+		padding: clamp(82px, 13dvh, 112px) 0 72px;
+		overflow: visible;
+		transform: translateY(2vh);
+		perspective: 1100px;
+		perspective-origin: center center;
+	}
+
+	.portal-live-preview .portal-music-spotlight-preview .artist-splash-card {
+		flex: 0 0 var(--artist-splash-spotlight-card-width);
+		width: var(--artist-splash-spotlight-card-width);
+		height: min(30dvh, 260px);
+		border: 0;
+		background: transparent;
+		opacity: 1;
+		animation: none;
+	}
+
+	.portal-live-preview .portal-music-spotlight-preview .artist-splash-spotlight-card-center {
+		z-index: 3;
+		filter: saturate(1);
+		transform: scale(1.24);
+	}
+
+	.portal-live-preview .portal-music-spotlight-preview .artist-splash-spotlight-card-side {
+		z-index: 1;
+		filter: saturate(0.45) brightness(0.58);
+		opacity: 0.72;
+		transform: scale(0.9);
+	}
+
+	.portal-live-preview .portal-music-spotlight-preview .artist-splash-spotlight-card-away {
+		z-index: 0;
+		filter: saturate(0.28) brightness(0.48);
+		opacity: 0.48;
+		transform: scale(0.82);
+	}
+
+	.portal-live-preview .portal-music-spotlight-preview .artist-splash-spotlight-card-side .artist-splash-card-frame {
+		box-shadow: 0 18px 42px rgba(0, 0, 0, 0.5);
+	}
+
+	.portal-live-preview .portal-music-spotlight-preview .artist-splash-spotlight-card-side .artist-splash-portrait {
+		filter: grayscale(100%) brightness(0.54);
+	}
+
+	.portal-live-preview .portal-music-spotlight-preview .artist-splash-spotlight-card-center .artist-splash-card-frame {
+		box-shadow: 0 28px 68px rgba(0, 0, 0, 0.6);
+	}
+
+	.portal-live-preview .portal-music-spotlight-preview .artist-splash-spotlight-card-center .artist-splash-name-art {
+		top: -24px;
+		left: 50%;
+		--artist-splash-name-x: -50%;
+		max-width: 90vw;
+		font-size: clamp(var(--artist-splash-name-center-min, 1.45rem),
+				var(--artist-splash-name-center-fluid, 8.4vw),
+				var(--artist-splash-name-center-max, 2.9rem));
+		opacity: 1;
+		transform: translate(var(--artist-splash-name-x), 0) rotate(-7deg) scale(1);
+	}
+
+	.portal-live-preview .portal-music-spotlight-preview .artist-splash-spotlight-card-center .artist-splash-portrait {
+		filter: grayscale(0%) brightness(0.96);
+	}
+}
+
+@media (hover: none) and (pointer: coarse) {
+	.portal-panel-active .portal-panel-label {
+		transform: none;
+	}
+
+	.portal-panel:hover .portal-panel-action {
+		transform: none;
 	}
 }
 
