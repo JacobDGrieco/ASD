@@ -63,11 +63,15 @@ export default function SongAlbums({ placements, adminPreview = false }) {
           const isTracklistAlbum = album.type === 'ALBUM' || album.type === 'EP'
           const isExpandable = hasSongs && isTracklistAlbum
           const isOpen = activeOpenAlbumId === album.id
+          const rowStartIndex = Math.floor(albumIndex / columns) * columns
+          const rowAlbumCount = Math.min(columns, albums.length - rowStartIndex)
+          const isSingleAlbumRow = rowAlbumCount === 1
 
           return (
             <Fragment key={album.id}>
               <AlbumCard
                 album={album}
+                className={isSingleAlbumRow ? 'song-albums-card-single-row' : ''}
                 isOpen={isOpen}
                 isDisabled={!isExpandable}
                 isUnreleased={!hasSongs}

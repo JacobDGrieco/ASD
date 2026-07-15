@@ -1,12 +1,13 @@
 import { useParams } from 'react-router-dom';
 import { useMemo } from 'react';
-import { TabPanel, TabView } from 'primereact/tabview';
+import { TabPanel } from 'primereact/tabview';
 import { useApi } from '../hooks/useApi.js';
 import AlbumDetails from '../components/album/AlbumDetails.jsx';
 import TrackList from '../components/artist/TrackList.jsx';
 import SongPersonCard from '../components/song/SongPersonCard.jsx';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import ArtworkGallery from '../components/shared/ArtworkGallery.jsx';
+import PageTabs from '../components/shared/PageTabs.jsx';
 import ProfileLinkIcon from '../components/shared/ProfileLinkIcon.jsx';
 import { useAdminAuth } from '../lib/adminAuth.jsx';
 import { usePageTitle } from '../lib/pageTitle.js';
@@ -38,14 +39,14 @@ export default function AlbumPage() {
 				<div className="aurora-page-content">
 					<AlbumHeader album={album} />
 					<div className="song-page-body">
-						<TabView className="page-tabview">
+						<PageTabs tabCount={2}>
 							<TabPanel header="Tracklist">
 								<TrackList songs={album.songs} allowHidden={adminPreview} />
 							</TabPanel>
 							<TabPanel header="About & Info">
 								<AlbumDetails album={album} />
 							</TabPanel>
-						</TabView>
+						</PageTabs>
 					</div>
 				</div>
 			)}

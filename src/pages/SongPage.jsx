@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { TabPanel, TabView } from 'primereact/tabview'
+import { TabPanel } from 'primereact/tabview'
 import { useApi } from '../hooks/useApi.js'
 import SongHeader from '../components/song/SongHeader.jsx'
 import LyricsView from '../components/song/LyricsView.jsx'
 import SongAlbums from '../components/song/SongAlbums.jsx'
 import SongInfoLinks from '../components/song/SongInfoLinks.jsx'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
+import PageTabs from '../components/shared/PageTabs.jsx'
 import { useAdminAuth } from '../lib/adminAuth.jsx'
 import { usePageTitle } from '../lib/pageTitle.js'
 import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js'
@@ -60,7 +61,7 @@ export default function SongPage() {
         <div className="aurora-page-content">
           <SongHeader song={song} adminPreview={adminPreview} />
           <div className="song-page-body">
-            <TabView className="page-tabview song-page-tabview" activeIndex={activeTabIndex} onTabChange={(event) => setActiveTabIndex(event.index)}>
+            <PageTabs className="song-page-tabview" tabCount={3} activeIndex={activeTabIndex} onTabChange={(event) => setActiveTabIndex(event.index)}>
               <TabPanel header="Lyrics">
                 <LyricsView lyric={song.lyric} />
               </TabPanel>
@@ -75,7 +76,7 @@ export default function SongPage() {
                   )}
                 </div>
               </TabPanel>
-            </TabView>
+            </PageTabs>
           </div>
         </div>
       )}

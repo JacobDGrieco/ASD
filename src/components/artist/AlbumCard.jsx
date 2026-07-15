@@ -12,9 +12,9 @@ function getSongIdFromPath(path) {
 	return null;
 }
 
-export default function AlbumCard({ album, isOpen, isUnreleased = false, isDisabled = false, onClick, to, subtitle }) {
+export default function AlbumCard({ album, isOpen, isUnreleased = false, isDisabled = false, onClick, to, subtitle, className = '' }) {
 	const year = new Date(album.releaseDate).getFullYear();
-	const className = `album-card-card ${isOpen ? 'album-card-open' : ''} ${isDisabled ? 'album-card-disabled' : ''} ${album.isPubliclyVisible === false ? 'album-card-hidden' : ''}`.trim();
+	const cardClassName = `album-card-card ${isOpen ? 'album-card-open' : ''} ${isDisabled ? 'album-card-disabled' : ''} ${album.isPubliclyVisible === false ? 'album-card-hidden' : ''} ${className}`.trim();
 	const streamLinks = normalizeProfileLinks(album.links);
 
 	const content = (
@@ -36,7 +36,7 @@ export default function AlbumCard({ album, isOpen, isUnreleased = false, isDisab
 	);
 
 	return (
-		<div className={className}>
+		<div className={cardClassName}>
 			{to ? (
 				<Link
 					to={to}

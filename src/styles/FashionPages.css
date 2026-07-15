@@ -1952,6 +1952,65 @@ a.fashion-piece-credit-mini-card:focus-visible .fashion-piece-credit-mini-image 
 	height: 180px;
 }
 
+@media (max-width: 559px) {
+	.fashion-catalogue-grid {
+		--catalogue-columns: 2;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 12px 10px;
+		justify-items: stretch;
+	}
+
+	.fashion-catalogue-grid .album-card-card {
+		width: 100%;
+		max-width: 156px;
+		padding: 8px;
+		justify-self: center;
+	}
+
+	.fashion-catalogue-grid .album-card-primary-action,
+	.fashion-catalogue-grid .album-card-info {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.fashion-catalogue-grid .album-card-cover-wrap {
+		width: 100%;
+		height: auto;
+		aspect-ratio: 1;
+	}
+
+	.fashion-catalogue-grid .album-card-title {
+		max-width: 100%;
+		font-size: 0.9rem;
+		letter-spacing: 0.04rem;
+	}
+
+	.fashion-catalogue-grid .album-card-meta {
+		max-width: 100%;
+		overflow: hidden;
+		font-size: 0.74rem;
+		letter-spacing: 0.04rem;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.fashion-catalogue-expand {
+		padding: 14px;
+	}
+
+	.fashion-catalogue-expand-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 12px 10px;
+		justify-items: stretch;
+	}
+
+	.fashion-catalogue-expand-grid .album-card-card {
+		width: 100%;
+		max-width: 140px;
+		justify-self: center;
+	}
+}
+
 /* ---- Collection detail page header ---- */
 .fashion-collection-page-content {
 	width: min(1720px, 100%);
@@ -2134,7 +2193,57 @@ a.fashion-piece-credit-mini-card:focus-visible .fashion-piece-credit-mini-image 
 	}
 
 	.fashion-collection-looks-panel .fashion-talent-grid {
-		grid-template-columns: 1fr;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 12px 10px;
+	}
+
+	.fashion-collection-looks-panel .fashion-talent-grid .album-card-card {
+		padding: 8px;
+	}
+
+	.fashion-collection-looks-panel .fashion-talent-grid .album-card-title {
+		font-size: 0.9rem;
+		letter-spacing: 0.04rem;
+	}
+
+	.fashion-collection-looks-panel .fashion-talent-grid .album-card-meta {
+		font-size: 0.74rem;
+		letter-spacing: 0.04rem;
+	}
+
+	.fashion-collection-credits-grid-wrap .fashion-look-credits-section {
+		padding: 18px 8px 22px;
+	}
+
+	.fashion-collection-credits-grid-wrap .fashion-credits-carousel {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		justify-content: stretch;
+		gap: 16px 10px;
+	}
+
+	.fashion-collection-credits-grid-wrap .fashion-credit-card {
+		width: 100%;
+		max-width: 140px;
+		justify-self: center;
+	}
+
+	.fashion-collection-credits-grid-wrap .fashion-credit-card-image-wrap {
+		width: 100%;
+		height: auto;
+		aspect-ratio: 7 / 9;
+	}
+
+	.fashion-collection-credits-grid-wrap .fashion-credit-card-role {
+		font-size: 0.62rem;
+		letter-spacing: 0.08em;
+	}
+
+	.fashion-collection-credits-grid-wrap .fashion-credit-card-name {
+		max-width: 100%;
+		overflow: hidden;
+		font-size: 0.8rem;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.fashion-collection-title {

@@ -1,8 +1,11 @@
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import '../../styles/SongInfoLinks.css'
 import { SONG_ROLES, ROLE_DISPLAY_LABELS } from '../../lib/songRoles.js'
 import SongPersonCard from './SongPersonCard.jsx'
 
 export default function SongInfoLinks({ song }) {
+  const peopleListRef = useRef(null)
+  const [personCardWidth, setPersonCardWidth] = useState(null)
   const meta = song.meta ?? {}
   const roleGroups = meta?.roleGroups ?? {}
   const roleRows = SONG_ROLES.reduce((rows, role) => {
@@ -29,6 +32,65 @@ export default function SongInfoLinks({ song }) {
   const hasAboutInfo = Boolean(meta.aboutText)
   const hasBasicInfo = basicRows.length > 0 || meta.tags?.length > 0
   const hasPeopleInfo = roleRows.length > 0
+  const peopleMeasureKey = useMemo(() => (
+    roleRows
+      .flatMap((row) => [row.label, ...row.links.map((link) => link.name ?? '')])
+      .join('|')
+  ), [roleRows])
+
+  useLayoutEffect(() => {
+    const list = peopleListRef.current
+    if (!list) return undefined
+    let isActive = true
+
+    const measureCards = () => {
+      if (!isActive) return
+      const cards = Array.from(list.querySelectorAll('.song-person-card'))
+      if (cards.length === 0) {
+        setPersonCardWidth(null)
+        return
+      }
+
+      const toNumber = (value) => Number.parseFloat(value) || 0
+      const getCardContentWidth = (card) => {
+        const styles = window.getComputedStyle(card)
+        const image = card.querySelector('.song-person-card-image-wrap')
+        const copy = card.querySelector('.song-person-card-copy')
+        const imageWidth = image?.getBoundingClientRect().width ?? 0
+        const copyWidth = copy?.scrollWidth ?? 0
+        const hasGap = imageWidth > 0 && copyWidth > 0
+        const gap = hasGap ? toNumber(styles.columnGap || styles.gap) : 0
+
+        return (
+          toNumber(styles.paddingLeft)
+          + toNumber(styles.paddingRight)
+          + toNumber(styles.borderLeftWidth)
+          + toNumber(styles.borderRightWidth)
+          + imageWidth
+          + gap
+          + copyWidth
+        )
+      }
+      const nextWidth = Math.ceil(Math.max(...cards.map(getCardContentWidth)))
+
+      if (nextWidth > 0) {
+        list.style.setProperty('--song-info-person-card-width', `${nextWidth}px`)
+        setPersonCardWidth(nextWidth)
+      } else {
+        list.style.removeProperty('--song-info-person-card-width')
+        setPersonCardWidth(null)
+      }
+    }
+
+    measureCards()
+    document.fonts?.ready.then(measureCards)
+    window.addEventListener('resize', measureCards)
+
+    return () => {
+      isActive = false
+      window.removeEventListener('resize', measureCards)
+    }
+  }, [peopleMeasureKey])
 
   if (!hasAboutInfo && !hasBasicInfo && !hasPeopleInfo) return null
 
@@ -56,7 +118,11 @@ export default function SongInfoLinks({ song }) {
       {hasPeopleInfo && (
         <div className="song-info-links-block">
           <h2 className="song-info-links-heading">People & Roles</h2>
-          <div className="song-info-links-list song-info-links-list--people">
+          <div
+            ref={peopleListRef}
+            className="song-info-links-list song-info-links-list--people"
+            style={personCardWidth ? { '--song-info-person-card-width': `${personCardWidth}px` } : undefined}
+          >
             {roleRows.map((row) => (
               <InfoRow key={row.label} label={row.label} links={row.links} />
             ))}

@@ -39,6 +39,11 @@
 	justify-content: center;
 }
 
+.song-albums-grid>.song-albums-card-single-row {
+	margin-right: auto;
+	margin-left: auto;
+}
+
 .song-albums-expand {
 	flex: 0 0 100%;
 	width: 100%;

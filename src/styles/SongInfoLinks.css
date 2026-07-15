@@ -40,13 +40,15 @@
 }
 
 .song-info-links-list--people {
+  --song-info-role-label-width: clamp(112px, 18vw, 150px);
+  --song-info-person-card-width: max-content;
   display: grid;
-  grid-template-columns: 140px max-content;
+  grid-template-columns: var(--song-info-role-label-width) max-content;
   column-gap: 20px;
-  row-gap: 10px;
-  align-items: center;
+  row-gap: 12px;
   width: fit-content;
   max-width: 100%;
+  align-items: start;
 }
 
 .song-info-links-list--people .song-info-links-row {
@@ -62,11 +64,12 @@
 }
 
 .song-info-links-row--people {
-  grid-template-columns: 140px max-content;
+  align-items: start;
 }
 
 .song-info-links-label {
   color: var(--text);
+  text-align: left;
   white-space: nowrap;
 }
 
@@ -79,7 +82,7 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
-  width: 100%;
+  width: var(--song-info-person-card-width);
   max-width: 100%;
   justify-items: stretch;
 }
@@ -88,6 +91,16 @@
   width: 100%;
   max-width: none;
   padding-right: 18px;
+}
+
+.song-info-links-person-grid .song-person-card-copy {
+  min-width: max-content;
+}
+
+.song-info-links-person-grid .song-person-card-role,
+.song-info-links-person-grid .song-person-card-name {
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .song-info-links-tags {
@@ -122,17 +135,22 @@
   }
 
   .song-info-links-list--people {
-    display: flex;
+    --song-info-role-label-width: 100%;
+    grid-template-columns: minmax(0, 1fr);
     width: 100%;
+    max-width: none;
   }
 
   .song-info-links-list--people .song-info-links-row {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .song-info-links-person-grid {
     grid-template-columns: minmax(0, 1fr);
-    max-width: none;
+    width: var(--song-info-person-card-width);
+    max-width: calc(100% - clamp(16px, 6vw, 28px));
+    margin-left: clamp(16px, 6vw, 28px);
   }
 
   .song-info-links-label {

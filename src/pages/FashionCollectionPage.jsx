@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import { TabPanel, TabView } from 'primereact/tabview'
+import { TabPanel } from 'primereact/tabview'
 import { useApi } from '../hooks/useApi.js'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
+import PageTabs from '../components/shared/PageTabs.jsx'
 import LookCard from '../components/fashion/LookCard.jsx'
 import { CreditsCarousel } from './FashionLookPage.jsx'
 import { useAdminAuth } from '../lib/adminAuth.jsx'
@@ -45,7 +46,7 @@ export default function FashionCollectionPage() {
       <div className="aurora-page-content fashion-page-content fashion-collection-page-content">
         <CollectionHeader collection={collection} />
         <div className="song-page-body fashion-collection-tabs-body">
-          <TabView className="page-tabview fashion-collection-tabview">
+          <PageTabs className="fashion-collection-tabview" tabCount={3}>
             <TabPanel header="Looks">
               {collection.looks?.length ? (
                 <div className="fashion-collection-looks-panel">
@@ -71,7 +72,7 @@ export default function FashionCollectionPage() {
             <TabPanel header="About">
               <CollectionAboutDetails collection={collection} />
             </TabPanel>
-          </TabView>
+          </PageTabs>
         </div>
       </div>
     </div>

@@ -1,11 +1,19 @@
 .song-page-body {
-	max-width: 900px;
+	max-width: 1120px;
 	margin: 0 auto;
-	padding: 0 60px;
+	padding: 0 clamp(32px, 6vw, 72px);
 }
 
 .page-tabview.p-tabview {
 	padding: 10px 0px;
+}
+
+.page-tabs-shell {
+	position: relative;
+}
+
+.page-tabs-arrow {
+	display: none;
 }
 
 .page-tabview .p-tabview-nav {
@@ -104,7 +112,57 @@
 
 @media (max-width: 640px) {
 	.song-page-body {
-		padding: 0 16px;
+		padding: 0 8px;
+	}
+
+	.page-tabs-shell {
+		display: block;
+		position: relative;
+	}
+
+	.page-tabs-panel {
+		min-width: 0;
+		width: 100%;
+	}
+
+	.page-tabs-arrow {
+		position: absolute;
+		top: 18px;
+		z-index: 3;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 42px;
+		padding: 0;
+		border: 1px solid rgba(200, 169, 110, 0.34);
+		border-radius: 8px;
+		background: rgba(10, 10, 10, 0.38);
+		color: rgba(247, 237, 220, 0.9);
+		cursor: pointer;
+		transition: background var(--transition), border-color var(--transition), color var(--transition), transform var(--transition);
+	}
+
+	.page-tabs-arrow-left {
+		left: 0;
+	}
+
+	.page-tabs-arrow-right {
+		right: 0;
+	}
+
+	.page-tabs-arrow:hover,
+	.page-tabs-arrow:focus-visible {
+		border-color: rgba(200, 169, 110, 0.68);
+		background: rgba(200, 169, 110, 0.14);
+		color: var(--text);
+		outline: none;
+		transform: translateY(-1px);
+	}
+
+	.page-tabs-arrow:disabled {
+		visibility: hidden;
+		pointer-events: none;
 	}
 
 	.page-tabview.p-tabview {
@@ -113,11 +171,23 @@
 
 	.page-tabview .p-tabview-nav {
 		margin-bottom: 14px;
+		overflow: hidden;
+	}
+
+	.page-tabview .p-tabview-nav li {
+		display: none;
+		width: 100%;
+		margin-right: 0;
+	}
+
+	.page-tabview .p-tabview-nav li.p-highlight {
+		display: flex;
 	}
 
 	.page-tabview .p-tabview-nav li .p-tabview-nav-link {
-		padding-left: 0.95rem;
-		padding-right: 0.95rem;
+		min-height: 42px;
+		padding-left: 42px;
+		padding-right: 42px;
 	}
 
 	.page-tab-panel-stack {
@@ -126,13 +196,19 @@
 }
 
 @media (max-width: 420px) {
+	.song-page-body {
+		padding: 0 4px;
+	}
+
 	.page-tabview .p-tabview-nav li {
-		flex: 1 0 auto;
+		width: 100%;
 	}
 
 	.page-tabview .p-tabview-nav li .p-tabview-nav-link {
-		padding-left: 0.8rem;
-		padding-right: 0.8rem;
-		font-size: 0.9rem;
+		padding-left: 0.35rem;
+		padding-right: 0.35rem;
+		font-size: 0.78rem;
+		white-space: normal;
+		text-align: center;
 	}
 }
