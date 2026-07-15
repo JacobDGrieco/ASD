@@ -1,145 +1,154 @@
-import { useEffect, useReducer, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
+import { FaBullhorn, FaChevronDown, FaCompactDisc, FaHome, FaInfoCircle, FaMusic, FaTshirt, FaUserFriends } from 'react-icons/fa';
 import '../../styles/Nav.css';
 
-const SECTION_TABS = {
-	music: [
-		{ to: '/shelf', label: 'The Shelf' },
-		{ to: '/crosshair', label: 'The Crosshair' },
-	],
-	fashion: [
-		{ to: '/fashion/catalogue', label: 'The Catalogue' },
-		{ to: '/fashion/talent', label: 'The Talent' },
-	],
-};
-
-const SITE_SECTIONS = [
-	{ key: 'music', to: '/music', label: 'Music' },
-	{ key: 'fashion', to: '/fashion', label: 'Fashion' },
+const NAV_GROUPS = [
+	{
+		key: 'extras',
+		label: 'Home',
+		to: '/',
+		cards: [
+			{ to: '/', label: 'A.S.D.', description: 'The main entrance.', icon: FaHome },
+			{ to: '/board', label: 'The Board', description: 'Announcements and pinned posts.', icon: FaBullhorn },
+			{ to: '/about', label: 'About', description: 'Company notes and credits.', icon: FaInfoCircle },
+		],
+	},
+	{
+		key: 'music',
+		label: 'Music',
+		to: '/music',
+		cards: [
+			{ to: '/music', label: 'Music Home', description: 'Records, artists, and releases.', icon: FaHome },
+			{ to: '/shelf', label: 'The Shelf', description: 'Albums, singles, and EPs.', icon: FaCompactDisc },
+			{ to: '/crosshair', label: 'The Crosshair', description: 'Videos and visual drops.', icon: FaMusic },
+		],
+	},
+	{
+		key: 'fashion',
+		label: 'Fashion',
+		to: '/fashion',
+		cards: [
+			{ to: '/fashion', label: 'Fashion Home', description: 'Runway, styling, and editorial work.', icon: FaHome },
+			{ to: '/fashion/catalogue', label: 'The Catalogue', description: 'Collections and loose looks.', icon: FaTshirt },
+			{ to: '/fashion/talent', label: 'The Talent', description: 'Models, stylists, and collaborators.', icon: FaUserFriends },
+		],
+	},
 ];
 
 function getSection(pathname) {
-	if (pathname === '/music' || pathname.startsWith('/music/') || ['/shelf', '/crosshair'].some((p) => pathname === p || pathname.startsWith(`${p}/`)) || pathname.startsWith('/artists/') || pathname.startsWith('/albums/') || pathname.startsWith('/songs/')) {
+	if (pathname === '/music' || pathname.startsWith('/music/') || ['/shelf', '/crosshair'].some((path) => pathname === path || pathname.startsWith(`${path}/`)) || pathname.startsWith('/artists/') || pathname.startsWith('/albums/') || pathname.startsWith('/songs/')) {
 		return 'music';
 	}
 	if (pathname === '/fashion' || pathname.startsWith('/fashion/')) return 'fashion';
-	return 'root';
+	return 'extras';
 }
 
-function NavContent({ section }) {
-	const sectionTabs = SECTION_TABS[section] ?? [];
-	const globalActions = (
-		<div className="nav-global-actions" aria-label="Global navigation">
-			<NavLink
-				to="/board"
-				className={({ isActive }) => isActive ? 'nav-board-link nav-board-link-active' : 'nav-board-link'}
-			>
-				The Board
-			</NavLink>
-			{section !== 'root' && (
-				<div className="nav-section-switch" aria-label="Site sections">
-					{SITE_SECTIONS.map((siteSection) => (
-						<Link
-							key={siteSection.key}
-							to={siteSection.to}
-							className={section === siteSection.key ? 'nav-section-link nav-section-link-active' : 'nav-section-link'}
-							aria-current={section === siteSection.key ? 'page' : undefined}
-						>
-							{siteSection.label}
-						</Link>
-					))}
-				</div>
-			)}
-		</div>
-	);
+function NavCard({ card, onNavigate }) {
+	const Icon = card.icon;
 
 	return (
-		<>
-			<Link to="/" className="nav-logo" aria-label="A.S.D. home">
-				<img src="/favicon.png" alt="" className="nav-logo-mark" />
-				<span>A.S.D.</span>
-			</Link>
-
-			{section === 'root' ? (
-				<>
-					<p className="nav-home-tagline">by the underground, for the unheard.</p>
-					{globalActions}
-				</>
-			) : (
-				<>
-					<div className="nav-links" aria-label={`${section} navigation`}>
-						{sectionTabs.map((tab) => (
-							<NavLink
-								key={tab.to}
-								to={tab.to}
-								className={({ isActive }) => isActive ? 'nav-link nav-link-active' : 'nav-link'}
-							>
-								{tab.label}
-							</NavLink>
-						))}
-					</div>
-					{globalActions}
-				</>
-			)}
-		</>
+		<NavLink
+			to={card.to}
+			className={({ isActive }) => (isActive ? 'nav-card nav-card-active' : 'nav-card')}
+			onClick={onNavigate}
+		>
+			<span className="nav-card-icon" aria-hidden="true">
+				<Icon />
+			</span>
+			<span className="nav-card-copy">
+				<span className="nav-card-title">{card.label}</span>
+				<span className="nav-card-description">{card.description}</span>
+			</span>
+		</NavLink>
 	);
-}
-
-function transitionStateReducer(state, action) {
-	switch (action.type) {
-		case 'start':
-			return {
-				exitingSection: action.exitingSection,
-				isTransitioning: true,
-				transitionKey: state.transitionKey + 1,
-			};
-		case 'clearExit':
-			return { ...state, exitingSection: null };
-		case 'finish':
-			return { ...state, isTransitioning: false };
-		default:
-			return state;
-	}
 }
 
 export default function Nav() {
 	const { pathname } = useLocation();
-	const section = getSection(pathname);
-
-	// Ref instead of state so updating it doesn't re-trigger this effect and cancel the timers
-	const renderedSectionRef = useRef(section);
-	const [{ exitingSection, isTransitioning, transitionKey }, dispatchTransitionState] = useReducer(
-		transitionStateReducer,
-		{ exitingSection: null, isTransitioning: false, transitionKey: 0 }
-	);
+	const activeSection = getSection(pathname);
+	const [isOpen, setIsOpen] = useState(false);
+	const navRef = useRef(null);
 
 	useEffect(() => {
-		if (section === renderedSectionRef.current) return undefined;
+		setIsOpen(false);
+	}, [pathname]);
 
-		dispatchTransitionState({ type: 'start', exitingSection: renderedSectionRef.current });
-		renderedSectionRef.current = section;
+	useEffect(() => {
+		if (!isOpen) return undefined;
 
-		const exitTimer = window.setTimeout(() => dispatchTransitionState({ type: 'clearExit' }), 500);
-		const enterTimer = window.setTimeout(() => dispatchTransitionState({ type: 'finish' }), 1600);
+		const handlePointerDown = (event) => {
+			if (!navRef.current?.contains(event.target)) setIsOpen(false);
+		};
+
+		const handleKeyDown = (event) => {
+			if (event.key === 'Escape') setIsOpen(false);
+		};
+
+		document.addEventListener('mousedown', handlePointerDown);
+		document.addEventListener('keydown', handleKeyDown);
 
 		return () => {
-			window.clearTimeout(exitTimer);
-			window.clearTimeout(enterTimer);
+			document.removeEventListener('mousedown', handlePointerDown);
+			document.removeEventListener('keydown', handleKeyDown);
 		};
-	}, [section]);
+	}, [isOpen]);
 
 	return (
-		<nav className={`nav-nav nav-${renderedSectionRef.current}`}>
-			{exitingSection && (
-				<div className="nav-content-layer nav-content-layer-exiting" aria-hidden="true">
-					<NavContent section={exitingSection} />
+		<nav
+			ref={navRef}
+			className={`nav-nav nav-cardnav nav-${activeSection}${isOpen ? ' nav-cardnav-open' : ''}`}
+		>
+			<div className="nav-cardnav-bar">
+				<Link to="/" className="nav-logo" aria-label="A.S.D. home" onClick={() => setIsOpen(false)}>
+					<img src="/favicon.png" alt="" className="nav-logo-mark" />
+					<span>A.S.D.</span>
+				</Link>
+
+				<div className="nav-cardnav-main" aria-label="Main navigation">
+					{NAV_GROUPS.map((group) => (
+						<NavLink
+							key={group.key}
+							to={group.to}
+							className={`nav-cardnav-trigger${activeSection === group.key ? ' nav-cardnav-trigger-active' : ''}`}
+							onClick={() => setIsOpen(false)}
+						>
+							{group.label}
+						</NavLink>
+					))}
+					<button
+						type="button"
+						className="nav-cardnav-toggle"
+						onClick={() => setIsOpen((current) => !current)}
+						aria-label={isOpen ? 'Close navigation cards' : 'Open navigation cards'}
+						aria-expanded={isOpen}
+						aria-controls="site-cardnav-panel"
+					>
+						<FaChevronDown aria-hidden="true" />
+					</button>
 				</div>
-			)}
+				<div className="nav-cardnav-spacer" aria-hidden="true" />
+			</div>
+
 			<div
-				key={transitionKey}
-				className={isTransitioning ? 'nav-content-layer nav-content-layer-entering' : 'nav-content-layer'}
+				id="site-cardnav-panel"
+				className="nav-cardnav-panel"
+				aria-hidden={!isOpen}
 			>
-				<NavContent section={renderedSectionRef.current} />
+				<div className="nav-cardnav-panel-inner">
+					{NAV_GROUPS.map((group) => (
+						<section key={group.key} className="nav-cardnav-group" aria-label={`${group.label} pages`}>
+							<div className="nav-cardnav-group-heading">
+								<span>{group.label}</span>
+							</div>
+							<div className="nav-cardnav-cards">
+								{group.cards.map((card) => (
+									<NavCard key={card.to} card={card} onNavigate={() => setIsOpen(false)} />
+								))}
+							</div>
+						</section>
+					))}
+				</div>
 			</div>
 		</nav>
 	);
