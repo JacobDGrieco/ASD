@@ -40,13 +40,22 @@ export default function SoundCloudPlayer({
   const onPlaybackStartRef = useRef(onPlaybackStart)
   const onPlaybackPauseRef = useRef(onPlaybackPause)
   const onPlaybackEndRef = useRef(onPlaybackEnd)
+  const srcUrlRef = useRef(null)
+  const srcAutoPlayRef = useRef(false)
   const [isReady, setIsReady] = useState(false)
   const [widgetApiFailed, setWidgetApiFailed] = useState(false)
+
+  if (url !== srcUrlRef.current) {
+    srcUrlRef.current = url
+    srcAutoPlayRef.current = Boolean(autoPlayOnReady)
+  }
 
   const src = useMemo(() => {
     if (!url) return null
 
-    return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23c8a96e&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&visual=false`
+    const autoPlay = srcAutoPlayRef.current ? 'true' : 'false'
+
+    return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23c8a96e&auto_play=${autoPlay}&hide_related=true&show_comments=false&show_user=false&show_reposts=false&visual=false`
   }, [url])
 
   useEffect(() => {

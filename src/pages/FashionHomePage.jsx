@@ -29,6 +29,8 @@ const CAMERA_FLASHES = [
 	{ id: 'right-aisle-2', x: '76%', y: '58%', delay: '-1.8s', duration: '5.2s', size: '7px' },
 ];
 
+const FASHION_HOME_SECTION_CARD_LIMIT = 8;
+
 function getImageSrc(image) {
 	return image?.previewUrl || image?.url || '';
 }
@@ -109,7 +111,7 @@ function FashionHomeSection({ eyebrow, title, description, to, linkLabel, childr
 }
 
 function FashionHomeCardPlaceholders() {
-	return Array.from({ length: 8 }, (_, index) => (
+	return Array.from({ length: FASHION_HOME_SECTION_CARD_LIMIT }, (_, index) => (
 		<div key={index} className="fashion-home-card-placeholder" />
 	));
 }
@@ -215,8 +217,8 @@ export default function FashionHomePage() {
 		: null;
 	const featuredImageSrc = getImageSrc(featuredImage);
 	const [readyFeaturedImageSrc, setReadyFeaturedImageSrc] = useState('');
-	const recentCatalogueItems = useMemo(() => getRecentItems(catalogueItems, 8), [catalogueItems]);
-	const recentTalent = useMemo(() => getRecentItems(talent, 8), [talent]);
+	const recentCatalogueItems = useMemo(() => getRecentItems(catalogueItems, FASHION_HOME_SECTION_CARD_LIMIT), [catalogueItems]);
+	const recentTalent = useMemo(() => getRecentItems(talent, FASHION_HOME_SECTION_CARD_LIMIT), [talent]);
 	const canSwapPresentation = Boolean(session?.role === 'SUPER_ADMIN' && token && featuredLook && featuredImage);
 	const canNavigatePresentation = Boolean(canSwapPresentation && runwaySlides.length > 1);
 	const activeRunwayImagePosition = runwaySlides.length

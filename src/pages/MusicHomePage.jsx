@@ -12,6 +12,8 @@ import '../styles/MusicHomePage.css';
 void prefetchApi('/api/artists');
 void prefetchApi('/api/record-player');
 
+const HOME_LATEST_LIMIT = 8;
+
 function getHomePageApiMessage(isDev) {
 	if (isDev) {
 		return 'The frontend dev server is up, but the API is not reachable. Start `npm run dev:vercel` in another terminal so `/api` can proxy to the local Vercel functions on port 3000, or use `npm run dev:vercel` by itself.';
@@ -83,7 +85,7 @@ export default function MusicHomePage() {
 				}))
 			)
 			.sort((left, right) => new Date(right.releaseDate).getTime() - new Date(left.releaseDate).getTime())
-			.slice(0, 8);
+			.slice(0, HOME_LATEST_LIMIT);
 	}, [artists]);
 
 	if ((artistsError || tracksError) && !artists && !tracks) {
@@ -153,7 +155,7 @@ export default function MusicHomePage() {
 							</div>
 						) : artistsLoading ? (
 							<div className="home-latest-row home-latest-row-loading" aria-hidden="true">
-								{Array.from({ length: 8 }, (_, index) => (
+								{Array.from({ length: HOME_LATEST_LIMIT }, (_, index) => (
 									<div key={index} className="home-latest-card-placeholder" />
 								))}
 							</div>

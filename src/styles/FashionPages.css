@@ -1719,6 +1719,10 @@ a.fashion-piece-credit-mini-card:focus-visible .fashion-piece-credit-mini-image 
 		padding: 48px 20px;
 	}
 
+	.fashion-home-showcase-grid > :nth-child(n + 3) {
+		display: none;
+	}
+
 	.fashion-runway-backdrop {
 		object-position: center;
 	}

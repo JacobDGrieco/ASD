@@ -74,7 +74,7 @@
 	--border: rgba(255, 255, 255, 0.07);
 	--radius: 4px;
 	--transition: 0.2s ease;
-	--nav-height: 76px;
+	--nav-height: 58px;
 	--font-body: 'Disko', Georgia, serif;
 	--font-display: 'Disko', Georgia, serif;
 	--font-description: 'Alba', Georgia, serif;
@@ -265,7 +265,7 @@ button {
 
 @media (max-width: 640px) {
 	:root {
-		--nav-height: 132px;
+		--nav-height: 50px;
 	}
 
 	html,

@@ -300,4 +300,8 @@
 		padding: 48px 20px;
 	}
 
+	.home-latest-row > :nth-child(n + 3) {
+		display: none;
+	}
+
 }
