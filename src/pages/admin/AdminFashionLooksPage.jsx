@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash, FaPencilAlt, FaTrash } from 'react-icons/fa';
 import { TabPanel, TabView } from 'primereact/tabview';
@@ -76,8 +76,7 @@ function renderDisplayValue(look, column) {
 
 	if (column.kind === 'collections') {
 		const labels = (look.collectionPlacements ?? [])
-			.map((placement) => placement.collection?.title)
-			.filter(Boolean);
+			.flatMap((placement) => (placement.collection?.title ? [placement.collection.title] : []));
 		if (!labels.length) return <span className="admin-artists-page-empty-value">Loose look</span>;
 		const value = labels.join(', ');
 		return <span className="admin-artists-page-cell-value" title={value}>{value}</span>;
@@ -141,6 +140,7 @@ function toFormPieces(pieces) {
 
 function toFormCollectionPlacements(placements) {
 	return (Array.isArray(placements) ? placements : []).map((placement, index) => ({
+		_key: crypto.randomUUID(),
 		collectionId: placement.collectionId ?? placement.collection?.id ?? '',
 		sortOrder: Number.isFinite(Number(placement.sortOrder)) ? Number(placement.sortOrder) : index,
 	}));
@@ -179,7 +179,7 @@ function buildLookFromCollection(collection) {
 		isVisible: collection.isVisible ?? true,
 		releaseDate: collection.releaseDate ? String(collection.releaseDate).slice(0, 10) : '',
 		images: collection.coverImage ? [collection.coverImage] : [],
-		collectionPlacements: collection.id ? [{ collectionId: collection.id, sortOrder: 0 }] : [],
+		collectionPlacements: collection.id ? [{ _key: crypto.randomUUID(), collectionId: collection.id, sortOrder: 0 }] : [],
 	};
 }
 
@@ -350,7 +350,7 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 									<div className="admin-modal-label">Collections</div>
 									<div className="admin-fashion-look-placements">
 										{form.collectionPlacements.map((placement, index) => (
-											<div key={`${placement.collectionId || 'new'}-${index}`} className="admin-fashion-look-placement-row">
+											<div key={placement._key} className="admin-fashion-look-placement-row">
 												<select
 													value={placement.collectionId}
 													onChange={(event) => setForm((current) => ({
@@ -407,7 +407,7 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 												...current,
 												collectionPlacements: [
 													...current.collectionPlacements,
-													{ collectionId: '', sortOrder: current.collectionPlacements.length },
+													{ _key: crypto.randomUUID(), collectionId: '', sortOrder: current.collectionPlacements.length },
 												],
 											}))}
 											className="admin-artists-page-ghost-btn"
@@ -470,7 +470,7 @@ export default function AdminFashionLooksPage() {
 	const [crewOptions, setCrewOptions] = useState([]);
 	const [collections, setCollections] = useState([]);
 	const [form, setForm] = useState(null);
-	const [returnToAfterSave, setReturnToAfterSave] = useState(null);
+	const returnToAfterSaveRef = useRef(null);
 	const [loadingEditId, setLoadingEditId] = useState(null);
 
 	useEffect(() => {
@@ -510,7 +510,7 @@ export default function AdminFashionLooksPage() {
 		if (!prefill) return;
 
 		setForm(buildLookFromCollection(prefill));
-		setReturnToAfterSave(location.state?.returnTo || null);
+		returnToAfterSaveRef.current = location.state?.returnTo || null;
 		navigate(location.pathname, { replace: true, state: {} });
 	}, [location.pathname, location.state, navigate]);
 
@@ -534,7 +534,7 @@ export default function AdminFashionLooksPage() {
 	};
 	const closeForm = () => {
 		setForm(null);
-		setReturnToAfterSave(null);
+		returnToAfterSaveRef.current = null;
 	};
 	const nextOrder = looks.reduce((maxOrder, look) => Math.max(maxOrder, look.order ?? 0), -1) + 1;
 
@@ -551,12 +551,15 @@ export default function AdminFashionLooksPage() {
 			...form,
 			slug: slugify(form.title),
 			releaseDate: form.releaseDate || null,
-			collectionPlacements: form.collectionPlacements
-				.filter((placement) => placement.collectionId)
-				.map((placement, index) => ({
+			collectionPlacements: form.collectionPlacements.reduce((acc, placement) => {
+				if (!placement.collectionId) return acc;
+				const index = acc.length;
+				acc.push({
 					collectionId: placement.collectionId,
 					sortOrder: Number.isFinite(Number(placement.sortOrder)) ? Number(placement.sortOrder) : index,
-				})),
+				});
+				return acc;
+			}, []),
 			credits: form.credits.filter(hasCreditValue),
 			pieces: form.pieces.map((piece) => ({
 				...piece,
@@ -588,7 +591,7 @@ export default function AdminFashionLooksPage() {
 			})
 			.catch(() => { });
 		closeForm();
-		if (returnToAfterSave) navigate(returnToAfterSave);
+		if (returnToAfterSaveRef.current) navigate(returnToAfterSaveRef.current);
 	};
 
 	const handleDelete = async (id) => {

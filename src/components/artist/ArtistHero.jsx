@@ -12,6 +12,22 @@ function uniqueUrls(urls) {
 	return [...new Set(urls.flatMap((url) => (url ? [url] : [])))];
 }
 
+function renderProfileLink(link) {
+	const label = PROFILE_LINK_PLATFORM_LABELS[link.platform] ?? 'Link';
+	return (
+		<a
+			key={link.id}
+			href={hrefForProfileLink(link)}
+			target={link.platform === 'email' ? undefined : '_blank'}
+			rel={link.platform === 'email' ? undefined : 'noopener noreferrer'}
+			aria-label={label}
+			title={label}
+		>
+			<ProfileLinkIcon platform={link.platform} />
+		</a>
+	);
+}
+
 function getArtistImages(artist) {
 	const listedImages = Array.isArray(artist.images)
 		? artist.images.flatMap((image) => {
@@ -124,21 +140,6 @@ export default function ArtistHero({ artist }) {
 	const profileLinks = normalizeProfileLinks(artist.links);
 	const professionalLinks = profileLinks.filter((link) => link.type === 'professional');
 	const personalLinks = profileLinks.filter((link) => link.type === 'personal');
-	const renderProfileLink = (link, index) => {
-		const label = PROFILE_LINK_PLATFORM_LABELS[link.platform] ?? 'Link';
-		return (
-			<a
-				key={`${link.platform}-${link.type}-${link.url}-${index}`}
-				href={hrefForProfileLink(link)}
-				target={link.platform === 'email' ? undefined : '_blank'}
-				rel={link.platform === 'email' ? undefined : 'noopener noreferrer'}
-				aria-label={label}
-				title={label}
-			>
-				<ProfileLinkIcon platform={link.platform} />
-			</a>
-		);
-	};
 
 	return (
 		<section className={`artist-hero-hero ${artist.isPubliclyVisible === false ? 'artist-hero-hero-hidden' : ''}`.trim()}>

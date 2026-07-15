@@ -12,7 +12,7 @@ import '../styles/MusicHomePage.css';
 void prefetchApi('/api/artists');
 void prefetchApi('/api/record-player');
 
-export function getHomePageApiMessage(isDev) {
+function getHomePageApiMessage(isDev) {
 	if (isDev) {
 		return 'The frontend dev server is up, but the API is not reachable. Start `npm run dev:vercel` in another terminal so `/api` can proxy to the local Vercel functions on port 3000, or use `npm run dev:vercel` by itself.';
 	}

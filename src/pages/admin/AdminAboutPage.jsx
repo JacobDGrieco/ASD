@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash, FaPencilAlt, FaTrash } from 'react-icons/fa';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
@@ -58,10 +58,223 @@ function normalizeHeroTitle(value) {
 	return value.replace(/\\n/g, '\n');
 }
 
+function AboutHeroCopyPanel({ titleDraft, bioDraft, setTitleDraft, setBioDraft, onReset, onSave, saving }) {
+	return (
+		<section className="admin-about-profile-panel" aria-labelledby="admin-about-hero-copy-title">
+			<div className="admin-about-profile-heading">
+				<div>
+					<h2 id="admin-about-hero-copy-title">Hero Copy</h2>
+				</div>
+			</div>
+			<label htmlFor="admin-about-hero-title" className="admin-modal-label">
+				Hero title <span className="admin-modal-label-required">*</span>
+			</label>
+			<textarea
+				id="admin-about-hero-title"
+				value={titleDraft}
+				onChange={(event) => setTitleDraft(normalizeHeroTitle(event.target.value))}
+				className="admin-artists-page-input admin-modal-textarea admin-about-title-input"
+				rows={2}
+				required
+			/>
+			<label htmlFor="admin-about-hero-bio" className="admin-modal-label">
+				Hero bio <span className="admin-modal-label-required">*</span>
+			</label>
+			<textarea
+				id="admin-about-hero-bio"
+				value={bioDraft}
+				onChange={(event) => setBioDraft(event.target.value)}
+				className="admin-artists-page-input admin-modal-textarea admin-about-bio-input"
+				rows={4}
+				required
+			/>
+			<div className="admin-about-profile-actions">
+				<button type="button" onClick={onReset} className="admin-artists-page-ghost-btn">
+					Reset
+				</button>
+				<button type="button" onClick={() => void onSave()} className="admin-artists-page-primary-btn" disabled={saving}>
+					{saving ? 'Saving...' : 'Save Copy'}
+				</button>
+			</div>
+		</section>
+	);
+}
+
+function AboutMembersTable({ members, loading, onEdit, onDelete }) {
+	return (
+		<div className="admin-artists-page-table-wrap">
+			<table className="admin-artists-page-table">
+				<thead>
+					<tr>
+						<th className="admin-artists-page-col-image">Image</th>
+						<th className="admin-artists-page-col-lg">Name</th>
+						<th className="admin-artists-page-col-lg">Role</th>
+						<th className="admin-about-bio-col">Bio</th>
+						<th className="admin-artists-page-col-sm">Visible</th>
+						<th className="admin-artists-page-col-sm">Order</th>
+						<th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
+					</tr>
+				</thead>
+				<tbody>
+					{members.map((member) => (
+						<tr key={member.id} className={member.isVisible ? '' : 'admin-artists-page-hidden-row'}>
+							<td className="admin-artists-page-col-image">{renderMemberImage(member)}</td>
+							<td className="admin-artists-page-col-lg">
+								<span className="admin-artists-page-cell-value" title={member.name}>{member.name}</span>
+							</td>
+							<td className="admin-artists-page-col-lg">
+								<span className="admin-artists-page-cell-value" title={member.role}>{member.role}</span>
+							</td>
+							<td className="admin-about-bio-col">
+								<span className="admin-artists-page-wrap-value" title={member.bio}>{member.bio}</span>
+							</td>
+							<td className="admin-artists-page-col-sm admin-artists-page-center-cell">
+								<span className="admin-about-visibility-icon" title={member.isVisible ? 'Visible' : 'Hidden'}>
+									{member.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
+								</span>
+							</td>
+							<td className="admin-artists-page-col-sm">
+								<span className="admin-artists-page-cell-value">{member.sortOrder ?? 0}</span>
+							</td>
+							<td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
+								<div className="admin-artists-page-actions">
+									<button
+										type="button"
+										onClick={() => onEdit(member)}
+										className="admin-artists-page-ghost-btn admin-artists-page-icon-btn"
+										aria-label={`Edit ${member.name}`}
+										title="Edit"
+									>
+										<FaPencilAlt aria-hidden="true" />
+									</button>
+									<ConfirmActionButton
+										message={`Delete ${member.name}?`}
+										onConfirm={() => onDelete(member)}
+										buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+										buttonAriaLabel={`Delete ${member.name}`}
+										buttonTitle="Delete"
+									>
+										<FaTrash aria-hidden="true" />
+									</ConfirmActionButton>
+								</div>
+							</td>
+						</tr>
+					))}
+					{!loading && members.length === 0 ? (
+						<tr>
+							<td colSpan={7}>
+								<span className="admin-about-empty">No company members yet. Add the first person with New Member.</span>
+							</td>
+						</tr>
+					) : null}
+				</tbody>
+			</table>
+		</div>
+	);
+}
+
+function AboutMemberFormModal({ form, setForm, token, onClose, onSave }) {
+	if (!form) return null;
+
+	return (
+		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+			<div className="admin-modal">
+				<div className="admin-modal-header">
+					<h2 className="admin-modal-title">{form.id ? 'Edit Member' : 'New Member'}</h2>
+					<button type="button" onClick={onClose} className="admin-modal-close" aria-label="Close">&times;</button>
+				</div>
+				<div className="admin-modal-body">
+					<div className="admin-modal-grid">
+						<div className="admin-modal-field admin-modal-field-full">
+							<div className="admin-artists-page-name-field">
+								<button
+									type="button"
+									onClick={() => setForm((current) => ({ ...current, isVisible: !current.isVisible }))}
+									className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
+									aria-label={form.isVisible ? 'Member is visible to the public. Click to hide.' : 'Member is hidden from the public. Click to show.'}
+									title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
+								>
+									{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
+								</button>
+								<div className="admin-artists-page-name-field-main">
+									<label htmlFor="admin-about-member-name" className="admin-modal-label">Name <span className="admin-modal-label-required">*</span></label>
+									<input
+										id="admin-about-member-name"
+										type="text"
+										value={form.name}
+										onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+										className="admin-artists-page-input"
+										placeholder="Full name"
+									/>
+								</div>
+							</div>
+						</div>
+						<div className="admin-modal-field admin-modal-field-full">
+							<div className="admin-modal-label">Image <span className="admin-modal-label-required">*</span></div>
+							<ImageCollectionField
+								value={primaryImage(form) ? [primaryImage(form)] : []}
+								onChange={(images) => {
+									const nextImage = images[0] ?? null;
+									setForm((current) => ({
+										...current,
+										image: nextImage,
+										imageUrl: nextImage?.url ?? '',
+										imagePathname: nextImage?.pathname ?? null,
+									}));
+								}}
+								token={token}
+								folder="about-members"
+								entityLabel={form.name || 'Company member'}
+							/>
+						</div>
+						<div className="admin-modal-field">
+							<label htmlFor="admin-about-member-role" className="admin-modal-label">Role <span className="admin-modal-label-required">*</span></label>
+							<input
+								id="admin-about-member-role"
+								type="text"
+								value={form.role}
+								onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))}
+								className="admin-artists-page-input"
+								placeholder="Founder / Creative Director"
+							/>
+						</div>
+						<div className="admin-modal-field">
+							<label htmlFor="admin-about-member-order" className="admin-modal-label">Order</label>
+							<input
+								id="admin-about-member-order"
+								type="number"
+								value={form.sortOrder}
+								onChange={(event) => setForm((current) => ({ ...current, sortOrder: event.target.value }))}
+								className="admin-artists-page-input"
+								min="0"
+							/>
+						</div>
+						<div className="admin-modal-field admin-modal-field-full">
+							<label htmlFor="admin-about-member-bio" className="admin-modal-label">Bio <span className="admin-modal-label-required">*</span></label>
+							<textarea
+								id="admin-about-member-bio"
+								value={form.bio}
+								onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))}
+								className="admin-artists-page-input admin-modal-textarea"
+								rows={5}
+								placeholder="Short public bio"
+							/>
+						</div>
+					</div>
+				</div>
+				<div className="admin-modal-footer">
+					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
+					<button type="button" onClick={() => void onSave()} className="admin-artists-page-primary-btn">Save</button>
+				</div>
+			</div>
+		</div>
+	);
+}
+
 export default function AdminAboutPage() {
 	const { token, session } = useAdminAuth();
 	const auth = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
-	const [profile, setProfile] = useState({ id: 'main', title: '', bio: '' });
+	const profileRef = useRef({ id: 'main', title: '', bio: '' });
 	const [titleDraft, setTitleDraft] = useState('');
 	const [bioDraft, setBioDraft] = useState('');
 	const [members, setMembers] = useState([]);
@@ -78,7 +291,7 @@ export default function AdminAboutPage() {
 		loadAdminResource({ cacheKey: 'admin-about', url: '/api/admin/about', token })
 			.then((about) => {
 				if (ignore) return;
-				setProfile(about.profile ?? { id: 'main', title: '', bio: '' });
+				profileRef.current = about.profile ?? { id: 'main', title: '', bio: '' };
 				setTitleDraft(about.profile?.title ?? '');
 				setBioDraft(about.profile?.bio ?? '');
 				setMembers(about.members ?? []);
@@ -121,6 +334,11 @@ export default function AdminAboutPage() {
 
 	const closeForm = () => setForm(null);
 
+	const resetHeroDraft = () => {
+		setTitleDraft(profileRef.current.title ?? '');
+		setBioDraft(profileRef.current.bio ?? '');
+	};
+
 	const handleSaveBio = async () => {
 		const title = normalizeHeroTitle(titleDraft).trim();
 		const bio = bioDraft.trim();
@@ -147,10 +365,10 @@ export default function AdminAboutPage() {
 				return;
 			}
 
-			setProfile(payload);
+			profileRef.current = payload;
 			setTitleDraft(payload.title ?? '');
 			setBioDraft(payload.bio ?? '');
-			primeAbout(payload, members);
+			primeAbout(profileRef.current, members);
 		} finally {
 			setSavingBio(false);
 		}
@@ -190,7 +408,7 @@ export default function AdminAboutPage() {
 			.sort((left, right) => (left.sortOrder ?? 0) - (right.sortOrder ?? 0));
 
 		setMembers(nextMembers);
-		primeAbout(profile, nextMembers);
+		primeAbout(profileRef.current, nextMembers);
 		closeForm();
 	};
 
@@ -202,7 +420,7 @@ export default function AdminAboutPage() {
 
 		const nextMembers = members.filter((candidate) => candidate.id !== member.id);
 		setMembers(nextMembers);
-		primeAbout(profile, nextMembers);
+		primeAbout(profileRef.current, nextMembers);
 	};
 
 	return (
@@ -214,213 +432,30 @@ export default function AdminAboutPage() {
 				</div>
 			</div>
 
-			<section className="admin-about-profile-panel" aria-labelledby="admin-about-hero-copy-title">
-				<div className="admin-about-profile-heading">
-					<div>
-						<h2 id="admin-about-hero-copy-title">Hero Copy</h2>
-					</div>
-				</div>
-				<label htmlFor="admin-about-hero-title" className="admin-modal-label">
-					Hero title <span className="admin-modal-label-required">*</span>
-				</label>
-				<textarea
-					id="admin-about-hero-title"
-					value={titleDraft}
-					onChange={(event) => setTitleDraft(normalizeHeroTitle(event.target.value))}
-					className="admin-artists-page-input admin-modal-textarea admin-about-title-input"
-					rows={2}
-					required
-				/>
-				<label htmlFor="admin-about-hero-bio" className="admin-modal-label">
-					Hero bio <span className="admin-modal-label-required">*</span>
-				</label>
-				<textarea
-					id="admin-about-hero-bio"
-					value={bioDraft}
-					onChange={(event) => setBioDraft(event.target.value)}
-					className="admin-artists-page-input admin-modal-textarea admin-about-bio-input"
-					rows={4}
-					required
-				/>
-				<div className="admin-about-profile-actions">
-					<button
-						type="button"
-						onClick={() => {
-							setTitleDraft(profile.title ?? '');
-							setBioDraft(profile.bio ?? '');
-						}}
-						className="admin-artists-page-ghost-btn"
-					>
-						Reset
-					</button>
-					<button type="button" onClick={() => void handleSaveBio()} className="admin-artists-page-primary-btn" disabled={savingBio}>
-						{savingBio ? 'Saving...' : 'Save Copy'}
-					</button>
-				</div>
-			</section>
+			<AboutHeroCopyPanel
+				titleDraft={titleDraft}
+				bioDraft={bioDraft}
+				setTitleDraft={setTitleDraft}
+				setBioDraft={setBioDraft}
+				onReset={resetHeroDraft}
+				onSave={handleSaveBio}
+				saving={savingBio}
+			/>
 
-			<div className="admin-artists-page-table-wrap">
-				<table className="admin-artists-page-table">
-					<thead>
-						<tr>
-							<th className="admin-artists-page-col-image">Image</th>
-							<th className="admin-artists-page-col-lg">Name</th>
-							<th className="admin-artists-page-col-lg">Role</th>
-							<th className="admin-about-bio-col">Bio</th>
-							<th className="admin-artists-page-col-sm">Visible</th>
-							<th className="admin-artists-page-col-sm">Order</th>
-							<th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
-						</tr>
-					</thead>
-					<tbody>
-						{members.map((member) => (
-							<tr key={member.id} className={member.isVisible ? '' : 'admin-artists-page-hidden-row'}>
-								<td className="admin-artists-page-col-image">{renderMemberImage(member)}</td>
-								<td className="admin-artists-page-col-lg">
-									<span className="admin-artists-page-cell-value" title={member.name}>{member.name}</span>
-								</td>
-								<td className="admin-artists-page-col-lg">
-									<span className="admin-artists-page-cell-value" title={member.role}>{member.role}</span>
-								</td>
-								<td className="admin-about-bio-col">
-									<span className="admin-artists-page-wrap-value" title={member.bio}>{member.bio}</span>
-								</td>
-								<td className="admin-artists-page-col-sm admin-artists-page-center-cell">
-									<span className="admin-about-visibility-icon" title={member.isVisible ? 'Visible' : 'Hidden'}>
-										{member.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
-									</span>
-								</td>
-								<td className="admin-artists-page-col-sm">
-									<span className="admin-artists-page-cell-value">{member.sortOrder ?? 0}</span>
-								</td>
-								<td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
-									<div className="admin-artists-page-actions">
-										<button
-											type="button"
-											onClick={() => openEdit(member)}
-											className="admin-artists-page-ghost-btn admin-artists-page-icon-btn"
-											aria-label={`Edit ${member.name}`}
-											title="Edit"
-										>
-											<FaPencilAlt aria-hidden="true" />
-										</button>
-										<ConfirmActionButton
-											message={`Delete ${member.name}?`}
-											onConfirm={() => handleDeleteMember(member)}
-											buttonClassName="admin-artists-page-danger-btn admin-artists-page-icon-btn"
-											buttonAriaLabel={`Delete ${member.name}`}
-											buttonTitle="Delete"
-										>
-											<FaTrash aria-hidden="true" />
-										</ConfirmActionButton>
-									</div>
-								</td>
-							</tr>
-						))}
-						{!loading && members.length === 0 ? (
-							<tr>
-								<td colSpan={7}>
-									<span className="admin-about-empty">No company members yet. Add the first person with New Member.</span>
-								</td>
-							</tr>
-						) : null}
-					</tbody>
-				</table>
-			</div>
+			<AboutMembersTable
+				members={members}
+				loading={loading}
+				onEdit={openEdit}
+				onDelete={handleDeleteMember}
+			/>
 
-			{form ? (
-				<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm(); }}>
-					<div className="admin-modal">
-						<div className="admin-modal-header">
-							<h2 className="admin-modal-title">{form.id ? 'Edit Member' : 'New Member'}</h2>
-							<button type="button" onClick={closeForm} className="admin-modal-close" aria-label="Close">&times;</button>
-						</div>
-						<div className="admin-modal-body">
-							<div className="admin-modal-grid">
-								<div className="admin-modal-field admin-modal-field-full">
-									<div className="admin-artists-page-name-field">
-										<button
-											type="button"
-											onClick={() => setForm((current) => ({ ...current, isVisible: !current.isVisible }))}
-											className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
-											aria-label={form.isVisible ? 'Member is visible to the public. Click to hide.' : 'Member is hidden from the public. Click to show.'}
-											title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
-										>
-											{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
-										</button>
-										<div className="admin-artists-page-name-field-main">
-											<label htmlFor="admin-about-member-name" className="admin-modal-label">Name <span className="admin-modal-label-required">*</span></label>
-											<input
-												id="admin-about-member-name"
-												type="text"
-												value={form.name}
-												onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-												className="admin-artists-page-input"
-												placeholder="Full name"
-											/>
-										</div>
-									</div>
-								</div>
-								<div className="admin-modal-field admin-modal-field-full">
-									<div className="admin-modal-label">Image <span className="admin-modal-label-required">*</span></div>
-									<ImageCollectionField
-										value={primaryImage(form) ? [primaryImage(form)] : []}
-										onChange={(images) => {
-											const nextImage = images[0] ?? null;
-											setForm((current) => ({
-												...current,
-												image: nextImage,
-												imageUrl: nextImage?.url ?? '',
-												imagePathname: nextImage?.pathname ?? null,
-											}));
-										}}
-										token={token}
-										folder="about-members"
-										entityLabel={form.name || 'Company member'}
-									/>
-								</div>
-								<div className="admin-modal-field">
-									<label htmlFor="admin-about-member-role" className="admin-modal-label">Role <span className="admin-modal-label-required">*</span></label>
-									<input
-										id="admin-about-member-role"
-										type="text"
-										value={form.role}
-										onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))}
-										className="admin-artists-page-input"
-										placeholder="Founder / Creative Director"
-									/>
-								</div>
-								<div className="admin-modal-field">
-									<label htmlFor="admin-about-member-order" className="admin-modal-label">Order</label>
-									<input
-										id="admin-about-member-order"
-										type="number"
-										value={form.sortOrder}
-										onChange={(event) => setForm((current) => ({ ...current, sortOrder: event.target.value }))}
-										className="admin-artists-page-input"
-										min="0"
-									/>
-								</div>
-								<div className="admin-modal-field admin-modal-field-full">
-									<label htmlFor="admin-about-member-bio" className="admin-modal-label">Bio <span className="admin-modal-label-required">*</span></label>
-									<textarea
-										id="admin-about-member-bio"
-										value={form.bio}
-										onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))}
-										className="admin-artists-page-input admin-modal-textarea"
-										rows={5}
-										placeholder="Short public bio"
-									/>
-								</div>
-							</div>
-						</div>
-						<div className="admin-modal-footer">
-							<button type="button" onClick={closeForm} className="admin-artists-page-ghost-btn">Cancel</button>
-							<button type="button" onClick={() => void handleSaveMember()} className="admin-artists-page-primary-btn">Save</button>
-						</div>
-					</div>
-				</div>
-			) : null}
+			<AboutMemberFormModal
+				form={form}
+				setForm={setForm}
+				token={token}
+				onClose={closeForm}
+				onSave={handleSaveMember}
+			/>
 		</div>
 	);
 }

@@ -4,10 +4,10 @@ export const SITE_TITLE = 'A.S.D.';
 
 export function formatPageTitle(parts) {
 	const rawParts = Array.isArray(parts) ? parts : [parts];
-	const titleParts = rawParts
-		.map((part) => String(part ?? '').trim())
-		.filter(Boolean)
-		.filter((part) => part !== SITE_TITLE);
+	const titleParts = rawParts.flatMap((part) => {
+		const trimmed = String(part ?? '').trim();
+		return trimmed && trimmed !== SITE_TITLE ? [trimmed] : [];
+	});
 
 	return titleParts.length ? `${titleParts.join(' | ')} | ${SITE_TITLE}` : SITE_TITLE;
 }

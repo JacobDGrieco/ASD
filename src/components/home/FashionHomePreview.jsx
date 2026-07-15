@@ -35,13 +35,13 @@ function getRunwaySlidesFromCatalogueItem(item) {
 	const looks = item?.looks?.length ? item.looks : (item?.linkedLook ? [item.linkedLook] : []);
 
 	return looks.flatMap((look) => (
-		(look.images ?? [])
-			.map((image, index) => ({
+		(look.images ?? []).flatMap((image, index) => (
+			getImageSrc(image) ? [{
 				id: `${look.id}-${getImageKey(image) || index}`,
 				look,
 				image,
-			}))
-			.filter((slide) => getImageSrc(slide.image))
+			}] : []
+		))
 	));
 }
 

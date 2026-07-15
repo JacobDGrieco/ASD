@@ -13,6 +13,22 @@ function uniqueUrls(urls) {
 	return [...new Set(urls.flatMap((url) => (url ? [url] : [])))];
 }
 
+function scrollPastSection(event, sectionSelector) {
+	const section = event.currentTarget.closest(sectionSelector);
+	const target = section?.nextElementSibling;
+	const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	if (target) {
+		target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+		return;
+	}
+
+	window.scrollBy({
+		top: Math.max(window.innerHeight - 80, 320),
+		behavior: prefersReducedMotion ? 'auto' : 'smooth',
+	});
+}
+
 function getArtistImages(artist) {
 	const listedImages = Array.isArray(artist.images)
 		? artist.images.flatMap((image) => {
@@ -482,21 +498,6 @@ function ArtistSpotlightCarousel({ artists }) {
 
 export default function ArtistSplash({ artists }) {
 	const isMobileSpotlight = useMediaQuery(MOBILE_SPOTLIGHT_QUERY);
-	const handleScrollCue = (event) => {
-		const section = event.currentTarget.closest('.artist-splash-splash');
-		const target = section?.nextElementSibling;
-		const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-		if (target) {
-			target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
-			return;
-		}
-
-		window.scrollBy({
-			top: Math.max(window.innerHeight - 80, 320),
-			behavior: prefersReducedMotion ? 'auto' : 'smooth',
-		});
-	};
 
 	return (
 		<section className="artist-splash-splash">
@@ -507,7 +508,7 @@ export default function ArtistSplash({ artists }) {
 				type="button"
 				className="artist-splash-scroll-cue"
 				aria-label="Scroll to more music content"
-				onClick={handleScrollCue}
+				onClick={(event) => scrollPastSection(event, '.artist-splash-splash')}
 			>
 				<span aria-hidden="true" />
 			</button>

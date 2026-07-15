@@ -21,6 +21,8 @@ import { slugify } from '../../lib/slugify.js';
 import '../../styles/AdminArtistsPage.css';
 import '../../styles/AdminSongsPage.css';
 
+const EMPTY_ARRAY = [];
+
 const SONG_KEYS = [
 	'C Major',
 	'C Minor',
@@ -533,14 +535,14 @@ function SongInfoTab({
 function SongLinksTab({ form, setForm }) {
 	return (
 		<div className="admin-modal-grid">
-			<div className="admin-modal-field admin-modal-field-full">
-				<label className="admin-modal-label">Links</label>
+			<fieldset className="admin-modal-field admin-modal-field-full">
+				<legend className="admin-modal-label">Links</legend>
 				<AdminProfileLinksField
 					value={form.links}
 					onChange={(links) => setForm((current) => ({ ...current, links }))}
 					showTypeField={false}
 				/>
-			</div>
+			</fieldset>
 		</div>
 	);
 }
@@ -691,8 +693,8 @@ export default function AdminSongFormModal({
 	prefill,
 	songs,
 	albums,
-	artists = [],
-	outsideArtists = [],
+	artists = EMPTY_ARRAY,
+	outsideArtists = EMPTY_ARRAY,
 	token,
 	session,
 	onSaved,

@@ -109,11 +109,11 @@ export default function SongHeader({ song, adminPreview = false }) {
         </div>
         {streamLinks.length > 0 && (
           <div className="song-header-stream-links">
-            {streamLinks.map((link, index) => {
+            {streamLinks.map((link) => {
               const label = PROFILE_LINK_PLATFORM_LABELS[link.platform] ?? 'Link'
               return (
               <a
-                key={`${link.platform}-${link.type}-${link.url}-${index}`}
+                key={link.id}
                 href={hrefForProfileLink(link)}
                 target="_blank"
                 rel="noopener noreferrer"

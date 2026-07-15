@@ -110,7 +110,7 @@ function publishDateSortValue(post) {
 }
 
 function sortBoardPostsByPublishDate(posts) {
-	return [...posts].sort((a, b) => {
+	return posts.toSorted((a, b) => {
 		const publishDelta = publishDateSortValue(b) - publishDateSortValue(a);
 		if (publishDelta !== 0) return publishDelta;
 		return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();

@@ -33,6 +33,22 @@ function getImageSrc(image) {
 	return image?.previewUrl || image?.url || '';
 }
 
+function scrollPastSection(event, sectionSelector) {
+	const section = event.currentTarget.closest(sectionSelector);
+	const target = section?.nextElementSibling;
+	const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	if (target) {
+		target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+		return;
+	}
+
+	window.scrollBy({
+		top: Math.max(window.innerHeight - 80, 320),
+		behavior: prefersReducedMotion ? 'auto' : 'smooth',
+	});
+}
+
 function getImageKey(image) {
 	return image?.id ?? image?.pathname ?? image?.url ?? '';
 }
@@ -62,13 +78,13 @@ function getRunwaySlidesFromCatalogueItem(item) {
 	const looks = item?.looks?.length ? item.looks : (item?.linkedLook ? [item.linkedLook] : []);
 
 	return looks.flatMap((look) => (
-		(look.images ?? [])
-			.map((image, index) => ({
+		(look.images ?? []).flatMap((image, index) => (
+			getImageSrc(image) ? [{
 				id: `${look.id}-${getImageKey(image) || index}`,
 				look,
 				image,
-			}))
-			.filter((slide) => getImageSrc(slide.image))
+			}] : []
+		))
 	));
 }
 
@@ -285,22 +301,6 @@ export default function FashionHomePage() {
 		));
 	};
 
-	const handleScrollCue = (event) => {
-		const section = event.currentTarget.closest('.fashion-home-runway');
-		const target = section?.nextElementSibling;
-		const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-		if (target) {
-			target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
-			return;
-		}
-
-		window.scrollBy({
-			top: Math.max(window.innerHeight - 80, 320),
-			behavior: prefersReducedMotion ? 'auto' : 'smooth',
-		});
-	};
-
 	return (
 		<div className="page aurora-page fashion-page">
 			<AuroraBackground />
@@ -356,7 +356,7 @@ export default function FashionHomePage() {
 						type="button"
 						className="fashion-home-scroll-cue"
 						aria-label="Scroll to more fashion content"
-						onClick={handleScrollCue}
+						onClick={(event) => scrollPastSection(event, '.fashion-home-runway')}
 					>
 						<span aria-hidden="true" />
 					</button>

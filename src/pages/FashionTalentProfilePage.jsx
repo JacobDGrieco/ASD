@@ -71,11 +71,11 @@ export default function FashionTalentProfilePage() {
             </div>
             {contactLinks.length > 0 && (
               <div className="fashion-talent-hero-links">
-                {contactLinks.map((link, index) => {
+                {contactLinks.map((link) => {
                   const label = PROFILE_LINK_PLATFORM_LABELS[link.platform] ?? 'Link'
                   return (
                   <a
-                    key={`${link.platform}-${link.type}-${link.url}-${index}`}
+                    key={link.id}
                     href={hrefForProfileLink(link)}
                     target={link.platform === 'email' ? undefined : '_blank'}
                     rel={link.platform === 'email' ? undefined : 'noopener noreferrer'}

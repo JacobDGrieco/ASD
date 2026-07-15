@@ -116,13 +116,13 @@ function MusicArtistFormModal({ form, setForm, token, onClose, onSave, onDelete,
 						</TabPanel>
 						<TabPanel header="Links">
 							<div className="admin-modal-grid">
-								<div className="admin-modal-field admin-modal-field-full">
-									<label className="admin-modal-label">Links</label>
+								<fieldset className="admin-modal-field admin-modal-field-full">
+									<legend className="admin-modal-label">Links</legend>
 									<AdminProfileLinksField
 										value={form.links}
 										onChange={(links) => setForm((current) => ({ ...current, links }))}
 									/>
-								</div>
+								</fieldset>
 							</div>
 						</TabPanel>
 					</TabView>
