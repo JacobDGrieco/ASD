@@ -18,7 +18,7 @@ import { MUSIC_RELEASE_LEGACY_LINK_FIELDS, normalizeProfileLinks, profileLinksFo
 import { isOtherArtist, OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID } from '../../lib/publicVisibility.js';
 import { slugify } from '../../lib/slugify.js';
 import { createRoleEntry } from '../../lib/adminSongForm.js';
-import { SONG_ROLES } from '../../lib/songRoles.js';
+import { SONG_ROLES, sortMusicRoleEntries } from '../../lib/songRoles.js';
 import '../../styles/AdminArtistsPage.css';
 import '../../styles/AdminAlbumsPage.css';
 
@@ -70,14 +70,14 @@ function selectedRoleImage(entry, artistOptions, outsideArtistOptions) {
 }
 
 function toFormRoles(roles) {
-	return Array.isArray(roles)
+	return sortMusicRoleEntries(Array.isArray(roles)
 		? roles.map((entry) => createRoleEntry(entry.role, entry.name, {
 			artistId: entry.artistId,
 			outsideArtistId: entry.outsideArtistId,
 			externalUrl: entry.externalUrl,
 			applyToSongs: entry.applyToSongs !== false,
 		}))
-		: [];
+		: []);
 }
 
 function hasRoleValue(role) {
@@ -630,7 +630,7 @@ export default function AdminMusicAlbumsPage() {
 		const payload = {
 			...form,
 			links: normalizeProfileLinks(form.links),
-			roles: form.roles.filter(hasRoleValue).map(({ role, name, artistId, outsideArtistId, externalUrl, applyToSongs }) => ({
+			roles: sortMusicRoleEntries(form.roles.filter(hasRoleValue)).map(({ role, name, artistId, outsideArtistId, externalUrl, applyToSongs }) => ({
 				role,
 				name,
 				artistId,
@@ -698,7 +698,7 @@ export default function AdminMusicAlbumsPage() {
 	const addRole = () =>
 		setForm((current) => ({
 			...current,
-			roles: [...current.roles, createRoleEntry('Featured Artist', '', { applyToSongs: true })],
+			roles: sortMusicRoleEntries([...current.roles, createRoleEntry('Featured Artist', '', { applyToSongs: true })]),
 		}));
 
 	const removeRole = (index) =>
@@ -710,7 +710,7 @@ export default function AdminMusicAlbumsPage() {
 	const updateRole = (index, keyOrPatch, value) =>
 		setForm((current) => ({
 			...current,
-			roles: current.roles.map((entry, i) => {
+			roles: sortMusicRoleEntries(current.roles.map((entry, i) => {
 				if (i !== index) return entry;
 
 				const patch = typeof keyOrPatch === 'string'
@@ -720,7 +720,7 @@ export default function AdminMusicAlbumsPage() {
 				if (patch._prefillRole && (!entry.role || entry.role === 'Featured Artist')) next.role = patch._prefillRole;
 				delete next._prefillRole;
 				return next;
-			}),
+			})),
 		}));
 
 	const set = (key) => (event) => {

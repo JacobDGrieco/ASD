@@ -36,7 +36,7 @@ import {
 import { albumTypeSharesSongReleaseFields } from '../../src/lib/musicReleaseLinks.js'
 import { MUSIC_RELEASE_LEGACY_LINK_FIELDS, legacyFieldsFromProfileLinks, normalizeProfileLinks, profileLinksForSource } from '../../src/lib/profileLinks.js'
 import { isOtherArtist, OTHER_ARTIST_NAME } from '../../src/lib/publicVisibility.js'
-import { SONG_ROLES } from '../../src/lib/songRoles.js'
+import { SONG_ROLES, sortMusicRoleEntries } from '../../src/lib/songRoles.js'
 
 function withImages(song) {
   const images = clientImages(
@@ -233,7 +233,7 @@ async function normalizeLinkedRoleInput(roles) {
     })
   }
 
-  return normalizedRoles
+  return sortMusicRoleEntries(normalizedRoles)
 }
 
 function normalizeSongDuplicateValue(value) {
@@ -588,7 +588,7 @@ function mergeAlbumRolesWithSongRoles(albumRoles, songRoles) {
     })
   }
 
-  return merged
+  return sortMusicRoleEntries(merged)
 }
 
 async function syncSingleAlbumsFromSong(placementAlbums, links, roles) {

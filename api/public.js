@@ -7,6 +7,7 @@ import { formatCrosshairVideo } from '../src/lib/crosshairVideos.js'
 import { hasPublicBoardSource, isOtherArtist, isReservedHiddenArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js'
 import { isReleasedOnUtcDay } from '../src/lib/releaseSchedule.js'
 import { COMPANY_LEADERS, COMPANY_SUMMARY } from '../src/lib/companyProfile.js'
+import { sortMusicRoleEntries } from '../src/lib/songRoles.js'
 
 const DEFAULT_COMPANY_TITLE = COMPANY_SUMMARY.title
 const DEFAULT_COMPANY_BIO = COMPANY_SUMMARY.description
@@ -275,7 +276,7 @@ async function resolveOutsideArtistRoleLinks(roles) {
 }
 
 async function buildMusicRoleGroups(roles) {
-  const normalizedRoles = Array.isArray(roles) ? roles : []
+  const normalizedRoles = sortMusicRoleEntries(roles)
   const { byName: artistByName, byId: artistById, slugByName, slugById } = await resolveArtistRoleLinks(normalizedRoles)
   const { outsideByName, outsideById } = await resolveOutsideArtistRoleLinks(normalizedRoles)
 
@@ -742,7 +743,7 @@ async function getAlbum(res, id) {
   if (!isPublicAlbumReleased(album, now)) return res.status(404).json({ error: 'Album not found' })
 
   const albumImages = formatAlbumImages(album)
-  const roles = Array.isArray(album.roles) ? album.roles : []
+  const roles = sortMusicRoleEntries(album.roles)
   return res.status(200).json({
     ...album,
     links: profileLinksForSource(album, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
@@ -854,7 +855,7 @@ async function getSong(res, id) {
     song.meta = { ...song.meta, releaseDate: songReleaseDate }
   }
 
-  const effectiveRoles = Array.isArray(song.meta?.roles) ? song.meta.roles : []
+  const effectiveRoles = sortMusicRoleEntries(song.meta?.roles)
   if (song.meta || effectiveRoles.length) {
     song.meta = {
       ...(song.meta ?? {}),

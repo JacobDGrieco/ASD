@@ -9,6 +9,7 @@
 import { defaultVisibilityForReleaseDate } from './contentVisibility.js';
 import { albumTypeSharesSongReleaseFields } from './musicReleaseLinks.js';
 import { MUSIC_RELEASE_LEGACY_LINK_FIELDS, profileLinksForSource } from './profileLinks.js';
+import { sortMusicRoleEntries } from './songRoles.js';
 
 // Stable per-row identity for list fields (role credits, album placements) that
 // have no server-assigned id yet — lets React key list items correctly while a new
@@ -95,14 +96,14 @@ function earliestPlacementAlbumReleaseDate(song) {
 }
 
 function roleEntriesFromSource(roles) {
-	return Array.isArray(roles)
+	return sortMusicRoleEntries(Array.isArray(roles)
 		? roles.map((entry) => createRoleEntry(entry.role, entry.name, {
 			artistId: entry.artistId,
 			outsideArtistId: entry.outsideArtistId,
 			externalUrl: entry.externalUrl,
 			applyToSongs: entry.applyToSongs,
 		}))
-		: [];
+		: []);
 }
 
 export function roleEntryKey(role) {

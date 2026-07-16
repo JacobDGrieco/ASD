@@ -9,7 +9,7 @@ import ChipInputField from './ChipInputField.jsx';
 import MusicRolePersonPickerField from './MusicRolePersonPickerField.jsx';
 import ConfirmActionButton from './ConfirmActionButton.jsx';
 import PageTabs from '../shared/PageTabs.jsx';
-import { SONG_ROLES } from '../../lib/songRoles.js';
+import { SONG_ROLES, sortMusicRoleEntries } from '../../lib/songRoles.js';
 import {
 	createAlbumPlacement,
 	createRoleEntry,
@@ -158,7 +158,7 @@ function copyAlbumRolesToSongForm(form, album) {
 	}
 
 	return copiedRoles.length
-		? { ...form, roles: [...(form.roles ?? []), ...copiedRoles] }
+		? { ...form, roles: sortMusicRoleEntries([...(form.roles ?? []), ...copiedRoles]) }
 		: form;
 }
 
@@ -846,7 +846,7 @@ export default function AdminSongFormModal({
 	const addRole = () =>
 		setForm((current) => ({
 			...current,
-			roles: [...current.roles, createRoleEntry()],
+			roles: sortMusicRoleEntries([...current.roles, createRoleEntry()]),
 		}));
 
 	const removeRole = (index) =>
@@ -858,7 +858,7 @@ export default function AdminSongFormModal({
 	const updateRole = (index, keyOrPatch, value) =>
 		setForm((current) => ({
 			...current,
-			roles: current.roles.map((entry, i) => {
+			roles: sortMusicRoleEntries(current.roles.map((entry, i) => {
 				if (i !== index) return entry;
 
 				const patch = typeof keyOrPatch === 'string'
@@ -868,7 +868,7 @@ export default function AdminSongFormModal({
 				if (patch._prefillRole && (!entry.role || entry.role === 'Featured Artist')) next.role = patch._prefillRole;
 				delete next._prefillRole;
 				return next;
-			}),
+			})),
 		}));
 
 	const setAlbumPlacement = (index, key) => (event) =>

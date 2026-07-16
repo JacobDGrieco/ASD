@@ -42,3 +42,16 @@ export const ROLE_DISPLAY_LABELS = {
 	'Creative Director': 'Creative direction by',
 	'Art Director': 'Art direction by',
 };
+
+export function musicRoleSortIndex(role) {
+	const index = SONG_ROLES.indexOf(role);
+	return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+}
+
+export function compareMusicRoleEntries(left, right) {
+	return musicRoleSortIndex(left?.role) - musicRoleSortIndex(right?.role);
+}
+
+export function sortMusicRoleEntries(roles) {
+	return Array.isArray(roles) ? roles.toSorted(compareMusicRoleEntries) : [];
+}

@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { sortMusicRoleEntries } from '../src/lib/songRoles.js';
 
 function loadDotEnvLocal() {
 	const envPath = path.resolve(process.cwd(), '.env.local');
@@ -70,7 +71,7 @@ function mergeAlbumRoles(albumRoles, ...songRoleSets) {
 		}
 	}
 
-	return merged;
+	return sortMusicRoleEntries(merged);
 }
 
 function normalizeSongRoles(roles) {
@@ -85,7 +86,7 @@ function normalizeSongRoles(roles) {
 		merged.push(normalizedRole(role, { omitApplyToSongs: true }));
 	}
 
-	return merged;
+	return sortMusicRoleEntries(merged);
 }
 
 function copyAlbumRolesToSongRoles(songRoles, albumRoles) {

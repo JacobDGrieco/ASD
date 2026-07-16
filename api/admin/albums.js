@@ -25,7 +25,7 @@ import { clientImages, mergeLegacyImages, normalizeImageInput, primaryImageRefer
 import { MUSIC_RELEASE_LEGACY_LINK_FIELDS, legacyFieldsFromProfileLinks, normalizeProfileLinks, profileLinksForSource } from '../../src/lib/profileLinks.js'
 import { OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID, OTHER_ARTIST_SLUG } from '../../src/lib/publicVisibility.js'
 import { slugify } from '../../src/lib/slugify.js'
-import { SONG_ROLES } from '../../src/lib/songRoles.js'
+import { SONG_ROLES, sortMusicRoleEntries } from '../../src/lib/songRoles.js'
 
 function withImages(album) {
   const images = clientImages(mergeLegacyImages(album.images, album.coverArt, {
@@ -219,7 +219,7 @@ async function normalizeLinkedRoleInput(roles) {
   )
   const createdByKey = new Map([...toCreateByKey.keys()].map((key, index) => [key, createdArtists[index]]))
 
-  return inputRoles.map((entry) => {
+  return sortMusicRoleEntries(inputRoles.map((entry) => {
     const artistById = entry.artistId ? artistsById.get(entry.artistId) : null
     if (artistById) return { role: entry.role, name: artistById.name, artistId: artistById.id, applyToSongs: entry.applyToSongs }
 
@@ -246,7 +246,7 @@ async function normalizeLinkedRoleInput(roles) {
       externalUrl: outsideArtistByName.externalUrl,
       applyToSongs: entry.applyToSongs,
     }
-  })
+  }))
 }
 
 // Duplicate check is title + artist + release date + "other artist" name (for
@@ -385,7 +385,7 @@ function mergeSongRoles(songRoles, rolesToCopy) {
     merged.push(songRoleCopy(role))
   }
 
-  return merged
+  return sortMusicRoleEntries(merged)
 }
 
 async function copyAlbumRolesToAttachedSongs(albumId, rolesToCopy) {
