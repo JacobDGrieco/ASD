@@ -1,3 +1,16 @@
+/**
+ * Defines the set of admin CMS pages and which roles/accounts can see each one.
+ *
+ * Runs in both server (`src/lib/auth.js`'s `canAccessAdminPage`, used sparingly —
+ * most `api/admin/*.js` handlers check roles directly instead) and client
+ * (`AdminLayout.jsx` nav visibility, `App.jsx`'s `AdminPageAccessRoute` route guard)
+ * contexts.
+ *
+ * Important: `hasAdminPageAccess` is the nav/route-level gate only — it is NOT the
+ * security boundary. A logged-in session can still hit any `api/admin/*.js` endpoint
+ * directly regardless of what this function says; each endpoint enforces its own
+ * role/page checks server-side. Treat this module as UI convenience, not access control.
+ */
 export const ADMIN_PAGE_KEYS = {
   BOARD: 'board',
   MUSIC_ARTISTS: 'music_artists',
@@ -65,11 +78,17 @@ export const ADMIN_PAGE_PATHS = {
 
 const VALID_PAGE_KEYS = new Set(Object.values(ADMIN_PAGE_KEYS))
 
+/** Filters `value` down to recognized page keys and dedupes — sanitizes admin-submitted `pageAccess` arrays before they're stored on the JWT/DB row. */
 export function normalizeAdminPageAccess(value) {
   if (!Array.isArray(value)) return []
   return [...new Set(value.filter((key) => VALID_PAGE_KEYS.has(key)))]
 }
 
+/**
+ * The page-access list a new account gets when its `pageAccess` field is empty —
+ * i.e. the "no explicit customization yet" default, not a hard limit (a super admin
+ * can grant additional pages per-account via `AdminAccountsPage`).
+ */
 export function getDefaultAdminPageAccess(accountType) {
   if (accountType === ADMIN_ACCOUNT_TYPES.FASHION_TALENT) {
     return [ADMIN_PAGE_KEYS.FASHION_TALENT]
@@ -86,6 +105,16 @@ export function getAllowedPageGroupsForAccountType() {
   return ADMIN_PAGE_GROUPS
 }
 
+/**
+ * Whether `session` can see the admin page identified by `pageKey`.
+ *
+ * Precedence: SUPER_ADMIN always passes; otherwise an explicit non-empty
+ * `session.pageAccess` (set per-account in `AdminAccountsPage`) wins; otherwise
+ * falls back to a role default. Note the VIEWER default is a separate hardcoded
+ * list here rather than reusing `getDefaultAdminPageAccess` — the two lists are not
+ * currently kept in sync automatically, so a new page added to one may need adding
+ * to the other by hand.
+ */
 export function hasAdminPageAccess(session, pageKey) {
   if (!session || !pageKey) return false
   if (session.role === 'SUPER_ADMIN') return true
@@ -108,6 +137,7 @@ export function hasAdminPageAccess(session, pageKey) {
   return false
 }
 
+/** Where to redirect a session after login / when it lands on a page it can't access — the first page (in `ADMIN_PAGE_KEYS` order) it's allowed to see. */
 export function firstAccessibleAdminPath(session) {
   if (session?.role === 'SUPER_ADMIN') return '/admin/about'
 

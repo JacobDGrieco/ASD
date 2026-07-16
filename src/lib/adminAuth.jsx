@@ -1,3 +1,13 @@
+/**
+ * React context/provider for the admin session — the client-side counterpart to
+ * `src/lib/auth.js`. Owns login/logout and re-hydrates the session from the
+ * `asd_admin_token` cookie on mount via `GET /api/admin/login`. Client-only.
+ *
+ * Consumed by `App.jsx` (wraps the whole app in `AdminProvider`), every admin page/
+ * component via `useAdminAuth()`, and indirectly by public pages that show
+ * admin-only affordances while browsing the live site (`BoardPage.jsx`,
+ * `FashionHomePage.jsx`).
+ */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { clearAdminResourceCache } from './adminResourceCache.js'
 
@@ -16,6 +26,12 @@ const AdminContext = createContext(null)
 // flagged for a dedicated follow-up pass rather than a blind mechanical rewrite.
 const COOKIE_AUTH_SENTINEL = 'cookie'
 
+/**
+ * Provides `{ token, session, loading, login, logout }` to the app. On mount,
+ * checks for an existing cookie session; `login`/`logout` call the corresponding
+ * `api/admin/login` endpoint and clear the admin resource cache so stale data from
+ * a previous session/account doesn't leak into the next one.
+ */
 export function AdminProvider({ children }) {
   const [token, setToken] = useState(null)
   const [session, setSession] = useState(null)
@@ -72,6 +88,7 @@ export function AdminProvider({ children }) {
   )
 }
 
+/** Reads the current admin session context; returns null outside an `AdminProvider`. */
 export function useAdminAuth() {
   return useContext(AdminContext)
 }

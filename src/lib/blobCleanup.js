@@ -1,6 +1,29 @@
+/**
+ * Deletes Vercel Blob-stored images/files once nothing in the database references
+ * them anymore, so replacing or removing an image in the admin CMS doesn't leave
+ * orphaned blobs accumulating in storage.
+ *
+ * Runs server-only (admin API handlers) — imports the Blob SDK's `del` and hits
+ * Prisma directly. Called from every admin endpoint that manages an image/file
+ * field (`api/admin/artists.js`, `albums.js`, `songs.js`, `fashion.js`,
+ * `fashionCollections.js`, `about.js`, `crosshair.js`, `outside-artists.js`) after
+ * an update (to clean up a replaced image) or a delete (to clean up everything the
+ * deleted record owned).
+ *
+ * Safety model: before deleting a blob pathname, `isBlobPathnameReferenced` re-queries
+ * every model that could still reference it. This is a best-effort check-then-delete,
+ * not a transaction — a pathname could theoretically be re-referenced between the
+ * check and the delete, but Vercel Blob has no atomic "delete if unreferenced"
+ * primitive, so this is the practical mitigation. Deletion failures are caught and
+ * only logged (`console.warn`), never surfaced to the caller, so a transient Blob
+ * API failure won't fail the admin request that triggered the cleanup — the tradeoff
+ * is that a failed delete can leave an orphaned blob with no operator-visible signal.
+ */
 import { del } from '@vercel/blob'
 import { prisma } from './prisma.js'
 
+// Only pathnames rooted in one of these folders are treated as blobs this app
+// manages — guards against `blobPathnameFromReference` matching an unrelated path.
 const MANAGED_BLOB_FOLDERS = new Set([
   'artists',
   'albums',
@@ -22,6 +45,12 @@ function normalizeManagedPathname(value) {
   return MANAGED_BLOB_FOLDERS.has(folder) ? pathname : ''
 }
 
+/**
+ * Normalizes any of the three shapes an image reference can take in this codebase
+ * — a bare managed-folder pathname, a `/api/blob?pathname=` proxy URL, or a full
+ * `*.blob.vercel-storage.com` URL — down to a canonical pathname, or `''` if the
+ * reference isn't a recognized managed blob.
+ */
 export function blobPathnameFromReference(value) {
   const reference = typeof value === 'string' ? value.trim() : ''
   if (!reference) return ''
@@ -45,6 +74,14 @@ export function blobPathnameFromReference(value) {
   return ''
 }
 
+/**
+ * Recursively collects every managed blob pathname referenced by the given values.
+ * Accepts a mix of strings, arrays, and image-like objects (checked in order:
+ * `pathname`, then `url`, then `previewUrl`) so callers can pass raw DB fields,
+ * client-shaped image arrays, or both without pre-normalizing.
+ *
+ * @returns {string[]} Deduplicated list of canonical pathnames.
+ */
 export function collectBlobPathnames(...sources) {
   const pathnames = []
 
@@ -73,12 +110,16 @@ export function collectBlobPathnames(...sources) {
   return [...new Set(pathnames)]
 }
 
+/** Pathnames present in `before` but no longer present in `after` — i.e. candidates for cleanup after an update. */
 export function removedBlobPathnames(before, after) {
   const beforePathnames = collectBlobPathnames(before)
   const afterPathnames = new Set(collectBlobPathnames(after))
   return beforePathnames.filter((pathname) => !afterPathnames.has(pathname))
 }
 
+// Every model with an image/file field gets checked here — a false negative (missed
+// reference) would cause data-in-use to be deleted, so this list must stay in sync
+// with the schema whenever a new image-bearing model is added.
 async function isBlobPathnameReferenced(pathname) {
   const exactPathnameCounts = await Promise.all([
     prisma.artistImage.count({ where: { pathname } }),
@@ -97,6 +138,8 @@ async function isBlobPathnameReferenced(pathname) {
 
   if (exactPathnameCounts.some((count) => count > 0)) return true
 
+  // Older records may still store a raw URL/pathname directly on a legacy string
+  // column (pre-dating the dedicated *Image tables) — `contains` catches those too.
   const legacyReferenceCounts = await Promise.all([
     prisma.artist.count({ where: { portrait: { contains: pathname } } }),
     prisma.album.count({ where: { coverArt: { contains: pathname } } }),
@@ -114,6 +157,14 @@ async function isBlobPathnameReferenced(pathname) {
   return legacyReferenceCounts.some((count) => count > 0)
 }
 
+/**
+ * Deletes each of `pathnames` from Vercel Blob, but only after confirming nothing
+ * in the database still references it (see module header for the check-then-delete
+ * caveat). Failures are logged and swallowed rather than thrown, so callers never
+ * need to handle a cleanup failure — the tradeoff is silent orphaned blobs on error.
+ *
+ * @returns {Promise<string[]>} Pathnames actually deleted (empty on no-op or failure).
+ */
 export async function deleteUnusedBlobPathnames(pathnames) {
   const normalized = [...new Set(collectBlobPathnames(pathnames))]
   if (!normalized.length) return []
@@ -139,6 +190,7 @@ export async function deleteUnusedBlobPathnames(pathnames) {
   }
 }
 
+/** Convenience wrapper for the update path: clean up whatever `before` had that `after` no longer references. */
 export async function deleteRemovedBlobPathnames(before, after) {
   return deleteUnusedBlobPathnames(removedBlobPathnames(before, after))
 }

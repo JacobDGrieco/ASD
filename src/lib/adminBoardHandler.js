@@ -1,3 +1,21 @@
+/**
+ * Server-side CRUD + business rules for board posts (the freeform pinboard
+ * feature), called from `api/admin/artists.js` via its `resource=board` sub-route.
+ *
+ * Business rules enforced here (not visible from the schema alone):
+ * - At most `BOARD_COUNT_CAP` posts are "publicly active" at once — publishing a
+ *   post past the cap auto-archives the single oldest active post.
+ * - Posts drop out of public view once older than `BOARD_AGE_DAYS`, independent of
+ *   archiving (see `publicWhere`, mirrored in `api/public.js`'s `getBoardPosts`).
+ * - A post body is limited to `MAX_BODY_IMAGES` image and `MAX_BODY_LINKS` links
+ *   (see `boardMarkdown.js`).
+ * - Only SUPER_ADMIN can reposition (drag) or archive/unarchive a post; ARTIST
+ *   accounts can create/edit/delete only their own artist's posts; VIEWER is
+ *   read-only.
+ * - Posting "as" the label itself (`ASD_RECORDS_ARTIST_OPTION_ID`) lazily creates a
+ *   reserved `Artist` row for A.S.D. the first time it's used, rather than requiring
+ *   it to pre-exist.
+ */
 import { prisma } from './prisma.js'
 import { isArtistAdmin, isSuperAdmin, isViewer } from './auth.js'
 import { collectBlobPathnames, deleteRemovedBlobPathnames, deleteUnusedBlobPathnames } from './blobCleanup.js'
@@ -49,6 +67,10 @@ function validateBoardBody(body) {
   }) || null
 }
 
+// Resolves the artistId a post should be saved under. Non-super-admins are always
+// pinned to their own artist. Super admins may post "as" the reserved A.S.D. label
+// artist (ASD_RECORDS_ARTIST_OPTION_ID is a client-side sentinel, not a real id) —
+// the first time that's used, the corresponding Artist row is created on demand.
 async function resolveBoardArtistId(session, artistId) {
   if (!isSuperAdmin(session)) return session.artistId
   if (!artistId) return null
@@ -71,6 +93,10 @@ async function resolveBoardArtistId(session, artistId) {
   return labelArtist.id
 }
 
+// Enforces BOARD_COUNT_CAP by archiving the single oldest publicly-active post once
+// the cap is exceeded. Called after any create/update that results in a published
+// post — a post-hoc cap rather than a pre-check, so it always resolves back down to
+// at most BOARD_COUNT_CAP active posts regardless of how the cap was crossed.
 async function autoArchiveOldest() {
   const count = await prisma.boardPost.count({ where: publicWhere() })
   if (count <= BOARD_COUNT_CAP) return
@@ -88,6 +114,12 @@ async function autoArchiveOldest() {
   })
 }
 
+/**
+ * Routes GET/POST/PUT/DELETE/PATCH for the admin board resource. Single-post
+ * operations require `req.query.id`; PATCH additionally requires `req.query.action`
+ * (`'position'` for drag-reposition, `'archive'` for archive/unarchive) and is
+ * restricted to SUPER_ADMIN. See module header for the full permission matrix.
+ */
 export async function handleAdminBoard(req, res, session) {
   const { id, action } = req.query
 

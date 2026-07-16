@@ -1,3 +1,30 @@
+/**
+ * Core admin authentication and authorization for the ASD admin CMS.
+ *
+ * This module is the single source of truth for "who is this request from and what
+ * are they allowed to touch." It owns the JWT session cookie (issuing, reading,
+ * verifying, clearing) and the Prisma `where`-clause builders that scope admin data
+ * access by role.
+ *
+ * Runs server-only (Vercel Functions under `api/`) — it reads `process.env.JWT_SECRET`
+ * and constructs Set-Cookie headers, neither of which are meaningful in the browser.
+ *
+ * Role model: `SUPER_ADMIN` (full access), `ARTIST` (scoped to one `artistId`),
+ * `TALENT` (scoped to one `talentId`, fashion side), `VIEWER` (read-mostly, no
+ * scoping identifier). See `src/lib/adminPageAccess.js` for which admin pages each
+ * role can see, and `api/admin/login.js` for how a session is first created.
+ *
+ * Main consumers: every handler in `api/admin/*.js` calls `requireAdmin`/
+ * `requireSuperAdmin` before doing anything; `api/admin/albums.js` and
+ * `api/admin/songs.js` use `artistScopedAlbumWhere`/`artistScopedSongWhere` to filter
+ * list queries to what the caller is allowed to see.
+ *
+ * Security note: session state lives entirely in an HttpOnly cookie. Admin UI code
+ * also sends an `Authorization: Bearer` header on most requests, but `isUsableBearerToken`
+ * deliberately rejects the sentinel value the client always sends (see
+ * `COOKIE_AUTH_SENTINEL` in `src/lib/adminAuth.jsx`), so the cookie is what actually
+ * authenticates every request.
+ */
 import jwt from 'jsonwebtoken'
 import { releaseVisibilityUpperBound } from './releaseSchedule.js'
 import { hasAdminPageAccess, normalizeAdminPageAccess } from './adminPageAccess.js'
@@ -12,6 +39,9 @@ function secret() {
   return process.env.JWT_SECRET
 }
 
+// The admin client always sends 'cookie' as the bearer value (it never holds the
+// real JWT in JS-reachable state) — treat that sentinel, plus the string forms of
+// missing values, as "no usable bearer token" so we fall back to the session cookie.
 function isUsableBearerToken(value) {
   return Boolean(value && value !== 'null' && value !== 'undefined' && value !== 'cookie')
 }
@@ -37,6 +67,17 @@ export function serializeClearAdminAuthCookie() {
   return `${ADMIN_AUTH_COOKIE_NAME}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${secure}`
 }
 
+/**
+ * Extracts the admin session token from an incoming request.
+ *
+ * Prefers a usable `Authorization: Bearer` header, falling back to the
+ * `asd_admin_token` HttpOnly cookie. In practice the bearer path is never taken
+ * (see `isUsableBearerToken`) — this always resolves to the cookie value in the
+ * current client.
+ *
+ * @param {import('http').IncomingMessage} req - Vercel request object.
+ * @returns {string|null} Raw JWT string, or null if no session token is present.
+ */
 export function readAdminTokenFromRequest(req) {
   const auth = req.headers.authorization
   if (auth?.startsWith('Bearer ')) {
@@ -47,6 +88,13 @@ export function readAdminTokenFromRequest(req) {
   return parseCookieHeader(req.headers.cookie)[ADMIN_AUTH_COOKIE_NAME] ?? null
 }
 
+/**
+ * Signs an admin session into a JWT, valid for 8 hours (matches the cookie's Max-Age).
+ *
+ * @param {object} session - Session shape produced by one of the `create*Session`
+ *   helpers in `api/admin/login.js` (role, artist/talent identity, pageAccess).
+ * @returns {string} Signed JWT to be set as the `asd_admin_token` cookie.
+ */
 export function signToken(session) {
   return jwt.sign(
     {
@@ -65,6 +113,16 @@ export function signToken(session) {
   )
 }
 
+/**
+ * Verifies and decodes an admin JWT into a session object.
+ *
+ * Any verification failure (bad signature, expired token, malformed payload) is
+ * swallowed and reported as `null` rather than thrown — callers only need to know
+ * "valid session or not," and `requireAdmin` turns a null into a 401.
+ *
+ * @param {string} token - Raw JWT, as returned by `readAdminTokenFromRequest`.
+ * @returns {object|null} Decoded session, or null if the token is invalid/expired.
+ */
 export function verifyToken(token) {
   try {
     const payload = jwt.verify(token, secret())
@@ -105,6 +163,15 @@ export function canAccessAdminPage(session, pageKey) {
   return hasAdminPageAccess(session, pageKey)
 }
 
+/**
+ * Guards an admin API handler: resolves the caller's session, or writes a 401 and
+ * returns null. Callers must check the return value and stop handling the request
+ * when it's null (the response has already been sent).
+ *
+ * @param {import('http').IncomingMessage} req
+ * @param {import('http').ServerResponse} res
+ * @returns {object|null} The verified session, or null if unauthenticated.
+ */
 export function requireAdmin(req, res) {
   const token = readAdminTokenFromRequest(req)
   if (!token) {
@@ -121,6 +188,10 @@ export function requireAdmin(req, res) {
   return session
 }
 
+/**
+ * Like `requireAdmin`, but additionally requires the `SUPER_ADMIN` role, writing a
+ * 403 if the caller is authenticated but not a super admin.
+ */
 export function requireSuperAdmin(req, res) {
   const session = requireAdmin(req, res)
   if (!session) return null
@@ -139,6 +210,14 @@ function viewerReleaseDateUpperBound() {
   return releaseVisibilityUpperBound()
 }
 
+/**
+ * Prisma `where` clause approximating "what a VIEWER-role admin may see" for albums:
+ * the same rule the public site uses (visible now, or auto-show-on-release once the
+ * release date has passed the America/New_York midnight boundary — see
+ * `releaseSchedule.js`), rather than the raw `isVisible` column. This lets the
+ * read-only viewer role browse the admin UI without exposing not-yet-released or
+ * manually-hidden content.
+ */
 export function viewerAlbumVisibilityWhere() {
   const upperBound = viewerReleaseDateUpperBound()
 
@@ -165,6 +244,12 @@ export function viewerAlbumVisibilityWhere() {
   }
 }
 
+/**
+ * Song equivalent of `viewerAlbumVisibilityWhere`. A song's effective release date
+ * can come from its own `SongMeta.releaseDate` or fall back to its album's, and a
+ * song is excluded if any of its album placements haven't released yet — this
+ * mirrors the public API's song-visibility logic in `api/public.js`.
+ */
 export function viewerSongVisibilityWhere() {
   const upperBound = viewerReleaseDateUpperBound()
 
@@ -217,6 +302,13 @@ export function viewerSongVisibilityWhere() {
   }
 }
 
+/**
+ * Prisma `where` clause scoping an album list/query to what `session` is allowed to
+ * access: everything for SUPER_ADMIN, the viewer-visibility rule for VIEWER, only
+ * the caller's own artist for ARTIST, and an unmatchable clause (`{ id: '__no_access__' }`)
+ * for any other/unrecognized role — a deny-by-default fallback rather than an
+ * accidental full-table match.
+ */
 export function artistScopedAlbumWhere(session) {
   if (isSuperAdmin(session)) return {}
   if (isViewer(session)) return viewerAlbumVisibilityWhere()
@@ -224,6 +316,12 @@ export function artistScopedAlbumWhere(session) {
   return { artistId: session.artistId }
 }
 
+/**
+ * Song equivalent of `artistScopedAlbumWhere`. For an ARTIST session, a song only
+ * matches if *every* one of its album placements belongs to the caller's artist —
+ * a song placed on another artist's album is excluded even if it's also placed on
+ * the caller's, since partial ownership isn't exposed as edit access.
+ */
 export function artistScopedSongWhere(session) {
   if (isSuperAdmin(session)) return {}
   if (isViewer(session)) return viewerSongVisibilityWhere()

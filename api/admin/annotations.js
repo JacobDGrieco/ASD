@@ -1,3 +1,15 @@
+/**
+ * Admin CRUD for lyric annotations (the clickable explanation popups on song
+ * lyrics). Requires `MUSIC_SONGS` page access and a non-viewer role; every
+ * annotation/lyric lookup is scoped through `artistScopedSongWhere` so an ARTIST
+ * session can't read or edit annotations on another artist's songs.
+ *
+ * `PUT` replaces an annotation's character ranges wholesale inside a transaction
+ * (delete-all-then-recreate) rather than diffing — simpler than reconciling range
+ * edits, and ranges have no independent identity worth preserving across an edit.
+ *
+ * Server-only (Vercel Function). Consumed by `AdminMusicLyricsPage.jsx`.
+ */
 import { prisma } from '../../src/lib/prisma.js'
 import { artistScopedSongWhere, canAccessAdminPage, isViewer, requireAdmin } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'

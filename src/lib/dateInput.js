@@ -1,3 +1,11 @@
+/**
+ * Validates a `YYYY-MM-DD` admin date-input string, including calendar
+ * correctness (rejects e.g. `2026-02-30`) by round-tripping through
+ * `Date.UTC` and checking the parsed parts match what was entered — a plain
+ * `new Date(value)` would silently roll an invalid date into the next month
+ * instead of failing. Used by `AdminDateInput.jsx` and album/song release-date
+ * form validation.
+ */
 export function isValidDateInput(value, { required = false } = {}) {
   const trimmed = String(value ?? '').trim()
   if (!trimmed) return !required

@@ -1,3 +1,11 @@
+/**
+ * Admin CRUD for the "About" page: the singleton `CompanyProfile` (hero title/bio)
+ * and the `CompanyMember` list (leadership bios). SUPER_ADMIN only.
+ *
+ * Routes: `GET` (profile + members), `PUT` with no `id` (update the hero profile),
+ * `POST` (create a member), `PUT`/`DELETE` with `id` (update/delete a member).
+ * Server-only (Vercel Function). Consumed by `AdminAboutPage.jsx`.
+ */
 import { prisma } from '../../src/lib/prisma.js'
 import { requireSuperAdmin } from '../../src/lib/auth.js'
 import { collectBlobPathnames, deleteRemovedBlobPathnames, deleteUnusedBlobPathnames } from '../../src/lib/blobCleanup.js'
@@ -48,6 +56,8 @@ function formatMember(member) {
   }
 }
 
+// The CompanyProfile row is a singleton keyed by a fixed id — upsert so the first
+// request after a fresh deploy creates it with sane defaults instead of 404ing.
 async function getProfile() {
   return prisma.companyProfile.upsert({
     where: { id: PROFILE_ID },

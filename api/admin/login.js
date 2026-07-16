@@ -1,3 +1,16 @@
+/**
+ * The admin login entrypoint: `POST` authenticates and sets the session cookie,
+ * `GET` re-hydrates a session from an existing cookie, `DELETE` logs out.
+ *
+ * `POST` tries credentials in order: (1) the global `ADMIN_PASSWORD` env var, via
+ * timing-safe comparison, granting SUPER_ADMIN; (2) DB-backed `ArtistAdminAccess`
+ * rows (scrypt-verified) — if the matched artist is the reserved "A.S.D." label
+ * artist (`isAsdRecordsArtist`), the session is promoted to SUPER_ADMIN rather than
+ * scoped ARTIST access; (3) DB-backed `FashionTalentAdminAccess` rows, granting
+ * TALENT access. No rate limiting on any path.
+ *
+ * Server-only (Vercel Function). Consumed by `adminAuth.jsx`'s `AdminProvider`.
+ */
 import { timingSafeEqual } from 'crypto'
 import { prisma } from '../../src/lib/prisma.js'
 import { ADMIN_ROLE_ARTIST, ADMIN_ROLE_SUPER, ADMIN_ROLE_TALENT, requireAdmin, serializeAdminAuthCookie, serializeClearAdminAuthCookie, signToken } from '../../src/lib/auth.js'
@@ -48,6 +61,8 @@ function createTalentSession(access) {
   }
 }
 
+// Constant-time string comparison for the ADMIN_PASSWORD check, so a wrong guess
+// doesn't leak timing information the way a plain `===` compare would.
 function timingSafeStringEqual(a, b) {
   const bufferA = Buffer.from(a)
   const bufferB = Buffer.from(b)

@@ -1,3 +1,9 @@
+/**
+ * Formatting/validation helpers for Crosshair videos (the video-hub feature),
+ * shared by the manual admin CRUD path (`api/admin/crosshair.js`) and the YouTube
+ * sync path (`youtubeChannelSync.js`) so both produce the same client-facing shape.
+ * Runs in both server and client contexts — pure functions, no I/O.
+ */
 import { buildClientImageUrl } from './images.js'
 import { getYouTubeEmbedUrl, getYouTubeVideoId } from './artistVideos.js'
 
@@ -23,6 +29,11 @@ export function getYouTubeThumbnailUrl(youtubeUrl) {
   return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
 }
 
+/**
+ * Shapes a `CrosshairVideo` row for client consumption: resolves a display
+ * thumbnail (custom upload if present, else YouTube's own thumbnail) and adds the
+ * embed URL/type label.
+ */
 export function formatCrosshairVideo(video) {
   const customThumbnailUrl = buildClientImageUrl({
     url: video.thumbnailUrl,
@@ -53,6 +64,7 @@ export function formatCrosshairVideo(video) {
   }
 }
 
+/** Sanitizes manual admin CRUD input into the shape `crosshairVideo` writes expect (used by `api/admin/crosshair.js`, not the sync path, which builds its own shape in `youtubeChannelSync.js`). */
 export function normalizeCrosshairVideoInput(input = {}) {
   const type = Object.values(CROSSHAIR_VIDEO_TYPE).includes(input.type)
     ? input.type
@@ -74,6 +86,7 @@ export function normalizeCrosshairVideoInput(input = {}) {
   }
 }
 
+/** @returns {string|null} A user-facing validation error, or null if `input` is valid. */
 export function validateCrosshairVideoInput(input) {
   if (!input.title) return 'Title is required.'
   if (!input.youtubeUrl) return 'YouTube URL is required.'

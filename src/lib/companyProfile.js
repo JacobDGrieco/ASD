@@ -1,3 +1,9 @@
+/**
+ * Static fallback content for the About page, used by `api/public.js`'s
+ * `getCompanyAbout` when the `CompanyProfile`/`CompanyMember` tables are missing
+ * (Prisma error codes P2021/P2022 — i.e. a pre-migration deploy) or simply empty,
+ * so the page never renders completely blank.
+ */
 export const COMPANY_LEADERS = [
 	{
 		id: 'alex-rivers',
@@ -27,6 +33,7 @@ export const COMPANY_SUMMARY = {
 	description: 'A.S.D. is a music label, fashion vertical, and creative operations company for artists who move outside the expected lane. The company pairs releases, visuals, editorial work, and live-facing media into one connected platform.',
 };
 
+/** Resolves a display image URL for a company member, preferring a resolved `previewUrl` over the raw stored value. */
 export function getCompanyMemberImage(member) {
 	return member?.image?.previewUrl || member?.image?.url || member?.imageUrl || '';
 }

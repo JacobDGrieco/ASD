@@ -1,6 +1,13 @@
+/**
+ * Client-side in-memory cache + in-flight request de-duplication for public GET
+ * endpoints. Backs `useApi`'s cache layer and `prefetchApi`'s hover/nav-triggered
+ * warmups. State is a plain module-level `Map`, so it resets on full page reload
+ * and isn't shared across browser tabs.
+ */
 const apiCache = new Map()
 const inflightRequests = new Map()
 
+/** Returns the cached `{ data, timestamp }` entry for `cacheKey` if it exists and is younger than `maxAge`, evicting it otherwise. A `maxAge` of 0 always evicts and misses (forces a fresh fetch). */
 export function getCachedApiEntry(cacheKey, maxAge) {
   if (maxAge <= 0) {
     apiCache.delete(cacheKey)
@@ -22,6 +29,11 @@ async function fetchJson(url, headers) {
   return response.json()
 }
 
+/**
+ * Fetches `url` as JSON, serving from cache if fresh and de-duplicating concurrent
+ * requests for the same `cacheKey` (so hovering the same link twice before the
+ * first fetch resolves doesn't issue a second network request).
+ */
 export function prefetchApi(url, { maxAge = 5 * 60 * 1000, headers, cacheKey = url } = {}) {
   if (!url) return Promise.resolve(null)
 
@@ -43,6 +55,7 @@ export function prefetchApi(url, { maxAge = 5 * 60 * 1000, headers, cacheKey = u
   return request
 }
 
+/** Evicts a cached entry and any in-flight request for `cacheKey` — used when data is known stale (e.g. `useApi`'s midnight refresh). */
 export function clearCachedApiEntry(cacheKey) {
   apiCache.delete(cacheKey)
   inflightRequests.delete(cacheKey)

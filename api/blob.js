@@ -1,3 +1,17 @@
+/**
+ * Streams (or, with `?redirect=1`, redirects to) a private Vercel Blob object by
+ * pathname — the read-side counterpart to `api/admin/uploads.js`'s writes. Private
+ * blobs aren't reachable directly from the browser, so every private image URL in
+ * the app is built as `/api/blob?pathname=...` (see `buildBlobProxyUrl` in
+ * `images.js`) and proxied through here.
+ *
+ * Deliberately has no auth check, unlike every write path for these blobs — a
+ * pathname is effectively treated as an unguessable capability token. This is an
+ * intentional asymmetry worth confirming against your threat model rather than a
+ * settled design decision.
+ *
+ * Server-only (Vercel Function).
+ */
 import { Readable } from 'node:stream'
 import { get } from '@vercel/blob'
 

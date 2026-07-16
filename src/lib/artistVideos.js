@@ -1,3 +1,7 @@
+/**
+ * Pure YouTube URL parsing shared by Crosshair videos and artist video embeds.
+ * Handles the `youtu.be/…`, `…/watch?v=…`, `…/embed/…`, and `…/shorts/…` URL shapes.
+ */
 export function getYouTubeVideoId(url) {
   if (typeof url !== 'string' || !url.trim()) return null
 
@@ -21,6 +25,7 @@ export function getYouTubeVideoId(url) {
   return null
 }
 
+/** Builds a `youtube.com/embed/...` iframe URL from any supported YouTube URL shape, or null if `url` isn't a recognizable YouTube link. */
 export function getYouTubeEmbedUrl(url) {
   const videoId = getYouTubeVideoId(url)
   if (!videoId) return null

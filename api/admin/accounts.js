@@ -1,3 +1,16 @@
+/**
+ * Admin CRUD for login accounts (`ArtistAdminAccess`/`FashionTalentAdminAccess`) —
+ * i.e. who besides the global `ADMIN_PASSWORD` super admin can log into the CMS,
+ * and which pages/permissions each account has. SUPER_ADMIN only.
+ *
+ * GET returns one row per Artist/FashionTalent (whether or not it has an account
+ * yet) so the accounts page can show "no account" rows alongside real ones. Every
+ * write path re-validates password uniqueness across accounts and against the
+ * global admin password (`validateUniqueAccountPassword`) and normalizes
+ * `pageAccess` to a default set when the caller doesn't specify one.
+ *
+ * Server-only (Vercel Function). Consumed by `AdminAccountsPage.jsx`.
+ */
 import { prisma } from '../../src/lib/prisma.js'
 import { requireSuperAdmin } from '../../src/lib/auth.js'
 import { getAdminAccountSchemaCapabilities } from '../../src/lib/adminAccountSchema.js'
@@ -33,6 +46,10 @@ function formatAccount(account, accountType) {
   }
 }
 
+// The `name`/`pageAccess` columns on ArtistAdminAccess were added in a later
+// migration than the model itself — only select/write them when the connected
+// database actually has them (see adminAccountSchema.js), so this endpoint keeps
+// working against a DB that hasn't been migrated yet.
 function artistAdminAccessSelect(capabilities) {
   return {
     id: true,
@@ -64,6 +81,9 @@ function artistAdminAccessUpdateData(data, capabilities) {
   }
 }
 
+// The reserved "A.S.D." label artist's account is really a super-admin login in
+// disguise (see isAsdRecordsArtist / login.js) — flag it so the UI can label it
+// "Admin" instead of "Music Artist" and sort it to the top.
 function formatRow(subject, account, accountType) {
   const isSuperAdminAccount = accountType === ADMIN_ACCOUNT_TYPES.MUSIC_ARTIST && isAsdRecordsArtist(subject)
 

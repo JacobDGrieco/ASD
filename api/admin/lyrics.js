@@ -1,3 +1,14 @@
+/**
+ * Admin read/write for a song's lyric text (`SongLyric.text` — the annotations
+ * themselves are managed separately by `annotations.js`). GET returns an empty
+ * placeholder rather than 404 if no lyric row exists yet, so the editor can start
+ * from a blank state for a song that's never had lyrics entered. Requires
+ * `MUSIC_SONGS` page access; write additionally requires a non-viewer role, and the
+ * song lookup is scoped through `artistScopedSongWhere` so an ARTIST session can't
+ * touch another artist's lyrics.
+ *
+ * Server-only (Vercel Function). Consumed by `AdminMusicLyricsPage.jsx`.
+ */
 import { prisma } from '../../src/lib/prisma.js'
 import { artistScopedSongWhere, canAccessAdminPage, isViewer, requireAdmin } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'

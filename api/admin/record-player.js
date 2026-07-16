@@ -1,9 +1,25 @@
+/**
+ * Admin read/write for the home-page vinyl "record player" widget: a fixed set of
+ * `RecordPlayerTrack` slots (position -> song), plus (`?resource=songs`) a song
+ * search endpoint for picking what goes in each slot. Requires
+ * `MUSIC_RECORD_PLAYER` page access; the song search and slot save are blocked for
+ * VIEWER sessions (read-only otherwise). A VIEWER's slot list is additionally
+ * filtered through `viewerSongVisibilityWhere` so it only shows songs that would
+ * actually be publicly visible.
+ *
+ * `PUT` replaces every slot wholesale (delete-all, recreate) rather than diffing —
+ * there's no independent identity to preserve for a slot beyond its position.
+ *
+ * Server-only (Vercel Function). Consumed by `AdminMusicRecordPlayerPage.jsx`.
+ */
 import { prisma } from '../../src/lib/prisma.js'
 import { canAccessAdminPage, isViewer, requireAdmin, viewerSongVisibilityWhere } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
 import { clientImages, mergeLegacyImages } from '../../src/lib/images.js'
 import { isOtherArtist, OTHER_ARTIST_NAME } from '../../src/lib/publicVisibility.js'
 
+// Leftover perf-debugging instrumentation — logs timing for every branch of every
+// request in production. Not gated behind a dev-only flag; noisy but harmless.
 function logTiming(label, startedAt) {
   const duration = Date.now() - startedAt
   console.log(`[record-player] ${label}: ${duration}ms`)

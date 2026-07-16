@@ -1,3 +1,20 @@
+/**
+ * Bridges two generations of the "social/streaming links" data model. Artist,
+ * FashionTalent, and music-release (Album/Song) records originally had one fixed
+ * string column per platform (e.g. `soundcloudProfile`, `spotifyUrl`) — they've
+ * since gained a single generic `links: Json` field holding an array of
+ * `{ id, platform, type, url }` entries, but the legacy columns are still read/
+ * written for backward compatibility. This module is the translation layer so both
+ * representations stay usable and roughly in sync.
+ *
+ * `profileLinksForSource` is the read-side entry point (prefers `links`, falls back
+ * to the legacy columns via `*_LEGACY_LINK_FIELDS`); `legacyFieldsFromProfileLinks`
+ * is the write-side equivalent for the endpoints that still populate legacy columns.
+ *
+ * Runs in both server (`api/public.js`, `api/admin/*.js` formatters) and client
+ * (`AdminProfileLinksField`/`AdminProfileLinksSummary`, public link rendering)
+ * contexts — pure data transforms, no I/O.
+ */
 export const PROFILE_LINK_TYPES = [
 	{ value: 'professional', label: 'Professional' },
 	{ value: 'personal', label: 'Personal' },
@@ -69,6 +86,7 @@ export const MUSIC_RELEASE_LEGACY_LINK_FIELDS = [
 	{ field: 'youtubeUrl', platform: 'youtube', type: 'professional' },
 ];
 
+/** Professional links before personal — the display order used everywhere links are rendered. */
 export function sortProfileLinks(value) {
 	if (!Array.isArray(value)) return [];
 
@@ -79,6 +97,7 @@ export function sortProfileLinks(value) {
 	});
 }
 
+/** Sanitizes a raw `links` array: unknown platforms fall back to `'website'`, unknown types to `'personal'`, entries without a URL are dropped, and result is sorted via `sortProfileLinks`. */
 export function normalizeProfileLinks(value) {
 	if (!Array.isArray(value)) return [];
 
@@ -100,6 +119,7 @@ export function normalizeProfileLinks(value) {
 	return sortProfileLinks(links);
 }
 
+/** Reconstructs a normalized links array from `source`'s legacy per-platform columns, per one of the `*_LEGACY_LINK_FIELDS` maps. */
 export function profileLinksFromLegacy(source, fields) {
 	const links = fields.reduce((legacyLinks, field, index) => {
 		const url = typeof source?.[field.field] === 'string' ? source[field.field].trim() : '';
@@ -116,11 +136,23 @@ export function profileLinksFromLegacy(source, fields) {
 	return sortProfileLinks(links);
 }
 
+/**
+ * The main read-side accessor: prefers `source.links` if it has any entries,
+ * otherwise reconstructs links from the legacy columns. This means a record that
+ * has ever been saved with the new `links` field stops reading its legacy columns
+ * entirely, even if they still hold values.
+ */
 export function profileLinksForSource(source, fields) {
 	const links = normalizeProfileLinks(source?.links);
 	return links.length ? links : profileLinksFromLegacy(source, fields);
 }
 
+/**
+ * Write-side equivalent of `profileLinksFromLegacy`: given a normalized `links`
+ * array, produces a `{ [legacyColumn]: url | null }` object so an admin endpoint
+ * can keep legacy columns populated alongside the new `links` field. If multiple
+ * links match the same legacy field's platform/type, only the first is kept.
+ */
 export function legacyFieldsFromProfileLinks(links, fields) {
 	const normalized = normalizeProfileLinks(links);
 	const nextFields = Object.fromEntries(fields.map((field) => [field.field, null]));
@@ -137,6 +169,7 @@ export function legacyFieldsFromProfileLinks(links, fields) {
 	return nextFields;
 }
 
+/** Builds a clickable `href` for a profile link: adds `mailto:` for bare email addresses, adds `https:` for protocol-relative/bare-domain URLs, otherwise passes the URL through as-is. */
 export function hrefForProfileLink(link) {
 	const url = typeof link?.url === 'string' ? link.url.trim() : '';
 	if (!url) return '';

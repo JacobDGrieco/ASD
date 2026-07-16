@@ -1,3 +1,16 @@
+/**
+ * Handles all admin image upload paths: direct browser-to-Blob upload tokens (via
+ * `@vercel/blob/client`'s `handleUpload`, for `ImageCollectionField`/
+ * `BoardMarkdownEditor`'s file picker), "import from URL" (server downloads and
+ * re-hosts a remote image), and blob deletion. Requires an admin session and
+ * blocks VIEWER. Prisma-free — this endpoint only talks to Vercel Blob.
+ *
+ * Uploads are restricted to `ALLOWED_FOLDERS` (checked both for direct uploads, via
+ * the token's path prefix, and for imports, via `normalizeFolder`), capped at
+ * `MAX_IMAGE_SIZE_BYTES`, and limited to `ALLOWED_CONTENT_TYPES`.
+ *
+ * Server-only (Vercel Function).
+ */
 import { Buffer } from 'node:buffer'
 import { del, put } from '@vercel/blob'
 import { handleUpload } from '@vercel/blob/client'
@@ -52,6 +65,9 @@ function buildRemotePathname(folder, sourceUrl, contentType) {
   return `${folder}/${Date.now()}-${nameFromUrl || 'remote-image'}.${extension}`
 }
 
+// Downloads a remote image server-side and re-hosts it in Vercel Blob, so an admin
+// can "import" an external image URL without needing to save-and-reupload it
+// manually. Validates protocol, content-type, and size before accepting the bytes.
 async function importImageFromUrl(body) {
   const remoteUrl = typeof body?.url === 'string' ? body.url.trim() : ''
   const requestedFolder = typeof body?.folder === 'string' ? body.folder : 'artists'

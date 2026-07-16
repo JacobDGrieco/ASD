@@ -1,5 +1,14 @@
+/**
+ * Detects, at runtime, whether certain admin-account schema additions have been
+ * deployed to the connected database yet — lets `api/admin/login.js` and
+ * `adminAccounts.js` work across a rolling deploy where the app code and DB
+ * migration state might briefly be out of sync (e.g. `name`/`pageAccess` columns on
+ * `ArtistAdminAccess`, or the `FashionTalentAdminAccess` table's existence).
+ * Result is memoized per server instance since schema doesn't change at runtime.
+ */
 let cachedAdminAccountSchemaCapabilities = null
 
+/** Queries `information_schema` for the optional admin-account columns/tables and caches the result for this process's lifetime. */
 export async function getAdminAccountSchemaCapabilities(prisma) {
   if (cachedAdminAccountSchemaCapabilities) return cachedAdminAccountSchemaCapabilities
 

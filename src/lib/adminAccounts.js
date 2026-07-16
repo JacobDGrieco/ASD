@@ -1,7 +1,19 @@
+/**
+ * Password-uniqueness validation for admin accounts (`api/admin/accounts.js`).
+ * Business rule: every account password must be unique across both artist and
+ * fashion-talent admin accounts, and none may match the global `ADMIN_PASSWORD`
+ * super-admin password — prevents an account holder from accidentally (or
+ * deliberately) reusing another account's credential.
+ */
 import { prisma } from './prisma.js'
 import { getAdminAccountSchemaCapabilities } from './adminAccountSchema.js'
 import { verifyPassword } from './passwords.js'
 
+/**
+ * Checks a candidate password against the global admin password and every other
+ * account's password hash, excluding the account currently being edited (if any).
+ * @returns {string|null} A user-facing validation error, or null if the password is unique.
+ */
 export async function validateUniqueArtistPassword(password, currentArtistId = null, currentTalentId = null) {
   if (!password) return null
 
@@ -45,6 +57,7 @@ export async function validateUniqueArtistPassword(password, currentArtistId = n
   return null
 }
 
+/** Object-argument convenience wrapper around `validateUniqueArtistPassword`. */
 export async function validateUniqueAccountPassword(password, current = {}) {
   return validateUniqueArtistPassword(password, current.artistId ?? null, current.talentId ?? null)
 }

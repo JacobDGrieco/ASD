@@ -1,3 +1,10 @@
+/**
+ * Admin CRUD for Crosshair videos, plus two `action=` sub-routes: `config` (GET,
+ * reports which YouTube sync auth modes are configured) and `sync` (POST, runs
+ * `syncCrosshairFromYouTube` — see that module for what a sync does and how it
+ * protects manual edits). Requires `MUSIC_CROSSHAIR` page access and a non-viewer
+ * role. Server-only (Vercel Function). Consumed by `AdminMusicCrosshairPage.jsx`.
+ */
 import { prisma } from '../../src/lib/prisma.js'
 import { canAccessAdminPage, isViewer, requireAdmin } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'

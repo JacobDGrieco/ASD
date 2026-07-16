@@ -1,3 +1,15 @@
+/**
+ * Admin CRUD for fashion collections (groupings of looks, e.g. a runway season).
+ * Read access is shared with the Looks page (they need collections for the
+ * placement picker); writes require `FASHION_COLLECTIONS` access. A TALENT session
+ * only sees/edits collections it created (`fashionCollectionCreatorWhere`).
+ *
+ * Shares the same free-text-credit-auto-registration rule as `fashion.js` — see
+ * `resolveTypedOutsideTalentCredits` there for the canonical explanation.
+ *
+ * Server-only (Vercel Function). Consumed by `AdminFashionCollectionsPage.jsx` and
+ * read-only by `AdminFashionLooksPage.jsx`.
+ */
 import { prisma } from '../../src/lib/prisma.js'
 import { canAccessAdminPage, isSuperAdmin, isTalentAdmin, requireAdmin } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
@@ -69,6 +81,9 @@ function collectUnlinkedCreditNames(credits, namesByKey) {
   }
 }
 
+// See fashion.js's resolveTypedOutsideTalentCredits — same auto-registration rule,
+// duplicated here rather than shared since the two endpoints' credit shapes
+// (collection credits vs. look/piece credits) differ slightly.
 async function resolveTypedOutsideTalentCredits(tx, credits) {
   const namesByKey = new Map()
   collectUnlinkedCreditNames(credits, namesByKey)

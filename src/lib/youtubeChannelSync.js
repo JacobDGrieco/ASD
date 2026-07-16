@@ -1,3 +1,24 @@
+/**
+ * Syncs the "Crosshair" video library from a YouTube channel's uploads, so the
+ * label doesn't have to manually re-enter every video already published on YouTube.
+ *
+ * Runs server-only — called from `api/admin/crosshair.js`'s `action=sync`, a
+ * manual admin action (there is no cron/webhook trigger). Talks to the YouTube Data
+ * API v3 and, in OAuth mode, Google's OAuth token endpoint.
+ *
+ * Two auth modes, resolved by `selectAuthMode`:
+ * - Public/API-key (`YOUTUBE_API_KEY` + `YOUTUBE_CHANNEL_ID`/`YOUTUBE_CHANNEL_HANDLE`):
+ *   only sees public/unlisted videos as far as the API exposes them, no private access.
+ * - OAuth (`YOUTUBE_CLIENT_ID`/`YOUTUBE_CLIENT_SECRET`/`YOUTUBE_REFRESH_TOKEN`):
+ *   required to see unlisted videos reliably; exchanges the refresh token for a
+ *   fresh access token on every sync.
+ *
+ * Manual-edit protection: a video whose `source` isn't `'YOUTUBE_SYNC'` (i.e. a
+ * human created/edited it directly) keeps its title/description/type/thumbnail/
+ * publishedAt across resyncs — only technical metadata (duration, privacy status,
+ * lastSyncedAt, the URL itself) is refreshed. `isVisible` is always preserved from
+ * the current row regardless of source, so hiding a video sticks across syncs.
+ */
 import { prisma } from './prisma.js'
 import { CROSSHAIR_VIDEO_TYPE, formatCrosshairVideo } from './crosshairVideos.js'
 
@@ -23,6 +44,7 @@ function chunk(items, size) {
   return chunks
 }
 
+// Parses YouTube's ISO-8601 duration format (e.g. "PT4M13S") into seconds.
 function parseIsoDurationSeconds(value) {
   if (typeof value !== 'string') return null
   const match = value.match(/^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/)
@@ -50,6 +72,10 @@ function youtubeWatchUrl(videoId) {
   return `https://www.youtube.com/watch?v=${videoId}`
 }
 
+// A synced video is classified SHORT purely by duration (<=60s, matching YouTube's
+// own Shorts cutoff) — there's no way to distinguish EDITED from the sync alone, so
+// synced videos always land as either SHORT or UNCUT; EDITED is only reachable via
+// manual admin entry.
 function classifyVideoType(video) {
   const durationSeconds = parseIsoDurationSeconds(video.contentDetails?.duration)
   if (durationSeconds !== null && durationSeconds <= 60) return CROSSHAIR_VIDEO_TYPE.SHORT
@@ -177,6 +203,11 @@ async function fetchVideoDetails(videoIds, auth) {
   return videos
 }
 
+// Upserts one synced video, preserving human-entered fields if the existing row
+// wasn't itself created by a previous sync (see module header). A custom thumbnail
+// (identified by having a thumbnailPathname, i.e. an uploaded blob) is also kept
+// even on an otherwise-synced row, since re-syncing shouldn't discard a manually
+// uploaded thumbnail.
 async function saveSyncedVideo(video, existingByVideoId) {
   const current = existingByVideoId.get(video.youtubeVideoId)
   if (!current) {
@@ -246,6 +277,7 @@ function selectAuthMode(mode = 'auto') {
   return oauth || publicAuth
 }
 
+/** Reports which auth modes are configured via env vars, for the admin UI to show sync availability without attempting a sync. */
 export function getYouTubeSyncConfigStatus() {
   return {
     publicApiConfigured: Boolean(configuredPublicAuth()),
@@ -253,6 +285,15 @@ export function getYouTubeSyncConfigStatus() {
   }
 }
 
+/**
+ * Runs a full sync: resolves the channel's uploads playlist, pages through every
+ * video in it, fetches full details in batches of 50, filters to public/unlisted
+ * (excluding private and deleted uploads), and upserts each into `CrosshairVideo`.
+ *
+ * @param {{mode?: 'auto'|'oauth'|'public'}} [options] - `'auto'` (default) prefers
+ *   OAuth if configured, else falls back to the public API key mode.
+ * @throws {Error} If no auth mode is configured, or any YouTube/Google API call fails.
+ */
 export async function syncCrosshairFromYouTube({ mode = 'auto' } = {}) {
   const config = selectAuthMode(mode)
   if (!config) {

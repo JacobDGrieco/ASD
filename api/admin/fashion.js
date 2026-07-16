@@ -1,3 +1,24 @@
+/**
+ * Consolidated admin handler for three fashion resources, routed by
+ * `?resource=talent|crew|looks`: talent profiles, "crew" (outside/freelance
+ * credits not on the talent roster), and looks (the individual editorial
+ * lookbook entries with pieces and credits).
+ *
+ * Permission model (`canAccessFashionResource`): talent/crew reads are shared
+ * across whichever fashion page needs them for a picker; talent/crew writes are
+ * SUPER_ADMIN only (`talentProfileWhere`/`isSuperAdmin` checks); looks are scoped
+ * to the look's `creatorTalentId` for TALENT-role sessions via
+ * `fashionProjectCreatorWhere` (a talent can only edit looks they created).
+ *
+ * Business rule shared with `fashionCollections.js`: a credit entered with a
+ * free-text name that doesn't match an existing Talent/Crew record silently
+ * creates a new `FashionCrew` row (`resolveTypedOutsideTalentCredits`) — there's
+ * no separate "register a new person" confirmation step.
+ *
+ * Server-only (Vercel Function). Consumed by `AdminFashionTalentPage.jsx`,
+ * `AdminFashionOutsideTalentPage.jsx`, `AdminFashionLooksPage.jsx`, and the
+ * `CrewPickerField`/`CreditsField` components.
+ */
 import { prisma } from '../../src/lib/prisma.js'
 import { canAccessAdminPage, isSuperAdmin, isTalentAdmin, requireAdmin } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
@@ -445,6 +466,9 @@ function normalizeLookPlacements(body) {
   }, [])
 }
 
+// A TALENT session may only place a look into collections it created itself —
+// checked by re-querying which of the requested collectionIds are actually owned
+// by the caller, rather than trusting the client-submitted placement list.
 async function validateLookCollectionOwnership(session, placements) {
   if (isSuperAdmin(session) || !placements.length) return true
   if (!isTalentAdmin(session)) return false
@@ -527,6 +551,11 @@ function collectUnlinkedCreditNames(credits, namesByKey) {
   }
 }
 
+// Auto-registers unlinked credit names as new FashionCrew rows: any credit that
+// has neither talentId nor crewId but does have a free-text creditName is looked
+// up by name against existing Talent/Crew, and if there's still no match, a new
+// FashionCrew row is created for it. This is the "typing a name registers a
+// person" business rule — there's no separate confirmation step.
 async function resolveTypedOutsideTalentCredits(tx, credits, pieces) {
   const namesByKey = new Map()
   collectUnlinkedCreditNames(credits, namesByKey)
@@ -772,6 +801,7 @@ async function handleLooks(req, res, session) {
   return res.status(405).json({ error: 'Method not allowed' })
 }
 
+/** Dispatches to the talent/crew/looks sub-handler based on `?resource=`, after the shared per-resource permission check. */
 export default async function handler(req, res) {
   const session = requireAdmin(req, res)
   if (!session) return

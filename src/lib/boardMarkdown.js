@@ -1,3 +1,32 @@
+/**
+ * Hand-rolled, security-conscious markdown-subset renderer + validator for "board"
+ * post bodies (the freeform pinboard feature). Board posts are written by
+ * artist-scoped admins, so the threat model is "semi-trusted CMS input, not fully
+ * trusted, not fully untrusted public input": output is escaped by default, and
+ * only an explicit allowlist of things is permitted through unescaped.
+ *
+ * What's allowed through:
+ * - A fixed set of block-level HTML tags (see `HTML_BLOCK_TAG_PATTERN`) — if a
+ *   paragraph block matches one of these, its lines are treated as raw HTML rather
+ *   than run through the markdown-subset parser.
+ * - Markdown images/links, but only with `isSafeUrl`-approved URLs (http(s)/mailto/
+ *   tel schemes, or root-relative paths) — this blocks `javascript:`-style payloads.
+ * - A small set of inline markdown tokens (`**bold**`, `*italic*`, `++underline++`,
+ *   `~~strike~~`, `` `code` ``).
+ *
+ * `validateBoardBodyMarkdown` separately enforces per-post image/link count caps —
+ * an anti-abuse limit on a CMS field with fairly open-ended admin write access, not
+ * a security control (see `IMAGE_LIMIT`/`LINK_LIMIT`).
+ *
+ * The renderer's output is still expected to pass through DOMPurify client-side
+ * (see `BoardCardDetail.jsx`) before being used with `dangerouslySetInnerHTML` —
+ * this module reduces the attack surface DOMPurify has to sanitize, it isn't a
+ * substitute for it.
+ *
+ * Runs in both server (validation on save, `adminBoardHandler.js`) and client
+ * (rendering for display, `BoardCardDetail.jsx`; live preview, `BoardMarkdownEditor.jsx`)
+ * contexts — pure string transforms, no I/O.
+ */
 const IMAGE_LIMIT = 1
 const LINK_LIMIT = 5
 
@@ -22,6 +51,9 @@ function escapeAttribute(value) {
   return escapeHtml(value).replace(/`/g, '&#96;')
 }
 
+// Allowlists URL schemes for rendered links/images: bare relative paths, root-
+// relative paths, or absolute URLs using http(s)/mailto/tel. Deliberately excludes
+// `javascript:`, `data:`, and any other scheme that could execute in the viewer.
 function isSafeUrl(value) {
   const trimmed = String(value ?? '').trim()
   if (!trimmed) return false
@@ -64,6 +96,13 @@ function imageValueToPathname(value) {
   return ''
 }
 
+/**
+ * Finds every managed-blob image pathname referenced in a post body (markdown
+ * `![]()` syntax or raw `<img src>`), so `blobCleanup.js` can include body images
+ * when deciding what's still referenced after an edit or delete.
+ *
+ * @returns {Set<string>} Pathnames found in the body.
+ */
 export function extractBoardBodyImagePathnames(body) {
   const source = String(body ?? '')
   const pathnames = new Set()
@@ -93,6 +132,10 @@ export function countBoardBodyLinks(body) {
   return countMatches(body, HTML_LINK_PATTERN) + countMatches(body, MARKDOWN_LINK_PATTERN)
 }
 
+/**
+ * Enforces the per-post image/link caps on a board body before save.
+ * @returns {string} A user-facing error message, or `''` if the body is within limits.
+ */
 export function validateBoardBodyMarkdown(body, { maxImages = IMAGE_LIMIT, maxLinks = LINK_LIMIT } = {}) {
   const imageCount = countBoardBodyImages(body)
   const linkCount = countBoardBodyLinks(body)
@@ -112,6 +155,11 @@ function restoreTokens(value, tokens) {
   return value.replace(/\u0000(\d+)\u0000/g, (_, index) => tokens[Number(index)] ?? '')
 }
 
+// Renders one line's worth of inline markdown to HTML. HTML tags, images, links,
+// and inline code are extracted into `tokens` and replaced with a NUL-delimited
+// placeholder *before* the remaining text is HTML-escaped — this stops the escape
+// pass from mangling the already-built-safe HTML, and `restoreTokens` splices the
+// real markup back in afterward.
 function renderInlineMarkdown(value) {
   const tokens = []
   const stash = (html) => {
@@ -259,6 +307,13 @@ function renderMarkdownBlock(lines) {
   return output.filter(Boolean).join('')
 }
 
+/**
+ * Renders a board post body to sanitized-ish HTML (see module header — still
+ * expected to go through DOMPurify before `dangerouslySetInnerHTML`). Splits the
+ * body into blank-line-separated blocks; a block containing an allowlisted HTML
+ * block tag is passed through as raw HTML (inline-formatted), everything else is
+ * parsed as the markdown subset (headings, lists, blockquotes, paragraphs).
+ */
 export function renderBoardBodyMarkdown(body) {
   const source = String(body ?? '').trim()
   if (!source) return ''

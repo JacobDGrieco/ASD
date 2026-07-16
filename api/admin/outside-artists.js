@@ -1,3 +1,12 @@
+/**
+ * Admin CRUD for "outside" music artists — non-roster people credited on a song
+ * (featured artists, producers, etc.) who don't have their own `Artist` profile.
+ * Read access is shared with the Songs page (needed for the role-credit picker);
+ * writes require `MUSIC_OUTSIDE_ARTISTS` access and a non-viewer role.
+ *
+ * Server-only (Vercel Function). Consumed by `AdminMusicOutsideArtistsPage.jsx` and
+ * read-only by `MusicRolePersonPickerField`/song credit forms.
+ */
 import { prisma } from '../../src/lib/prisma.js'
 import { canAccessAdminPage, isViewer, requireAdmin } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
