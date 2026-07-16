@@ -413,6 +413,14 @@ function resolvePrimaryPlacement(placements) {
   return placements?.[0] ?? null
 }
 
+function earliestPlacementAlbumReleaseDate(placements) {
+  const releaseDates = (Array.isArray(placements) ? placements : [])
+    .map((placement) => placement.album?.releaseDate)
+    .filter(Boolean)
+    .sort((left, right) => new Date(left).getTime() - new Date(right).getTime())
+  return releaseDates[0] ?? null
+}
+
 async function getArtists(res) {
   setPublicCache(res)
   const now = new Date()
@@ -830,7 +838,8 @@ async function getSong(res, id) {
   const primaryPlacement = resolvePrimaryPlacement(releasedPlacements)
   const requestedPlacement = resolvePrimaryPlacement(song.placements)
   const primaryAlbum = primaryPlacement?.album ?? null
-  const songReleaseDate = song.meta?.releaseDate ?? requestedPlacement?.album?.releaseDate ?? null
+  const inheritedSongReleaseDate = earliestPlacementAlbumReleaseDate(song.placements)
+  const songReleaseDate = song.meta?.releaseDate ?? inheritedSongReleaseDate ?? requestedPlacement?.album?.releaseDate ?? null
 
   if (!requestedPlacement || !isPublicArtistVisible(requestedPlacement.album.artist) || !isPublicAlbumReleased(requestedPlacement.album, now)) {
     return res.status(404).json({ error: 'Song not found' })
@@ -839,8 +848,10 @@ async function getSong(res, id) {
     return res.status(404).json({ error: 'Song not found' })
   }
 
-  if (song.meta && !song.meta.releaseDate && primaryAlbum?.releaseDate) {
-    song.meta = { ...song.meta, releaseDate: primaryAlbum.releaseDate }
+  if (!song.meta && songReleaseDate) {
+    song.meta = { releaseDate: songReleaseDate }
+  } else if (song.meta && !song.meta.releaseDate && songReleaseDate) {
+    song.meta = { ...song.meta, releaseDate: songReleaseDate }
   }
 
   const effectiveRoles = Array.isArray(song.meta?.roles) ? song.meta.roles : []
@@ -955,18 +966,23 @@ async function getRecordPlayer(res) {
           const placement = track.song.placements.find((candidate) => (
             isPublicArtistVisible(candidate.album.artist) &&
             isPublicAlbumReleased(candidate.album, now) &&
-            isPublicSongReleased(track.song, candidate.album.releaseDate, now)
+            isPublicSongReleased({
+              ...track.song,
+              releaseDate: track.song.meta?.releaseDate ?? earliestPlacementAlbumReleaseDate(track.song.placements),
+            }, candidate.album.releaseDate, now)
           ))
           if (!placement) return []
 
           const album = formatAlbumSummary(placement.album)
           const songReleaseSource = publicSongReleaseSource(track.song, track.song.placements, placement.album)
+          const songReleaseDate = track.song.meta?.releaseDate ?? earliestPlacementAlbumReleaseDate(track.song.placements)
           return [{
             ...track,
             song: {
               ...track.song,
               ...publicSongReleaseFields(songReleaseSource),
-              isPubliclyVisible: isPublicSongReleased(track.song, placement.album.releaseDate, now)
+              meta: track.song.meta ? { ...track.song.meta, releaseDate: songReleaseDate ?? track.song.meta.releaseDate } : track.song.meta,
+              isPubliclyVisible: isPublicSongReleased({ ...track.song, releaseDate: songReleaseDate }, placement.album.releaseDate, now)
                 && isPublicAlbumReleased(placement.album, now)
                 && isPublicArtistVisible(placement.album.artist),
               album,

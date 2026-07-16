@@ -27,7 +27,11 @@ function primaryImage(images) {
 
 function isSongHidden(song) {
 	const album = song?.album ?? song?.placements?.[0]?.album ?? null;
-	const releaseDate = song?.meta?.releaseDate ?? album?.releaseDate ?? null;
+	const placementReleaseDates = (Array.isArray(song?.placements) ? song.placements : [])
+		.map((placement) => placement.album?.releaseDate ? String(placement.album.releaseDate).slice(0, 10) : '')
+		.filter(Boolean)
+		.sort();
+	const releaseDate = song?.meta?.releaseDate ?? placementReleaseDates[0] ?? album?.releaseDate ?? null;
 	return (
 		(!isOtherArtist(album?.artist) && album?.artist?.isVisible === false) ||
 		!isEffectivelyVisible(song, releaseDate)
@@ -36,6 +40,19 @@ function isSongHidden(song) {
 
 function compareLexicographically(left, right) {
 	return left.localeCompare(right, undefined, { sensitivity: 'base', numeric: true });
+}
+
+function normalizeReleaseDate(value) {
+	if (!value) return '';
+	return String(value).slice(0, 10);
+}
+
+function compareReleaseDatesDesc(leftDate, rightDate) {
+	const leftValue = normalizeReleaseDate(leftDate);
+	const rightValue = normalizeReleaseDate(rightDate);
+	if (leftValue && rightValue && leftValue !== rightValue) return rightValue.localeCompare(leftValue);
+	if (leftValue !== rightValue) return leftValue ? -1 : 1;
+	return 0;
 }
 
 function withOtherArtistOption(artists) {
@@ -52,6 +69,52 @@ function primaryAlbum(song, albumById) {
 	if (song.album?.id) return song.album;
 	const albumIds = placementAlbumIds(song);
 	return albumIds.length ? albumById[albumIds[0]] ?? null : null;
+}
+
+function earliestAlbumReleaseDateForSong(song, albumById) {
+	const releaseDates = placementAlbumIds(song)
+		.map((albumId) => albumById[albumId]?.releaseDate ?? song.placements?.find((placement) => placement.albumId === albumId)?.album?.releaseDate ?? '')
+		.map(normalizeReleaseDate)
+		.filter(Boolean)
+		.sort();
+	return releaseDates[0] ?? '';
+}
+
+function compareAlbumsByReleaseDate(left, right) {
+	const releaseCompare = compareReleaseDatesDesc(left.releaseDate, right.releaseDate);
+	if (releaseCompare !== 0) return releaseCompare;
+
+	const titleCompare = compareLexicographically(left.title ?? '', right.title ?? '');
+	if (titleCompare !== 0) return titleCompare;
+
+	const leftArtist = isOtherArtist(left.artist) ? left.otherArtistName || OTHER_ARTIST_NAME : left.artist?.name ?? '';
+	const rightArtist = isOtherArtist(right.artist) ? right.otherArtistName || OTHER_ARTIST_NAME : right.artist?.name ?? '';
+	return compareLexicographically(leftArtist, rightArtist);
+}
+
+function compareSongsByReleaseDate(left, right, albumById) {
+	const leftAlbum = primaryAlbum(left, albumById);
+	const rightAlbum = primaryAlbum(right, albumById);
+	const releaseCompare = compareReleaseDatesDesc(
+		left.meta?.releaseDate ?? earliestAlbumReleaseDateForSong(left, albumById) ?? leftAlbum?.releaseDate,
+		right.meta?.releaseDate ?? earliestAlbumReleaseDateForSong(right, albumById) ?? rightAlbum?.releaseDate
+	);
+	if (releaseCompare !== 0) return releaseCompare;
+
+	const leftAlbumTitle = albumTitles(left, albumById) ?? '';
+	const rightAlbumTitle = albumTitles(right, albumById) ?? '';
+	const albumCompare = compareLexicographically(leftAlbumTitle, rightAlbumTitle);
+	if (albumCompare !== 0) return albumCompare;
+
+	const leftDisc = left.discNumber ?? left.albumPlacements?.[0]?.discNumber ?? left.placements?.[0]?.discNumber ?? 0;
+	const rightDisc = right.discNumber ?? right.albumPlacements?.[0]?.discNumber ?? right.placements?.[0]?.discNumber ?? 0;
+	if (leftDisc !== rightDisc) return leftDisc - rightDisc;
+
+	const leftTrack = primaryTrackNumber(left) ?? 0;
+	const rightTrack = primaryTrackNumber(right) ?? 0;
+	if (leftTrack !== rightTrack) return leftTrack - rightTrack;
+
+	return compareLexicographically(left.title ?? '', right.title ?? '');
 }
 
 function displayArtistName(song, albumById) {
@@ -163,7 +226,7 @@ function SongsTable({ songs, albumById, isViewer, loadingEditSongId, onEdit }) {
 				</thead>
 				<tbody>
 					{songs.map((song) => {
-						const releaseDate = song.meta?.releaseDate ?? primaryAlbum(song, albumById)?.releaseDate ?? '';
+						const releaseDate = song.meta?.releaseDate ?? earliestAlbumReleaseDateForSong(song, albumById) ?? primaryAlbum(song, albumById)?.releaseDate ?? '';
 						const dateStr = releaseDate ? String(releaseDate).slice(0, 10) : '';
 						const links = songDisplayLinks(song, albumById);
 						return (
@@ -290,7 +353,7 @@ export default function AdminMusicSongsPage() {
 	), [artists]);
 
 	const sortedAlbumOptions = useMemo(
-		() => albumOptions.toSorted((left, right) => compareLexicographically(left.title, right.title)),
+		() => albumOptions.toSorted(compareAlbumsByReleaseDate),
 		[albumOptions]
 	);
 
@@ -308,7 +371,7 @@ export default function AdminMusicSongsPage() {
 				if (!hasMatchingArtist) return false;
 			}
 			return true;
-		})
+		}).toSorted((left, right) => compareSongsByReleaseDate(left, right, albumById))
 	), [albumById, deferredFilterTitle, filterAlbum, filterArtist, songs]);
 
 	const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredSongs.length / PAGE_SIZE)), [filteredSongs.length]);
@@ -326,7 +389,6 @@ export default function AdminMusicSongsPage() {
 	const openCreate = () => {
 		setCreatingWithPrefill({
 			albumId: filterAlbum,
-			releaseDate: filterAlbum ? albumById[filterAlbum]?.releaseDate?.slice?.(0, 10) ?? '' : '',
 		});
 	};
 
@@ -352,9 +414,10 @@ export default function AdminMusicSongsPage() {
 	};
 
 	const handleSongSaved = (saved) => {
-		const nextSongs = editingSongForm?.id
+		const nextSongs = (editingSongForm?.id
 			? songs.map((s) => (s.id === saved.id ? saved : s))
-			: [...songs, saved];
+			: [...songs, saved])
+			.toSorted((left, right) => compareSongsByReleaseDate(left, right, albumById));
 		setSongs(nextSongs);
 		primeAdminResource('songs-list', token, nextSongs);
 		clearAdminResource('albums-list', token);

@@ -95,6 +95,20 @@ function compareLexicographically(left, right) {
 	return left.localeCompare(right, undefined, { sensitivity: 'base', numeric: true });
 }
 
+function compareAlbumsByReleaseDate(left, right) {
+	const leftDate = normalizeAlbumReleaseDate(left.releaseDate);
+	const rightDate = normalizeAlbumReleaseDate(right.releaseDate);
+	if (leftDate && rightDate && leftDate !== rightDate) return rightDate.localeCompare(leftDate);
+	if (leftDate !== rightDate) return leftDate ? -1 : 1;
+
+	const titleCompare = compareLexicographically(left.title ?? '', right.title ?? '');
+	if (titleCompare !== 0) return titleCompare;
+
+	const leftArtist = isOtherArtist(left.artist) ? left.otherArtistName || OTHER_ARTIST_NAME : left.artist?.name ?? '';
+	const rightArtist = isOtherArtist(right.artist) ? right.otherArtistName || OTHER_ARTIST_NAME : right.artist?.name ?? '';
+	return compareLexicographically(leftArtist, rightArtist);
+}
+
 function withOtherArtistOption(artists) {
 	return [...artists, { id: OTHER_ARTIST_OPTION_ID, name: OTHER_ARTIST_NAME }];
 }
@@ -534,7 +548,7 @@ export default function AdminMusicAlbumsPage() {
 			if (filterType && album.type !== filterType) return false;
 			if (deferredFilterTitle && !album.title.toLowerCase().includes(deferredFilterTitle.trim().toLowerCase())) return false;
 			return true;
-		})
+		}).toSorted(compareAlbumsByReleaseDate)
 	), [albums, deferredFilterTitle, filterArtist, filterType]);
 
 	const artistOptions = useMemo(() => (
@@ -639,7 +653,8 @@ export default function AdminMusicAlbumsPage() {
 		}
 		const saved = await res.json();
 		const withArtist = { ...saved, artist: saved.artist ?? artists.find((artist) => artist.id === saved.artistId) ?? null };
-		const nextAlbums = isEdit ? albums.map((album) => (album.id === saved.id ? withArtist : album)) : [...albums, withArtist];
+		const nextAlbums = (isEdit ? albums.map((album) => (album.id === saved.id ? withArtist : album)) : [...albums, withArtist])
+			.toSorted(compareAlbumsByReleaseDate);
 		setAlbums(nextAlbums);
 		primeAdminResource('albums-list', token, nextAlbums);
 		clearAdminResource('songs-list', token);
@@ -657,7 +672,6 @@ export default function AdminMusicAlbumsPage() {
 			setCreateSongPrefill({
 				albumId: saved.id,
 				title: saved.title ?? '',
-				releaseDate: saved.releaseDate ? String(saved.releaseDate).slice(0, 10) : '',
 				soundcloudUrl: saved.soundcloudUrl ?? '',
 				spotifyUrl: saved.spotifyUrl ?? '',
 				appleMusicUrl: saved.appleMusicUrl ?? '',

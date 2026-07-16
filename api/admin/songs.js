@@ -457,7 +457,20 @@ function songListInclude() {
 }
 
 function effectiveSongReleaseDate(song) {
-  return song?.meta?.releaseDate ?? song?.placements?.[0]?.album?.releaseDate ?? null
+  if (song?.meta?.releaseDate) return song.meta.releaseDate
+  const releaseDates = (Array.isArray(song?.placements) ? song.placements : [])
+    .map((placement) => placement.album?.releaseDate)
+    .filter(Boolean)
+    .sort((left, right) => new Date(left).getTime() - new Date(right).getTime())
+  return releaseDates[0] ?? null
+}
+
+function earliestAlbumReleaseDate(albums) {
+  const releaseDates = (Array.isArray(albums) ? albums : [])
+    .map((album) => album?.releaseDate)
+    .filter(Boolean)
+    .sort((left, right) => new Date(left).getTime() - new Date(right).getTime())
+  return releaseDates[0] ?? null
 }
 
 // Song equivalent of albums.js's syncAlbumReleaseVisibility. A song's effective
@@ -644,7 +657,7 @@ export default async function handler(req, res) {
       const normalizedLinks = links === undefined ? profileLinksForSource(req.body, MUSIC_RELEASE_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
       const legacyLinkFields = legacyFieldsFromProfileLinks(normalizedLinks, MUSIC_RELEASE_LEGACY_LINK_FIELDS)
       const primaryAlbum = placementAlbums.find((album) => album.id === placements[0]?.albumId) ?? null
-      const effectiveReleaseDate = releaseDate || primaryAlbum?.releaseDate || null
+      const effectiveReleaseDate = releaseDate || earliestAlbumReleaseDate(placementAlbums)
       const visibility = normalizeVisibilityInput({
         isVisible: req.body.isVisible,
         autoShowOnRelease: req.body.autoShowOnRelease,
@@ -729,13 +742,15 @@ export default async function handler(req, res) {
     const sortedSongs = songs
       .map((song) => withListImages(formatSong(song)))
       .sort((left, right) => {
+        const leftReleaseDate = effectiveSongReleaseDate(left)
+        const rightReleaseDate = effectiveSongReleaseDate(right)
+        const leftRelease = leftReleaseDate ? new Date(leftReleaseDate).getTime() : 0
+        const rightRelease = rightReleaseDate ? new Date(rightReleaseDate).getTime() : 0
+        if (leftRelease !== rightRelease) return rightRelease - leftRelease
+
         const leftArtistOrder = left.album?.artist?.order ?? Number.MAX_SAFE_INTEGER
         const rightArtistOrder = right.album?.artist?.order ?? Number.MAX_SAFE_INTEGER
         if (leftArtistOrder !== rightArtistOrder) return leftArtistOrder - rightArtistOrder
-
-        const leftRelease = left.album?.releaseDate ? new Date(left.album.releaseDate).getTime() : 0
-        const rightRelease = right.album?.releaseDate ? new Date(right.album.releaseDate).getTime() : 0
-        if (leftRelease !== rightRelease) return rightRelease - leftRelease
 
         if ((left.discNumber ?? 0) !== (right.discNumber ?? 0)) return (left.discNumber ?? 0) - (right.discNumber ?? 0)
         if ((left.trackNumber ?? 0) !== (right.trackNumber ?? 0)) return (left.trackNumber ?? 0) - (right.trackNumber ?? 0)
@@ -780,7 +795,7 @@ export default async function handler(req, res) {
     const normalizedLinks = links === undefined ? profileLinksForSource(req.body, MUSIC_RELEASE_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
     const legacyLinkFields = legacyFieldsFromProfileLinks(normalizedLinks, MUSIC_RELEASE_LEGACY_LINK_FIELDS)
     const primaryAlbum = placementAlbums.find((album) => album.id === placements[0]?.albumId) ?? null
-    const effectiveReleaseDate = releaseDate || primaryAlbum?.releaseDate || null
+    const effectiveReleaseDate = releaseDate || earliestAlbumReleaseDate(placementAlbums)
     const visibility = normalizeVisibilityInput({
       isVisible: req.body.isVisible,
       autoShowOnRelease: req.body.autoShowOnRelease,

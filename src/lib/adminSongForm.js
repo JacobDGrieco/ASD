@@ -86,6 +86,14 @@ function sharedReleaseAlbum(song) {
 	return placements.find((placement) => albumTypeSharesSongReleaseFields(placement.album?.type))?.album ?? null;
 }
 
+function earliestPlacementAlbumReleaseDate(song) {
+	const releaseDates = (Array.isArray(song?.placements) ? song.placements : [])
+		.map((placement) => placement.album?.releaseDate ? String(placement.album.releaseDate).slice(0, 10) : '')
+		.filter(Boolean)
+		.sort();
+	return releaseDates[0] ?? '';
+}
+
 function roleEntriesFromSource(roles) {
 	return Array.isArray(roles)
 		? roles.map((entry) => createRoleEntry(entry.role, entry.name, {
@@ -137,7 +145,7 @@ export async function loadAdminSongDetail(songId, token) {
  * components).
  */
 export function hasManualSongVisibilityChoice(song) {
-	const releaseDate = song?.meta?.releaseDate ?? song?.placements?.[0]?.album?.releaseDate ?? '';
+	const releaseDate = song?.meta?.releaseDate ?? earliestPlacementAlbumReleaseDate(song);
 	const defaultVisibility = defaultVisibilityForReleaseDate(releaseDate);
 	return (
 		song?.isVisible !== defaultVisibility.isVisible ||

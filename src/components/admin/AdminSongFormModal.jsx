@@ -90,15 +90,25 @@ function albumMatchesSearch(album, query) {
 	return searchableText.includes(query);
 }
 
+function earliestAlbumReleaseDateForPlacements(placements, albumById) {
+	const releaseDates = (Array.isArray(placements) ? placements : [])
+		.map((placement) => albumById[placement.albumId]?.releaseDate?.slice?.(0, 10) ?? '')
+		.filter(Boolean)
+		.sort();
+	return releaseDates[0] ?? '';
+}
+
 function compareAlbumOptions(left, right) {
-	const artistCompare = compareText(albumArtistName(left), albumArtistName(right));
-	if (artistCompare !== 0) return artistCompare;
+	const leftDate = normalizeSongReleaseDate(left.releaseDate);
+	const rightDate = normalizeSongReleaseDate(right.releaseDate);
+	if (leftDate && rightDate && leftDate !== rightDate) return rightDate.localeCompare(leftDate);
+	if (leftDate !== rightDate) return leftDate ? -1 : 1;
 
 	const titleCompare = compareText(left.title, right.title);
 	if (titleCompare !== 0) return titleCompare;
 
-	const releaseDateCompare = compareText(normalizeSongReleaseDate(left.releaseDate), normalizeSongReleaseDate(right.releaseDate));
-	if (releaseDateCompare !== 0) return releaseDateCompare;
+	const artistCompare = compareText(albumArtistName(left), albumArtistName(right));
+	if (artistCompare !== 0) return artistCompare;
 
 	return compareText(left.id, right.id);
 }
@@ -199,12 +209,13 @@ function songModalReducer(state, action) {
 			};
 		}
 		case 'set-release-date':
+			const releaseDateForVisibility = action.value || earliestAlbumReleaseDateForPlacements(state.form.albumPlacements, action.albumById);
 			return {
 				...state,
 				form: {
 					...state.form,
 					releaseDate: action.value,
-					...(!action.visibilityTouched ? defaultVisibilityForReleaseDate(action.value) : {}),
+					...(!action.visibilityTouched ? defaultVisibilityForReleaseDate(releaseDateForVisibility) : {}),
 				},
 				validationErrors: clearFieldError(state.validationErrors, 'releaseDate'),
 			};
@@ -213,13 +224,13 @@ function songModalReducer(state, action) {
 			const nextPlacements = state.form.albumPlacements.map((placement, i) =>
 				i === action.index ? { ...placement, [action.fieldName]: action.value } : placement
 			);
-			const primaryAlbumReleaseDate = state.form.releaseDate || action.visibilityTouched
+			const inheritedReleaseDate = state.form.releaseDate || action.visibilityTouched
 				? ''
-				: action.albumById[nextPlacements[0]?.albumId]?.releaseDate?.slice?.(0, 10) ?? '';
+				: earliestAlbumReleaseDateForPlacements(nextPlacements, action.albumById);
 			const nextForm = {
 				...state.form,
 				albumPlacements: nextPlacements,
-				...(state.form.releaseDate || action.visibilityTouched ? {} : defaultVisibilityForReleaseDate(primaryAlbumReleaseDate)),
+				...(state.form.releaseDate || action.visibilityTouched ? {} : defaultVisibilityForReleaseDate(inheritedReleaseDate)),
 			};
 			return {
 				...state,
@@ -251,15 +262,15 @@ function songModalReducer(state, action) {
 			};
 		case 'remove-album-placement': {
 			const nextPlacements = state.form.albumPlacements.filter((_, i) => i !== action.index);
-			const primaryAlbumReleaseDate = state.form.releaseDate || action.visibilityTouched
+			const inheritedReleaseDate = state.form.releaseDate || action.visibilityTouched
 				? ''
-				: action.albumById[nextPlacements[0]?.albumId]?.releaseDate?.slice?.(0, 10) ?? '';
+				: earliestAlbumReleaseDateForPlacements(nextPlacements, action.albumById);
 			return {
 				...state,
 				form: {
 					...state.form,
 					albumPlacements: nextPlacements,
-					...(state.form.releaseDate || action.visibilityTouched ? {} : defaultVisibilityForReleaseDate(primaryAlbumReleaseDate)),
+					...(state.form.releaseDate || action.visibilityTouched ? {} : defaultVisibilityForReleaseDate(inheritedReleaseDate)),
 				},
 				validationErrors: state.validationErrors
 					? {
@@ -817,7 +828,7 @@ export default function AdminSongFormModal({
 	};
 
 	const setReleaseDate = (value) => {
-		dispatchModal({ type: 'set-release-date', value, visibilityTouched: visibilityTouchedRef.current });
+		dispatchModal({ type: 'set-release-date', value, albumById, visibilityTouched: visibilityTouchedRef.current });
 	};
 
 	const setBpm = (event) =>
