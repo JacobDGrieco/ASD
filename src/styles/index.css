@@ -116,6 +116,19 @@ span {
 	font-family: var(--font-display);
 }
 
+.home-section-kicker {
+	font-family: 'Accessories', 'Segoe UI', sans-serif;
+}
+
+.home-section-title {
+	font-family: 'Alba', Georgia, serif;
+	font-weight: 400;
+}
+
+.home-section-copy .home-section-text {
+	font-family: 'Mono55', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+}
+
 .artist-hero-name {
 	font-family: var(--font-artist-name);
 }

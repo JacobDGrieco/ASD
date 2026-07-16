@@ -665,7 +665,6 @@
 
 .fashion-home-showcase-eyebrow {
 	color: rgba(200, 169, 110, 0.84);
-	font-family: var(--font-nav-tab);
 	font-size: 0.74rem;
 	letter-spacing: 0.16em;
 	line-height: 1.2;
@@ -684,7 +683,6 @@
 .fashion-home-showcase-description {
 	margin-top: 18px;
 	color: rgba(232, 232, 232, 0.7);
-	font-family: var(--font-description);
 	line-height: 1.85;
 }
 

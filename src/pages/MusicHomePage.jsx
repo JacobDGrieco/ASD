@@ -138,17 +138,17 @@ export default function MusicHomePage() {
 					)}
 				</div>
 				<section className="home-about">
-					<div className="home-about-copy">
-						<p className="home-about-kicker">The Shelf</p>
-						<h2 className="home-about-title">Independent music from the underground.</h2>
-						<p>
+					<div className="home-about-copy home-section-copy">
+						<p className="home-about-kicker home-section-kicker">The Shelf</p>
+						<h2 className="home-about-title home-section-title">Independent music from the underground.</h2>
+						<p className="home-section-text">
 							A.S.D. is an independent collective built around artists who move outside the expected lane.
 							Each release is shaped with a hands-on approach, from early demos to the final visual world around it.
 						</p>
-						<p>
+						<p className="home-section-text">
 							The catalog spans intimate singles, sharper experimental projects, and collaborative drops that keep the label rooted in its own scene instead of chasing a template.
 						</p>
-						<Link to="/shelf" className="home-about-link">Open The Shelf</Link>
+						<Link to="/shelf" className="home-about-link">Scan The Shelf</Link>
 					</div>
 					<div className="home-latest home-latest-inline">
 						{latestReleases.length > 0 ? (
@@ -181,13 +181,13 @@ export default function MusicHomePage() {
 					</div>
 				</section>
 				<section className="home-crosshair" aria-labelledby="home-crosshair-title">
-					<div className="home-crosshair-copy">
-						<p className="home-crosshair-kicker">The Crosshair</p>
-						<h2 id="home-crosshair-title" className="home-crosshair-title">Sessions, shorts, and uncut footage.</h2>
-						<p>
+					<div className="home-crosshair-copy home-section-copy">
+						<p className="home-crosshair-kicker home-section-kicker">The Crosshair</p>
+						<h2 id="home-crosshair-title" className="home-crosshair-title home-section-title">Sessions, shorts, and uncut footage.</h2>
+						<p className="home-section-text">
 							A closer view of the people around A.S.D., from raw conversations to edited drops and short-form pieces.
 						</p>
-						<Link to="/crosshair" className="home-crosshair-link">Open Crosshair</Link>
+						<Link to="/crosshair" className="home-crosshair-link">View The Crosshair</Link>
 					</div>
 					<div className="home-crosshair-videos" aria-label="Latest Crosshair videos">
 						{featuredCrosshairVideos.map((video) => (

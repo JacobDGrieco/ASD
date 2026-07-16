@@ -95,10 +95,10 @@ function FashionHomeSection({ eyebrow, title, description, to, linkLabel, childr
 
 	return (
 		<section className="fashion-home-showcase" aria-labelledby={sectionId}>
-			<div className="fashion-home-showcase-copy">
-				<p className="fashion-home-showcase-eyebrow">{eyebrow}</p>
-				<h2 id={sectionId} className="fashion-home-showcase-title">{title}</h2>
-				<p className="fashion-home-showcase-description">{description}</p>
+			<div className="fashion-home-showcase-copy home-section-copy">
+				<p className="fashion-home-showcase-eyebrow home-section-kicker">{eyebrow}</p>
+				<h2 id={sectionId} className="fashion-home-showcase-title home-section-title">{title}</h2>
+				<p className="fashion-home-showcase-description home-section-text">{description}</p>
 				<Link to={to} className="fashion-home-hero-link fashion-home-hero-link-ghost fashion-home-showcase-link">
 					{linkLabel}
 				</Link>
@@ -370,7 +370,7 @@ export default function FashionHomePage() {
 						title="Recent edits from the ASD catalogue."
 						description="New collections and loose looks, pulled straight from the fashion archive as they are published."
 						to="/fashion/catalogue"
-						linkLabel="View catalogue"
+						linkLabel="Read the catalogue"
 					>
 						{recentCatalogueItems.length > 0
 							? recentCatalogueItems.map((item) => (
@@ -384,7 +384,7 @@ export default function FashionHomePage() {
 						title="Recent edits from the ASD catalogue."
 						description="New collections and loose looks will appear here once public catalogue data is available."
 						to="/fashion/catalogue"
-						linkLabel="View catalogue"
+						linkLabel="Read the catalogue"
 					>
 						<div className="fashion-home-showcase-empty">Collections and looks will appear here once they are published.</div>
 					</FashionHomeSection>
@@ -396,7 +396,7 @@ export default function FashionHomePage() {
 						title="Faces and makers behind the newest work."
 						description="Models, stylists, photographers, designers, and editors recently added to the fashion roster."
 						to="/fashion/talent"
-						linkLabel="View all talent"
+						linkLabel="View the talent"
 					>
 						{recentTalent.length > 0
 							? recentTalent.map((person) => <TalentCard key={person.id} talent={person} />)
@@ -408,7 +408,7 @@ export default function FashionHomePage() {
 						title="Faces and makers behind the newest work."
 						description="New talent will appear here once public roster data is available."
 						to="/fashion/talent"
-						linkLabel="View talent"
+						linkLabel="View the talent"
 					>
 						<div className="fashion-home-showcase-empty">Talent will appear here once profiles are published.</div>
 					</FashionHomeSection>

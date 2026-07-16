@@ -117,13 +117,6 @@
 	max-width: 520px;
 }
 
-.home-about-kicker {
-	color: var(--accent);
-	font-size: 0.78rem;
-	letter-spacing: 0.12em;
-	text-transform: uppercase;
-}
-
 .home-about-title {
 	margin-top: 10px;
 	max-width: 12ch;
@@ -133,9 +126,7 @@
 }
 
 .home-about-copy p {
-	font-family: var(--font-description);
 	margin-top: 18px;
-	color: rgba(232, 232, 232, 0.7);
 	line-height: 1.85;
 }
 
@@ -220,6 +211,11 @@
 	white-space: nowrap;
 }
 
+.home-latest-row .album-card-stream-links {
+	justify-content: center;
+	width: 100%;
+}
+
 .home-latest-row-loading {
 	overflow: hidden;
 }
@@ -256,6 +252,7 @@
 	max-width: 430px;
 }
 
+.home-about-kicker,
 .home-crosshair-kicker,
 .home-crosshair-type {
 	color: var(--accent);
@@ -272,9 +269,12 @@
 	letter-spacing: 0.06rem;
 }
 
+.home-crosshair-type {
+	font-family: 'Accessories', 'Segoe UI', sans-serif;
+}
+
 .home-crosshair-copy p:not(.home-crosshair-kicker) {
 	margin-top: 18px;
-	font-family: var(--font-description);
 	color: rgba(232, 232, 232, 0.72);
 	line-height: 1.8;
 }
@@ -516,7 +516,7 @@
 		padding: 48px 20px;
 	}
 
-	.home-latest-row > :nth-child(n + 3) {
+	.home-latest-row> :nth-child(n + 3) {
 		display: none;
 	}
 
