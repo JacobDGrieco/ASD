@@ -67,7 +67,6 @@ function NavCard({ card, onNavigate }) {
 export default function Nav() {
 	const { pathname } = useLocation();
 	const activeSection = getSection(pathname);
-	const activeGroup = NAV_GROUPS.find((group) => group.key === activeSection) ?? NAV_GROUPS[0];
 	const [isOpen, setIsOpen] = useState(false);
 	const navRef = useRef(null);
 
@@ -137,16 +136,22 @@ export default function Nav() {
 				aria-hidden={!isOpen}
 			>
 				<div className="nav-cardnav-panel-inner">
-					<section className="nav-cardnav-group" aria-label={`${activeGroup.label} pages`}>
-						<div className="nav-cardnav-group-heading">
-							<span>{activeGroup.label}</span>
-						</div>
-						<div className="nav-cardnav-cards">
-							{activeGroup.cards.map((card) => (
-								<NavCard key={card.to} card={card} onNavigate={() => setIsOpen(false)} />
-							))}
-						</div>
-					</section>
+					{NAV_GROUPS.map((group) => (
+						<section
+							key={group.key}
+							className={`nav-cardnav-group${activeSection === group.key ? ' nav-cardnav-group-active' : ''}`}
+							aria-label={`${group.label} pages`}
+						>
+							<div className="nav-cardnav-group-heading">
+								<span>{group.label}</span>
+							</div>
+							<div className="nav-cardnav-cards">
+								{group.cards.map((card) => (
+									<NavCard key={card.to} card={card} onNavigate={() => setIsOpen(false)} />
+								))}
+							</div>
+						</section>
+					))}
 				</div>
 			</div>
 		</nav>
