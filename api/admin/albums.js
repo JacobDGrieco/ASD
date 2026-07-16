@@ -1,3 +1,20 @@
+/**
+ * Admin CRUD for albums. Read access requires either `MUSIC_ALBUMS` or
+ * `MUSIC_SONGS` page access (songs need to look up albums); writes require
+ * `MUSIC_ALBUMS` and a non-viewer role. Results are scoped per session via
+ * `artistScopedAlbumWhere` (full access for SUPER_ADMIN, own-artist-only for
+ * ARTIST, live-visibility view for VIEWER).
+ *
+ * Every request (including plain GETs) first runs `syncAlbumReleaseVisibility`,
+ * lazily flipping `isVisible` to true for any album whose `autoShowOnRelease` date
+ * has passed — see `contentVisibility.js` for why the public site doesn't depend
+ * on this sync having run. Duplicate-title+artist+release-date albums are rejected
+ * with a 409, checked at the application layer (not a DB constraint), so it's
+ * possible (though unlikely) for two concurrent creates to both succeed.
+ *
+ * Server-only (Vercel Function). Consumed by `AdminMusicAlbumsPage.jsx` and
+ * (read-only) `AdminMusicSongsPage.jsx`/`AdminSongFormModal.jsx`.
+ */
 import { prisma } from '../../src/lib/prisma.js'
 import { artistScopedAlbumWhere, canAccessAdminPage, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
@@ -8,6 +25,7 @@ import { clientImages, mergeLegacyImages, normalizeImageInput, primaryImageRefer
 import { MUSIC_RELEASE_LEGACY_LINK_FIELDS, legacyFieldsFromProfileLinks, normalizeProfileLinks, profileLinksForSource } from '../../src/lib/profileLinks.js'
 import { OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID, OTHER_ARTIST_SLUG } from '../../src/lib/publicVisibility.js'
 import { slugify } from '../../src/lib/slugify.js'
+import { SONG_ROLES } from '../../src/lib/songRoles.js'
 
 function withImages(album) {
   const images = clientImages(mergeLegacyImages(album.images, album.coverArt, {
@@ -21,6 +39,7 @@ function withImages(album) {
     links: profileLinksForSource(album, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
     coverArt: primaryImage?.previewUrl ?? album.coverArt,
     images,
+    roles: Array.isArray(album.roles) ? album.roles : [],
   }
 }
 
@@ -39,6 +58,7 @@ function withListImages(album) {
     links: profileLinksForSource(album, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
     coverArt: images[0]?.previewUrl ?? album.coverArt,
     images,
+    roles: Array.isArray(album.roles) ? album.roles : [],
     imageCount: album._count?.images ?? images.length,
   }
 }
@@ -65,6 +85,7 @@ function includeAlbumList() {
     appleMusicUrl: true,
     youtubeUrl: true,
     links: true,
+    roles: true,
     releaseDate: true,
     artistId: true,
     artist: { select: { id: true, name: true, slug: true, isVisible: true } },
@@ -79,6 +100,11 @@ function includeAlbumList() {
   }
 }
 
+// Materializes the DB isVisible column for albums whose auto-show release date has
+// passed. Runs on every request to this endpoint (including GETs) rather than on a
+// schedule — see contentVisibility.js's module header for why public reads don't
+// actually depend on this having run, but admin list views showing the raw column
+// benefit from it being reasonably fresh.
 async function syncAlbumReleaseVisibility() {
   await prisma.album.updateMany({
     where: {
@@ -104,6 +130,128 @@ function normalizeAlbumReleaseDate(value) {
   return String(value).slice(0, 10)
 }
 
+function normalizedRoleName(value) {
+  return String(value ?? '').trim().replace(/\s+/g, ' ').toLowerCase()
+}
+
+function normalizeExternalUrl(value) {
+  const url = typeof value === 'string' ? value.trim() : ''
+  if (!url) return ''
+
+  try {
+    const parsed = new URL(url.includes('://') ? url : `https://${url}`)
+    return ['http:', 'https:'].includes(parsed.protocol) ? parsed.toString() : ''
+  } catch {
+    return ''
+  }
+}
+
+async function normalizeLinkedRoleInput(roles) {
+  if (!Array.isArray(roles)) return []
+
+  const inputRoles = roles.reduce((normalized, roleEntry) => {
+    if (!SONG_ROLES.includes(roleEntry.role)) return normalized
+    if (typeof roleEntry.name !== 'string') return normalized
+
+    const name = roleEntry.name.trim().replace(/\s+/g, ' ')
+    if (!name) return normalized
+
+    normalized.push({
+      role: roleEntry.role,
+      name,
+      artistId: typeof roleEntry.artistId === 'string' ? roleEntry.artistId : '',
+      outsideArtistId: typeof roleEntry.outsideArtistId === 'string' ? roleEntry.outsideArtistId : '',
+      externalUrl: normalizeExternalUrl(roleEntry.externalUrl),
+      applyToSongs: roleEntry.applyToSongs !== false,
+    })
+    return normalized
+  }, [])
+
+  if (!inputRoles.length) return []
+
+  const artistIds = [...new Set(inputRoles.flatMap((entry) => (entry.artistId ? [entry.artistId] : [])))]
+  const outsideArtistIds = [...new Set(inputRoles.flatMap((entry) => (entry.outsideArtistId ? [entry.outsideArtistId] : [])))]
+  const names = [...new Set(inputRoles.map((entry) => entry.name))]
+
+  const [artists, outsideArtists] = await Promise.all([
+    prisma.artist.findMany({
+      where: {
+        OR: [
+          ...(artistIds.length ? [{ id: { in: artistIds } }] : []),
+          ...names.map((name) => ({ name: { equals: name, mode: 'insensitive' } })),
+        ],
+      },
+      select: { id: true, name: true },
+    }),
+    prisma.musicOutsideArtist.findMany({
+      where: {
+        OR: [
+          ...(outsideArtistIds.length ? [{ id: { in: outsideArtistIds } }] : []),
+          ...names.map((name) => ({ name: { equals: name, mode: 'insensitive' } })),
+        ],
+      },
+      select: { id: true, name: true, role: true, externalUrl: true },
+    }),
+  ])
+
+  const artistsById = new Map(artists.map((artist) => [artist.id, artist]))
+  const artistsByName = new Map(artists.map((artist) => [normalizedRoleName(artist.name), artist]))
+  const outsideArtistsById = new Map(outsideArtists.map((artist) => [artist.id, artist]))
+  const outsideArtistsByName = new Map(outsideArtists.map((artist) => [normalizedRoleName(artist.name), artist]))
+  const toCreateByKey = new Map()
+
+  for (const entry of inputRoles) {
+    if (entry.artistId && artistsById.has(entry.artistId)) continue
+    if (entry.outsideArtistId && outsideArtistsById.has(entry.outsideArtistId)) continue
+    const nameKey = normalizedRoleName(entry.name)
+    if (artistsByName.has(nameKey)) continue
+    if (outsideArtistsByName.has(nameKey)) continue
+    if (!toCreateByKey.has(nameKey)) toCreateByKey.set(nameKey, entry)
+  }
+
+  const createdArtists = await Promise.all(
+    [...toCreateByKey.values()].map((entry) =>
+      prisma.musicOutsideArtist.create({
+        data: { name: entry.name, role: entry.role, externalUrl: entry.externalUrl },
+        select: { id: true, name: true, externalUrl: true },
+      })
+    )
+  )
+  const createdByKey = new Map([...toCreateByKey.keys()].map((key, index) => [key, createdArtists[index]]))
+
+  return inputRoles.map((entry) => {
+    const artistById = entry.artistId ? artistsById.get(entry.artistId) : null
+    if (artistById) return { role: entry.role, name: artistById.name, artistId: artistById.id, applyToSongs: entry.applyToSongs }
+
+    const outsideArtistById = entry.outsideArtistId ? outsideArtistsById.get(entry.outsideArtistId) : null
+    if (outsideArtistById) {
+      return {
+        role: entry.role,
+        name: outsideArtistById.name,
+        outsideArtistId: outsideArtistById.id,
+        externalUrl: outsideArtistById.externalUrl,
+        applyToSongs: entry.applyToSongs,
+      }
+    }
+
+    const nameKey = normalizedRoleName(entry.name)
+    const artistByName = artistsByName.get(nameKey)
+    if (artistByName) return { role: entry.role, name: artistByName.name, artistId: artistByName.id, applyToSongs: entry.applyToSongs }
+
+    const outsideArtistByName = outsideArtistsByName.get(nameKey) ?? createdByKey.get(nameKey)
+    return {
+      role: entry.role,
+      name: outsideArtistByName.name,
+      outsideArtistId: outsideArtistByName.id,
+      externalUrl: outsideArtistByName.externalUrl,
+      applyToSongs: entry.applyToSongs,
+    }
+  })
+}
+
+// Duplicate check is title + artist + release date + "other artist" name (for
+// compilation albums), case/whitespace-insensitive. Excludes `id` itself so
+// updating an album doesn't flag it as a duplicate of its own prior state.
 async function findDuplicateAlbum({ id, title, releaseDate, resolvedArtistId, otherArtistName }) {
   const candidates = await prisma.album.findMany({
     where: {
@@ -149,6 +297,10 @@ async function loadAlbumForSession(session, id) {
   })
 }
 
+// ARTIST-role sessions are always pinned to their own artist. Super admins can
+// additionally save an album under the reserved "Other" pseudo-artist
+// (OTHER_ARTIST_OPTION_ID is a client-side sentinel), lazily creating that Artist
+// row the first time it's used — same pattern as the board's ASD-Records artist.
 async function resolveAlbumArtistId(session, artistId) {
   if (!isSuperAdmin(session)) return session.artistId
   if (!artistId) return null
@@ -180,6 +332,125 @@ async function resolveAlbumArtistSlugPart(artistId, otherArtistName, resolvedArt
   return artist?.slug ?? resolvedArtistId
 }
 
+function roleSyncKey(role) {
+  const personKey = role.artistId
+    ? `artist:${role.artistId}`
+    : role.outsideArtistId
+      ? `outside:${role.outsideArtistId}`
+      : `name:${String(role.name ?? '').trim().toLowerCase()}`
+  return `${role.role}:${personKey}`
+}
+
+function songRoleCopy(role) {
+  return {
+    role: role.role,
+    name: role.name,
+    ...(role.artistId ? { artistId: role.artistId } : {}),
+    ...(role.outsideArtistId ? { outsideArtistId: role.outsideArtistId } : {}),
+    ...(role.externalUrl ? { externalUrl: role.externalUrl } : {}),
+  }
+}
+
+function albumRolesToCopy(previousRoles, nextRoles) {
+  const previousByKey = new Map(
+    (Array.isArray(previousRoles) ? previousRoles : [])
+      .filter((role) => role?.role && role?.name)
+      .map((role) => [roleSyncKey(role), role])
+  )
+
+  return (Array.isArray(nextRoles) ? nextRoles : []).filter((role) => {
+    if (!role?.role || !role?.name || role.applyToSongs === false) return false
+    const previousRole = previousByKey.get(roleSyncKey(role))
+    return !previousRole || previousRole.applyToSongs === false
+  })
+}
+
+function mergeSongRoles(songRoles, rolesToCopy) {
+  const merged = []
+  const seen = new Set()
+
+  for (const role of Array.isArray(songRoles) ? songRoles : []) {
+    if (!role?.role || !role?.name) continue
+    const key = roleSyncKey(role)
+    if (seen.has(key)) continue
+    seen.add(key)
+    merged.push(songRoleCopy(role))
+  }
+
+  for (const role of Array.isArray(rolesToCopy) ? rolesToCopy : []) {
+    if (!role?.role || !role?.name) continue
+    const key = roleSyncKey(role)
+    if (seen.has(key)) continue
+    seen.add(key)
+    merged.push(songRoleCopy(role))
+  }
+
+  return merged
+}
+
+async function copyAlbumRolesToAttachedSongs(albumId, rolesToCopy) {
+  if (!rolesToCopy.length) return
+
+  const metas = await prisma.songMeta.findMany({
+    where: {
+      song: {
+        placements: {
+          some: { albumId },
+        },
+      },
+    },
+    select: {
+      songId: true,
+      roles: true,
+    },
+  })
+  const songIdsWithMeta = new Set(metas.map((meta) => meta.songId))
+  const placements = await prisma.songAlbum.findMany({
+    where: { albumId },
+    select: { songId: true },
+  })
+  const songIds = [...new Set(placements.map((placement) => placement.songId))]
+  if (!songIds.length) return
+
+  await Promise.all([
+    ...metas.map((meta) => {
+      const nextRoles = mergeSongRoles(meta.roles, rolesToCopy)
+      if (nextRoles.length === (Array.isArray(meta.roles) ? meta.roles.length : 0)) return null
+      return prisma.songMeta.update({
+        where: { songId: meta.songId },
+        data: { roles: nextRoles },
+      })
+    }).filter(Boolean),
+    ...songIds
+      .filter((songId) => !songIdsWithMeta.has(songId))
+      .map((songId) => prisma.songMeta.create({
+        data: {
+          songId,
+          roles: rolesToCopy.map(songRoleCopy),
+        },
+      })),
+  ])
+}
+
+async function syncSingleSongsFromAlbum(albumId, type, links) {
+  if (String(type ?? '').toUpperCase() !== 'SINGLE') return
+
+  const placements = await prisma.songAlbum.findMany({
+    where: { albumId },
+    select: { songId: true },
+  })
+  const songIds = [...new Set(placements.map((placement) => placement.songId))]
+  if (!songIds.length) return
+
+  await prisma.song.updateMany({
+    where: { id: { in: songIds } },
+    data: {
+      links,
+      ...legacyFieldsFromProfileLinks(links, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
+    },
+  })
+}
+
 export default async function handler(req, res) {
   const session = requireAdmin(req, res)
   if (!session) return
@@ -203,7 +474,7 @@ export default async function handler(req, res) {
     if (req.method === 'PUT') {
       if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_ALBUMS)) return res.status(403).json({ error: 'Forbidden' })
       if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
-      const { title, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, links, releaseDate, artistId, images } = req.body
+      const { title, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, links, roles, releaseDate, artistId, images } = req.body
       const resolvedArtistId = await resolveAlbumArtistId(session, artistId)
       if (!resolvedArtistId) return res.status(400).json({ error: 'Artist is required.' })
       const duplicateAlbum = await findDuplicateAlbum({ id, title, releaseDate, resolvedArtistId, otherArtistName: artistId === OTHER_ARTIST_OPTION_ID ? otherArtistName : '' })
@@ -213,6 +484,7 @@ export default async function handler(req, res) {
       const artistSlugPart = await resolveAlbumArtistSlugPart(artistId, otherArtistName, resolvedArtistId)
       const normalizedImages = normalizeImageInput(images, 'cover')
       const normalizedLinks = links === undefined ? profileLinksForSource(req.body, MUSIC_RELEASE_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
+      const normalizedRoles = await normalizeLinkedRoleInput(roles)
       const legacyLinkFields = legacyFieldsFromProfileLinks(normalizedLinks, MUSIC_RELEASE_LEGACY_LINK_FIELDS)
       const visibility = normalizeVisibilityInput({
         isVisible: req.body.isVisible,
@@ -235,6 +507,7 @@ export default async function handler(req, res) {
           appleMusicUrl: appleMusicUrl || null,
           youtubeUrl: youtubeUrl || null,
           links: normalizedLinks,
+          roles: normalizedRoles,
           ...legacyLinkFields,
           releaseDate: new Date(releaseDate),
           artistId: resolvedArtistId,
@@ -247,6 +520,8 @@ export default async function handler(req, res) {
         },
         include: includeAlbum(),
       })
+      await syncSingleSongsFromAlbum(album.id, album.type, normalizedLinks)
+      await copyAlbumRolesToAttachedSongs(album.id, albumRolesToCopy(existingAlbum.roles, normalizedRoles))
       await deleteRemovedBlobPathnames([existingAlbum.images, existingAlbum.coverArt], normalizedImages)
       return res.status(200).json(withImages(album))
     }
@@ -275,7 +550,7 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_ALBUMS)) return res.status(403).json({ error: 'Forbidden' })
     if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
-    const { title, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, links, releaseDate, artistId, images } = req.body
+    const { title, type, otherArtistName, aboutText, soundcloudUrl, spotifyUrl, appleMusicUrl, youtubeUrl, links, roles, releaseDate, artistId, images } = req.body
     const resolvedArtistId = await resolveAlbumArtistId(session, artistId)
     if (!resolvedArtistId) return res.status(400).json({ error: 'Artist is required.' })
     const duplicateAlbum = await findDuplicateAlbum({ title, releaseDate, resolvedArtistId, otherArtistName: artistId === OTHER_ARTIST_OPTION_ID ? otherArtistName : '' })
@@ -285,6 +560,7 @@ export default async function handler(req, res) {
     const artistSlugPart = await resolveAlbumArtistSlugPart(artistId, otherArtistName, resolvedArtistId)
     const normalizedImages = normalizeImageInput(images, 'cover')
     const normalizedLinks = links === undefined ? profileLinksForSource(req.body, MUSIC_RELEASE_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
+    const normalizedRoles = await normalizeLinkedRoleInput(roles)
     const legacyLinkFields = legacyFieldsFromProfileLinks(normalizedLinks, MUSIC_RELEASE_LEGACY_LINK_FIELDS)
     const visibility = normalizeVisibilityInput({
       isVisible: req.body.isVisible,
@@ -306,6 +582,7 @@ export default async function handler(req, res) {
         appleMusicUrl: appleMusicUrl || null,
         youtubeUrl: youtubeUrl || null,
         links: normalizedLinks,
+        roles: normalizedRoles,
         ...legacyLinkFields,
         releaseDate: new Date(releaseDate),
         artistId: resolvedArtistId,
@@ -319,6 +596,7 @@ export default async function handler(req, res) {
       },
       include: includeAlbum(),
     })
+    await syncSingleSongsFromAlbum(album.id, album.type, normalizedLinks)
     return res.status(201).json(withImages(album))
   }
 

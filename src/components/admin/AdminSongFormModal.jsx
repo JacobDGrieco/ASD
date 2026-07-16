@@ -15,9 +15,11 @@ import {
 	createRoleEntry,
 	emptySongForm,
 	initSongFormFromPrefill,
+	albumRoleAppliesToSongs,
+	roleEntryKey,
 } from '../../lib/adminSongForm.js';
 import { defaultVisibilityForReleaseDate } from '../../lib/contentVisibility.js';
-import { songPlacementsAllowOwnLinks } from '../../lib/musicReleaseLinks.js';
+import { songPlacementsAllowOwnLinks, songPlacementsShareReleaseFields } from '../../lib/musicReleaseLinks.js';
 import { normalizeProfileLinks } from '../../lib/profileLinks.js';
 import { isOtherArtist, OTHER_ARTIST_NAME } from '../../lib/publicVisibility.js';
 import { slugify } from '../../lib/slugify.js';
@@ -126,6 +128,30 @@ function clearFieldError(errors, fieldName) {
 	return errors ? { ...errors, [fieldName]: '' } : errors;
 }
 
+function copyAlbumRolesToSongForm(form, album) {
+	if (!album) return form;
+	const rolesToCopy = (Array.isArray(album.roles) ? album.roles : []).filter(albumRoleAppliesToSongs);
+	if (!rolesToCopy.length) return form;
+
+	const existingKeys = new Set((form.roles ?? []).map(roleEntryKey));
+	const copiedRoles = [];
+	for (const role of rolesToCopy) {
+		if (!role?.role || !role?.name) continue;
+		const key = roleEntryKey(role);
+		if (existingKeys.has(key)) continue;
+		existingKeys.add(key);
+		copiedRoles.push(createRoleEntry(role.role, role.name, {
+			artistId: role.artistId,
+			outsideArtistId: role.outsideArtistId,
+			externalUrl: role.externalUrl,
+		}));
+	}
+
+	return copiedRoles.length
+		? { ...form, roles: [...(form.roles ?? []), ...copiedRoles] }
+		: form;
+}
+
 function songModalReducer(state, action) {
 	switch (action.type) {
 		case 'init-create':
@@ -183,19 +209,23 @@ function songModalReducer(state, action) {
 				validationErrors: clearFieldError(state.validationErrors, 'releaseDate'),
 			};
 		case 'set-album-placement': {
+			const previousAlbumId = state.form.albumPlacements[action.index]?.albumId ?? '';
 			const nextPlacements = state.form.albumPlacements.map((placement, i) =>
 				i === action.index ? { ...placement, [action.fieldName]: action.value } : placement
 			);
 			const primaryAlbumReleaseDate = state.form.releaseDate || action.visibilityTouched
 				? ''
 				: action.albumById[nextPlacements[0]?.albumId]?.releaseDate?.slice?.(0, 10) ?? '';
+			const nextForm = {
+				...state.form,
+				albumPlacements: nextPlacements,
+				...(state.form.releaseDate || action.visibilityTouched ? {} : defaultVisibilityForReleaseDate(primaryAlbumReleaseDate)),
+			};
 			return {
 				...state,
-				form: {
-					...state.form,
-					albumPlacements: nextPlacements,
-					...(state.form.releaseDate || action.visibilityTouched ? {} : defaultVisibilityForReleaseDate(primaryAlbumReleaseDate)),
-				},
+				form: action.fieldName === 'albumId' && action.value && action.value !== previousAlbumId
+					? copyAlbumRolesToSongForm(nextForm, action.albumById[action.value])
+					: nextForm,
 				validationErrors: state.validationErrors?.albumPlacements?.[action.index]
 					? {
 						...state.validationErrors,
@@ -621,7 +651,9 @@ function selectedRoleImage(entry, artistOptions, outsideArtistOptions) {
 			? outsideArtistOptions.find((artist) => artist.id === entry.outsideArtistId)
 			: null;
 
-	return selected?.image ?? null;
+	if (selected?.image) return selected.image;
+	if (!Array.isArray(selected?.images) || selected.images.length === 0) return null;
+	return selected.images.find((image) => image.isPrimary) ?? selected.images[0];
 }
 
 function SongRolesTab({ form, artistOptions, outsideArtistOptions, addRole, removeRole, updateRole }) {
@@ -748,7 +780,10 @@ export default function AdminSongFormModal({
 	);
 
 	const showSongLinksTab = useMemo(
-		() => songPlacementsAllowOwnLinks(form?.albumPlacements, albumById),
+		() => (
+			songPlacementsAllowOwnLinks(form?.albumPlacements, albumById) ||
+			songPlacementsShareReleaseFields(form?.albumPlacements, albumById)
+		),
 		[albumById, form?.albumPlacements]
 	);
 	const songEditorTabCount = showSongLinksTab ? 4 : 3;
@@ -934,6 +969,7 @@ export default function AdminSongFormModal({
 							songFieldClassName={songFieldClassName}
 							visibilityTouchedRef={visibilityTouchedRef}
 							sortedAlbums={sortedAlbums}
+							albumById={albumById}
 							artistOptions={sortedArtists}
 							outsideArtistOptions={sortedOutsideArtists}
 							isArtistScoped={isArtistScoped}

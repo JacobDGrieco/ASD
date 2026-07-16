@@ -117,6 +117,7 @@ model Album {
   appleMusicUrl     String?
   youtubeUrl        String?
   links             Json         @default(dbgenerated("'[]'::jsonb"))
+  roles             Json         @default(dbgenerated("'[]'::jsonb"))
   releaseDate       DateTime
   artistId          String
   artist            Artist       @relation(fields: [artistId], references: [id], onDelete: Cascade)

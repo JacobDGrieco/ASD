@@ -1,9 +1,16 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+function primaryOptionImage(option) {
+	if (option?.image) return option.image;
+	if (!Array.isArray(option?.images) || option.images.length === 0) return null;
+	return option.images.find((image) => image.isPrimary) ?? option.images[0];
+}
+
 function optionImage(option, className) {
-	if (!option?.image) return <span className={`${className} crew-picker-option-img-blank`} aria-hidden="true" />;
-	return <img src={option.image.previewUrl || option.image.url} alt="" className={className} />;
+	const image = primaryOptionImage(option);
+	if (!image) return <span className={`${className} crew-picker-option-img-blank`} aria-hidden="true" />;
+	return <img src={image.previewUrl || image.url} alt="" className={className} />;
 }
 
 export default function MusicRolePersonPickerField({

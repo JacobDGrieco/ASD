@@ -3,6 +3,7 @@ import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import { FaBars, FaBullseye, FaBullhorn, FaChevronDown, FaChevronLeft, FaChevronRight, FaCompactDisc, FaInfoCircle, FaMicrophoneAlt, FaMusic, FaSignOutAlt, FaTimes, FaUserFriends, FaUserShield, FaRecordVinyl, FaTshirt, FaUsers } from 'react-icons/fa';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import { ADMIN_PAGE_KEYS, hasAdminPageAccess } from '../../lib/adminPageAccess.js';
+import { clearAdminFilterState } from '../../lib/adminFilterState.js';
 import '../../styles/AdminLayout.css';
 
 const ADMIN_SIDEBAR_STATE_KEY = 'admin-sidebar-collapsed';
@@ -129,6 +130,11 @@ export default function AdminLayout() {
 		}
 	};
 
+	const handleLogout = () => {
+		clearAdminFilterState();
+		void logout();
+	};
+
 	return (
 		<div className="admin-layout-layout">
 			<nav className={`admin-layout-sidebar ${isCollapsed ? 'admin-layout-sidebar-collapsed' : ''}`.trim()}>
@@ -195,7 +201,7 @@ export default function AdminLayout() {
 						);
 					})}
 				</div>
-				<button type="button" onClick={logout} className="admin-layout-logout" aria-label="Log out" title="Log out">
+				<button type="button" onClick={handleLogout} className="admin-layout-logout" aria-label="Log out" title="Log out">
 					<span className="admin-layout-link-icon"><FaSignOutAlt aria-hidden="true" /></span>
 					<span className="admin-layout-label">Log out</span>
 				</button>

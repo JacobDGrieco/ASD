@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy, useEffect, useRef } from 'react';
 import { Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom';
 import Nav from './components/shared/Nav.jsx';
 import PageTitle from './components/shared/PageTitle.jsx';
@@ -24,6 +24,7 @@ import AdminRoute from './components/admin/AdminRoute.jsx';
 import SideRails from './components/shared/SideRails.jsx';
 import PublicLegalFooter from './components/shared/PublicLegalFooter.jsx';
 import { AdminProvider, useAdminAuth } from './lib/adminAuth.jsx';
+import { clearAdminFilterState } from './lib/adminFilterState.js';
 import { isAdminPreviewSession } from './lib/publicPreview.js';
 import { ADMIN_PAGE_KEYS, firstAccessibleAdminPath, hasAdminPageAccess } from './lib/adminPageAccess.js';
 import './styles/PublicAdminPreview.css';
@@ -55,6 +56,25 @@ function ScrollToTop() {
 	useEffect(() => {
 		window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
 	}, [location.pathname, location.search, location.hash]);
+
+	return null;
+}
+
+function ClearAdminFiltersOnExit() {
+	const location = useLocation();
+	const previousPathnameRef = useRef(location.pathname);
+
+	useEffect(() => {
+		const previousPathname = previousPathnameRef.current;
+		const wasInAdmin = previousPathname === '/admin' || previousPathname.startsWith('/admin/');
+		const isInAdmin = location.pathname === '/admin' || location.pathname.startsWith('/admin/');
+
+		if (wasInAdmin && !isInAdmin) {
+			clearAdminFilterState();
+		}
+
+		previousPathnameRef.current = location.pathname;
+	}, [location.pathname]);
 
 	return null;
 }
@@ -134,6 +154,7 @@ export default function App() {
 	return (
 		<AdminProvider>
 			<PageTitle />
+			<ClearAdminFiltersOnExit />
 			<Suspense fallback={<RouteFallback />}>
 				<Routes>
 					<Route element={<PublicLayout />}>

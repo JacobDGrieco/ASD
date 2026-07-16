@@ -1,3 +1,24 @@
+/**
+ * Admin CRUD for songs — the most involved admin endpoint, coordinating a song's
+ * album placements, credit roles, and metadata as one logical save. Requires
+ * `MUSIC_SONGS` page access; writes additionally require a non-viewer role, and
+ * an ARTIST session may only place songs on its own albums
+ * (`validatePlacementOwnership`).
+ *
+ * Notable business rules:
+ * - Every request (including GETs) first runs `syncSongReleaseVisibility` — see
+ *   the equivalent in `albums.js` for why public visibility doesn't depend on it.
+ * - Songs on `SINGLE` releases share release-level links/roles with the album;
+ *   saving either side syncs those fields so both editors can manage them.
+ * - `normalizeLinkedRoleInput` auto-registers unmatched credit names as new
+ *   `MusicOutsideArtist` rows, the song-credit equivalent of the fashion
+ *   auto-registration rule in `fashion.js`.
+ * - Duplicate detection (title + release date + matching album/artist per
+ *   placement) is a 409, checked at the application layer, not a DB constraint.
+ *
+ * Server-only (Vercel Function). Consumed by `AdminMusicSongsPage.jsx` and
+ * `AdminSongFormModal.jsx`.
+ */
 import { prisma } from '../../src/lib/prisma.js'
 import { artistScopedSongWhere, canAccessAdminPage, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
@@ -12,7 +33,7 @@ import {
   primaryImageReference,
   toImageCreateManyData,
 } from '../../src/lib/images.js'
-import { songPlacementsAllowOwnLinks } from '../../src/lib/musicReleaseLinks.js'
+import { albumTypeSharesSongReleaseFields } from '../../src/lib/musicReleaseLinks.js'
 import { MUSIC_RELEASE_LEGACY_LINK_FIELDS, legacyFieldsFromProfileLinks, normalizeProfileLinks, profileLinksForSource } from '../../src/lib/profileLinks.js'
 import { isOtherArtist, OTHER_ARTIST_NAME } from '../../src/lib/publicVisibility.js'
 import { SONG_ROLES } from '../../src/lib/songRoles.js'
@@ -99,6 +120,10 @@ function normalizeExternalUrl(value) {
   }
 }
 
+// Resolves each role credit's name to an existing Artist or MusicOutsideArtist by
+// id-then-name match, and auto-creates a new MusicOutsideArtist for any name that
+// matches neither — the same "typing a name registers a person" rule used for
+// fashion credits in fashion.js's resolveTypedOutsideTalentCredits.
 async function normalizeLinkedRoleInput(roles) {
   if (!Array.isArray(roles)) return []
 
@@ -245,6 +270,12 @@ async function loadPlacementAlbums(placements) {
       slug: true,
       type: true,
       otherArtistName: true,
+      soundcloudUrl: true,
+      spotifyUrl: true,
+      appleMusicUrl: true,
+      youtubeUrl: true,
+      links: true,
+      roles: true,
       artistId: true,
       artist: {
         select: {
@@ -373,6 +404,12 @@ function songInclude() {
             type: true,
             otherArtistName: true,
             releaseDate: true,
+            soundcloudUrl: true,
+            spotifyUrl: true,
+            appleMusicUrl: true,
+            youtubeUrl: true,
+            links: true,
+            roles: true,
             artistId: true,
             artist: { select: { id: true, name: true, slug: true, order: true, isVisible: true } },
           },
@@ -423,6 +460,10 @@ function effectiveSongReleaseDate(song) {
   return song?.meta?.releaseDate ?? song?.placements?.[0]?.album?.releaseDate ?? null
 }
 
+// Song equivalent of albums.js's syncAlbumReleaseVisibility. A song's effective
+// release date can come from its own SongMeta or its primary album placement —
+// fetched candidates are filtered in JS (rather than in the query) since the
+// upperBound comparison needs the resolved effective date, not either column alone.
 async function syncSongReleaseVisibility() {
   const candidates = await prisma.song.findMany({
     where: {
@@ -502,6 +543,57 @@ async function validatePlacementOwnership(session, placements) {
   return albums.length === placements.length
 }
 
+function roleSyncKey(role) {
+  const personKey = role.artistId
+    ? `artist:${role.artistId}`
+    : role.outsideArtistId
+      ? `outside:${role.outsideArtistId}`
+      : `name:${String(role.name ?? '').trim().toLowerCase()}`
+  return `${role.role}:${personKey}`
+}
+
+function mergeAlbumRolesWithSongRoles(albumRoles, songRoles) {
+  const merged = []
+  const seen = new Set()
+
+  for (const role of Array.isArray(albumRoles) ? albumRoles : []) {
+    if (!role?.role || !role?.name) continue
+    const key = roleSyncKey(role)
+    if (seen.has(key)) continue
+    seen.add(key)
+    merged.push(role)
+  }
+
+  for (const role of Array.isArray(songRoles) ? songRoles : []) {
+    if (!role?.role || !role?.name) continue
+    const key = roleSyncKey(role)
+    if (seen.has(key)) continue
+    seen.add(key)
+    merged.push({
+      ...role,
+      applyToSongs: true,
+    })
+  }
+
+  return merged
+}
+
+async function syncSingleAlbumsFromSong(placementAlbums, links, roles) {
+  const singleAlbums = placementAlbums.filter((album) => albumTypeSharesSongReleaseFields(album.type))
+  if (!singleAlbums.length) return
+
+  await Promise.all(singleAlbums.map((album) =>
+    prisma.album.update({
+      where: { id: album.id },
+      data: {
+        links,
+        roles: mergeAlbumRolesWithSongRoles(album.roles, roles),
+        ...legacyFieldsFromProfileLinks(links, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
+      },
+    })
+  ))
+}
+
 export default async function handler(req, res) {
   const session = requireAdmin(req, res)
   if (!session) return
@@ -549,10 +641,7 @@ export default async function handler(req, res) {
 
       const normalizedImages = normalizeImageInput(images, 'artwork')
       const placementAlbums = await loadPlacementAlbums(placements)
-      const placementAlbumById = Object.fromEntries(placementAlbums.map((album) => [album.id, album]))
-      const normalizedLinks = songPlacementsAllowOwnLinks(placements, placementAlbumById)
-        ? links === undefined ? profileLinksForSource(req.body, MUSIC_RELEASE_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
-        : []
+      const normalizedLinks = links === undefined ? profileLinksForSource(req.body, MUSIC_RELEASE_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
       const legacyLinkFields = legacyFieldsFromProfileLinks(normalizedLinks, MUSIC_RELEASE_LEGACY_LINK_FIELDS)
       const primaryAlbum = placementAlbums.find((album) => album.id === placements[0]?.albumId) ?? null
       const effectiveReleaseDate = releaseDate || primaryAlbum?.releaseDate || null
@@ -593,6 +682,7 @@ export default async function handler(req, res) {
       })
 
       const normalizedRoles = await normalizeLinkedRoleInput(roles)
+      await syncSingleAlbumsFromSong(placementAlbums, normalizedLinks, normalizedRoles)
 
       await prisma.songMeta.upsert({
         where: { songId: id },
@@ -687,10 +777,7 @@ export default async function handler(req, res) {
 
     const normalizedImages = normalizeImageInput(images, 'artwork')
     const placementAlbums = await loadPlacementAlbums(placements)
-    const placementAlbumById = Object.fromEntries(placementAlbums.map((album) => [album.id, album]))
-    const normalizedLinks = songPlacementsAllowOwnLinks(placements, placementAlbumById)
-      ? links === undefined ? profileLinksForSource(req.body, MUSIC_RELEASE_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
-      : []
+    const normalizedLinks = links === undefined ? profileLinksForSource(req.body, MUSIC_RELEASE_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
     const legacyLinkFields = legacyFieldsFromProfileLinks(normalizedLinks, MUSIC_RELEASE_LEGACY_LINK_FIELDS)
     const primaryAlbum = placementAlbums.find((album) => album.id === placements[0]?.albumId) ?? null
     const effectiveReleaseDate = releaseDate || primaryAlbum?.releaseDate || null
@@ -729,6 +816,7 @@ export default async function handler(req, res) {
     })
 
     const normalizedRoles = await normalizeLinkedRoleInput(roles)
+    await syncSingleAlbumsFromSong(placementAlbums, normalizedLinks, normalizedRoles)
 
     await prisma.songMeta.create({
       data: {

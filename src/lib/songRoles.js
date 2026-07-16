@@ -1,3 +1,4 @@
+/** The fixed set of music credit roles offered in song and album editors, and their public-facing display labels (e.g. "Producer" -> "Produced by"). */
 export const SONG_ROLES = [
 	'Featured Artist',
 	'Producer',
@@ -11,6 +12,13 @@ export const SONG_ROLES = [
 	'Mixing Engineer',
 	'Mastering Engineer',
 	'Recording Engineer',
+	'Artwork',
+	'Photographer',
+	'Videographer',
+	'Director',
+	'Video Editor',
+	'Creative Director',
+	'Art Director',
 ];
 
 export const ROLE_DISPLAY_LABELS = {
@@ -26,4 +34,11 @@ export const ROLE_DISPLAY_LABELS = {
 	'Mixing Engineer': 'Mixed by',
 	'Mastering Engineer': 'Mastered by',
 	'Recording Engineer': 'Recorded by',
+	'Artwork': 'Artwork by',
+	'Photographer': 'Photography by',
+	'Videographer': 'Video by',
+	'Director': 'Directed by',
+	'Video Editor': 'Edited by',
+	'Creative Director': 'Creative direction by',
+	'Art Director': 'Art direction by',
 };

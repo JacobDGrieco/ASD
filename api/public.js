@@ -274,6 +274,50 @@ async function resolveOutsideArtistRoleLinks(roles) {
   }, { outsideByName: {}, outsideById: {} })
 }
 
+async function buildMusicRoleGroups(roles) {
+  const normalizedRoles = Array.isArray(roles) ? roles : []
+  const { byName: artistByName, byId: artistById, slugByName, slugById } = await resolveArtistRoleLinks(normalizedRoles)
+  const { outsideByName, outsideById } = await resolveOutsideArtistRoleLinks(normalizedRoles)
+
+  const roleGroups = {}
+  for (const { role, name, artistId, outsideArtistId, externalUrl } of normalizedRoles) {
+    if (!roleGroups[role]) roleGroups[role] = []
+    const linkedArtistSlug = artistId ? slugById[artistId] ?? null : null
+    if (linkedArtistSlug) {
+      roleGroups[role].push(artistById[artistId] ?? { name, slug: linkedArtistSlug })
+      continue
+    }
+
+    const linkedOutsideArtist = outsideArtistId ? outsideById[outsideArtistId] ?? null : null
+    if (linkedOutsideArtist) {
+      roleGroups[role].push({
+        name: linkedOutsideArtist.name || name,
+        slug: null,
+        externalUrl: linkedOutsideArtist.externalUrl || externalUrl || '',
+        image: linkedOutsideArtist.image ?? null,
+      })
+      continue
+    }
+
+    const names = getRoleCreditDisplayNames(name, slugByName)
+    if (!names.length) continue
+    for (const displayName of names) {
+      const nameKey = displayName.trim().toLowerCase()
+      const artist = artistByName[nameKey] ?? null
+      const outsideArtist = outsideByName[nameKey] ?? null
+      roleGroups[role].push({
+        name: displayName,
+        slug: artist?.slug ?? slugByName[nameKey] ?? null,
+        image: artist?.image ?? outsideArtist?.image ?? null,
+        portrait: artist?.portrait ?? '',
+        externalUrl: outsideArtist?.externalUrl || (displayName === name ? externalUrl : '') || '',
+      })
+    }
+  }
+
+  return roleGroups
+}
+
 function applyPublicArtistName(album) {
   if (!album?.artist || !isOtherArtist(album.artist) || !album.otherArtistName?.trim()) return album
 
@@ -690,9 +734,12 @@ async function getAlbum(res, id) {
   if (!isPublicAlbumReleased(album, now)) return res.status(404).json({ error: 'Album not found' })
 
   const albumImages = formatAlbumImages(album)
+  const roles = Array.isArray(album.roles) ? album.roles : []
   return res.status(200).json({
     ...album,
     links: profileLinksForSource(album, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
+    roles,
+    roleGroups: await buildMusicRoleGroups(roles),
     artist: formatPublicArtistReference(album.artist),
     isPubliclyVisible: isPublicAlbumReleased(album, now) && isPublicArtistVisible(album.artist),
     coverArt: albumImages[0]?.previewUrl ?? album.coverArt,
@@ -730,6 +777,7 @@ async function getSong(res, id) {
               appleMusicUrl: true,
               youtubeUrl: true,
               links: true,
+              roles: true,
               releaseDate: true,
               images: {
                 orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
@@ -795,48 +843,13 @@ async function getSong(res, id) {
     song.meta = { ...song.meta, releaseDate: primaryAlbum.releaseDate }
   }
 
-  if (song.meta) {
-    const roles = Array.isArray(song.meta.roles) ? song.meta.roles : []
-    const { byName: artistByName, byId: artistById, slugByName, slugById } = await resolveArtistRoleLinks(roles)
-    const { outsideByName, outsideById } = await resolveOutsideArtistRoleLinks(roles)
-
-    const roleGroups = {}
-    for (const { role, name, artistId, outsideArtistId, externalUrl } of roles) {
-      if (!roleGroups[role]) roleGroups[role] = []
-      const linkedArtistSlug = artistId ? slugById[artistId] ?? null : null
-      if (linkedArtistSlug) {
-        roleGroups[role].push(artistById[artistId] ?? { name, slug: linkedArtistSlug })
-        continue
-      }
-
-      const linkedOutsideArtist = outsideArtistId ? outsideById[outsideArtistId] ?? null : null
-      if (linkedOutsideArtist) {
-        roleGroups[role].push({
-          name: linkedOutsideArtist.name || name,
-          slug: null,
-          externalUrl: linkedOutsideArtist.externalUrl || externalUrl || '',
-          image: linkedOutsideArtist.image ?? null,
-        })
-        continue
-      }
-
-      const names = getRoleCreditDisplayNames(name, slugByName)
-      if (!names.length) continue
-      for (const displayName of names) {
-        const nameKey = displayName.trim().toLowerCase()
-        const artist = artistByName[nameKey] ?? null
-        const outsideArtist = outsideByName[nameKey] ?? null
-        roleGroups[role].push({
-          name: displayName,
-          slug: artist?.slug ?? slugByName[nameKey] ?? null,
-          image: artist?.image ?? outsideArtist?.image ?? null,
-          portrait: artist?.portrait ?? '',
-          externalUrl: outsideArtist?.externalUrl || (displayName === name ? externalUrl : '') || '',
-        })
-      }
+  const effectiveRoles = Array.isArray(song.meta?.roles) ? song.meta.roles : []
+  if (song.meta || effectiveRoles.length) {
+    song.meta = {
+      ...(song.meta ?? {}),
+      roles: effectiveRoles,
+      roleGroups: await buildMusicRoleGroups(effectiveRoles),
     }
-
-    song.meta = { ...song.meta, roleGroups }
   }
 
   const placements = releasedPlacements.map((placement) => {
@@ -1019,6 +1032,31 @@ function formatFashionCredit(credit) {
   }
 }
 
+function fashionCreditKey(credit) {
+  return credit.talentId
+    || (credit.crew ? `crew:${credit.crew.id}` : null)
+    || `name:${(credit.creditName || '').toLowerCase().trim()}:role:${(credit.roleLabel || '').toLowerCase().trim()}`
+}
+
+function mergeInheritedFashionCredits(lookCredits, collectionPlacements) {
+  const merged = []
+  const seenKeys = new Set()
+
+  function addCredit(credit) {
+    const key = fashionCreditKey(credit)
+    if (!key || seenKeys.has(key)) return
+    seenKeys.add(key)
+    merged.push(credit)
+  }
+
+  for (const credit of (lookCredits ?? [])) addCredit(credit)
+  for (const placement of (collectionPlacements ?? [])) {
+    for (const credit of (placement.collection?.credits ?? [])) addCredit(credit)
+  }
+
+  return merged
+}
+
 function formatFashionPiece(piece) {
   const credits = (piece.credits ?? []).map(formatFashionCredit)
   return {
@@ -1031,7 +1069,7 @@ function formatFashionPiece(piece) {
 }
 
 function formatFashionLook(look) {
-  const lookCredits = (look.credits ?? []).map(formatFashionCredit)
+  const lookCredits = mergeInheritedFashionCredits(look.credits, look.collectionPlacements).map(formatFashionCredit)
   const effectiveReleaseDate = look.releaseDate ?? look.collectionPlacements?.[0]?.collection?.releaseDate ?? null
   return {
     id: look.id,
@@ -1126,7 +1164,16 @@ function includePublicLook() {
     collectionPlacements: {
       orderBy: { sortOrder: 'asc' },
       include: {
-        collection: { select: { id: true, title: true, slug: true, season: true, releaseDate: true } },
+        collection: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            season: true,
+            releaseDate: true,
+            credits: includePublicCollectionCredits(),
+          },
+        },
       },
     },
     images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },

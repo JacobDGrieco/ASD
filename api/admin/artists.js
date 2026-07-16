@@ -1,3 +1,20 @@
+/**
+ * Admin CRUD for artists, plus (via `?resource=board`) a delegated sub-route to
+ * `adminBoardHandler.js` for board posts. Read access is shared across several
+ * music admin pages (they all need the artist list); creating/deleting an artist,
+ * and editing its `order`/admin password, is SUPER_ADMIN only — an ARTIST session
+ * can edit its own profile fields but not reorder itself or manage its own login
+ * password.
+ *
+ * Reserved pseudo-artists (`isReservedHiddenArtist` — "Other" and the label's own
+ * "A.S.D." row) are excluded from the list endpoint and cannot be edited/deleted
+ * through this handler, since they're managed implicitly by other features (album
+ * "other artist" compilations, board posting-as-the-label).
+ *
+ * Server-only (Vercel Function). Consumed by `AdminMusicArtistsPage.jsx`,
+ * `AdminMusicBoardPage.jsx` (board sub-route), and read-only by several other
+ * admin pages that need an artist picker.
+ */
 import { prisma } from '../../src/lib/prisma.js'
 import { canAccessAdminPage, canAccessArtist, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
@@ -24,6 +41,7 @@ function withImages(artist) {
     links: profileLinksForSource(artist, ARTIST_LEGACY_LINK_FIELDS),
     portrait: primaryImage?.previewUrl ?? artist.portrait,
     images,
+    image: primaryImage ?? null,
     hasAdminPassword: Boolean(artist.adminAccess?.active),
   }
 }
@@ -75,20 +93,19 @@ function selectArtistList() {
 }
 
 function withListImages(artist) {
-  const previewImage = artist.images?.[0] ?? null
-  const images = previewImage
-    ? clientImages(mergeLegacyImages([previewImage], artist.portrait, {
-        fallbackUsage: 'portrait',
-        altText: artist.name,
-        idPrefix: artist.id,
-      }))
-    : []
+  const images = clientImages(mergeLegacyImages(artist.images ?? [], artist.portrait, {
+    fallbackUsage: 'portrait',
+    altText: artist.name,
+    idPrefix: artist.id,
+  }))
+  const primaryImage = images.find((image) => image.isPrimary) ?? images[0]
 
   return {
     ...artist,
     links: profileLinksForSource(artist, ARTIST_LEGACY_LINK_FIELDS),
-    portrait: images[0]?.previewUrl ?? artist.portrait,
+    portrait: primaryImage?.previewUrl ?? artist.portrait,
     images,
+    image: primaryImage ?? null,
     imageCount: artist._count?.images ?? images.length,
     hasAdminPassword: Boolean(artist.adminAccess?.active),
   }
@@ -227,6 +244,9 @@ export default async function handler(req, res) {
       if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_ARTISTS)) return res.status(403).json({ error: 'Forbidden' })
       if (!isSuperAdmin(session)) return res.status(403).json({ error: 'Forbidden' })
       if (isReservedHiddenArtist(existingArtist)) return res.status(403).json({ error: 'This reserved artist cannot be deleted here.' })
+      // Deleting an artist cascades to its albums/videos/board posts at the DB
+      // level, so every image those own must be collected here before the delete —
+      // afterward there'd be no way to look them up.
       const blobPathnames = collectBlobPathnames(
         existingArtist.images,
         existingArtist.portrait,

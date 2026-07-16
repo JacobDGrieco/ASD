@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import { FaArrowLeft, FaArrowRight, FaPencilAlt, FaStickyNote } from 'react-icons/fa';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import AdminProfileLinksSummary from '../../components/admin/AdminProfileLinksSummary.jsx';
-import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
+import { clearAdminResource, loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
 import { isEffectivelyVisible } from '../../lib/contentVisibility.js';
+import { ADMIN_SONGS_FILTER_STATE_KEY } from '../../lib/adminFilterState.js';
 import { songPlacementsAllowOwnLinks } from '../../lib/musicReleaseLinks.js';
 import { normalizeProfileLinks } from '../../lib/profileLinks.js';
 import { isOtherArtist, OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID } from '../../lib/publicVisibility.js';
@@ -18,7 +19,6 @@ import '../../styles/AdminArtistsPage.css';
 import '../../styles/AdminSongsPage.css';
 
 const PAGE_SIZE = 30;
-const SONGS_FILTER_STATE_KEY = 'admin-songs-page-state';
 
 function primaryImage(images) {
 	if (!Array.isArray(images) || images.length === 0) return null;
@@ -226,7 +226,7 @@ export default function AdminMusicSongsPage() {
 	const initialFilterState = (() => {
 		if (typeof window === 'undefined') return { filterArtist: '', filterAlbum: '', filterTitle: '', page: 1 };
 		try {
-			const saved = JSON.parse(window.sessionStorage.getItem(SONGS_FILTER_STATE_KEY) ?? '{}');
+			const saved = JSON.parse(window.sessionStorage.getItem(ADMIN_SONGS_FILTER_STATE_KEY) ?? '{}');
 			return {
 				filterArtist: typeof saved.filterArtist === 'string' ? saved.filterArtist : '',
 				filterAlbum: typeof saved.filterAlbum === 'string' ? saved.filterAlbum : '',
@@ -320,7 +320,7 @@ export default function AdminMusicSongsPage() {
 
 	useEffect(() => {
 		if (typeof window === 'undefined') return;
-		window.sessionStorage.setItem(SONGS_FILTER_STATE_KEY, JSON.stringify({ filterArtist, filterAlbum, filterTitle, page: currentPage }));
+		window.sessionStorage.setItem(ADMIN_SONGS_FILTER_STATE_KEY, JSON.stringify({ filterArtist, filterAlbum, filterTitle, page: currentPage }));
 	}, [currentPage, filterAlbum, filterArtist, filterTitle]);
 
 	const openCreate = () => {
@@ -357,6 +357,7 @@ export default function AdminMusicSongsPage() {
 			: [...songs, saved];
 		setSongs(nextSongs);
 		primeAdminResource('songs-list', token, nextSongs);
+		clearAdminResource('albums-list', token);
 		closeModal();
 	};
 

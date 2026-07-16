@@ -1,5 +1,5 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import { FaEye, FaEyeSlash, FaPencilAlt } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaPencilAlt, FaPlus, FaTrash } from 'react-icons/fa';
 import { TabPanel } from 'primereact/tabview';
 import AdminProfileLinksField from '../../components/admin/AdminProfileLinksField.jsx';
 import AdminProfileLinksSummary from '../../components/admin/AdminProfileLinksSummary.jsx';
@@ -7,14 +7,18 @@ import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx'
 import AdminDateInput from '../../components/admin/AdminDateInput.jsx';
 import { isValidDateInput } from '../../lib/dateInput.js';
 import ImageCollectionField from '../../components/admin/ImageCollectionField.jsx';
+import MusicRolePersonPickerField from '../../components/admin/MusicRolePersonPickerField.jsx';
 import PageTabs from '../../components/shared/PageTabs.jsx';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import { clearAdminResource, loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
 import AdminSongFormModal from '../../components/admin/AdminSongFormModal.jsx';
+import { ADMIN_ALBUMS_FILTER_STATE_KEY } from '../../lib/adminFilterState.js';
 import { defaultVisibilityForReleaseDate, isEffectivelyVisible } from '../../lib/contentVisibility.js';
 import { MUSIC_RELEASE_LEGACY_LINK_FIELDS, normalizeProfileLinks, profileLinksForSource } from '../../lib/profileLinks.js';
 import { isOtherArtist, OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID } from '../../lib/publicVisibility.js';
 import { slugify } from '../../lib/slugify.js';
+import { createRoleEntry } from '../../lib/adminSongForm.js';
+import { SONG_ROLES } from '../../lib/songRoles.js';
 import '../../styles/AdminArtistsPage.css';
 import '../../styles/AdminAlbumsPage.css';
 
@@ -28,6 +32,7 @@ const empty = {
 	type: '',
 	images: [],
 	links: [],
+	roles: [],
 	otherArtistName: '',
 	aboutText: '',
 	soundcloudUrl: '',
@@ -50,6 +55,33 @@ const columns = [
 function primaryImage(images) {
 	if (!Array.isArray(images) || images.length === 0) return null;
 	return images.find((image) => image.isPrimary) ?? images[0];
+}
+
+function selectedRoleImage(entry, artistOptions, outsideArtistOptions) {
+	const selected = entry.artistId
+		? artistOptions.find((artist) => artist.id === entry.artistId)
+		: entry.outsideArtistId
+			? outsideArtistOptions.find((artist) => artist.id === entry.outsideArtistId)
+			: null;
+
+	if (selected?.image) return selected.image;
+	if (!Array.isArray(selected?.images) || selected.images.length === 0) return null;
+	return selected.images.find((image) => image.isPrimary) ?? selected.images[0];
+}
+
+function toFormRoles(roles) {
+	return Array.isArray(roles)
+		? roles.map((entry) => createRoleEntry(entry.role, entry.name, {
+			artistId: entry.artistId,
+			outsideArtistId: entry.outsideArtistId,
+			externalUrl: entry.externalUrl,
+			applyToSongs: entry.applyToSongs !== false,
+		}))
+		: [];
+}
+
+function hasRoleValue(role) {
+	return Boolean(role?.name?.trim() && role?.role);
 }
 
 function isAlbumHidden(album) {
@@ -221,11 +253,72 @@ function AlbumsPagination({ currentPage, totalPages, onPageChange }) {
 	);
 }
 
+function AlbumRolesTab({ form, artistOptions, outsideArtistOptions, addRole, removeRole, updateRole }) {
+	return (
+		<div className="admin-song-tab-layout">
+			<div className="admin-song-tab-scroll">
+				<div className="admin-song-roles-list">
+					{form.roles.map((entry, index) => {
+						const image = selectedRoleImage(entry, artistOptions, outsideArtistOptions);
+
+						return (
+							<div key={entry.clientKey ?? `${entry.role}:${entry.name}`} className="admin-song-role-row admin-song-role-row-with-apply">
+								<label className="admin-song-role-apply-toggle" title="Apply this album role to attached songs">
+									<input
+										type="checkbox"
+										checked={entry.applyToSongs !== false}
+										onChange={(event) => updateRole(index, 'applyToSongs', event.target.checked)}
+										aria-label={`Apply ${entry.role || 'role'} to attached songs`}
+									/>
+								</label>
+								<div className="admin-song-role-thumb" aria-hidden="true">
+									{image ? (
+										<img src={image.previewUrl || image.url} alt="" className="admin-song-role-thumb-img" />
+									) : null}
+								</div>
+								<div className="admin-song-role-name">
+									<MusicRolePersonPickerField
+										name={entry.name}
+										artistId={entry.artistId}
+										outsideArtistId={entry.outsideArtistId}
+										artistOptions={artistOptions}
+										outsideArtistOptions={outsideArtistOptions}
+										onChange={(patch) => updateRole(index, patch)}
+									/>
+								</div>
+								<select value={entry.role} onChange={(event) => updateRole(index, 'role', event.target.value)} className="admin-artists-page-input admin-song-role-select" aria-label={`Role type ${index + 1}`}>
+									{SONG_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
+								</select>
+								<button type="button" onClick={() => removeRole(index)} className="admin-artists-page-danger-btn admin-artists-page-icon-btn" aria-label="Remove role" title="Remove role">
+									<FaTrash aria-hidden="true" />
+								</button>
+							</div>
+						);
+					})}
+				</div>
+			</div>
+			<div className="admin-song-tab-actions">
+				<button
+					type="button"
+					onClick={addRole}
+					className="admin-artists-page-ghost-btn admin-song-add-role-btn"
+					aria-label="Add role"
+					title="Add role"
+				>
+					<FaPlus aria-hidden="true" />
+				</button>
+			</div>
+		</div>
+	);
+}
+
 function AlbumFormModal({
 	form,
 	setForm,
 	token,
 	artistOptions,
+	roleArtistOptions,
+	outsideArtistOptions,
 	scopedArtistId,
 	isArtistScoped,
 	validationErrors,
@@ -233,6 +326,9 @@ function AlbumFormModal({
 	fieldClassName,
 	set,
 	setReleaseDate,
+	addRole,
+	removeRole,
+	updateRole,
 	onClose,
 	onSave,
 	onDelete,
@@ -246,7 +342,7 @@ function AlbumFormModal({
 					<button type="button" onClick={onClose} className="admin-modal-close" aria-label="Close">x</button>
 				</div>
 				<div className="admin-modal-body">
-					<PageTabs className="admin-modal-tabs" tabCount={2}>
+					<PageTabs className="admin-modal-tabs" tabCount={3}>
 						<TabPanel header="Album">
 							<div className="admin-modal-grid">
 								<div className="admin-modal-field admin-modal-field-full">
@@ -339,6 +435,16 @@ function AlbumFormModal({
 								</fieldset>
 							</div>
 						</TabPanel>
+						<TabPanel header="Roles">
+							<AlbumRolesTab
+								form={form}
+								artistOptions={roleArtistOptions}
+								outsideArtistOptions={outsideArtistOptions}
+								addRole={addRole}
+								removeRole={removeRole}
+								updateRole={updateRole}
+							/>
+						</TabPanel>
 					</PageTabs>
 				</div>
 				<div className="admin-modal-footer">
@@ -369,13 +475,28 @@ export default function AdminMusicAlbumsPage() {
 	const isViewer = session?.role === 'VIEWER';
 	const scopedArtistId = session?.artistId ?? '';
 	const auth = { Authorization: `Bearer ${token}` };
+	const initialFilterState = (() => {
+		if (typeof window === 'undefined') return { filterArtist: '', filterType: '', filterTitle: '', page: 1 };
+		try {
+			const saved = JSON.parse(window.sessionStorage.getItem(ADMIN_ALBUMS_FILTER_STATE_KEY) ?? '{}');
+			return {
+				filterArtist: typeof saved.filterArtist === 'string' ? saved.filterArtist : '',
+				filterType: typeof saved.filterType === 'string' ? saved.filterType : '',
+				filterTitle: typeof saved.filterTitle === 'string' ? saved.filterTitle : '',
+				page: Number.isInteger(saved.page) && saved.page > 0 ? saved.page : 1,
+			};
+		} catch {
+			return { filterArtist: '', filterType: '', filterTitle: '', page: 1 };
+		}
+	})();
 	const [albums, setAlbums] = useState([]);
 	const [artists, setArtists] = useState([]);
+	const [outsideArtists, setOutsideArtists] = useState([]);
 	const [form, setForm] = useState(null);
-	const [filterArtist, setFilterArtist] = useState('');
-	const [filterType, setFilterType] = useState('');
-	const [filterTitle, setFilterTitle] = useState('');
-	const [page, setPage] = useState(1);
+	const [filterArtist, setFilterArtist] = useState(initialFilterState.filterArtist);
+	const [filterType, setFilterType] = useState(initialFilterState.filterType);
+	const [filterTitle, setFilterTitle] = useState(initialFilterState.filterTitle);
+	const [page, setPage] = useState(initialFilterState.page);
 	const [loadingEditId, setLoadingEditId] = useState(null);
 	const [validationErrors, setValidationErrors] = useState({});
 	const visibilityTouchedRef = useRef(false);
@@ -391,6 +512,10 @@ export default function AdminMusicAlbumsPage() {
 
 		loadAdminResource({ cacheKey: 'artists-list', url: '/api/admin/artists', token }).then((artistList) => {
 			if (!ignore) setArtists(artistList);
+		});
+
+		loadAdminResource({ cacheKey: 'music-outside-artists-list', url: '/api/admin/outside-artists', token }).then((outsideArtistList) => {
+			if (!ignore) setOutsideArtists(outsideArtistList);
 		});
 
 		return () => {
@@ -418,12 +543,25 @@ export default function AdminMusicAlbumsPage() {
 		)
 	), [artists]);
 
+	const roleArtistOptions = useMemo(() => (
+		artists.toSorted((left, right) => compareLexicographically(left.name, right.name))
+	), [artists]);
+
+	const roleOutsideArtistOptions = useMemo(() => (
+		outsideArtists.toSorted((left, right) => compareLexicographically(left.name, right.name))
+	), [outsideArtists]);
+
 	const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredAlbums.length / PAGE_SIZE)), [filteredAlbums.length]);
 	const currentPage = Math.min(page, totalPages);
 	const pagedAlbums = useMemo(
 		() => filteredAlbums.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
 		[currentPage, filteredAlbums]
 	);
+
+	useEffect(() => {
+		if (typeof window === 'undefined') return;
+		window.sessionStorage.setItem(ADMIN_ALBUMS_FILTER_STATE_KEY, JSON.stringify({ filterArtist, filterType, filterTitle, page: currentPage }));
+	}, [currentPage, filterArtist, filterTitle, filterType]);
 
 	const openCreate = () => {
 		setValidationErrors({});
@@ -446,6 +584,7 @@ export default function AdminMusicAlbumsPage() {
 				otherArtistName: detail.otherArtistName ?? '',
 				images: detail.images ?? [],
 				links: profileLinksForSource(detail, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
+				roles: toFormRoles(detail.roles),
 				aboutText: detail.aboutText ?? '',
 				soundcloudUrl: detail.soundcloudUrl ?? '',
 				spotifyUrl: detail.spotifyUrl ?? '',
@@ -477,6 +616,14 @@ export default function AdminMusicAlbumsPage() {
 		const payload = {
 			...form,
 			links: normalizeProfileLinks(form.links),
+			roles: form.roles.filter(hasRoleValue).map(({ role, name, artistId, outsideArtistId, externalUrl, applyToSongs }) => ({
+				role,
+				name,
+				artistId,
+				outsideArtistId,
+				externalUrl,
+				applyToSongs: applyToSongs !== false,
+			})),
 			slug: slugify(form.title),
 			...(isArtistScoped ? { artistId: scopedArtistId } : {}),
 		};
@@ -495,6 +642,15 @@ export default function AdminMusicAlbumsPage() {
 		const nextAlbums = isEdit ? albums.map((album) => (album.id === saved.id ? withArtist : album)) : [...albums, withArtist];
 		setAlbums(nextAlbums);
 		primeAdminResource('albums-list', token, nextAlbums);
+		clearAdminResource('songs-list', token);
+		fetch('/api/admin/outside-artists', { headers: auth })
+			.then((response) => (response.ok ? response.json() : null))
+			.then((outsideArtistList) => {
+				if (!outsideArtistList) return;
+				setOutsideArtists(outsideArtistList);
+				primeAdminResource('music-outside-artists-list', token, outsideArtistList);
+			})
+			.catch(() => {});
 		closeForm();
 
 		if (!isEdit && saved.type === 'SINGLE') {
@@ -507,6 +663,7 @@ export default function AdminMusicAlbumsPage() {
 				appleMusicUrl: saved.appleMusicUrl ?? '',
 				youtubeUrl: saved.youtubeUrl ?? '',
 				links: profileLinksForSource(saved, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
+				roles: Array.isArray(saved.roles) ? saved.roles.filter((role) => role?.applyToSongs !== false) : [],
 			});
 		}
 	};
@@ -520,8 +677,37 @@ export default function AdminMusicAlbumsPage() {
 
 	const handleSongSaved = () => {
 		clearAdminResource('songs-list', token);
+		clearAdminResource('albums-list', token);
 		setCreateSongPrefill(null);
 	};
+
+	const addRole = () =>
+		setForm((current) => ({
+			...current,
+			roles: [...current.roles, createRoleEntry('Featured Artist', '', { applyToSongs: true })],
+		}));
+
+	const removeRole = (index) =>
+		setForm((current) => ({
+			...current,
+			roles: current.roles.filter((_, i) => i !== index),
+		}));
+
+	const updateRole = (index, keyOrPatch, value) =>
+		setForm((current) => ({
+			...current,
+			roles: current.roles.map((entry, i) => {
+				if (i !== index) return entry;
+
+				const patch = typeof keyOrPatch === 'string'
+					? { [keyOrPatch]: value }
+					: keyOrPatch;
+				const next = { ...entry, ...patch };
+				if (patch._prefillRole && (!entry.role || entry.role === 'Featured Artist')) next.role = patch._prefillRole;
+				delete next._prefillRole;
+				return next;
+			}),
+		}));
 
 	const set = (key) => (event) => {
 		const nextValue = event.target.value;
@@ -644,6 +830,8 @@ export default function AdminMusicAlbumsPage() {
 					setForm={setForm}
 					token={token}
 					artistOptions={artistOptions}
+					roleArtistOptions={roleArtistOptions}
+					outsideArtistOptions={roleOutsideArtistOptions}
 					scopedArtistId={scopedArtistId}
 					isArtistScoped={isArtistScoped}
 					validationErrors={validationErrors}
@@ -651,6 +839,9 @@ export default function AdminMusicAlbumsPage() {
 					fieldClassName={fieldClassName}
 					set={set}
 					setReleaseDate={setReleaseDate}
+					addRole={addRole}
+					removeRole={removeRole}
+					updateRole={updateRole}
 					onClose={closeForm}
 					onSave={handleSave}
 					onDelete={async () => {

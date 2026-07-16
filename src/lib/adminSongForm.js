@@ -1,6 +1,18 @@
+/**
+ * Client-side form-state helpers for the admin song editor (`AdminSongFormModal`).
+ * Builds the initial form shape from either an existing song (edit mode) or a
+ * prefill object (e.g. creating a song from within the Albums page), and handles
+ * the "server record -> editable draft" and reverse shape differences (e.g. role
+ * entries and album placements need stable per-row client keys the server doesn't
+ * track). Client-only.
+ */
 import { defaultVisibilityForReleaseDate } from './contentVisibility.js';
+import { albumTypeSharesSongReleaseFields } from './musicReleaseLinks.js';
 import { MUSIC_RELEASE_LEGACY_LINK_FIELDS, profileLinksForSource } from './profileLinks.js';
 
+// Stable per-row identity for list fields (role credits, album placements) that
+// have no server-assigned id yet — lets React key list items correctly while a new
+// row is being edited, before it's ever saved.
 function createClientKey(prefix) {
 	return `${prefix}-${crypto.randomUUID()}`;
 }
@@ -17,6 +29,7 @@ export function createRoleEntry(role = 'Featured Artist', name = '', extra = {})
 		artistId: extra.artistId ?? '',
 		outsideArtistId: extra.outsideArtistId ?? '',
 		externalUrl: extra.externalUrl ?? '',
+		...(extra.applyToSongs !== undefined ? { applyToSongs: Boolean(extra.applyToSongs) } : {}),
 	};
 }
 
@@ -41,6 +54,10 @@ export const emptySongForm = {
 	albumPlacements: [createAlbumPlacement()],
 };
 
+// Normalizes a song's album placements into form rows, checking three possible
+// server shapes in order (new-style albumPlacements, legacy placements with a
+// nested album, or a flat single albumId) so the form works against whichever
+// shape the loaded record happens to have.
 function buildPlacementForm(song) {
 	if (Array.isArray(song.albumPlacements) && song.albumPlacements.length) {
 		return song.albumPlacements.map((p) => ({
@@ -64,6 +81,36 @@ function buildPlacementForm(song) {
 	return [createAlbumPlacement()];
 }
 
+function sharedReleaseAlbum(song) {
+	const placements = Array.isArray(song?.placements) ? song.placements : [];
+	return placements.find((placement) => albumTypeSharesSongReleaseFields(placement.album?.type))?.album ?? null;
+}
+
+function roleEntriesFromSource(roles) {
+	return Array.isArray(roles)
+		? roles.map((entry) => createRoleEntry(entry.role, entry.name, {
+			artistId: entry.artistId,
+			outsideArtistId: entry.outsideArtistId,
+			externalUrl: entry.externalUrl,
+			applyToSongs: entry.applyToSongs,
+		}))
+		: [];
+}
+
+export function roleEntryKey(role) {
+	const personKey = role.artistId
+		? `artist:${role.artistId}`
+		: role.outsideArtistId
+			? `outside:${role.outsideArtistId}`
+			: `name:${String(role.name ?? '').trim().toLowerCase()}`;
+	return `${role.role}:${personKey}`;
+}
+
+export function albumRoleAppliesToSongs(role) {
+	return role?.applyToSongs !== false;
+}
+
+/** Fetches full song detail for the editor, throwing with the server's error message (or a generic one) on failure. */
 export async function loadAdminSongDetail(songId, token) {
 	const response = await fetch(`/api/admin/songs?id=${songId}`, { headers: { Authorization: `Bearer ${token}` } });
 	const contentType = response.headers.get('content-type') ?? '';
@@ -81,6 +128,14 @@ export async function loadAdminSongDetail(songId, token) {
 	return payload;
 }
 
+/**
+ * Whether a song's current visibility differs from what `defaultVisibilityForReleaseDate`
+ * would produce for its release date — i.e. whether an admin has manually
+ * overridden the auto-computed default. The song form uses this to decide whether
+ * to keep recalculating visibility as the release date changes, or to leave the
+ * admin's explicit choice alone (see `visibilityTouchedRef` pattern in the form
+ * components).
+ */
 export function hasManualSongVisibilityChoice(song) {
 	const releaseDate = song?.meta?.releaseDate ?? song?.placements?.[0]?.album?.releaseDate ?? '';
 	const defaultVisibility = defaultVisibilityForReleaseDate(releaseDate);
@@ -90,20 +145,20 @@ export function hasManualSongVisibilityChoice(song) {
 	);
 }
 
+/** Builds editable form state from a fetched song record (edit mode). */
 export function buildSongFormFromDetail(detail) {
+	const sharedAlbum = sharedReleaseAlbum(detail);
+	const songLinks = profileLinksForSource(detail, MUSIC_RELEASE_LEGACY_LINK_FIELDS);
+	const sharedAlbumLinks = sharedAlbum ? profileLinksForSource(sharedAlbum, MUSIC_RELEASE_LEGACY_LINK_FIELDS) : [];
+	const songRoles = roleEntriesFromSource(detail.meta?.roles);
+
 	return {
 		...emptySongForm,
 		...detail,
 		images: detail.images ?? [],
-		links: profileLinksForSource(detail, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
+		links: songLinks.length ? songLinks : sharedAlbumLinks,
 		aboutText: detail.meta?.aboutText ?? '',
-		roles: Array.isArray(detail.meta?.roles)
-			? detail.meta.roles.map((entry) => createRoleEntry(entry.role, entry.name, {
-				artistId: entry.artistId,
-				outsideArtistId: entry.outsideArtistId,
-				externalUrl: entry.externalUrl,
-			}))
-			: [],
+		roles: songRoles,
 		tags: detail.meta?.tags ?? [],
 		bpm: detail.meta?.bpm ?? '',
 		key: detail.meta?.key ?? '',
@@ -112,12 +167,14 @@ export function buildSongFormFromDetail(detail) {
 	};
 }
 
+/** Builds initial form state for a brand-new song, optionally prefilled (e.g. from "create song" launched off an Album's page with its release date/album already chosen). */
 export function initSongFormFromPrefill(prefill = {}) {
 	return {
 		...emptySongForm,
 		title: prefill.title ?? '',
 		releaseDate: prefill.releaseDate ?? '',
 		links: profileLinksForSource(prefill, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
+		roles: roleEntriesFromSource((prefill.roles ?? []).filter(albumRoleAppliesToSongs)),
 		soundcloudUrl: prefill.soundcloudUrl ?? '',
 		spotifyUrl: prefill.spotifyUrl ?? '',
 		appleMusicUrl: prefill.appleMusicUrl ?? '',
