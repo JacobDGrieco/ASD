@@ -154,7 +154,7 @@ function InfoRow({ label, value, links }) {
 
 function TagRow({ label, tags }) {
   return (
-    <div className="song-info-links-row">
+    <div className="song-info-links-row song-info-links-row--tags">
       <span className="song-info-links-label">{label}</span>
       <div className="song-info-links-tags">
         {tags.map((tag) => (

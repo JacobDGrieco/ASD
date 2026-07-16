@@ -95,6 +95,34 @@
 	filter: grayscale(0.34) contrast(1.05) brightness(0.86);
 }
 
+.about-leader-hidden .about-leader-image-wrap::before,
+.about-leader-hidden .about-leader-image-wrap::after {
+	content: "";
+	position: absolute;
+	inset: 50%;
+	width: 180%;
+	height: 2px;
+	background: rgba(228, 108, 108, 0.92);
+	transform-origin: center;
+	z-index: 3;
+	pointer-events: none;
+}
+
+.about-leader-hidden .about-leader-image-wrap::before {
+	transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.about-leader-hidden .about-leader-image-wrap::after {
+	transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.about-leader-hidden .about-leader-copy h2,
+.about-leader-hidden .about-leader-copy p {
+	text-decoration: line-through;
+	text-decoration-thickness: 1px;
+	text-decoration-color: rgba(228, 108, 108, 0.88);
+}
+
 .about-leader-copy {
 	max-width: 660px;
 }

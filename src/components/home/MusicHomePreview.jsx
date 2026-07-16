@@ -6,7 +6,7 @@ import '../../styles/HomePortal.css';
 function ArtistPreviewCard({ artist, index, className = '', active = false }) {
 	return (
 		<div
-			className={`artist-splash-card ${active ? 'artist-splash-card-active' : ''} ${className}`.trim()}
+			className={`artist-splash-card ${active ? 'artist-splash-card-active' : ''} ${artist.isPubliclyVisible === false ? 'artist-splash-card-hidden' : ''} ${className}`.trim()}
 			style={{ '--artist-splash-enter-delay': `${index * 120}ms` }}
 		>
 			<span className="artist-splash-name-art" data-text={artist.name}>
@@ -45,8 +45,7 @@ function buildMobileSpotlightArtists(artists) {
 
 export default function MusicHomePreview() {
 	const { data: artists } = useApi('/api/artists');
-	const visibleArtists = (artists ?? []).filter((a) => a.isPubliclyVisible !== false);
-	const previewArtists = visibleArtists.slice(0, 8);
+	const previewArtists = (artists ?? []).slice(0, 8);
 	const { artists: mobilePreviewArtists, activeIndex: activeMobileIndex } = buildMobileSpotlightArtists(previewArtists);
 	const rowCount = previewArtists.length >= 5 ? 2 : 1;
 	const columnCount = Math.max(1, Math.ceil(previewArtists.length / rowCount));

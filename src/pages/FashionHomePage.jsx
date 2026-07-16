@@ -151,7 +151,7 @@ function FashionRunwayFeature({
 	const nextPresentation = presentation === 'model' ? 'frame' : 'no-back';
 
 	return (
-		<div className={`fashion-runway-feature fashion-runway-feature-${presentation} fashion-runway-reveal`} aria-label={`Featured look: ${featuredLook.title}`}>
+		<div className={`fashion-runway-feature fashion-runway-feature-${presentation} fashion-runway-reveal ${featuredLook.isVisible === false ? 'fashion-runway-feature-hidden' : ''}`.trim()} aria-label={`Featured look: ${featuredLook.title}`}>
 			{canSwapPresentation ? (
 				<div className="fashion-runway-admin-controls" aria-label="Runway image controls">
 					<button

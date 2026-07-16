@@ -1,6 +1,7 @@
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import { useCompanyProfile } from '../hooks/useCompanyProfile.js';
 import { getCompanyMemberImage } from '../lib/companyProfile.js';
+import '../styles/SongHeader.css';
 import '../styles/AboutPage.css';
 
 export default function AboutPage() {
@@ -30,7 +31,7 @@ export default function AboutPage() {
 						return (
 							<article
 								key={leader.id}
-								className={`about-leader ${index % 2 === 1 ? 'about-leader-reverse' : ''}`}
+								className={`about-leader ${index % 2 === 1 ? 'about-leader-reverse' : ''} ${leader.isVisible === false ? 'about-leader-hidden' : ''}`.trim()}
 							>
 								<div className="about-leader-image-wrap">
 									{imageSrc ? (
@@ -38,6 +39,7 @@ export default function AboutPage() {
 									) : null}
 								</div>
 								<div className="about-leader-copy">
+									{leader.isVisible === false && <span className="song-header-visibility-badge">Hidden in public view</span>}
 									<p className="about-leader-role">{leader.role}</p>
 									<h2>{leader.name}</h2>
 									<p>{leader.bio ?? leader.blurb}</p>

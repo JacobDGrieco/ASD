@@ -5,7 +5,7 @@ export default function LookCard({ look }) {
   const image = look.images?.[0]
 
   return (
-    <Link to={`/fashion/looks/${look.slug}`} className="album-card-card">
+    <Link to={`/fashion/looks/${look.slug}`} className={`album-card-card${look.isVisible === false ? ' album-card-hidden' : ''}`}>
       <div className="album-card-primary-action">
         <div className="album-card-cover-wrap">
           {image ? (

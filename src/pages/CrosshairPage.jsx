@@ -45,6 +45,13 @@ function formatDate(value) {
 	return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function isCrosshairVideoPubliclyVisible(video) {
+	if (!video || video.isVisible === false) return false;
+	if (!video.publishedAt) return true;
+	const publishedAt = new Date(video.publishedAt).getTime();
+	return Number.isNaN(publishedAt) || publishedAt <= Date.now();
+}
+
 export default function CrosshairPage() {
 	const { data: videos, loading, error } = useApi('/api/crosshair', { refreshAtUtcMidnight: true });
 	const [activeType, setActiveType] = useState('ALL');
@@ -103,12 +110,13 @@ export default function CrosshairPage() {
 				</section>
 
 				<section className="crosshair-stage">
-					<div className="crosshair-player-column">
+					<div className={`crosshair-player-column ${selectedVideo && !isCrosshairVideoPubliclyVisible(selectedVideo) ? 'crosshair-player-column-hidden' : ''}`.trim()}>
 						<CrosshairPlayer video={selectedVideo} />
 					</div>
 					<aside className="crosshair-info">
 						{selectedVideo ? (
 							<>
+								{!isCrosshairVideoPubliclyVisible(selectedVideo) && <span className="crosshair-visibility-badge">Hidden in public view</span>}
 								<p className="crosshair-source">{selectedVideo.typeLabel}</p>
 								<h2>{selectedVideo.title}</h2>
 								<div className="crosshair-meta">
@@ -133,10 +141,12 @@ export default function CrosshairPage() {
 					{filteredVideos.map((video) => {
 						const isActive = video.id === selectedVideo?.id;
 						const isShort = video.type === 'SHORT';
+						const isHidden = !isCrosshairVideoPubliclyVisible(video);
 						const cardClassName = [
 							'crosshair-card',
 							isShort ? 'crosshair-card-short' : 'crosshair-card-regular',
 							isActive ? 'crosshair-card-active' : '',
+							isHidden ? 'crosshair-card-hidden' : '',
 						].filter(Boolean).join(' ');
 
 						return (

@@ -2,7 +2,9 @@ import { useMemo } from 'react';
 import AlbumCard from '../components/artist/AlbumCard.jsx';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import { prefetchApi, useApi } from '../hooks/useApi.js';
+import { useAdminAuth } from '../lib/adminAuth.jsx';
 import { buildAlbumPath, buildSongPath } from '../lib/publicVisibility.js';
+import { isAdminPreviewSession } from '../lib/publicPreview.js';
 import '../styles/ShelfPage.css';
 
 void prefetchApi('/api/artists');
@@ -12,6 +14,8 @@ function compareRecentAlbums(left, right) {
 }
 
 export default function ShelfPage() {
+	const { session, token } = useAdminAuth();
+	const adminPreview = isAdminPreviewSession(session, token);
 	const artistApiUrl = '/api/artists';
 	const { data: artists, loading, error } = useApi(artistApiUrl, {
 		refreshAtUtcMidnight: true,
@@ -49,8 +53,8 @@ export default function ShelfPage() {
 						{albums.map((album) => {
 							const singleSong = album.type === 'SINGLE' && album.songs?.length === 1 ? album.songs[0] : null;
 							const to = singleSong
-								? buildSongPath({ song: singleSong })
-								: buildAlbumPath({ album });
+								? buildSongPath({ song: singleSong, allowHidden: adminPreview })
+								: buildAlbumPath({ album, allowHidden: adminPreview });
 
 							return (
 								<AlbumCard

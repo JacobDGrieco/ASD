@@ -10,6 +10,7 @@ import LookCard from '../components/fashion/LookCard.jsx'
 import { usePageTitle } from '../lib/pageTitle.js'
 import { PROFILE_LINK_PLATFORM_LABELS, hrefForProfileLink, normalizeProfileLinks } from '../lib/profileLinks.js'
 import '../styles/Discography.css'
+import '../styles/SongHeader.css'
 import '../styles/FashionPages.css'
 
 const ROLE_LABEL = {
@@ -55,7 +56,7 @@ export default function FashionTalentProfilePage() {
     <div className="page aurora-page fashion-page">
       <AuroraBackground />
       <div className="aurora-page-content fashion-page-content">
-        <section className="fashion-talent-hero">
+        <section className={`fashion-talent-hero ${talent.isVisible === false ? 'fashion-talent-hero-hidden' : ''}`.trim()}>
           <div className="fashion-talent-hero-portrait-wrap">
             <div className="fashion-talent-hero-portrait-frame">
               <ArtworkGallery images={talent.images} title={talent.name} buttonLabel={`View ${talent.name} images`} />
@@ -82,6 +83,7 @@ export default function FashionTalentProfilePage() {
             )}
           </div>
           <div className="fashion-talent-hero-info">
+            {talent.isVisible === false && <span className="song-header-visibility-badge">Hidden in public view</span>}
             <span className="fashion-talent-hero-role">{ROLE_LABEL[talent.role] ?? talent.role}</span>
             <h1 className="fashion-talent-hero-name">{talent.name}</h1>
             {talent.bio && <p className="fashion-talent-hero-bio">{talent.bio}</p>}

@@ -31,8 +31,13 @@ function getRightRailNames(names, startIndex) {
 	return Array.from({ length: RIGHT_RAIL_COUNT }, (_, index) => names[(startIndex + index) % names.length]);
 }
 
+function isVisibleRailRow(row) {
+	return row?.isPubliclyVisible !== false && row?.isVisible !== false;
+}
+
 function getDisplayNames(rows, fallbackNames) {
 	const names = (Array.isArray(rows) ? rows : []).reduce((displayNames, row) => {
+		if (!isVisibleRailRow(row)) return displayNames;
 		const name = row?.name;
 		if (typeof name === 'string' && name.trim()) displayNames.push(name.trim());
 		return displayNames;
@@ -52,8 +57,21 @@ export default function SideRails() {
 	useEffect(() => {
 		const prev = prevSectionRef.current;
 
-		// Only animate section-to-section (both must be non-null and different)
-		if (!section || !prev || section === prev) return undefined;
+		if (section === prev) return undefined;
+
+		if (!section) {
+			prevSectionRef.current = null;
+			setDisplaySection(null);
+			setIsHiding(false);
+			return undefined;
+		}
+
+		if (!prev) {
+			prevSectionRef.current = section;
+			setDisplaySection(section);
+			setIsHiding(false);
+			return undefined;
+		}
 
 		// Fade out immediately
 		setIsHiding(true);
@@ -79,9 +97,10 @@ export default function SideRails() {
 	const { data: musicRailRows } = useApi(section !== null ? '/api/artists' : null);
 	const { data: fashionRailRows } = useApi(section !== null ? '/api/fashion/talent' : null);
 
-	// All content derives from displaySection so it only changes mid-transition
-	const fallbackNames = displaySection === 'fashion' ? FASHION_FALLBACK_NAMES : MUSIC_FALLBACK_NAMES;
-	const railRows = displaySection === 'music' ? musicRailRows : displaySection === 'fashion' ? fashionRailRows : null;
+	// All content derives from displaySection so section-to-section changes only swap mid-transition.
+	const activeDisplaySection = displaySection ?? section;
+	const fallbackNames = activeDisplaySection === 'fashion' ? FASHION_FALLBACK_NAMES : MUSIC_FALLBACK_NAMES;
+	const railRows = activeDisplaySection === 'music' ? musicRailRows : activeDisplaySection === 'fashion' ? fashionRailRows : null;
 	const rightRailSourceNames = useMemo(
 		() => getDisplayNames(railRows, fallbackNames),
 		[fallbackNames, railRows]
@@ -98,7 +117,7 @@ export default function SideRails() {
 			previousIndex: null,
 			transitionKey: 0,
 		});
-	}, [displaySection, rightRailSourceNames.length]);
+	}, [activeDisplaySection, rightRailSourceNames.length]);
 
 	useEffect(() => {
 		const intervalId = window.setInterval(() => {

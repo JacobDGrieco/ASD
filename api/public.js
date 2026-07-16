@@ -8,6 +8,7 @@ import { hasPublicBoardSource, isOtherArtist, isReservedHiddenArtist, OTHER_ARTI
 import { isReleasedOnUtcDay } from '../src/lib/releaseSchedule.js'
 import { COMPANY_LEADERS, COMPANY_SUMMARY } from '../src/lib/companyProfile.js'
 import { sortMusicRoleEntries } from '../src/lib/songRoles.js'
+import { readAdminTokenFromRequest, verifyToken } from '../src/lib/auth.js'
 
 const DEFAULT_COMPANY_TITLE = COMPANY_SUMMARY.title
 const DEFAULT_COMPANY_BIO = COMPANY_SUMMARY.description
@@ -49,6 +50,11 @@ function normalizeSlug(value) {
 
 function setPublicCache(res) {
   res.setHeader('Cache-Control', 'no-store')
+}
+
+function publicRequestContext(req) {
+  const token = readAdminTokenFromRequest(req)
+  return { includeHidden: Boolean(token && verifyToken(token)) }
 }
 
 function formatCompanyMember(member) {
@@ -104,7 +110,7 @@ function fallbackCompanyAbout() {
   }
 }
 
-async function getCompanyAbout(res) {
+async function getCompanyAbout(res, context) {
   setPublicCache(res)
   let profile
   let members
@@ -113,7 +119,7 @@ async function getCompanyAbout(res) {
     ;[profile, members] = await Promise.all([
       prisma.companyProfile.findUnique({ where: { id: 'main' } }),
       prisma.companyMember.findMany({
-        where: { isVisible: true },
+        where: context.includeHidden ? {} : { isVisible: true },
         orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
       }),
     ])
@@ -384,10 +390,10 @@ function formatPlacementSongs(placements, fallbackReleaseDate = null, now = new 
     }))
 }
 
-function visiblePlacementSongs(placements, fallbackReleaseDate, now, artistVisible = true) {
+function visiblePlacementSongs(placements, fallbackReleaseDate, now, artistVisible = true, context = { includeHidden: false }) {
   const songs = []
   for (const song of formatPlacementSongs(placements, fallbackReleaseDate, now)) {
-    if (!isPublicSongReleased(song, fallbackReleaseDate, now)) continue
+    if (!isPreviewSongVisible(song, fallbackReleaseDate, now, context)) continue
     songs.push({
       ...song,
       isPubliclyVisible: song.isPubliclyVisible && artistVisible,
@@ -410,6 +416,19 @@ function isPublicArtistVisible(artist) {
   return !isReservedHiddenArtist(artist) && artist?.isVisible !== false
 }
 
+function isPreviewArtistVisible(artist, context) {
+  if (!artist) return false
+  return !isReservedHiddenArtist(artist) && (context.includeHidden || artist?.isVisible !== false)
+}
+
+function isPreviewAlbumVisible(album, now, context) {
+  return context.includeHidden || isPublicAlbumReleased(album, now)
+}
+
+function isPreviewSongVisible(song, fallbackReleaseDate, now, context) {
+  return context.includeHidden || isPublicSongReleased(song, fallbackReleaseDate, now)
+}
+
 function resolvePrimaryPlacement(placements) {
   return placements?.[0] ?? null
 }
@@ -422,7 +441,7 @@ function earliestPlacementAlbumReleaseDate(placements) {
   return releaseDates[0] ?? null
 }
 
-async function getArtists(res) {
+async function getArtists(res, context) {
   setPublicCache(res)
   const now = new Date()
   const artists = await prisma.artist.findMany({
@@ -496,21 +515,21 @@ async function getArtists(res) {
 
   return res.status(200).json(
     artists.reduce((publicArtists, artist) => {
-      if (!isPublicArtistVisible(artist)) return publicArtists
+      if (!isPreviewArtistVisible(artist, context)) return publicArtists
       const images = formatArtistImages(artist)
+      const artistVisible = isPublicArtistVisible(artist)
       publicArtists.push({
         ...artist,
         links: profileLinksForSource(artist, ARTIST_LEGACY_LINK_FIELDS),
-        isPubliclyVisible: isPublicArtistVisible(artist),
+        isPubliclyVisible: artistVisible,
         portrait: images[0]?.previewUrl ?? artist.portrait,
         images,
         albums: (artist.albums ?? []).reduce((albums, album) => {
-          if (!isPublicAlbumReleased(album, now)) return albums
-          const artistVisible = isPublicArtistVisible(artist)
+          if (!isPreviewAlbumVisible(album, now, context)) return albums
           albums.push({
             ...formatAlbumSummary(album),
             isPubliclyVisible: isPublicAlbumReleased(album, now) && artistVisible,
-            songs: visiblePlacementSongs(album.songPlacements, album.releaseDate, now, artistVisible),
+            songs: visiblePlacementSongs(album.songPlacements, album.releaseDate, now, artistVisible, context),
           })
           return albums
         }, []),
@@ -520,7 +539,7 @@ async function getArtists(res) {
   )
 }
 
-async function getArtist(res, slug) {
+async function getArtist(res, slug, context) {
   setPublicCache(res)
   const now = new Date()
   const artist = await prisma.artist.findUnique({
@@ -559,7 +578,7 @@ async function getArtist(res, slug) {
   })
 
   if (!artist) return res.status(404).json({ error: 'Artist not found' })
-  if (!isPublicArtistVisible(artist)) return res.status(404).json({ error: 'Artist not found' })
+  if (!isPreviewArtistVisible(artist, context)) return res.status(404).json({ error: 'Artist not found' })
 
   const images = formatArtistImages(artist)
 
@@ -626,9 +645,9 @@ async function getArtist(res, slug) {
 
     for (const placement of song.placements) {
       const album = placement.album
-      if (!isPublicArtistVisible(album.artist)) continue
-      if (!isPublicAlbumReleased(album, now)) continue
-      if (!isPublicSongReleased({ ...song, releaseDate }, album.releaseDate, now)) continue
+      if (!isPreviewArtistVisible(album.artist, context)) continue
+      if (!isPreviewAlbumVisible(album, now, context)) continue
+      if (!isPreviewSongVisible({ ...song, releaseDate }, album.releaseDate, now, context)) continue
 
       if (!albumMap.has(album.id)) {
         albumMap.set(album.id, {
@@ -667,12 +686,12 @@ async function getArtist(res, slug) {
     portrait: images[0]?.previewUrl ?? artist.portrait,
     images,
     albums: artist.albums.reduce((albums, album) => {
-      if (!isPublicAlbumReleased(album, now)) return albums
+      if (!isPreviewAlbumVisible(album, now, context)) return albums
       const artistVisible = isPublicArtistVisible(artist)
       albums.push({
         ...formatAlbumSummary(album),
         isPubliclyVisible: isPublicAlbumReleased(album, now) && artistVisible,
-        songs: visiblePlacementSongs(album.songPlacements, album.releaseDate, now, artistVisible),
+        songs: visiblePlacementSongs(album.songPlacements, album.releaseDate, now, artistVisible, context),
       })
       return albums
     }, []),
@@ -680,17 +699,19 @@ async function getArtist(res, slug) {
   })
 }
 
-async function getCrosshairVideos(res) {
+async function getCrosshairVideos(res, context) {
   setPublicCache(res)
   const now = new Date()
   const videos = await prisma.crosshairVideo.findMany({
-    where: {
-      isVisible: true,
-      OR: [
-        { publishedAt: null },
-        { publishedAt: { lte: now } },
-      ],
-    },
+    where: context.includeHidden
+      ? {}
+      : {
+          isVisible: true,
+          OR: [
+            { publishedAt: null },
+            { publishedAt: { lte: now } },
+          ],
+        },
     orderBy: [
       { publishedAt: 'desc' },
       { createdAt: 'desc' },
@@ -707,7 +728,7 @@ async function getCrosshairVideos(res) {
   )
 }
 
-async function getAlbum(res, id) {
+async function getAlbum(res, id, context) {
   setPublicCache(res)
   const now = new Date()
   const album = await prisma.album.findUnique({
@@ -739,8 +760,8 @@ async function getAlbum(res, id) {
   })
 
   if (!album) return res.status(404).json({ error: 'Album not found' })
-  if (!isPublicArtistVisible(album.artist)) return res.status(404).json({ error: 'Album not found' })
-  if (!isPublicAlbumReleased(album, now)) return res.status(404).json({ error: 'Album not found' })
+  if (!isPreviewArtistVisible(album.artist, context)) return res.status(404).json({ error: 'Album not found' })
+  if (!isPreviewAlbumVisible(album, now, context)) return res.status(404).json({ error: 'Album not found' })
 
   const albumImages = formatAlbumImages(album)
   const roles = sortMusicRoleEntries(album.roles)
@@ -758,11 +779,12 @@ async function getAlbum(res, id) {
       album.releaseDate,
       now,
       isPublicArtistVisible(album.artist),
+      context,
     ),
   })
 }
 
-async function getSong(res, id) {
+async function getSong(res, id, context) {
   setPublicCache(res)
   const now = new Date()
   const song = await prisma.song.findUnique({
@@ -833,8 +855,8 @@ async function getSong(res, id) {
   if (!song) return res.status(404).json({ error: 'Song not found' })
 
   const releasedPlacements = song.placements.filter((placement) => (
-    isPublicArtistVisible(placement.album.artist) &&
-    isPublicAlbumReleased(placement.album, now)
+    isPreviewArtistVisible(placement.album.artist, context) &&
+    isPreviewAlbumVisible(placement.album, now, context)
   ))
   const primaryPlacement = resolvePrimaryPlacement(releasedPlacements)
   const requestedPlacement = resolvePrimaryPlacement(song.placements)
@@ -842,10 +864,10 @@ async function getSong(res, id) {
   const inheritedSongReleaseDate = earliestPlacementAlbumReleaseDate(song.placements)
   const songReleaseDate = song.meta?.releaseDate ?? inheritedSongReleaseDate ?? requestedPlacement?.album?.releaseDate ?? null
 
-  if (!requestedPlacement || !isPublicArtistVisible(requestedPlacement.album.artist) || !isPublicAlbumReleased(requestedPlacement.album, now)) {
+  if (!requestedPlacement || !isPreviewArtistVisible(requestedPlacement.album.artist, context) || !isPreviewAlbumVisible(requestedPlacement.album, now, context)) {
     return res.status(404).json({ error: 'Song not found' })
   }
-  if (!isPublicSongReleased({ ...song, releaseDate: songReleaseDate }, requestedPlacement.album.releaseDate, now)) {
+  if (!isPreviewSongVisible({ ...song, releaseDate: songReleaseDate }, requestedPlacement.album.releaseDate, now, context)) {
     return res.status(404).json({ error: 'Song not found' })
   }
 
@@ -880,6 +902,7 @@ async function getSong(res, id) {
           album.releaseDate,
           now,
           isPublicArtistVisible(album.artist),
+          context,
         ),
       },
     }
@@ -909,7 +932,7 @@ async function getSong(res, id) {
   })
 }
 
-async function getRecordPlayer(res) {
+async function getRecordPlayer(res, context) {
   try {
     setPublicCache(res)
     const now = new Date()
@@ -965,12 +988,12 @@ async function getRecordPlayer(res) {
       tracks
         .flatMap((track) => {
           const placement = track.song.placements.find((candidate) => (
-            isPublicArtistVisible(candidate.album.artist) &&
-            isPublicAlbumReleased(candidate.album, now) &&
-            isPublicSongReleased({
+            isPreviewArtistVisible(candidate.album.artist, context) &&
+            isPreviewAlbumVisible(candidate.album, now, context) &&
+            isPreviewSongVisible({
               ...track.song,
               releaseDate: track.song.meta?.releaseDate ?? earliestPlacementAlbumReleaseDate(track.song.placements),
-            }, candidate.album.releaseDate, now)
+            }, candidate.album.releaseDate, now, context)
           ))
           if (!placement) return []
 
@@ -1113,17 +1136,17 @@ function formatFashionLook(look) {
   }
 }
 
-async function getFashionTalentList(res) {
+async function getFashionTalentList(res, context) {
   setPublicCache(res)
   const talent = await prisma.fashionTalent.findMany({
-    where: { isVisible: true },
+    where: context.includeHidden ? {} : { isVisible: true },
     orderBy: { order: 'asc' },
     select: publicFashionTalentSelect(),
   })
   return res.status(200).json(talent.map(formatFashionTalent))
 }
 
-async function getFashionTalent(res, slug) {
+async function getFashionTalent(res, slug, context) {
   setPublicCache(res)
   const talent = await prisma.fashionTalent.findUnique({
     where: { slug },
@@ -1152,10 +1175,10 @@ async function getFashionTalent(res, slug) {
   })
 
   if (!talent) return res.status(404).json({ error: 'Talent not found' })
-  if (!talent.isVisible) return res.status(404).json({ error: 'Talent not found' })
+  if (!context.includeHidden && !talent.isVisible) return res.status(404).json({ error: 'Talent not found' })
 
   const featuredIn = (talent.lookCredits ?? []).reduce((credits, credit) => {
-    if (!credit.look?.isVisible) return credits
+    if (!context.includeHidden && !credit.look?.isVisible) return credits
     credits.push({
       roleLabel: credit.roleLabel,
       look: credit.look
@@ -1163,6 +1186,7 @@ async function getFashionTalent(res, slug) {
             id: credit.look.id,
             title: credit.look.title,
             slug: credit.look.slug,
+            isVisible: credit.look.isVisible,
             images: clientImages(credit.look.images ?? []),
             pieces: new Array(credit.look._count?.pieces ?? 0),
           }
@@ -1264,11 +1288,11 @@ function includePublicCollectionCredits() {
   }
 }
 
-async function getFashionCatalogue(res) {
+async function getFashionCatalogue(res, context) {
   setPublicCache(res)
 
   const collections = await prisma.fashionCollection.findMany({
-    where: { isVisible: true },
+    where: context.includeHidden ? {} : { isVisible: true },
     orderBy: [
       { releaseDate: { sort: 'desc', nulls: 'last' } },
       { order: 'asc' },
@@ -1276,7 +1300,7 @@ async function getFashionCatalogue(res) {
     ],
     include: {
       lookPlacements: {
-        where: { look: { isVisible: true } },
+        ...(context.includeHidden ? {} : { where: { look: { isVisible: true } } }),
         orderBy: { sortOrder: 'asc' },
         include: {
           look: {
@@ -1341,14 +1365,14 @@ function compareFashionCatalogueItems(left, right) {
   return (left.order ?? 0) - (right.order ?? 0)
 }
 
-async function getFashionCollection(res, slug) {
+async function getFashionCollection(res, slug, context) {
   setPublicCache(res)
 
   const collection = await prisma.fashionCollection.findUnique({
     where: { slug },
     include: {
       lookPlacements: {
-        where: { look: { isVisible: true } },
+        ...(context.includeHidden ? {} : { where: { look: { isVisible: true } } }),
         orderBy: { sortOrder: 'asc' },
         include: {
           look: {
@@ -1361,7 +1385,7 @@ async function getFashionCollection(res, slug) {
   })
 
   if (!collection) return res.status(404).json({ error: 'Collection not found' })
-  if (!collection.isVisible) return res.status(404).json({ error: 'Collection not found' })
+  if (!context.includeHidden && !collection.isVisible) return res.status(404).json({ error: 'Collection not found' })
 
   const seenKeys = new Set()
   const mergedCredits = []
@@ -1412,10 +1436,10 @@ async function getFashionCollection(res, slug) {
   })
 }
 
-async function getFashionLooksList(res) {
+async function getFashionLooksList(res, context) {
   setPublicCache(res)
   const looks = await prisma.fashionLook.findMany({
-    where: { isVisible: true },
+    where: context.includeHidden ? {} : { isVisible: true },
     orderBy: [
       { releaseDate: { sort: 'desc', nulls: 'last' } },
       { order: 'asc' },
@@ -1425,7 +1449,7 @@ async function getFashionLooksList(res) {
   return res.status(200).json(looks.map(formatFashionLook).sort(compareFashionCatalogueItems))
 }
 
-async function getFashionLook(res, slug) {
+async function getFashionLook(res, slug, context) {
   setPublicCache(res)
   const look = await prisma.fashionLook.findUnique({
     where: { slug },
@@ -1433,28 +1457,34 @@ async function getFashionLook(res, slug) {
   })
 
   if (!look) return res.status(404).json({ error: 'Look not found' })
-  if (!look.isVisible) return res.status(404).json({ error: 'Look not found' })
+  if (!context.includeHidden && !look.isVisible) return res.status(404).json({ error: 'Look not found' })
 
   return res.status(200).json(formatFashionLook(look))
 }
 
-async function getBoardPosts(res) {
+async function getBoardPosts(res, context) {
   setPublicCache(res)
   const now = new Date()
   const ageCap = new Date()
   ageCap.setDate(ageCap.getDate() - 90)
 
   const posts = await prisma.boardPost.findMany({
-    where: {
-      publishedAt: { not: null, lte: now },
-      archivedAt: null,
-      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-      AND: [{ publishedAt: { gte: ageCap } }],
-      artist: {
-        isVisible: true,
-        slug: { not: OTHER_ARTIST_SLUG },
-      },
-    },
+    where: context.includeHidden
+      ? {
+          artist: {
+            slug: { not: OTHER_ARTIST_SLUG },
+          },
+        }
+      : {
+          publishedAt: { not: null, lte: now },
+          archivedAt: null,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+          AND: [{ publishedAt: { gte: ageCap } }],
+          artist: {
+            isVisible: true,
+            slug: { not: OTHER_ARTIST_SLUG },
+          },
+        },
     orderBy: { publishedAt: 'desc' },
     take: 25,
     select: {
@@ -1473,30 +1503,31 @@ async function getBoardPosts(res) {
     },
   })
 
-  return res.status(200).json(posts.filter((post) => hasPublicBoardSource(post.artist)))
+  return res.status(200).json(context.includeHidden ? posts : posts.filter((post) => hasPublicBoardSource(post.artist)))
 }
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+  const context = publicRequestContext(req)
 
   const resource = typeof req.query.resource === 'string' ? req.query.resource : ''
   const slug = normalizeSlug(req.query.slug)
   const id = typeof req.query.id === 'string' ? req.query.id.trim() : null
 
-  if (resource === 'artists') return getArtists(res)
-  if (resource === 'artist' && slug) return getArtist(res, slug)
-  if (resource === 'album' && id) return getAlbum(res, id)
-  if (resource === 'song' && id) return getSong(res, id)
-  if (resource === 'crosshair') return getCrosshairVideos(res)
-  if (resource === 'recordPlayer') return getRecordPlayer(res)
-  if (resource === 'boardPosts') return getBoardPosts(res)
-  if (resource === 'about') return getCompanyAbout(res)
-  if (resource === 'fashionTalentList') return getFashionTalentList(res)
-  if (resource === 'fashionTalent' && slug) return getFashionTalent(res, slug)
-  if (resource === 'fashionLooksList') return getFashionLooksList(res)
-  if (resource === 'fashionLook' && slug) return getFashionLook(res, slug)
-  if (resource === 'fashionCatalogue') return getFashionCatalogue(res)
-  if (resource === 'fashionCollection' && slug) return getFashionCollection(res, slug)
+  if (resource === 'artists') return getArtists(res, context)
+  if (resource === 'artist' && slug) return getArtist(res, slug, context)
+  if (resource === 'album' && id) return getAlbum(res, id, context)
+  if (resource === 'song' && id) return getSong(res, id, context)
+  if (resource === 'crosshair') return getCrosshairVideos(res, context)
+  if (resource === 'recordPlayer') return getRecordPlayer(res, context)
+  if (resource === 'boardPosts') return getBoardPosts(res, context)
+  if (resource === 'about') return getCompanyAbout(res, context)
+  if (resource === 'fashionTalentList') return getFashionTalentList(res, context)
+  if (resource === 'fashionTalent' && slug) return getFashionTalent(res, slug, context)
+  if (resource === 'fashionLooksList') return getFashionLooksList(res, context)
+  if (resource === 'fashionLook' && slug) return getFashionLook(res, slug, context)
+  if (resource === 'fashionCatalogue') return getFashionCatalogue(res, context)
+  if (resource === 'fashionCollection' && slug) return getFashionCollection(res, slug, context)
 
   return res.status(404).json({ error: 'Not found' })
 }

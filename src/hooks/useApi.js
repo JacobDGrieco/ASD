@@ -1,5 +1,7 @@
 import { useEffect, useReducer } from 'react'
 import { clearCachedApiEntry, getCachedApiEntry, prefetchApi } from '../lib/apiCache.js'
+import { useAdminAuth } from '../lib/adminAuth.jsx'
+import { isAdminPreviewSession } from '../lib/publicPreview.js'
 import { millisecondsUntilNextUtcMidnight } from '../lib/releaseSchedule.js'
 
 function apiStateReducer(state, action) {
@@ -24,7 +26,12 @@ function apiStateReducer(state, action) {
 export { prefetchApi }
 
 export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = false, headers, cacheKey = url } = {}) {
-  const cached = url ? getCachedApiEntry(cacheKey, maxAge) : null
+  const auth = useAdminAuth()
+  const adminPreview = isAdminPreviewSession(auth?.session, auth?.token)
+  const effectiveCacheKey = adminPreview && url?.startsWith('/api/') && !url.startsWith('/api/admin/')
+    ? `${cacheKey}:admin-preview`
+    : cacheKey
+  const cached = url ? getCachedApiEntry(effectiveCacheKey, maxAge) : null
   const [{ data, loading, error }, dispatchApiState] = useReducer(
     apiStateReducer,
     { data: cached?.data ?? null, loading: url !== null && !cached, error: null }
@@ -34,7 +41,7 @@ export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = fal
     if (!url) return
 
     let cancelled = false
-    const cachedEntry = getCachedApiEntry(cacheKey, maxAge)
+    const cachedEntry = getCachedApiEntry(effectiveCacheKey, maxAge)
 
     if (cachedEntry) {
       dispatchApiState({ type: 'cached', data: cachedEntry.data })
@@ -43,7 +50,7 @@ export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = fal
 
     dispatchApiState({ type: 'loading' })
 
-    prefetchApi(url, { maxAge, headers, cacheKey })
+    prefetchApi(url, { maxAge, headers, cacheKey: effectiveCacheKey })
       .then((nextData) => {
         if (!cancelled) {
           dispatchApiState({ type: 'success', data: nextData })
@@ -58,7 +65,7 @@ export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = fal
     return () => {
       cancelled = true
     }
-  }, [cacheKey, headers, maxAge, url])
+  }, [effectiveCacheKey, headers, maxAge, url])
 
   useEffect(() => {
     if (!url || !refreshAtUtcMidnight) return undefined
@@ -68,9 +75,9 @@ export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = fal
 
     const scheduleRefresh = () => {
       timeoutId = window.setTimeout(() => {
-        clearCachedApiEntry(cacheKey)
+        clearCachedApiEntry(effectiveCacheKey)
 
-        prefetchApi(url, { maxAge, headers, cacheKey })
+        prefetchApi(url, { maxAge, headers, cacheKey: effectiveCacheKey })
           .then((nextData) => {
             if (!cancelled) {
               dispatchApiState({ type: 'refreshSuccess', data: nextData })
@@ -93,7 +100,7 @@ export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = fal
       cancelled = true
       if (timeoutId !== null) window.clearTimeout(timeoutId)
     }
-  }, [cacheKey, headers, maxAge, refreshAtUtcMidnight, url])
+  }, [effectiveCacheKey, headers, maxAge, refreshAtUtcMidnight, url])
 
   return { data, loading, error }
 }

@@ -4,6 +4,7 @@ import '../../styles/AlbumCard.css'
 export default function CollectionCard({ collection, isOpen, onClick, to, metaOverride }) {
   const coverImg = collection.coverImage
   const isLoose = collection.collectionType === 'LOOSE_LOOK' || collection.catalogueType === 'loose'
+  const isHidden = collection.isVisible === false || (isLoose && collection.linkedLook?.isVisible === false)
   const lookCount = collection.looks?.length ?? 0
   const meta = metaOverride ?? [
     isLoose ? 'Loose' : 'Collection',
@@ -33,7 +34,7 @@ export default function CollectionCard({ collection, isOpen, onClick, to, metaOv
 
   if (to) {
     return (
-      <Link to={to} className={`album-card-card${isOpen ? ' album-card-open' : ''}`}>
+      <Link to={to} className={`album-card-card${isOpen ? ' album-card-open' : ''}${isHidden ? ' album-card-hidden' : ''}`}>
         <div className="album-card-primary-action">
           {content}
         </div>
@@ -42,7 +43,7 @@ export default function CollectionCard({ collection, isOpen, onClick, to, metaOv
   }
 
   return (
-    <div className={`album-card-card${isOpen ? ' album-card-open' : ''}`}>
+    <div className={`album-card-card${isOpen ? ' album-card-open' : ''}${isHidden ? ' album-card-hidden' : ''}`}>
       <button type="button" className="album-card-primary-action" onClick={onClick}>
         {content}
       </button>

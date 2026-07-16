@@ -94,6 +94,7 @@
 }
 
 .crosshair-player-frame {
+	position: relative;
 	aspect-ratio: 16 / 9;
 	width: 100%;
 	background:
@@ -113,6 +114,38 @@
 	border: 0;
 	display: block;
 	background: #000;
+}
+
+.crosshair-player-column-hidden .crosshair-player-frame::before,
+.crosshair-player-column-hidden .crosshair-player-frame::after,
+.crosshair-card-hidden .crosshair-thumb::before,
+.crosshair-card-hidden .crosshair-thumb::after {
+	content: "";
+	position: absolute;
+	inset: 50%;
+	width: 180%;
+	height: 2px;
+	background: rgba(228, 108, 108, 0.92);
+	transform-origin: center;
+	z-index: 3;
+	pointer-events: none;
+}
+
+.crosshair-player-column-hidden .crosshair-player-frame::before,
+.crosshair-card-hidden .crosshair-thumb::before {
+	transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.crosshair-player-column-hidden .crosshair-player-frame::after,
+.crosshair-card-hidden .crosshair-thumb::after {
+	transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.crosshair-card-hidden .crosshair-card-body strong,
+.crosshair-card-hidden .crosshair-card-body span {
+	text-decoration: line-through;
+	text-decoration-thickness: 1px;
+	text-decoration-color: rgba(228, 108, 108, 0.88);
 }
 
 .crosshair-player-empty {
@@ -150,6 +183,19 @@
 	margin-top: 10px;
 	font-size: clamp(1.6rem, 3vw, 2.35rem);
 	line-height: 1.05;
+}
+
+.crosshair-visibility-badge {
+	display: inline-flex;
+	width: fit-content;
+	padding: 6px 10px;
+	border: 1px solid rgba(228, 108, 108, 0.45);
+	border-radius: 999px;
+	background: rgba(70, 20, 20, 0.24);
+	color: #efb0b0;
+	font-size: 0.72rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
 }
 
 .crosshair-meta {

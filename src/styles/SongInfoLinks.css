@@ -67,6 +67,10 @@
   align-items: start;
 }
 
+.song-info-links-row--tags {
+  margin-top: 10px;
+}
+
 .song-info-links-label {
   color: var(--text);
   text-align: left;

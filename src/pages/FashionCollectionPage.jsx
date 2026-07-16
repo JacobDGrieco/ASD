@@ -112,7 +112,7 @@ function CollectionHeader({ collection }) {
   const meta = [collection.season, collection.location].filter(Boolean).join(' · ')
 
   return (
-    <section className="song-header-header song-header-album-header fashion-collection-header">
+    <section className={`song-header-header song-header-album-header fashion-collection-header ${collection.isVisible === false ? 'song-header-hidden' : ''}`.trim()}>
       <div className="song-header-media-column fashion-collection-media-column">
         <div className="song-header-art-wrap fashion-collection-cover-wrap">
           {coverImg ? (
@@ -127,6 +127,7 @@ function CollectionHeader({ collection }) {
         </div>
       </div>
       <div className="song-header-info fashion-collection-info">
+        {collection.isVisible === false && <span className="song-header-visibility-badge">Hidden in public view</span>}
         <h1 className="fashion-collection-title">{collection.title}</h1>
         {meta && <p className="song-header-meta fashion-collection-meta">{meta}</p>}
         {collection.description && (

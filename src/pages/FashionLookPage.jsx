@@ -4,6 +4,7 @@ import { FaShoppingBag, FaUsers, FaChevronLeft, FaChevronRight } from 'react-ico
 import { useApi } from '../hooks/useApi.js'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 import { usePageTitle } from '../lib/pageTitle.js'
+import '../styles/SongHeader.css'
 import '../styles/FashionPages.css'
 
 const CREDIT_ROLE_PRIORITY = new Map([
@@ -442,7 +443,7 @@ export default function FashionLookPage() {
     <div className="page aurora-page fashion-page">
       <AuroraBackground />
       <div className="aurora-page-content fashion-page-content">
-        <section className="fashion-look-hero">
+        <section className={`fashion-look-hero ${look.isVisible === false ? 'fashion-look-hero-hidden' : ''}`.trim()}>
           <div className="fashion-look-gallery">
             <div className="fashion-look-gallery-main">
               {activeImage ? (
@@ -494,6 +495,7 @@ export default function FashionLookPage() {
           </div>
 
           <div className="fashion-look-info">
+            {look.isVisible === false && <span className="song-header-visibility-badge">Hidden in public view</span>}
             <h1 className="fashion-look-title">{look.title}</h1>
             <ModelsRow credits={modelCredits} />
             {look.description && <p className="fashion-look-description">{look.description}</p>}

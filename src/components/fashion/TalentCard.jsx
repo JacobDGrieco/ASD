@@ -14,7 +14,7 @@ export default function TalentCard({ talent }) {
   const image = talent.images?.[0]
 
   return (
-    <Link to={`/fashion/talent/${talent.slug}`} className="album-card-card">
+    <Link to={`/fashion/talent/${talent.slug}`} className={`album-card-card${talent.isVisible === false ? ' album-card-hidden' : ''}`}>
       <div className="album-card-primary-action">
         <div className="album-card-cover-wrap">
           {image ? (
