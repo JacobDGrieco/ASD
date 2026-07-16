@@ -16,6 +16,7 @@
 }
 
 .nav-cardnav-bar {
+	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -26,6 +27,7 @@
 .nav-logo {
 	display: inline-flex;
 	align-items: center;
+	gap: 10px;
 	min-width: max-content;
 	color: var(--accent);
 	font-size: 1.18rem;
@@ -47,6 +49,15 @@
 	display: block;
 	width: 34px;
 	height: 34px;
+}
+
+@media (min-width: 721px) {
+	.nav-logo {
+		position: absolute;
+		left: 0;
+		top: 50%;
+		transform: translateY(-50%);
+	}
 }
 
 .nav-cardnav-main {
@@ -274,6 +285,8 @@
 
 	.nav-logo {
 		flex: 0 0 auto;
+		gap: 8px;
+		font-size: 0.98rem;
 	}
 
 	.nav-logo-mark {

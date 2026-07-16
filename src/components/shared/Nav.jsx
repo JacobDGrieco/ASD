@@ -103,6 +103,7 @@ export default function Nav() {
 			<div className="nav-cardnav-bar">
 				<Link to="/" className="nav-logo" aria-label="A.S.D. home" onClick={() => setIsOpen(false)}>
 					<img src="/favicon.png" alt="" className="nav-logo-mark" />
+					<span>A.S.D.</span>
 				</Link>
 
 				<div className="nav-cardnav-main" aria-label="Main navigation">

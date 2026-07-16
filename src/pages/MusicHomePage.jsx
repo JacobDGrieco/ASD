@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { FaPlay } from 'react-icons/fa';
 import { prefetchApi, useApi } from '../hooks/useApi.js';
 import ArtistSplash from '../components/home/ArtistSplash.jsx';
 import RecordPlayer from '../components/home/RecordPlayer.jsx';
@@ -9,8 +11,10 @@ import '../styles/MusicHomePage.css';
 
 void prefetchApi('/api/artists');
 void prefetchApi('/api/record-player');
+void prefetchApi('/api/crosshair');
 
 const HOME_LATEST_LIMIT = 8;
+const HOME_CROSSHAIR_LIMIT = 2;
 
 function getHomePageApiMessage(isDev) {
 	if (isDev) {
@@ -48,9 +52,17 @@ function HomeRecordPlayerPlaceholder() {
 	);
 }
 
+function formatDate(value) {
+	if (!value) return null;
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return null;
+	return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 export default function MusicHomePage() {
 	const artistApiUrl = '/api/artists';
 	const recordApiUrl = '/api/record-player';
+	const crosshairApiUrl = '/api/crosshair';
 	const {
 		data: artists,
 		loading: artistsLoading,
@@ -63,6 +75,13 @@ export default function MusicHomePage() {
 		loading: tracksLoading,
 		error: tracksError,
 	} = useApi(recordApiUrl, {
+		refreshAtUtcMidnight: true,
+	});
+	const {
+		data: crosshairVideos,
+		loading: crosshairLoading,
+		error: crosshairError,
+	} = useApi(crosshairApiUrl, {
 		refreshAtUtcMidnight: true,
 	});
 	const apiMessage = getHomePageApiMessage(import.meta.env.DEV);
@@ -78,6 +97,10 @@ export default function MusicHomePage() {
 			.sort((left, right) => new Date(right.releaseDate).getTime() - new Date(left.releaseDate).getTime())
 			.slice(0, HOME_LATEST_LIMIT);
 	}, [artists]);
+
+	const featuredCrosshairVideos = useMemo(() => (
+		(Array.isArray(crosshairVideos) ? crosshairVideos : []).slice(0, HOME_CROSSHAIR_LIMIT)
+	), [crosshairVideos]);
 
 	if ((artistsError || tracksError) && !artists && !tracks) {
 		return (
@@ -116,6 +139,7 @@ export default function MusicHomePage() {
 				</div>
 				<section className="home-about">
 					<div className="home-about-copy">
+						<p className="home-about-kicker">The Shelf</p>
 						<h2 className="home-about-title">Independent music from the underground.</h2>
 						<p>
 							A.S.D. is an independent collective built around artists who move outside the expected lane.
@@ -124,6 +148,7 @@ export default function MusicHomePage() {
 						<p>
 							The catalog spans intimate singles, sharper experimental projects, and collaborative drops that keep the label rooted in its own scene instead of chasing a template.
 						</p>
+						<Link to="/shelf" className="home-about-link">Open The Shelf</Link>
 					</div>
 					<div className="home-latest home-latest-inline">
 						{latestReleases.length > 0 ? (
@@ -152,6 +177,42 @@ export default function MusicHomePage() {
 							</div>
 						) : (
 							<div className="home-latest-empty">Latest albums will appear here once public catalog data is available.</div>
+						)}
+					</div>
+				</section>
+				<section className="home-crosshair" aria-labelledby="home-crosshair-title">
+					<div className="home-crosshair-copy">
+						<p className="home-crosshair-kicker">The Crosshair</p>
+						<h2 id="home-crosshair-title" className="home-crosshair-title">Sessions, shorts, and uncut footage.</h2>
+						<p>
+							A closer view of the people around A.S.D., from raw conversations to edited drops and short-form pieces.
+						</p>
+						<Link to="/crosshair" className="home-crosshair-link">Open Crosshair</Link>
+					</div>
+					<div className="home-crosshair-videos" aria-label="Latest Crosshair videos">
+						{featuredCrosshairVideos.map((video) => (
+							<Link key={video.id} to="/crosshair" className="home-crosshair-card">
+								<span className={`home-crosshair-thumb ${video.type === 'SHORT' ? 'home-crosshair-thumb-short' : ''}`.trim()}>
+									<img src={video.thumbnailUrl || '/favicon.png'} alt="" loading="lazy" decoding="async" />
+									<span className="home-crosshair-play"><FaPlay aria-hidden="true" /></span>
+								</span>
+								<span className="home-crosshair-card-body">
+									<span className="home-crosshair-type">{video.typeLabel}</span>
+									<strong>{video.title}</strong>
+									<span>{formatDate(video.publishedAt) || 'A.S.D.'}</span>
+								</span>
+							</Link>
+						))}
+						{crosshairLoading && !featuredCrosshairVideos.length && (
+							<div className="home-crosshair-loading" aria-hidden="true">
+								<div />
+								<div />
+							</div>
+						)}
+						{!crosshairLoading && !featuredCrosshairVideos.length && (
+							<div className="home-crosshair-empty">
+								{crosshairError ? 'Crosshair videos could not be loaded.' : 'Crosshair videos will appear here once they are published.'}
+							</div>
 						)}
 					</div>
 				</section>
