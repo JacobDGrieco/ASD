@@ -1,5 +1,6 @@
+import { timingSafeEqual } from 'crypto'
 import { prisma } from '../../src/lib/prisma.js'
-import { ADMIN_ROLE_ARTIST, ADMIN_ROLE_SUPER, ADMIN_ROLE_TALENT, ADMIN_ROLE_VIEWER, requireAdmin, serializeAdminAuthCookie, serializeClearAdminAuthCookie, signToken } from '../../src/lib/auth.js'
+import { ADMIN_ROLE_ARTIST, ADMIN_ROLE_SUPER, ADMIN_ROLE_TALENT, requireAdmin, serializeAdminAuthCookie, serializeClearAdminAuthCookie, signToken } from '../../src/lib/auth.js'
 import { getAdminAccountSchemaCapabilities } from '../../src/lib/adminAccountSchema.js'
 import { normalizeAdminPageAccess } from '../../src/lib/adminPageAccess.js'
 import { verifyPassword } from '../../src/lib/passwords.js'
@@ -47,13 +48,11 @@ function createTalentSession(access) {
   }
 }
 
-function createViewerSession() {
-  return {
-    role: ADMIN_ROLE_VIEWER,
-    artistId: null,
-    artistSlug: null,
-    artistName: null,
-  }
+function timingSafeStringEqual(a, b) {
+  const bufferA = Buffer.from(a)
+  const bufferB = Buffer.from(b)
+  if (bufferA.length !== bufferB.length) return false
+  return timingSafeEqual(bufferA, bufferB)
 }
 
 function sendLogin(res, session) {
@@ -79,13 +78,8 @@ export default async function handler(req, res) {
   const { password } = req.body ?? {}
   if (!password) return res.status(401).json({ error: 'Invalid password' })
 
-  if (process.env.ADMIN_PASSWORD && password === process.env.ADMIN_PASSWORD) {
+  if (process.env.ADMIN_PASSWORD && timingSafeStringEqual(password, process.env.ADMIN_PASSWORD)) {
     const session = createSuperAdminSession()
-    return sendLogin(res, session)
-  }
-
-  if (password === 'viewer') {
-    const session = createViewerSession()
     return sendLogin(res, session)
   }
 

@@ -9,7 +9,6 @@ The root (`/`) is a portal that expands into two sections, each with its own nav
 ### Music (`/music`)
 - Artist and album/song pages (`/artists/:slug`, `/albums/:albumId`, `/songs/:songId`) with lyrics and annotations
 - **The Board** (`/board`) — a freeform, drag-and-drop pinboard of posts
-- **The Stage** (`/videos`) — artist videos
 - **The Crosshair** (`/crosshair`) — a filterable video player (shorts/long-form)
 - A record-player widget backed by `RecordPlayerTrack` data
 
@@ -34,7 +33,6 @@ A protected CMS covering both verticals: artists, albums, songs, lyrics, videos,
 - `npm run dev`: frontend-only Vite dev server
 - `npm run dev:vercel`: full-stack local dev with the React app and Vercel API routes
 - `npm run build`: production frontend build
-- `npm run test:run`: run the test suite
 - `npm run db:migrate` / `db:push` / `db:studio` / `db:seed`: Prisma workflows
 
 Use `npm run dev:vercel` for any page that depends on `/api/*` routes, including the homepage.
@@ -43,4 +41,3 @@ Use `npm run dev:vercel` for any page that depends on `/api/*` routes, including
 
 - Vercel Hobby limits function count per deployment, not across all of your projects.
 - Only deployable runtime handlers should live under `api/`.
-- API tests live in `src/test/api/` so they do not get counted as Vercel Functions.

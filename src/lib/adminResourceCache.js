@@ -21,9 +21,10 @@ export function loadAdminResource({ cacheKey, url, token }) {
   if (existing?.data) return Promise.resolve(existing.data)
   if (existing?.promise) return existing.promise
 
-  const promise = fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
+  // `token` is always the COOKIE_AUTH_SENTINEL value ('cookie'); the server discards it
+  // and authenticates via the HttpOnly session cookie instead (see readAdminTokenFromRequest
+  // in src/lib/auth.js). No Authorization header is sent here for that reason.
+  const promise = fetch(url)
     .then(async (response) => {
       if (response.status === 401) {
         expireAdminSession()

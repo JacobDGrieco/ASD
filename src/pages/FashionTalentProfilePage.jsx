@@ -7,10 +7,8 @@ import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 import ArtworkGallery from '../components/shared/ArtworkGallery.jsx'
 import ProfileLinkIcon from '../components/shared/ProfileLinkIcon.jsx'
 import LookCard from '../components/fashion/LookCard.jsx'
-import { useAdminAuth } from '../lib/adminAuth.jsx'
 import { usePageTitle } from '../lib/pageTitle.js'
 import { PROFILE_LINK_PLATFORM_LABELS, hrefForProfileLink, normalizeProfileLinks } from '../lib/profileLinks.js'
-import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js'
 import '../styles/Discography.css'
 import '../styles/FashionPages.css'
 
@@ -25,14 +23,8 @@ const ROLE_LABEL = {
 
 export default function FashionTalentProfilePage() {
   const { slug } = useParams()
-  const { session, token } = useAdminAuth()
-  const adminPreview = isAdminPreviewSession(session, token)
   const apiUrl = `/api/fashion/talent/${slug}`
-  const previewHeaders = useMemo(() => publicPreviewHeaders(adminPreview ? token : null), [adminPreview, token])
-  const { data: talent, loading, error } = useApi(apiUrl, {
-    headers: previewHeaders,
-    cacheKey: publicPreviewCacheKey(apiUrl, adminPreview),
-  })
+  const { data: talent, loading, error } = useApi(apiUrl)
   const photos = useMemo(() => {
     if (!talent) return []
     const seen = new Set()

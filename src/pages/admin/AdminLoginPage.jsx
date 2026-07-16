@@ -45,7 +45,6 @@ export default function AdminLoginPage() {
             {loading ? 'Entering…' : 'Enter'}
           </button>
         </form>
-        <p className="admin-login-page-viewer-hint">Viewer access password: <strong>viewer</strong></p>
       </div>
     </div>
   )

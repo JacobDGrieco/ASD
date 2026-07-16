@@ -68,19 +68,6 @@ export function signToken(session) {
 export function verifyToken(token) {
   try {
     const payload = jwt.verify(token, secret())
-    if (payload?.admin === true && !payload?.role) {
-      return {
-        role: ADMIN_ROLE_SUPER,
-        artistId: null,
-        artistSlug: null,
-        artistName: null,
-        talentId: null,
-        talentSlug: null,
-        talentName: null,
-        accountName: null,
-        pageAccess: [],
-      }
-    }
 
     return {
       role: payload.role,

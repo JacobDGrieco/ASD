@@ -6,9 +6,7 @@ import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 import PageTabs from '../components/shared/PageTabs.jsx'
 import LookCard from '../components/fashion/LookCard.jsx'
 import { CreditsCarousel } from './FashionLookPage.jsx'
-import { useAdminAuth } from '../lib/adminAuth.jsx'
 import { usePageTitle } from '../lib/pageTitle.js'
-import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js'
 import '../styles/FashionPages.css'
 import '../styles/SongHeader.css'
 import '../styles/SongPage.css'
@@ -16,17 +14,8 @@ import '../styles/AlbumDetails.css'
 
 export default function FashionCollectionPage() {
   const { slug } = useParams()
-  const { session, token } = useAdminAuth()
-  const adminPreview = isAdminPreviewSession(session, token)
   const apiUrl = `/api/fashion/collections/${slug}`
-  const previewHeaders = useMemo(
-    () => publicPreviewHeaders(adminPreview ? token : null),
-    [adminPreview, token],
-  )
-  const { data: collection, loading, error } = useApi(apiUrl, {
-    headers: previewHeaders,
-    cacheKey: publicPreviewCacheKey(apiUrl, adminPreview),
-  })
+  const { data: collection, loading, error } = useApi(apiUrl)
   const titleParts = useMemo(() => {
     if (!collection) return null
     const primaryCredit = collection.credits?.find((credit) => credit.creditName || credit.talent?.name)

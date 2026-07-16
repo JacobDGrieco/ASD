@@ -12,7 +12,6 @@ import outsideArtists from '../api/admin/outside-artists.js'
 import recordPlayer from '../api/admin/record-player.js'
 import songs from '../api/admin/songs.js'
 import uploads from '../api/admin/uploads.js'
-import videos from '../api/admin/videos.js'
 import blob from '../api/blob.js'
 import publicApi from '../api/public.js'
 
@@ -34,7 +33,6 @@ void [
   recordPlayer,
   songs,
   uploads,
-  videos,
   blob,
   publicApi,
 ]

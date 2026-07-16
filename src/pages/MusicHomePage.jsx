@@ -5,8 +5,6 @@ import RecordPlayer from '../components/home/RecordPlayer.jsx';
 import AlbumCard from '../components/artist/AlbumCard.jsx';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import { buildAlbumPath, buildSongPath } from '../lib/publicVisibility.js';
-import { useAdminAuth } from '../lib/adminAuth.jsx';
-import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js';
 import '../styles/MusicHomePage.css';
 
 void prefetchApi('/api/artists');
@@ -51,9 +49,6 @@ function HomeRecordPlayerPlaceholder() {
 }
 
 export default function MusicHomePage() {
-	const { session, token } = useAdminAuth();
-	const adminPreview = isAdminPreviewSession(session, token);
-	const artistHeaders = useMemo(() => publicPreviewHeaders(adminPreview ? token : null), [adminPreview, token]);
 	const artistApiUrl = '/api/artists';
 	const recordApiUrl = '/api/record-player';
 	const {
@@ -62,8 +57,6 @@ export default function MusicHomePage() {
 		error: artistsError,
 	} = useApi(artistApiUrl, {
 		refreshAtUtcMidnight: true,
-		headers: artistHeaders,
-		cacheKey: publicPreviewCacheKey(artistApiUrl, adminPreview),
 	});
 	const {
 		data: tracks,
@@ -71,8 +64,6 @@ export default function MusicHomePage() {
 		error: tracksError,
 	} = useApi(recordApiUrl, {
 		refreshAtUtcMidnight: true,
-		headers: artistHeaders,
-		cacheKey: publicPreviewCacheKey(recordApiUrl, adminPreview),
 	});
 	const apiMessage = getHomePageApiMessage(import.meta.env.DEV);
 

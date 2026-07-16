@@ -8,21 +8,14 @@ import SongAlbums from '../components/song/SongAlbums.jsx'
 import SongInfoLinks from '../components/song/SongInfoLinks.jsx'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 import PageTabs from '../components/shared/PageTabs.jsx'
-import { useAdminAuth } from '../lib/adminAuth.jsx'
 import { usePageTitle } from '../lib/pageTitle.js'
-import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js'
 import '../styles/SongPage.css'
 
 export default function SongPage() {
   const { songId } = useParams()
-  const { session, token } = useAdminAuth()
-  const adminPreview = isAdminPreviewSession(session, token)
   const apiUrl = `/api/songs/${songId}`
-  const previewHeaders = useMemo(() => publicPreviewHeaders(adminPreview ? token : null), [adminPreview, token])
   const { data: song, loading, error } = useApi(apiUrl, {
     refreshAtUtcMidnight: true,
-    headers: previewHeaders,
-    cacheKey: publicPreviewCacheKey(apiUrl, adminPreview),
   })
   const lyricLineCount = song?.lyric?.text ? song.lyric.text.split('\n').filter((line) => line.trim()).length : 0
   const defaultTabIndex = lyricLineCount < 2 ? 2 : 0

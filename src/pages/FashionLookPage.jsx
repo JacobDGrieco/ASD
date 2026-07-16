@@ -3,9 +3,7 @@ import { useMemo, useRef, useState, useEffect, useSyncExternalStore } from 'reac
 import { FaShoppingBag, FaUsers, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 import { useApi } from '../hooks/useApi.js'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
-import { useAdminAuth } from '../lib/adminAuth.jsx'
 import { usePageTitle } from '../lib/pageTitle.js'
-import { isAdminPreviewSession, publicPreviewCacheKey, publicPreviewHeaders } from '../lib/publicPreview.js'
 import '../styles/FashionPages.css'
 
 const CREDIT_ROLE_PRIORITY = new Map([
@@ -408,14 +406,8 @@ function getServerThumbsVisibleSnapshot() {
 
 export default function FashionLookPage() {
   const { slug } = useParams()
-  const { session, token } = useAdminAuth()
-  const adminPreview = isAdminPreviewSession(session, token)
   const apiUrl = `/api/fashion/looks/${slug}`
-  const previewHeaders = useMemo(() => publicPreviewHeaders(adminPreview ? token : null), [adminPreview, token])
-  const { data: look, loading, error } = useApi(apiUrl, {
-    headers: previewHeaders,
-    cacheKey: publicPreviewCacheKey(apiUrl, adminPreview),
-  })
+  const { data: look, loading, error } = useApi(apiUrl)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const thumbsVisible = useSyncExternalStore(
     subscribeToWindowResize,
