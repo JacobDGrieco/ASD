@@ -1,6 +1,7 @@
 import { prisma } from '../src/lib/prisma.js'
 import { isEffectivelyVisible } from '../src/lib/contentVisibility.js'
 import { clientImage, clientImages, mergeLegacyImages } from '../src/lib/images.js'
+import { songPlacementsAllowOwnLinks } from '../src/lib/musicReleaseLinks.js'
 import { ARTIST_LEGACY_LINK_FIELDS, FASHION_TALENT_LEGACY_LINK_FIELDS, MUSIC_RELEASE_LEGACY_LINK_FIELDS, profileLinksForSource } from '../src/lib/profileLinks.js'
 import { formatCrosshairVideo } from '../src/lib/crosshairVideos.js'
 import { hasPublicBoardSource, isOtherArtist, isReservedHiddenArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js'
@@ -294,6 +295,21 @@ function formatAlbumSummary(album) {
     artist: formatPublicArtistReference(displayAlbum.artist),
     coverArt: albumImages[0]?.previewUrl ?? displayAlbum.coverArt,
     images: albumImages,
+  }
+}
+
+function publicSongReleaseSource(song, placements, fallbackAlbum = null) {
+  if (songPlacementsAllowOwnLinks(placements)) return song
+  return fallbackAlbum ?? placements?.find((placement) => placement.album)?.album ?? null
+}
+
+function publicSongReleaseFields(source) {
+  return {
+    soundcloudUrl: source?.soundcloudUrl ?? null,
+    spotifyUrl: source?.spotifyUrl ?? null,
+    appleMusicUrl: source?.appleMusicUrl ?? null,
+    youtubeUrl: source?.youtubeUrl ?? null,
+    links: profileLinksForSource(source, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
   }
 }
 
@@ -847,10 +863,11 @@ async function getSong(res, id) {
   if (!placements.length) return res.status(404).json({ error: 'Song not found' })
 
   const songImages = formatSongImages(song)
+  const songReleaseSource = publicSongReleaseSource(song, releasedPlacements, primaryAlbum)
 
   return res.status(200).json({
     ...song,
-    links: profileLinksForSource(song, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
+    ...publicSongReleaseFields(songReleaseSource),
     isPubliclyVisible: isPublicSongReleased({ ...song, releaseDate: songReleaseDate }, requestedPlacement.album.releaseDate, now)
       && isPublicAlbumReleased(requestedPlacement.album, now)
       && isPublicArtistVisible(requestedPlacement.album.artist),
@@ -895,6 +912,7 @@ async function getRecordPlayer(res) {
                   select: {
                     isVisible: true,
                     autoShowOnRelease: true,
+                    type: true,
                     coverArt: true,
                     title: true,
                     otherArtistName: true,
@@ -929,10 +947,12 @@ async function getRecordPlayer(res) {
           if (!placement) return []
 
           const album = formatAlbumSummary(placement.album)
+          const songReleaseSource = publicSongReleaseSource(track.song, track.song.placements, placement.album)
           return [{
             ...track,
             song: {
               ...track.song,
+              ...publicSongReleaseFields(songReleaseSource),
               isPubliclyVisible: isPublicSongReleased(track.song, placement.album.releaseDate, now)
                 && isPublicAlbumReleased(placement.album, now)
                 && isPublicArtistVisible(placement.album.artist),

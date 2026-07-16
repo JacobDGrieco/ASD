@@ -131,8 +131,8 @@ export default function MusicHomePage() {
 								{latestReleases.map((album) => {
 									const singleSong = album.type === 'SINGLE' && album.songs?.length === 1 ? album.songs[0] : null;
 									const to = singleSong
-										? buildSongPath({ song: singleSong, allowHidden: adminPreview })
-										: buildAlbumPath({ album, allowHidden: adminPreview });
+										? buildSongPath({ song: singleSong })
+										: buildAlbumPath({ album });
 
 									return (
 										<AlbumCard

@@ -12,6 +12,7 @@ import {
   primaryImageReference,
   toImageCreateManyData,
 } from '../../src/lib/images.js'
+import { songPlacementsAllowOwnLinks } from '../../src/lib/musicReleaseLinks.js'
 import { MUSIC_RELEASE_LEGACY_LINK_FIELDS, legacyFieldsFromProfileLinks, normalizeProfileLinks, profileLinksForSource } from '../../src/lib/profileLinks.js'
 import { isOtherArtist, OTHER_ARTIST_NAME } from '../../src/lib/publicVisibility.js'
 import { SONG_ROLES } from '../../src/lib/songRoles.js'
@@ -242,6 +243,7 @@ async function loadPlacementAlbums(placements) {
       id: true,
       title: true,
       slug: true,
+      type: true,
       otherArtistName: true,
       artistId: true,
       artist: {
@@ -368,6 +370,7 @@ function songInclude() {
             id: true,
             title: true,
             slug: true,
+            type: true,
             otherArtistName: true,
             releaseDate: true,
             artistId: true,
@@ -391,6 +394,7 @@ function songListInclude() {
             id: true,
             title: true,
             slug: true,
+            type: true,
             otherArtistName: true,
             releaseDate: true,
             artistId: true,
@@ -544,9 +548,12 @@ export default async function handler(req, res) {
       }
 
       const normalizedImages = normalizeImageInput(images, 'artwork')
-      const normalizedLinks = links === undefined ? profileLinksForSource(req.body, MUSIC_RELEASE_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
-      const legacyLinkFields = legacyFieldsFromProfileLinks(normalizedLinks, MUSIC_RELEASE_LEGACY_LINK_FIELDS)
       const placementAlbums = await loadPlacementAlbums(placements)
+      const placementAlbumById = Object.fromEntries(placementAlbums.map((album) => [album.id, album]))
+      const normalizedLinks = songPlacementsAllowOwnLinks(placements, placementAlbumById)
+        ? links === undefined ? profileLinksForSource(req.body, MUSIC_RELEASE_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
+        : []
+      const legacyLinkFields = legacyFieldsFromProfileLinks(normalizedLinks, MUSIC_RELEASE_LEGACY_LINK_FIELDS)
       const primaryAlbum = placementAlbums.find((album) => album.id === placements[0]?.albumId) ?? null
       const effectiveReleaseDate = releaseDate || primaryAlbum?.releaseDate || null
       const visibility = normalizeVisibilityInput({
@@ -679,9 +686,12 @@ export default async function handler(req, res) {
     }
 
     const normalizedImages = normalizeImageInput(images, 'artwork')
-    const normalizedLinks = links === undefined ? profileLinksForSource(req.body, MUSIC_RELEASE_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
-    const legacyLinkFields = legacyFieldsFromProfileLinks(normalizedLinks, MUSIC_RELEASE_LEGACY_LINK_FIELDS)
     const placementAlbums = await loadPlacementAlbums(placements)
+    const placementAlbumById = Object.fromEntries(placementAlbums.map((album) => [album.id, album]))
+    const normalizedLinks = songPlacementsAllowOwnLinks(placements, placementAlbumById)
+      ? links === undefined ? profileLinksForSource(req.body, MUSIC_RELEASE_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
+      : []
+    const legacyLinkFields = legacyFieldsFromProfileLinks(normalizedLinks, MUSIC_RELEASE_LEGACY_LINK_FIELDS)
     const primaryAlbum = placementAlbums.find((album) => album.id === placements[0]?.albumId) ?? null
     const effectiveReleaseDate = releaseDate || primaryAlbum?.releaseDate || null
     const visibility = normalizeVisibilityInput({

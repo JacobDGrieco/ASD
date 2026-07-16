@@ -9,13 +9,17 @@ import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import ArtworkGallery from '../components/shared/ArtworkGallery.jsx';
 import PageTabs from '../components/shared/PageTabs.jsx';
 import ProfileLinkIcon from '../components/shared/ProfileLinkIcon.jsx';
+import { useAdminAuth } from '../lib/adminAuth.jsx';
 import { usePageTitle } from '../lib/pageTitle.js';
 import { PROFILE_LINK_PLATFORM_LABELS, hrefForProfileLink, normalizeProfileLinks } from '../lib/profileLinks.js';
+import { isAdminPreviewSession } from '../lib/publicPreview.js';
 import '../styles/SongHeader.css';
 import '../styles/SongPage.css';
 
 export default function AlbumPage() {
 	const { albumId } = useParams();
+	const { session, token } = useAdminAuth();
+	const adminPreview = isAdminPreviewSession(session, token);
 	const apiUrl = `/api/albums/${albumId}`;
 	const { data: album, loading, error } = useApi(apiUrl, {
 		refreshAtUtcMidnight: true,

@@ -17,6 +17,7 @@ import {
 	initSongFormFromPrefill,
 } from '../../lib/adminSongForm.js';
 import { defaultVisibilityForReleaseDate } from '../../lib/contentVisibility.js';
+import { songPlacementsAllowOwnLinks } from '../../lib/musicReleaseLinks.js';
 import { normalizeProfileLinks } from '../../lib/profileLinks.js';
 import { isOtherArtist, OTHER_ARTIST_NAME } from '../../lib/publicVisibility.js';
 import { slugify } from '../../lib/slugify.js';
@@ -675,19 +676,23 @@ function SongRolesTab({ form, artistOptions, outsideArtistOptions, addRole, remo
 }
 
 function SongEditorTabs(props) {
+	const tabCount = props.showSongLinksTab ? 4 : 3;
+
 	return (
 		<PageTabs
 			activeIndex={props.activeTabIndex}
 			onTabChange={props.onTabChange}
 			className="admin-song-editor-tabs"
-			tabCount={4}
+			tabCount={tabCount}
 		>
 			<TabPanel header="Song">
 				<SongInfoTab {...props} />
 			</TabPanel>
-			<TabPanel header="Links">
-				<SongLinksTab form={props.form} setForm={props.setForm} />
-			</TabPanel>
+			{props.showSongLinksTab && (
+				<TabPanel header="Links">
+					<SongLinksTab form={props.form} setForm={props.setForm} />
+				</TabPanel>
+			)}
 			<TabPanel header="Albums">
 				<SongAlbumsTab {...props} />
 			</TabPanel>
@@ -726,6 +731,11 @@ export default function AdminSongFormModal({
 	const albumById = useMemo(
 		() => Object.fromEntries(albums.map((album) => [album.id, album])),
 		[albums]
+	);
+
+	const showSongLinksTab = useMemo(
+		() => songPlacementsAllowOwnLinks(form?.albumPlacements, albumById),
+		[albumById, form?.albumPlacements]
 	);
 
 	const sortedAlbums = useMemo(
@@ -824,10 +834,11 @@ export default function AdminSongFormModal({
 	const handleSave = async () => {
 		const nextErrors = validateSongForm(form, songs ?? [], albumById);
 		if (hasSongValidationErrors(nextErrors)) {
+			const albumTabIndex = showSongLinksTab ? 2 : 1;
 			dispatchModal({
 				type: 'set-validation-errors',
 				errors: nextErrors,
-				activeTabIndex: hasAlbumErrors(nextErrors) && !hasSongInfoErrors(nextErrors) ? 2 : undefined,
+				activeTabIndex: hasAlbumErrors(nextErrors) && !hasSongInfoErrors(nextErrors) ? albumTabIndex : undefined,
 			});
 			return;
 		}
@@ -835,9 +846,10 @@ export default function AdminSongFormModal({
 
 		const isEdit = Boolean(form.id);
 		const url = isEdit ? `/api/admin/songs?id=${form.id}` : '/api/admin/songs';
+		const songLinks = showSongLinksTab ? normalizeProfileLinks(form.links) : [];
 		const payload = {
 			...form,
-			links: normalizeProfileLinks(form.links),
+			links: songLinks,
 			slug: slugify(form.title),
 			albumIds: form.albumPlacements.map((p) => p.albumId),
 			discNumbers: form.albumPlacements.map((p) => Number(p.discNumber)),
@@ -896,6 +908,7 @@ export default function AdminSongFormModal({
 							setField={setField}
 							setReleaseDate={setReleaseDate}
 							setBpm={setBpm}
+							showSongLinksTab={showSongLinksTab}
 							songFieldClassName={songFieldClassName}
 							visibilityTouchedRef={visibilityTouchedRef}
 							sortedAlbums={sortedAlbums}

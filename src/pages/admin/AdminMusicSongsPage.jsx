@@ -5,6 +5,8 @@ import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import AdminProfileLinksSummary from '../../components/admin/AdminProfileLinksSummary.jsx';
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';
 import { isEffectivelyVisible } from '../../lib/contentVisibility.js';
+import { songPlacementsAllowOwnLinks } from '../../lib/musicReleaseLinks.js';
+import { normalizeProfileLinks } from '../../lib/profileLinks.js';
 import { isOtherArtist, OTHER_ARTIST_NAME, OTHER_ARTIST_OPTION_ID } from '../../lib/publicVisibility.js';
 import AdminSongFormModal from '../../components/admin/AdminSongFormModal.jsx';
 import {
@@ -74,6 +76,33 @@ function albumTitles(song, albumById) {
 	return titles.length ? titles.join('; ') : null;
 }
 
+function songDisplayLinks(song, albumById) {
+	const placements = Array.isArray(song.placements)
+		? song.placements.map((placement) => ({
+			...placement,
+			album: albumById[placement.albumId] ?? placement.album ?? null,
+		}))
+		: placementAlbumIds(song).map((albumId) => ({
+			albumId,
+			album: albumById[albumId] ?? null,
+		}));
+
+	if (songPlacementsAllowOwnLinks(placements, albumById)) return song.links;
+
+	const seen = new Set();
+	return placements.flatMap((placement) => {
+		const album = placement.album ?? albumById[placement.albumId] ?? null;
+		if (album?.type !== 'SINGLE') return [];
+
+		return normalizeProfileLinks(album.links).flatMap((link) => {
+			const key = `${link.platform}:${link.type}:${link.url}`;
+			if (seen.has(key)) return [];
+			seen.add(key);
+			return [{ ...link, id: `${album.id}-${link.id}` }];
+		});
+	});
+}
+
 function imageCell(song, albumById) {
 	const albumIds = placementAlbumIds(song);
 	const album = albumIds.length ? albumById[albumIds[0]] ?? null : null;
@@ -136,6 +165,7 @@ function SongsTable({ songs, albumById, isViewer, loadingEditSongId, onEdit }) {
 					{songs.map((song) => {
 						const releaseDate = song.meta?.releaseDate ?? primaryAlbum(song, albumById)?.releaseDate ?? '';
 						const dateStr = releaseDate ? String(releaseDate).slice(0, 10) : '';
+						const links = songDisplayLinks(song, albumById);
 						return (
 							<tr key={song.id} className={isSongHidden(song) ? 'admin-artists-page-hidden-row' : ''}>
 								<td className="admin-artists-page-col-image">{imageCell(song, albumById)}</td>
@@ -144,7 +174,7 @@ function SongsTable({ songs, albumById, isViewer, loadingEditSongId, onEdit }) {
 								<td className="admin-songs-col-artist">{cell(displayArtistName(song, albumById))}</td>
 								<td className="admin-songs-col-album">{wrapCell(albumTitles(song, albumById))}</td>
 								<td className="admin-songs-col-date">{cell(dateStr)}</td>
-								<td className="admin-artists-page-col-xl admin-links-col-centered"><AdminProfileLinksSummary links={song.links} /></td>
+								<td className="admin-artists-page-col-xl admin-links-col-centered"><AdminProfileLinksSummary links={links} /></td>
 								<td className="admin-songs-col-actions admin-artists-page-sticky-right-0">
 									<div className="admin-songs-actions">
 										<Link

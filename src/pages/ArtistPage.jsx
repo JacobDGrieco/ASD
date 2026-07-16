@@ -5,10 +5,14 @@ import ArtistHero from '../components/artist/ArtistHero.jsx'
 import Discography from '../components/artist/Discography.jsx'
 import FeaturedOn from '../components/artist/FeaturedOn.jsx'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
+import { useAdminAuth } from '../lib/adminAuth.jsx'
 import { usePageTitle } from '../lib/pageTitle.js'
+import { isAdminPreviewSession } from '../lib/publicPreview.js'
 
 export default function ArtistPage() {
   const { slug } = useParams()
+  const { session, token } = useAdminAuth()
+  const adminPreview = isAdminPreviewSession(session, token)
   const { data: artist, loading, error } = useApi(`/api/artists/${slug}`, {
     refreshAtUtcMidnight: true,
   })
