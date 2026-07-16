@@ -21,6 +21,43 @@ function renderBackdrop(text, ranges) {
 	return parts;
 }
 
+function createScrollRestorer(element) {
+	if (typeof window === 'undefined' || !element) return null;
+
+	const snapshots = [];
+	let current = element.parentElement;
+	while (current) {
+		const style = window.getComputedStyle(current);
+		const canScrollY = ['auto', 'scroll', 'overlay'].includes(style.overflowY);
+		const canScrollX = ['auto', 'scroll', 'overlay'].includes(style.overflowX);
+		if (
+			(canScrollY && current.scrollHeight > current.clientHeight) ||
+			(canScrollX && current.scrollWidth > current.clientWidth)
+		) {
+			snapshots.push({
+				element: current,
+				scrollLeft: current.scrollLeft,
+				scrollTop: current.scrollTop,
+			});
+		}
+		current = current.parentElement;
+	}
+
+	const windowSnapshot = {
+		element: window,
+		scrollLeft: window.scrollX,
+		scrollTop: window.scrollY,
+	};
+
+	return () => {
+		for (const snapshot of snapshots) {
+			snapshot.element.scrollLeft = snapshot.scrollLeft;
+			snapshot.element.scrollTop = snapshot.scrollTop;
+		}
+		window.scrollTo(windowSnapshot.scrollLeft, windowSnapshot.scrollTop);
+	};
+}
+
 async function saveLyricsAndAnnotations({
 	isSaving,
 	annotations,
@@ -479,11 +516,16 @@ export default function AdminMusicLyricsPage() {
 	const textareaWrapperRef = useRef(null);
 	const textareaRef = useRef(null);
 
-	const resizeLyricTextarea = useCallback((el = textareaRef.current) => {
+	const resizeLyricTextarea = useCallback((el = textareaRef.current, { preserveScroll = false } = {}) => {
 		if (!el) return;
+		const restoreScroll = preserveScroll ? createScrollRestorer(el) : null;
 		el.style.height = 'auto';
 		const borderHeight = el.offsetHeight - el.clientHeight;
 		el.style.height = `${el.scrollHeight + borderHeight}px`;
+		if (restoreScroll) {
+			restoreScroll();
+			window.requestAnimationFrame(restoreScroll);
+		}
 	}, []);
 
 	// Load 
@@ -523,13 +565,15 @@ export default function AdminMusicLyricsPage() {
 	useLayoutEffect(() => {
 		if (isLoading) return;
 		resizeLyricTextarea();
-	}, [isLoading, lyricText, resizeLyricTextarea]);
+	}, [isLoading, resizeLyricTextarea]);
 
 	useEffect(() => {
 		const wrapper = textareaWrapperRef.current;
 		if (!wrapper) return;
 
-		const resizeObserver = new ResizeObserver(() => resizeLyricTextarea());
+		const resizeObserver = new ResizeObserver(() => {
+			resizeLyricTextarea(textareaRef.current, { preserveScroll: true });
+		});
 		resizeObserver.observe(wrapper);
 
 		return () => resizeObserver.disconnect();
@@ -580,7 +624,7 @@ export default function AdminMusicLyricsPage() {
 		setLyricText(newValue);
 		adjustAnnotationRanges(changeStart, changeEnd, netDelta);
 
-		resizeLyricTextarea(e.target);
+		resizeLyricTextarea(e.target, { preserveScroll: true });
 
 		preEditRef.current = {
 			value: newValue,
