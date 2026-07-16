@@ -105,7 +105,7 @@ function PublicLayout() {
 							window.location.reload();
 						}}
 					>
-						Return to Public View
+						Public View
 					</button>
 				</>
 			)}

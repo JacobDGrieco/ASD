@@ -676,29 +676,43 @@ function SongRolesTab({ form, artistOptions, outsideArtistOptions, addRole, remo
 }
 
 function SongEditorTabs(props) {
-	const tabCount = props.showSongLinksTab ? 4 : 3;
+	const tabs = [
+		{
+			key: 'song',
+			header: 'Song',
+			content: <SongInfoTab {...props} />,
+		},
+		...(props.showSongLinksTab
+			? [{
+				key: 'links',
+				header: 'Links',
+				content: <SongLinksTab form={props.form} setForm={props.setForm} />,
+			}]
+			: []),
+		{
+			key: 'albums',
+			header: 'Albums',
+			content: <SongAlbumsTab {...props} />,
+		},
+		{
+			key: 'roles',
+			header: 'Roles',
+			content: <SongRolesTab {...props} />,
+		},
+	];
 
 	return (
 		<PageTabs
 			activeIndex={props.activeTabIndex}
 			onTabChange={props.onTabChange}
 			className="admin-song-editor-tabs"
-			tabCount={tabCount}
+			tabCount={tabs.length}
 		>
-			<TabPanel header="Song">
-				<SongInfoTab {...props} />
-			</TabPanel>
-			{props.showSongLinksTab && (
-				<TabPanel header="Links">
-					<SongLinksTab form={props.form} setForm={props.setForm} />
+			{tabs.map((tab) => (
+				<TabPanel key={tab.key} header={tab.header}>
+					{tab.content}
 				</TabPanel>
-			)}
-			<TabPanel header="Albums">
-				<SongAlbumsTab {...props} />
-			</TabPanel>
-			<TabPanel header="Roles">
-				<SongRolesTab {...props} />
-			</TabPanel>
+			))}
 		</PageTabs>
 	);
 }
@@ -737,6 +751,14 @@ export default function AdminSongFormModal({
 		() => songPlacementsAllowOwnLinks(form?.albumPlacements, albumById),
 		[albumById, form?.albumPlacements]
 	);
+	const songEditorTabCount = showSongLinksTab ? 4 : 3;
+
+	useEffect(() => {
+		const lastTabIndex = songEditorTabCount - 1;
+		if (activeTabIndex > lastTabIndex) {
+			dispatchModal({ type: 'set-active-tab', index: lastTabIndex });
+		}
+	}, [activeTabIndex, songEditorTabCount]);
 
 	const sortedAlbums = useMemo(
 		() => albums.toSorted(compareAlbumOptions),
