@@ -813,18 +813,14 @@ export default function AdminMusicAlbumsPage() {
 				</div>
 			</div>
 
-			{!form && (
-				<AlbumsTable
-					albums={pagedAlbums}
-					isViewer={isViewer}
-					loadingEditId={loadingEditId}
-					onEdit={openEdit}
-				/>
-			)}
+			<AlbumsTable
+				albums={pagedAlbums}
+				isViewer={isViewer}
+				loadingEditId={loadingEditId}
+				onEdit={openEdit}
+			/>
 
-			{!form && (
-				<AlbumsPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setPage} />
-			)}
+			<AlbumsPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setPage} />
 
 			{createSongPrefill && (
 				<AdminSongFormModal

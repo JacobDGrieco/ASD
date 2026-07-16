@@ -489,19 +489,15 @@ export default function AdminMusicSongsPage() {
 				</div>
 			</div>
 
-			{!isModalOpen && (
-				<SongsTable
-					songs={pagedSongs}
-					albumById={albumById}
-					isViewer={isViewer}
-					loadingEditSongId={loadingEditSongId}
-					onEdit={openEdit}
-				/>
-			)}
+			<SongsTable
+				songs={pagedSongs}
+				albumById={albumById}
+				isViewer={isViewer}
+				loadingEditSongId={loadingEditSongId}
+				onEdit={openEdit}
+			/>
 
-			{!isModalOpen && (
-				<SongsPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setPage} />
-			)}
+			<SongsPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setPage} />
 
 			{isModalOpen && (
 				<AdminSongFormModal
