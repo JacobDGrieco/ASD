@@ -9,6 +9,7 @@
 import { defaultVisibilityForReleaseDate } from './contentVisibility.js';
 import { albumTypeSharesSongReleaseFields } from './musicReleaseLinks.js';
 import { MUSIC_RELEASE_LEGACY_LINK_FIELDS, profileLinksForSource } from './profileLinks.js';
+import { normalizeSongDuration } from './songDuration.js';
 import { sortMusicRoleEntries } from './songRoles.js';
 
 // Stable per-row identity for list fields (role credits, album placements) that
@@ -164,6 +165,7 @@ export function buildSongFormFromDetail(detail) {
 	return {
 		...emptySongForm,
 		...detail,
+		duration: normalizeSongDuration(detail.duration) ?? '',
 		images: detail.images ?? [],
 		links: songLinks.length ? songLinks : sharedAlbumLinks,
 		aboutText: detail.meta?.aboutText ?? '',
@@ -184,6 +186,7 @@ export function initSongFormFromPrefill(prefill = {}) {
 	return {
 		...emptySongForm,
 		title: prefill.title ?? '',
+		duration: normalizeSongDuration(prefill.duration) ?? '',
 		isVisible: prefill.isVisible ?? visibilityDefaults.isVisible,
 		autoShowOnRelease: prefill.autoShowOnRelease ?? visibilityDefaults.autoShowOnRelease,
 		releaseDate,

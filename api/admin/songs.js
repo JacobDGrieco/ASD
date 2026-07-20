@@ -36,6 +36,7 @@ import {
 import { albumTypeSharesSongReleaseFields } from '../../src/lib/musicReleaseLinks.js'
 import { MUSIC_RELEASE_LEGACY_LINK_FIELDS, legacyFieldsFromProfileLinks, normalizeProfileLinks, profileLinksForSource } from '../../src/lib/profileLinks.js'
 import { isOtherArtist, OTHER_ARTIST_NAME } from '../../src/lib/publicVisibility.js'
+import { normalizeSongDuration } from '../../src/lib/songDuration.js'
 import { SONG_ROLES, sortMusicRoleEntries } from '../../src/lib/songRoles.js'
 
 function withImages(song) {
@@ -652,6 +653,8 @@ export default async function handler(req, res) {
         return res.status(409).json({ error: 'A song with this title, album, artist, and release date already exists.' })
       }
 
+      const normalizedDuration = normalizeSongDuration(duration)
+      if (normalizedDuration === null) return res.status(400).json({ error: 'Duration must use MM:SS.' })
       const normalizedImages = normalizeImageInput(images, 'artwork')
       const placementAlbums = await loadPlacementAlbums(placements)
       const normalizedLinks = links === undefined ? profileLinksForSource(req.body, MUSIC_RELEASE_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
@@ -671,7 +674,7 @@ export default async function handler(req, res) {
           slug: buildSongSlug({ title, album: primaryAlbum, releaseDate }),
           isVisible: visibility.isVisible,
           autoShowOnRelease: visibility.autoShowOnRelease,
-          duration,
+          duration: normalizedDuration,
           artwork: primaryImageReference(normalizedImages),
           soundcloudUrl,
           spotifyUrl,
@@ -790,6 +793,8 @@ export default async function handler(req, res) {
       return res.status(409).json({ error: 'A song with this title, album, artist, and release date already exists.' })
     }
 
+    const normalizedDuration = normalizeSongDuration(duration)
+    if (normalizedDuration === null) return res.status(400).json({ error: 'Duration must use MM:SS.' })
     const normalizedImages = normalizeImageInput(images, 'artwork')
     const placementAlbums = await loadPlacementAlbums(placements)
     const normalizedLinks = links === undefined ? profileLinksForSource(req.body, MUSIC_RELEASE_LEGACY_LINK_FIELDS) : normalizeProfileLinks(links)
@@ -807,7 +812,7 @@ export default async function handler(req, res) {
         slug: buildSongSlug({ title, album: primaryAlbum, releaseDate }),
         isVisible: visibility.isVisible,
         autoShowOnRelease: visibility.autoShowOnRelease,
-        duration: duration ?? '',
+        duration: normalizedDuration,
         artwork: primaryImageReference(normalizedImages),
         soundcloudUrl,
         spotifyUrl,

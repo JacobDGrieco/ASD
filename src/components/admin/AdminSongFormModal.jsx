@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useReducer, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { TabPanel } from 'primereact/tabview';
 import { FaEye, FaEyeSlash, FaPlus, FaTimes, FaTrash } from 'react-icons/fa';
 import AdminDateInput from './AdminDateInput.jsx';
@@ -22,6 +23,7 @@ import { defaultVisibilityForReleaseDate } from '../../lib/contentVisibility.js'
 import { songPlacementsAllowOwnLinks, songPlacementsShareReleaseFields } from '../../lib/musicReleaseLinks.js';
 import { normalizeProfileLinks } from '../../lib/profileLinks.js';
 import { isOtherArtist, OTHER_ARTIST_NAME } from '../../lib/publicVisibility.js';
+import { isValidSongDuration, songDurationFromParts, songDurationToParts } from '../../lib/songDuration.js';
 import { slugify } from '../../lib/slugify.js';
 import '../../styles/AdminArtistsPage.css';
 import '../../styles/AdminSongsPage.css';
@@ -300,6 +302,7 @@ function songModalReducer(state, action) {
 function validateSongForm(form, songs = [], albumById = {}) {
 	const errors = {
 		title: '',
+		duration: '',
 		releaseDate: '',
 		albumPlacementsRoot: '',
 		albumPlacements: Array.isArray(form.albumPlacements)
@@ -308,6 +311,7 @@ function validateSongForm(form, songs = [], albumById = {}) {
 	};
 
 	if (!form.title?.trim()) errors.title = 'Song title is required.';
+	if (form.duration && !isValidSongDuration(form.duration)) errors.duration = 'Duration must use MM:SS.';
 	if (form.releaseDate && !isValidDateInput(form.releaseDate)) errors.releaseDate = 'Release date must use YYYY-MM-DD.';
 	if (!Array.isArray(form.albumPlacements) || form.albumPlacements.length === 0) {
 		errors.albumPlacementsRoot = 'At least one album is required.';
@@ -323,7 +327,7 @@ function validateSongForm(form, songs = [], albumById = {}) {
 		seenAlbumIds.add(placement.albumId);
 	}
 
-	if (!errors.title && !errors.releaseDate && !errors.albumPlacementsRoot && !errors.albumPlacements.some((p) => p.albumId || p.trackNumber || p.discNumber)) {
+	if (!errors.title && !errors.duration && !errors.releaseDate && !errors.albumPlacementsRoot && !errors.albumPlacements.some((p) => p.albumId || p.trackNumber || p.discNumber)) {
 		const normalizedTitle = normalizeSongDuplicateValue(form.title);
 		const normalizedReleaseDate = normalizeSongReleaseDate(form.releaseDate);
 		const selectedAlbumIds = form.albumPlacements.flatMap((p) => (p.albumId ? [p.albumId] : []));
@@ -354,12 +358,12 @@ function validateSongForm(form, songs = [], albumById = {}) {
 
 function hasSongValidationErrors(errors) {
 	if (!errors) return false;
-	if (errors.title || errors.albumPlacementsRoot) return true;
+	if (errors.title || errors.duration || errors.releaseDate || errors.albumPlacementsRoot) return true;
 	return Array.isArray(errors.albumPlacements) && errors.albumPlacements.some((p) => p.albumId || p.trackNumber || p.discNumber);
 }
 
 function hasSongInfoErrors(errors) {
-	return Boolean(errors?.title || errors?.releaseDate);
+	return Boolean(errors?.title || errors?.duration || errors?.releaseDate);
 }
 
 function hasAlbumErrors(errors) {
@@ -384,11 +388,83 @@ function renderAlbumOption(album) {
 	);
 }
 
+function SongDurationInput({ value, invalid, onChange }) {
+	const secondsInputRef = useRef(null);
+	const [focusedPart, setFocusedPart] = useState(null);
+	const [draftParts, setDraftParts] = useState(() => songDurationToParts(value));
+
+	useEffect(() => {
+		if (!focusedPart) setDraftParts(songDurationToParts(value));
+	}, [focusedPart, value]);
+
+	const updatePart = (part, rawValue) => {
+		const nextValue = rawValue.replace(/\D/g, '').slice(0, 2);
+		const numericValue = nextValue ? Number(nextValue) : 0;
+		if (part === 'seconds' && numericValue > 59) return;
+
+		const nextParts = {
+			...draftParts,
+			[part]: nextValue,
+		};
+		setDraftParts(nextParts);
+
+		const nextDuration = songDurationFromParts(nextParts.minutes, nextParts.seconds);
+		if (nextDuration !== null) onChange(nextDuration);
+
+		if (part === 'minutes' && nextValue.length === 2) {
+			secondsInputRef.current?.focus();
+			secondsInputRef.current?.select();
+		}
+	};
+
+	return (
+		<div className={`admin-song-duration-control ${invalid ? 'admin-song-duration-control-invalid' : ''}`.trim()}>
+			<input
+				id="admin-song-duration"
+				type="text"
+				inputMode="numeric"
+				pattern="[0-9]*"
+				maxLength={2}
+				value={draftParts.minutes}
+				onFocus={(event) => {
+					setFocusedPart('minutes');
+					event.currentTarget.select();
+				}}
+				onBlur={() => setFocusedPart(null)}
+				onChange={(event) => updatePart('minutes', event.target.value)}
+				className="admin-song-duration-part"
+				aria-label="Duration minutes"
+				aria-invalid={Boolean(invalid)}
+			/>
+			<span className="admin-song-duration-separator" aria-hidden="true">:</span>
+			<input
+				ref={secondsInputRef}
+				type="text"
+				inputMode="numeric"
+				pattern="[0-9]*"
+				maxLength={2}
+				value={draftParts.seconds}
+				onFocus={(event) => {
+					setFocusedPart('seconds');
+					event.currentTarget.select();
+				}}
+				onBlur={() => setFocusedPart(null)}
+				onChange={(event) => updatePart('seconds', event.target.value)}
+				className="admin-song-duration-part"
+				aria-label="Duration seconds"
+				aria-invalid={Boolean(invalid)}
+			/>
+		</div>
+	);
+}
+
 function AlbumPlacementSelect({ id, value, albums, onChange, className, invalid }) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [searchText, setSearchText] = useState('');
+	const [menuStyle, setMenuStyle] = useState(null);
 	const listboxId = useId();
 	const rootRef = useRef(null);
+	const menuRef = useRef(null);
 	const selectedAlbum = albums.find((album) => album.id === value) ?? null;
 	const selectedAlbumLabel = albumSearchLabel(selectedAlbum);
 	const query = searchText.trim().toLowerCase();
@@ -400,8 +476,34 @@ function AlbumPlacementSelect({ id, value, albums, onChange, className, invalid 
 	useEffect(() => {
 		if (!isOpen) return undefined;
 
+		const updateMenuPosition = () => {
+			const rect = rootRef.current?.getBoundingClientRect();
+			if (!rect) return;
+
+			const viewportGap = 12;
+			const menuGap = 4;
+			const availableBelow = window.innerHeight - rect.bottom - viewportGap;
+			const availableAbove = rect.top - viewportGap;
+			const placeAbove = availableBelow < 160 && availableAbove > availableBelow;
+			const availableHeight = Math.max(120, placeAbove ? availableAbove : availableBelow);
+			const maxHeight = Math.min(420, availableHeight - menuGap);
+
+			setMenuStyle({
+				position: 'fixed',
+				left: `${rect.left}px`,
+				right: 'auto',
+				top: placeAbove
+					? `${Math.max(viewportGap, rect.top - maxHeight - menuGap)}px`
+					: `${rect.bottom + menuGap}px`,
+				width: `${rect.width}px`,
+				maxHeight: `${maxHeight}px`,
+			});
+		};
+
 		const handlePointerDown = (event) => {
-			if (!rootRef.current?.contains(event.target)) {
+			const isInsideInput = rootRef.current?.contains(event.target);
+			const isInsideMenu = menuRef.current?.contains(event.target);
+			if (!isInsideInput && !isInsideMenu) {
 				setSearchText(albumSearchLabel(selectedAlbum));
 				setIsOpen(false);
 			}
@@ -413,9 +515,14 @@ function AlbumPlacementSelect({ id, value, albums, onChange, className, invalid 
 			}
 		};
 
+		updateMenuPosition();
+		window.addEventListener('resize', updateMenuPosition);
+		window.addEventListener('scroll', updateMenuPosition, true);
 		document.addEventListener('mousedown', handlePointerDown);
 		document.addEventListener('keydown', handleEscape);
 		return () => {
+			window.removeEventListener('resize', updateMenuPosition);
+			window.removeEventListener('scroll', updateMenuPosition, true);
 			document.removeEventListener('mousedown', handlePointerDown);
 			document.removeEventListener('keydown', handleEscape);
 		};
@@ -426,6 +533,41 @@ function AlbumPlacementSelect({ id, value, albums, onChange, className, invalid 
 		setSearchText(albumSearchLabel(albums.find((album) => album.id === nextValue) ?? null));
 		setIsOpen(false);
 	};
+
+	const menu = isOpen && menuStyle ? (
+		<div
+			id={listboxId}
+			ref={menuRef}
+			className="admin-song-album-select-menu"
+			role="listbox"
+			style={menuStyle}
+		>
+			<button
+				type="button"
+				role="option"
+				aria-selected={!value}
+				className={`admin-song-album-select-option ${!value ? 'admin-song-album-select-option-selected' : ''}`.trim()}
+				onClick={() => selectValue('')}
+			>
+				<span className="admin-song-album-select-placeholder">- Album -</span>
+			</button>
+			{filteredAlbums.map((album) => (
+				<button
+					type="button"
+					key={album.id}
+					role="option"
+					aria-selected={value === album.id}
+					className={`admin-song-album-select-option ${value === album.id ? 'admin-song-album-select-option-selected' : ''}`.trim()}
+					onClick={() => selectValue(album.id)}
+				>
+					{renderAlbumOption(album)}
+				</button>
+			))}
+			{filteredAlbums.length === 0 && (
+				<div className="admin-song-album-select-empty">No matching albums</div>
+			)}
+		</div>
+	) : null;
 
 	return (
 		<div className="admin-song-album-select" ref={rootRef}>
@@ -464,34 +606,7 @@ function AlbumPlacementSelect({ id, value, albums, onChange, className, invalid 
 					}
 				}}
 			/>
-			{isOpen && (
-				<div id={listboxId} className="admin-song-album-select-menu" role="listbox">
-					<button
-						type="button"
-						role="option"
-						aria-selected={!value}
-						className={`admin-song-album-select-option ${!value ? 'admin-song-album-select-option-selected' : ''}`.trim()}
-						onClick={() => selectValue('')}
-					>
-						<span className="admin-song-album-select-placeholder">- Album -</span>
-					</button>
-					{filteredAlbums.map((album) => (
-						<button
-							type="button"
-							key={album.id}
-							role="option"
-							aria-selected={value === album.id}
-							className={`admin-song-album-select-option ${value === album.id ? 'admin-song-album-select-option-selected' : ''}`.trim()}
-							onClick={() => selectValue(album.id)}
-						>
-							{renderAlbumOption(album)}
-						</button>
-					))}
-					{filteredAlbums.length === 0 && (
-						<div className="admin-song-album-select-empty">No matching albums</div>
-					)}
-				</div>
-			)}
+			{typeof document !== 'undefined' && menu ? createPortal(menu, document.body) : null}
 		</div>
 	);
 }
@@ -502,6 +617,7 @@ function SongInfoTab({
 	token,
 	setForm,
 	setField,
+	setDuration,
 	setReleaseDate,
 	setBpm,
 	songFieldClassName,
@@ -542,7 +658,11 @@ function SongInfoTab({
 			<div className="admin-song-metadata-grid admin-modal-field-full">
 				<div className="admin-modal-field admin-song-metadata-field-duration">
 					<label htmlFor="admin-song-duration" className="admin-modal-label">Duration</label>
-					<input id="admin-song-duration" type="text" placeholder="e.g. 3:42" value={form.duration} onChange={setField('duration')} className="admin-artists-page-input" />
+					<SongDurationInput
+						value={form.duration}
+						invalid={Boolean(validationErrors?.duration)}
+						onChange={setDuration}
+					/>
 				</div>
 				<div className="admin-modal-field">
 					<label htmlFor="admin-song-release-date" className="admin-modal-label">Release Date</label>
@@ -831,6 +951,10 @@ export default function AdminSongFormModal({
 		dispatchModal({ type: 'set-release-date', value, albumById, visibilityTouched: visibilityTouchedRef.current });
 	};
 
+	const setDuration = (duration) => {
+		dispatchModal({ type: 'set-field', fieldName: 'duration', value: duration });
+	};
+
 	const setBpm = (event) =>
 		setForm((current) => {
 			const value = event.target.value;
@@ -974,6 +1098,7 @@ export default function AdminSongFormModal({
 							token={token}
 							setForm={setForm}
 							setField={setField}
+							setDuration={setDuration}
 							setReleaseDate={setReleaseDate}
 							setBpm={setBpm}
 							showSongLinksTab={showSongLinksTab}

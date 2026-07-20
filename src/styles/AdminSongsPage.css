@@ -147,7 +147,7 @@
 	left: 0;
 	right: 0;
 	top: calc(100% + 4px);
-	z-index: 20;
+	z-index: 1200;
 	max-height: min(420px, calc(100vh - 260px));
 	overflow-y: auto;
 	border: 1px solid var(--border);
@@ -222,9 +222,69 @@
 }
 
 .admin-song-metadata-grid {
+	--admin-song-metadata-control-height: 56px;
 	display: grid;
 	grid-template-columns: minmax(86px, 0.7fr) minmax(180px, 1.3fr) minmax(96px, 0.75fr) minmax(150px, 1.15fr);
 	gap: 12px;
+}
+
+.admin-song-metadata-grid .admin-artists-page-input,
+.admin-song-duration-control {
+	height: var(--admin-song-metadata-control-height);
+	min-height: var(--admin-song-metadata-control-height);
+}
+
+.admin-song-metadata-grid .admin-artists-page-input {
+	display: block;
+	line-height: 1.2;
+}
+
+.admin-song-duration-control {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+	align-items: center;
+	background: var(--bg-raised);
+	border: 1px solid var(--border);
+	color: var(--text);
+}
+
+.admin-song-duration-control:focus-within {
+	border-color: var(--accent);
+}
+
+.admin-song-duration-control-invalid {
+	border-color: rgba(224, 96, 96, 0.75);
+}
+
+.admin-song-duration-part {
+	width: 100%;
+	min-width: 0;
+	height: 100%;
+	padding: 0 8px;
+	border: 0;
+	background: transparent;
+	color: var(--text);
+	font: inherit;
+	font-size: 0.9rem;
+	text-align: center;
+	font-variant-numeric: tabular-nums;
+	-moz-appearance: textfield;
+}
+
+.admin-song-duration-part:focus {
+	outline: none;
+}
+
+.admin-song-duration-part::-webkit-outer-spin-button,
+.admin-song-duration-part::-webkit-inner-spin-button {
+	margin: 0;
+	appearance: none;
+}
+
+.admin-song-duration-separator {
+	color: var(--text-muted);
+	font-size: 0.95rem;
+	line-height: 1;
 }
 
 .admin-song-add-album-btn {
