@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { FaPlay, FaRandom } from 'react-icons/fa'
 import { prefetchApi } from '../../hooks/useApi.js'
-import { usePlayer } from '../../lib/playerContext.jsx'
+import { usePlayer } from '../../lib/playerContextCore.jsx'
 
 function playerPoolUrl({ type, id, slug }) {
   const params = new URLSearchParams({ type })

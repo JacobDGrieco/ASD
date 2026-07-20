@@ -645,6 +645,88 @@ body:has(.player-fullscreen) .side-rails {
 	width: min(240px, 22vw);
 }
 
+.player-lyrics-panel-synced {
+	height: calc(100dvh - 56px);
+	overflow: hidden;
+}
+
+.player-synced-lyrics {
+	--synced-lyrics-left-pad: clamp(28px, 4vw, 56px);
+	--synced-lyrics-right-pad: clamp(54px, 7vw, 96px);
+
+	position: relative;
+	width: min(100%, 680px);
+	height: 100%;
+	overflow: hidden;
+	isolation: isolate;
+	mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
+}
+
+.player-synced-lyrics::before,
+.player-synced-lyrics::after {
+	position: absolute;
+	right: 0;
+	left: 0;
+	z-index: 2;
+	height: 18%;
+	pointer-events: none;
+	content: "";
+}
+
+.player-synced-lyrics::before {
+	top: 0;
+	background: linear-gradient(to bottom, rgba(14, 12, 10, 0.76), transparent);
+}
+
+.player-synced-lyrics::after {
+	bottom: 0;
+	background: linear-gradient(to top, rgba(14, 12, 10, 0.76), transparent);
+}
+
+.player-synced-lyrics-track {
+	position: absolute;
+	top: 0;
+	right: var(--synced-lyrics-right-pad);
+	left: var(--synced-lyrics-left-pad);
+	will-change: transform;
+	transition: transform 0.58s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.player-synced-lyrics-line {
+	box-sizing: border-box;
+	max-width: min(540px, 100%);
+	padding: 13px 24px 13px 0;
+	color: rgba(232, 232, 232, calc(0.5 - (var(--lyric-distance, 1) * 0.055)));
+	filter: blur(calc(min(var(--lyric-distance, 4), 4) * 0.55px));
+	font-family: var(--font-readable);
+	font-size: 1.72rem;
+	font-weight: 650;
+	line-height: 1.22;
+	letter-spacing: 0;
+	overflow-wrap: break-word;
+	transform: scale(calc(1 - (min(var(--lyric-distance, 4), 4) * 0.025)));
+	transform-origin: left center;
+	transition:
+		color 0.32s ease,
+		filter 0.32s ease,
+		opacity 0.32s ease,
+		transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.player-synced-lyrics-line-active {
+	color: rgba(247, 237, 220, 0.98);
+	filter: blur(0);
+	transform: scale(1.075);
+}
+
+.player-synced-lyrics-line-cue {
+	color: rgba(200, 169, 110, 0.36);
+	font-size: 1rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
 .player-panel-empty {
 	display: flex;
 	align-items: center;
@@ -837,6 +919,22 @@ body:has(.player-fullscreen) .side-rails {
 	.player-fullscreen-right {
 		height: calc(48dvh - 30px);
 		padding: 24px 0 28px;
+	}
+
+	.player-lyrics-panel-synced {
+		height: calc(48dvh - 82px);
+	}
+
+	.player-synced-lyrics {
+		--synced-lyrics-left-pad: 22px;
+		--synced-lyrics-right-pad: 44px;
+
+		width: 100%;
+	}
+
+	.player-synced-lyrics-line {
+		padding-right: 0;
+		font-size: 1.22rem;
 	}
 
 	.player-panel-empty {

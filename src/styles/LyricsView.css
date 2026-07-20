@@ -14,6 +14,7 @@
 	line-height: 2.1;
 	font-size: 1.05rem;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+	transition: color 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
 }
 
 .lyrics-view-line span {
@@ -27,6 +28,20 @@
 
 .lyrics-view-plain {
 	color: var(--text);
+}
+
+.lyrics-view-line-synced {
+	opacity: 0.55;
+}
+
+.lyrics-view-line-active {
+	opacity: 1;
+	transform: translateX(4px);
+}
+
+.lyrics-view-line-active .lyrics-view-plain,
+.lyrics-view-line-active .lyrics-view-annotated {
+	color: var(--accent);
 }
 
 .lyrics-view-annotated {

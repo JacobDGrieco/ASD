@@ -57,7 +57,7 @@ function imageStateReducer(state, action) {
 	}
 }
 
-export default function ArtistHero({ artist }) {
+export default function ArtistHero({ artist, actions = null }) {
 	const { images, defaultImage, sequence } = useMemo(() => getArtistImages(artist), [artist]);
 	const [{ currentImage, previousImage, isTransitioning }, dispatchImageState] = useReducer(
 		imageStateReducer,
@@ -186,6 +186,11 @@ export default function ArtistHero({ artist }) {
 								</div>
 							</div>
 						)}
+					</div>
+				)}
+				{actions && (
+					<div className="artist-hero-actions player-page-actions">
+						{actions}
 					</div>
 				)}
 			</div>

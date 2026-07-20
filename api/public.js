@@ -203,6 +203,16 @@ function collectRoleCreditNames(roles) {
   return [...new Set(names)]
 }
 
+function normalizedRoleCreditName(value) {
+  return String(value ?? '').trim().toLowerCase()
+}
+
+function isFeaturedRoleForArtist(role, artist) {
+  if (role?.role !== 'Featured Artist') return false
+  if (role.artistId && role.artistId === artist.id) return true
+  return normalizedRoleCreditName(role.name) === normalizedRoleCreditName(artist.name)
+}
+
 async function resolveArtistRoleLinks(roles) {
   const names = collectRoleCreditNames(roles)
   const artistIds = [...new Set((Array.isArray(roles) ? roles : []).flatMap((role) => (
@@ -491,6 +501,16 @@ function formatPlayerPoolItem(song, placement, now, context) {
   }
 }
 
+function addPlayerPoolItem(poolBySongId, song, placement, now, context) {
+  const item = formatPlayerPoolItem(song, placement, now, context)
+  if (!item) return
+
+  const existing = poolBySongId.get(item.id)
+  if (!existing || comparePlayerPoolItems(item, existing) < 0) {
+    poolBySongId.set(item.id, item)
+  }
+}
+
 function formatPlacementSongs(placements, fallbackReleaseDate = null, now = new Date()) {
   return placements
     .slice()
@@ -764,9 +784,7 @@ async function getArtist(res, slug, context) {
   const albumMap = new Map()
   for (const { roles, releaseDate, song } of featuredMetas) {
     const rolesArray = Array.isArray(roles) ? roles : []
-    const isFeatured = rolesArray.some(
-      (r) => r.role === 'Featured Artist' && r.name?.toLowerCase() === artist.name.toLowerCase()
-    )
+    const isFeatured = rolesArray.some((role) => isFeaturedRoleForArtist(role, artist))
     if (!isFeatured) continue
 
     for (const placement of song.placements) {
@@ -1189,25 +1207,64 @@ async function getPlayerPool(res, { type, id, slug }, context) {
       },
     })
 
-    if (!artist) return res.status(404).json({ error: 'Artist not found' })
-    if (!isPreviewArtistVisible(artist, context)) return res.status(404).json({ error: 'Artist not found' })
+  if (!artist) return res.status(404).json({ error: 'Artist not found' })
+  if (!isPreviewArtistVisible(artist, context)) return res.status(404).json({ error: 'Artist not found' })
 
-    const seenSongIds = new Set()
-    const pool = artist.albums.flatMap((album) => {
-      if (!isPreviewAlbumVisible(album, now, context)) return []
-      return album.songPlacements.flatMap((placement) => {
-        if (seenSongIds.has(placement.song.id)) return []
-        const item = formatPlayerPoolItem(
+    const featuredMetas = await prisma.songMeta.findMany({
+      where: {
+        roles: {
+          array_contains: [{ role: 'Featured Artist' }],
+        },
+      },
+      select: {
+        roles: true,
+        releaseDate: true,
+        song: {
+          select: {
+            ...playerPoolSongSelect(),
+            placements: {
+              orderBy: [{ placementOrder: 'asc' }],
+              include: {
+                album: {
+                  select: playerPoolAlbumSelect(),
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+
+    const poolBySongId = new Map()
+    for (const album of artist.albums) {
+      if (!isPreviewAlbumVisible(album, now, context)) continue
+      for (const placement of album.songPlacements) {
+        addPlayerPoolItem(
+          poolBySongId,
           { ...placement.song, placements: album.songPlacements.map((albumPlacement) => ({ ...albumPlacement, album: { ...album, artist } })) },
           { ...placement, album: { ...album, artist } },
           now,
           context,
         )
-        if (!item) return []
-        seenSongIds.add(placement.song.id)
-        return [item]
-      })
-    }).sort(comparePlayerPoolItems)
+      }
+    }
+
+    for (const { roles, releaseDate, song } of featuredMetas) {
+      const rolesArray = Array.isArray(roles) ? roles : []
+      if (!rolesArray.some((role) => isFeaturedRoleForArtist(role, artist))) continue
+
+      for (const placement of song.placements) {
+        addPlayerPoolItem(
+          poolBySongId,
+          { ...song, meta: { ...(song.meta ?? {}), releaseDate }, placements: song.placements },
+          placement,
+          now,
+          context,
+        )
+      }
+    }
+
+    const pool = Array.from(poolBySongId.values()).sort(comparePlayerPoolItems)
 
     return res.status(200).json(publicPlayerPoolResponse(pool, `Playing from ${artist.name}`))
   }

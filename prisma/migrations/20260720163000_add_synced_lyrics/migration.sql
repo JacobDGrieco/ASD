@@ -1,0 +1,2 @@
+ALTER TABLE "SongLyric"
+ADD COLUMN "syncedLines" JSONB NOT NULL DEFAULT '[]';

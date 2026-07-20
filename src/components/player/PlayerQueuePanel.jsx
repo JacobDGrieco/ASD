@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef } from 'react'
-import { usePlayer } from '../../lib/playerContext.jsx'
+import { usePlayer } from '../../lib/playerContextCore.jsx'
 
 function QueueItem({ song, isCurrent, onClick }) {
   return (

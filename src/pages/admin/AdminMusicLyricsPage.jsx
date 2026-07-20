@@ -1,7 +1,10 @@
-import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
-import { FaCheck, FaPlus, FaTrash } from 'react-icons/fa';
+import { TabPanel } from 'primereact/tabview';
+import { FaCheck, FaPause, FaPlay, FaPlus, FaRedo, FaTrash } from 'react-icons/fa';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
+import SoundCloudPlayer from '../../components/shared/SoundCloudPlayer.jsx';
+import PageTabs from '../../components/shared/PageTabs.jsx';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import '../../styles/AdminLyricsPage.css';
 
@@ -19,6 +22,95 @@ function renderBackdrop(text, ranges) {
 	}
 	if (cursor < text.length) parts.push(text.slice(cursor));
 	return parts;
+}
+
+function lyricLineEntries(text) {
+	return String(text ?? '').split('\n').map((line, lineIndex) => ({
+		line,
+		lineIndex,
+	})).filter((entry) => entry.line.trim() && !isBracketedLyricCue(entry.line));
+}
+
+function isBracketedLyricCue(line) {
+	const trimmed = String(line ?? '').trim();
+	return trimmed.length >= 2 && trimmed.startsWith('[') && trimmed.endsWith(']');
+}
+
+function normalizeLyricLineForSync(line) {
+	return String(line ?? '').trim().replace(/\s+/g, ' ');
+}
+
+function reconcileSyncedLinesForTextChange(oldText, newText, syncedLines) {
+	if (!Array.isArray(syncedLines) || syncedLines.length === 0) return [];
+
+	const oldLines = String(oldText ?? '').split('\n');
+	const newLines = String(newText ?? '').split('\n');
+	const sortedTimings = syncedLines.toSorted((left, right) => left.lineIndex - right.lineIndex);
+
+	if (oldLines.length === newLines.length) {
+		return sortedTimings.filter((timing) => (
+			newLines[timing.lineIndex]?.trim() && !isBracketedLyricCue(newLines[timing.lineIndex])
+		));
+	}
+
+	const newIndexesByLine = newLines.reduce((lineMap, line, lineIndex) => {
+		if (isBracketedLyricCue(line)) return lineMap;
+		const key = normalizeLyricLineForSync(line);
+		if (!key) return lineMap;
+		const indexes = lineMap.get(key) ?? [];
+		indexes.push(lineIndex);
+		lineMap.set(key, indexes);
+		return lineMap;
+	}, new Map());
+	const usedNewIndexes = new Set();
+
+	return sortedTimings.reduce((timings, timing) => {
+		if (isBracketedLyricCue(oldLines[timing.lineIndex])) return timings;
+		const oldKey = normalizeLyricLineForSync(oldLines[timing.lineIndex]);
+		if (!oldKey) return timings;
+
+		const candidates = newIndexesByLine.get(oldKey) ?? [];
+		const preferredIndex = normalizeLyricLineForSync(newLines[timing.lineIndex]) === oldKey && !usedNewIndexes.has(timing.lineIndex)
+			? timing.lineIndex
+			: null;
+		const nextLineIndex = preferredIndex ?? candidates.find((lineIndex) => !usedNewIndexes.has(lineIndex));
+		if (typeof nextLineIndex !== 'number') return timings;
+
+		usedNewIndexes.add(nextLineIndex);
+		timings.push({ ...timing, lineIndex: nextLineIndex });
+		return timings;
+	}, []).sort((left, right) => left.lineIndex - right.lineIndex);
+}
+
+function formatSyncTime(milliseconds) {
+	const safeMilliseconds = Math.max(0, Math.round(Number(milliseconds) || 0));
+	const minutes = Math.floor(safeMilliseconds / 60000);
+	const seconds = Math.floor((safeMilliseconds % 60000) / 1000);
+	const ms = safeMilliseconds % 1000;
+	return `${minutes}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+}
+
+function parseSyncTime(value) {
+	const match = String(value ?? '').trim().match(/^(\d+):([0-5]?\d)(?:\.(\d{1,3}))?$/);
+	if (!match) return null;
+	const minutes = Number(match[1]);
+	const seconds = Number(match[2]);
+	const milliseconds = Number((match[3] ?? '0').padEnd(3, '0'));
+	return (minutes * 60 * 1000) + (seconds * 1000) + milliseconds;
+}
+
+function isTextEditingTarget(target) {
+	return ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(target?.tagName);
+}
+
+function scrollElementByOneLine(element, amount) {
+	const scrollContainer = element?.closest?.('.admin-layout-main');
+	if (scrollContainer && scrollContainer.scrollHeight > scrollContainer.clientHeight) {
+		scrollContainer.scrollBy({ top: amount, behavior: 'smooth' });
+		return;
+	}
+
+	window.scrollBy({ top: amount, behavior: 'smooth' });
 }
 
 function createScrollRestorer(element) {
@@ -64,6 +156,7 @@ async function saveLyricsAndAnnotations({
 	songId,
 	auth,
 	lyricText,
+	syncedLines,
 	lyricIdRef,
 	setAnnotations,
 	setIsSaving,
@@ -83,7 +176,7 @@ async function saveLyricsAndAnnotations({
 		const lyricRes = await fetch(`/api/admin/lyrics?songId=${songId}`, {
 			method: 'PUT',
 			headers: { ...auth, 'Content-Type': 'application/json' },
-			body: JSON.stringify({ text: lyricText }),
+			body: JSON.stringify({ text: lyricText, syncedLines }),
 		});
 		if (!lyricRes.ok) throw new Error('Failed to save lyrics.');
 		const lyricData = await lyricRes.json();
@@ -417,15 +510,250 @@ function AnnotationsPanel({
 	);
 }
 
+function SyncedLyricsPanel({
+	isViewer,
+	lyricText,
+	song,
+	syncedLines,
+	onSyncedLinesChange,
+}) {
+	const playerRef = useRef(null);
+	const panelRef = useRef(null);
+	const lineRefs = useRef(new Map());
+	const captureStartMsRef = useRef(null);
+	const previousEntryIndexRef = useRef(0);
+	const [position, setPosition] = useState(0);
+	const [duration, setDuration] = useState(0);
+	const [isPlaying, setIsPlaying] = useState(false);
+	const [isCapturing, setIsCapturing] = useState(false);
+	const [currentEntryIndex, setCurrentEntryIndex] = useState(0);
+
+	const lineEntries = useMemo(() => lyricLineEntries(lyricText), [lyricText]);
+	const timingByLineIndex = useMemo(() => new Map(
+		(syncedLines ?? []).map((timing) => [timing.lineIndex, timing])
+	), [syncedLines]);
+	const syncedCount = lineEntries.filter((entry) => timingByLineIndex.has(entry.lineIndex)).length;
+	const currentEntry = lineEntries[Math.min(currentEntryIndex, Math.max(lineEntries.length - 1, 0))] ?? null;
+	const currentMs = Math.round((position || 0) * 1000);
+	const maxDuration = Math.max(duration || 0, position || 0, 1);
+
+	const focusSyncPanel = useCallback(() => {
+		if (isViewer) return;
+		window.requestAnimationFrame(() => {
+			panelRef.current?.focus({ preventScroll: true });
+		});
+	}, [isViewer]);
+
+	useEffect(() => {
+		if (currentEntryIndex <= Math.max(lineEntries.length - 1, 0)) return;
+		setCurrentEntryIndex(Math.max(lineEntries.length - 1, 0));
+	}, [currentEntryIndex, lineEntries.length]);
+
+	useEffect(() => {
+		const currentLineIndex = lineEntries[currentEntryIndex]?.lineIndex;
+		const previousEntryIndex = previousEntryIndexRef.current;
+		previousEntryIndexRef.current = currentEntryIndex;
+		if (typeof currentLineIndex !== 'number' || previousEntryIndex === currentEntryIndex) return;
+
+		const lineElement = lineRefs.current.get(currentLineIndex);
+		const direction = currentEntryIndex > previousEntryIndex ? 1 : -1;
+		const lineHeight = lineElement?.getBoundingClientRect().height ?? 42;
+		scrollElementByOneLine(panelRef.current, direction * (lineHeight + 6));
+	}, [currentEntryIndex, lineEntries]);
+
+	const updateLineTiming = useCallback((lineIndex, patch) => {
+		onSyncedLinesChange((previous) => {
+			const existing = previous.find((timing) => timing.lineIndex === lineIndex) ?? { lineIndex, startMs: 0, endMs: 0 };
+			const nextTiming = { ...existing, ...patch };
+			const withoutLine = previous.filter((timing) => timing.lineIndex !== lineIndex);
+			if (nextTiming.endMs <= nextTiming.startMs) return previous;
+			return [...withoutLine, nextTiming].sort((left, right) => left.lineIndex - right.lineIndex);
+		});
+	}, [onSyncedLinesChange]);
+
+	const seekToMs = (milliseconds) => {
+		const seconds = Math.max(0, milliseconds / 1000);
+		playerRef.current?.seekTo(seconds);
+		setPosition(seconds);
+		focusSyncPanel();
+	};
+
+	const handleSpaceDown = (event) => {
+		if (event.code !== 'Space' || isTextEditingTarget(event.target)) return;
+		event.preventDefault();
+		if (isViewer || event.repeat || !currentEntry) return;
+		captureStartMsRef.current = currentMs;
+		setIsCapturing(true);
+		if (!isPlaying) setIsPlaying(true);
+	};
+
+	const handleSpaceUp = (event) => {
+		if (event.code !== 'Space' || isTextEditingTarget(event.target)) return;
+		event.preventDefault();
+		if (isViewer || !currentEntry || captureStartMsRef.current === null) return;
+		const startMs = captureStartMsRef.current;
+		const endMs = Math.max(currentMs, startMs + 250);
+		captureStartMsRef.current = null;
+		setIsCapturing(false);
+		updateLineTiming(currentEntry.lineIndex, { startMs, endMs });
+		setCurrentEntryIndex((index) => Math.min(index + 1, Math.max(lineEntries.length - 1, 0)));
+	};
+
+	const updateTimeField = (lineIndex, field, value) => {
+		const parsed = parseSyncTime(value);
+		if (parsed === null) return;
+		updateLineTiming(lineIndex, { [field]: parsed });
+	};
+
+	const resetSync = () => {
+		if (window.confirm('Clear all synced lyric timing for this song?')) {
+			onSyncedLinesChange([]);
+			setCurrentEntryIndex(0);
+			focusSyncPanel();
+		}
+	};
+
+	return (
+		<div
+			ref={panelRef}
+			className="alp-sync-panel"
+			tabIndex={isViewer ? -1 : 0}
+			onKeyDown={handleSpaceDown}
+			onKeyUp={handleSpaceUp}
+		>
+			<div className="alp-sync-header">
+				<div>
+					<span className="alp-sync-kicker">Synced lyrics</span>
+					<p className="alp-sync-status">
+						{lineEntries.length ? `${syncedCount}/${lineEntries.length} lines timed` : 'Add lyrics before syncing'}
+					</p>
+				</div>
+				<div className="alp-sync-actions">
+					<button
+						type="button"
+						className="alp-annotation-icon-btn"
+						onClick={() => {
+							setIsPlaying((playing) => !playing);
+							focusSyncPanel();
+						}}
+						disabled={!song?.soundcloudUrl}
+						aria-label={isPlaying ? 'Pause sync playback' : 'Play sync playback'}
+						title={isPlaying ? 'Pause' : 'Play'}
+					>
+						{isPlaying ? <FaPause aria-hidden="true" /> : <FaPlay aria-hidden="true" />}
+					</button>
+					<button
+						type="button"
+						className="alp-annotation-icon-btn"
+						onClick={resetSync}
+						disabled={isViewer || syncedCount === 0}
+						aria-label="Reset synced lyrics"
+						title="Reset synced lyrics"
+					>
+						<FaRedo aria-hidden="true" />
+					</button>
+				</div>
+			</div>
+
+			{song?.soundcloudUrl ? (
+				<SoundCloudPlayer
+					ref={playerRef}
+					url={song.soundcloudUrl}
+					isPlaying={isPlaying}
+					onPlaybackStart={() => {
+						setIsPlaying(true);
+						focusSyncPanel();
+					}}
+					onPlaybackPause={() => setIsPlaying(false)}
+					onPlaybackEnd={() => setIsPlaying(false)}
+					onReady={({ duration: nextDuration }) => setDuration(nextDuration || 0)}
+					onPlaybackProgress={({ position: nextPosition, duration: nextDuration }) => {
+						setPosition(nextPosition || 0);
+						if (nextDuration) setDuration(nextDuration);
+					}}
+				/>
+			) : (
+				<div className="alp-sync-empty">Add a SoundCloud URL to this song before syncing lyrics.</div>
+			)}
+
+			<div className="alp-sync-transport">
+				<input
+					type="range"
+					min="0"
+					max={maxDuration}
+					step="0.001"
+					value={Math.min(position, maxDuration)}
+					onChange={(event) => seekToMs(Number(event.target.value) * 1000)}
+					aria-label="Sync playback position"
+				/>
+				<div className="alp-sync-time">
+					<span>{formatSyncTime(currentMs)}</span>
+					<span>{formatSyncTime(maxDuration * 1000)}</span>
+				</div>
+			</div>
+			<div className="alp-sync-lines">
+				{lineEntries.map((entry, index) => {
+					const timing = timingByLineIndex.get(entry.lineIndex) ?? null;
+					const isCurrent = currentEntry?.lineIndex === entry.lineIndex;
+					return (
+						<div
+							key={`${entry.lineIndex}-${entry.line}`}
+							ref={(element) => {
+								if (element) lineRefs.current.set(entry.lineIndex, element);
+								else lineRefs.current.delete(entry.lineIndex);
+							}}
+							className={`alp-sync-line${isCurrent ? ' alp-sync-line-current' : ''}`.trim()}
+						>
+							<button
+								type="button"
+								className="alp-sync-line-text"
+								onClick={() => {
+									setCurrentEntryIndex(index);
+									focusSyncPanel();
+								}}
+							>
+								<span>{entry.line}</span>
+							</button>
+							<div className="alp-sync-line-times">
+								<input
+									type="text"
+									value={timing ? formatSyncTime(timing.startMs) : ''}
+									placeholder="0:00.000"
+									disabled={isViewer || !timing}
+									onChange={(event) => updateTimeField(entry.lineIndex, 'startMs', event.target.value)}
+									aria-label={`Start time for ${entry.line}`}
+								/>
+								<input
+									type="text"
+									value={timing ? formatSyncTime(timing.endMs) : ''}
+									placeholder="0:00.000"
+									disabled={isViewer || !timing}
+									onChange={(event) => updateTimeField(entry.lineIndex, 'endMs', event.target.value)}
+									aria-label={`End time for ${entry.line}`}
+								/>
+							</div>
+						</div>
+					);
+				})}
+			</div>
+		</div>
+	);
+}
+
 function LyricsEditPane({
 	state,
 	lyricText,
+	songForSync,
+	syncedLines,
+	activeTabIndex,
 	highlightedRanges,
 	textareaWrapperRef,
 	textareaRef,
 	sortedAnnotationEntries,
 	editingAnnotationIndex,
 	onLyricChange,
+	onSyncedLinesChange,
+	onTabChange,
 	onTextareaInteraction,
 	onTextareaMouseUp,
 	onTextareaKeyUp,
@@ -447,48 +775,67 @@ function LyricsEditPane({
 				<div>Loading lyrics...</div>
 			) : (
 				<>
-					{hasDirtyRanges && (
-						<div className="alp-dirty-banner">
-							Some annotation ranges were affected by your edits. Select the annotation card and re-highlight the text to fix them.
-						</div>
-					)}
+					<PageTabs
+						activeIndex={activeTabIndex}
+						onTabChange={onTabChange}
+						className="alp-tabs"
+						tabCount={2}
+					>
+						<TabPanel header="Plain Lyrics">
+							{hasDirtyRanges && (
+								<div className="alp-dirty-banner">
+									Some annotation ranges were affected by your edits. Select the annotation card and re-highlight the text to fix them.
+								</div>
+							)}
 
-					{isPicking && (
-						<div className="alp-picking-banner">
-							Highlight text in the lyrics to add a range to this annotation
-						</div>
-					)}
+							{isPicking && (
+								<div className="alp-picking-banner">
+									Highlight text in the lyrics to add a range to this annotation
+								</div>
+							)}
 
-					<div className="alp-editor-columns">
-						<LyricsPanel
-							isViewer={isViewer}
-							isPicking={isPicking}
-							lyricText={lyricText}
-							highlightedRanges={highlightedRanges}
-							textareaWrapperRef={textareaWrapperRef}
-							textareaRef={textareaRef}
-							onLyricChange={onLyricChange}
-							onTextareaInteraction={onTextareaInteraction}
-							onTextareaMouseUp={onTextareaMouseUp}
-							onTextareaKeyUp={onTextareaKeyUp}
-						/>
+							<div className="alp-editor-columns">
+								<LyricsPanel
+									isViewer={isViewer}
+									isPicking={isPicking}
+									lyricText={lyricText}
+									highlightedRanges={highlightedRanges}
+									textareaWrapperRef={textareaWrapperRef}
+									textareaRef={textareaRef}
+									onLyricChange={onLyricChange}
+									onTextareaInteraction={onTextareaInteraction}
+									onTextareaMouseUp={onTextareaMouseUp}
+									onTextareaKeyUp={onTextareaKeyUp}
+								/>
 
-						<AnnotationsPanel
-							isViewer={isViewer}
-							sortedAnnotationEntries={sortedAnnotationEntries}
-							editingAnnotationIndex={editingAnnotationIndex}
-							lyricText={lyricText}
-							onAddAnnotation={onAddAnnotation}
-							onEditAnnotation={onEditAnnotation}
-							onDoneEditing={onDoneEditing}
-							onHoverAnnotation={onHoverAnnotation}
-							onLeaveAnnotation={onLeaveAnnotation}
-							onDeleteAnnotation={onDeleteAnnotation}
-							onRemoveRange={onRemoveRange}
-							onAddRange={onAddRange}
-							onUpdateExplanation={onUpdateExplanation}
-						/>
-					</div>
+								<AnnotationsPanel
+									isViewer={isViewer}
+									sortedAnnotationEntries={sortedAnnotationEntries}
+									editingAnnotationIndex={editingAnnotationIndex}
+									lyricText={lyricText}
+									onAddAnnotation={onAddAnnotation}
+									onEditAnnotation={onEditAnnotation}
+									onDoneEditing={onDoneEditing}
+									onHoverAnnotation={onHoverAnnotation}
+									onLeaveAnnotation={onLeaveAnnotation}
+									onDeleteAnnotation={onDeleteAnnotation}
+									onRemoveRange={onRemoveRange}
+									onAddRange={onAddRange}
+									onUpdateExplanation={onUpdateExplanation}
+								/>
+							</div>
+						</TabPanel>
+
+						<TabPanel header="Synced Lyrics">
+							<SyncedLyricsPanel
+								isViewer={isViewer}
+								lyricText={lyricText}
+								song={songForSync}
+								syncedLines={syncedLines}
+								onSyncedLinesChange={onSyncedLinesChange}
+							/>
+						</TabPanel>
+					</PageTabs>
 				</>
 			)}
 		</div>
@@ -506,6 +853,9 @@ export default function AdminMusicLyricsPage() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSaving, setIsSaving] = useState(false);
 	const [lyricText, setLyricText] = useState('');
+	const [syncedLines, setSyncedLines] = useState([]);
+	const [songForSync, setSongForSync] = useState(null);
+	const [activeTabIndex, setActiveTabIndex] = useState(0);
 	const [annotations, setAnnotations] = useState([]);
 	const [editingAnnotationIndex, setEditingAnnotationIndex] = useState(null);
 	const [hoveredAnnotationIndex, setHoveredAnnotationIndex] = useState(null);
@@ -540,6 +890,8 @@ export default function AdminMusicLyricsPage() {
 				if (ignore) return;
 				lyricIdRef.current = data.id ?? null;
 				setLyricText(data.text ?? '');
+				setSyncedLines(Array.isArray(data.syncedLines) ? data.syncedLines : []);
+				setSongForSync(data.song ?? null);
 				setAnnotations(
 					(data.annotations ?? []).map((annotation) => ({
 						id: annotation.id ?? null,
@@ -565,7 +917,7 @@ export default function AdminMusicLyricsPage() {
 	useLayoutEffect(() => {
 		if (isLoading) return;
 		resizeLyricTextarea();
-	}, [isLoading, resizeLyricTextarea]);
+	}, [activeTabIndex, isLoading, resizeLyricTextarea]);
 
 	useEffect(() => {
 		const wrapper = textareaWrapperRef.current;
@@ -622,6 +974,7 @@ export default function AdminMusicLyricsPage() {
 		const netDelta = charsAdded - charsRemoved;
 
 		setLyricText(newValue);
+		setSyncedLines((current) => reconcileSyncedLinesForTextChange(oldValue, newValue, current));
 		adjustAnnotationRanges(changeStart, changeEnd, netDelta);
 
 		resizeLyricTextarea(e.target, { preserveScroll: true });
@@ -718,6 +1071,7 @@ export default function AdminMusicLyricsPage() {
 			songId,
 			auth,
 			lyricText,
+			syncedLines,
 			lyricIdRef,
 			setAnnotations,
 			setIsSaving,
@@ -767,12 +1121,17 @@ export default function AdminMusicLyricsPage() {
 			<LyricsEditPane
 				state={{ isLoading, hasDirtyRanges, isPicking, isViewer }}
 				lyricText={lyricText}
+				songForSync={songForSync}
+				syncedLines={syncedLines}
+				activeTabIndex={activeTabIndex}
 				highlightedRanges={highlightedRanges}
 				textareaWrapperRef={textareaWrapperRef}
 				textareaRef={textareaRef}
 				sortedAnnotationEntries={sortedAnnotationEntries}
 				editingAnnotationIndex={editingAnnotationIndex}
 				onLyricChange={handleLyricChange}
+				onSyncedLinesChange={setSyncedLines}
+				onTabChange={(event) => setActiveTabIndex(event.index)}
 				onTextareaInteraction={handleTextareaInteraction}
 				onTextareaMouseUp={handleTextareaMouseUp}
 				onTextareaKeyUp={handleTextareaKeyUp}

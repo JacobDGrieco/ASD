@@ -19,8 +19,39 @@ async function loadSongForLyrics(session, songId) {
       id: songId,
       ...artistScopedSongWhere(session),
     },
-    select: { id: true },
+    select: { id: true, title: true, soundcloudUrl: true, duration: true },
   })
+}
+
+function normalizeSyncedLines(input, text) {
+  if (!Array.isArray(input)) return []
+
+  const lines = String(text ?? '').split('\n')
+  const seen = new Set()
+  const normalized = []
+
+  for (const item of input) {
+    const lineIndex = Number(item?.lineIndex)
+    const startMs = Math.round(Number(item?.startMs))
+    const endMs = Math.round(Number(item?.endMs))
+
+    if (!Number.isInteger(lineIndex) || lineIndex < 0 || lineIndex >= lines.length) continue
+    if (!lines[lineIndex]?.trim()) continue
+    if (isBracketedLyricCue(lines[lineIndex])) continue
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) continue
+    if (startMs < 0 || endMs <= startMs) continue
+    if (seen.has(lineIndex)) continue
+
+    seen.add(lineIndex)
+    normalized.push({ lineIndex, startMs, endMs })
+  }
+
+  return normalized.sort((left, right) => left.lineIndex - right.lineIndex)
+}
+
+function isBracketedLyricCue(line) {
+  const trimmed = String(line ?? '').trim()
+  return trimmed.length >= 2 && trimmed.startsWith('[') && trimmed.endsWith(']')
 }
 
 export default async function handler(req, res) {
@@ -47,21 +78,23 @@ export default async function handler(req, res) {
     })
 
     if (!lyric) {
-      return res.status(200).json({ id: null, songId, text: '', annotations: [] })
+      return res.status(200).json({ id: null, songId, text: '', syncedLines: [], annotations: [], song })
     }
 
-    return res.status(200).json(lyric)
+    return res.status(200).json({ ...lyric, song })
   }
 
   if (req.method === 'PUT') {
     if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
 
-    const { text } = req.body
+    const { text, syncedLines } = req.body
+    const normalizedText = typeof text === 'string' ? text : ''
+    const normalizedSyncedLines = normalizeSyncedLines(syncedLines, normalizedText)
 
     const upserted = await prisma.songLyric.upsert({
       where: { songId },
-      create: { songId, text },
-      update: { text },
+      create: { songId, text: normalizedText, syncedLines: normalizedSyncedLines },
+      update: { text: normalizedText, syncedLines: normalizedSyncedLines },
     })
 
     return res.status(200).json(upserted)

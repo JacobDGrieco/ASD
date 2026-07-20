@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FaPause, FaPlay, FaStepBackward, FaStepForward } from 'react-icons/fa'
-import { usePlayer } from '../../lib/playerContext.jsx'
+import { usePlayer } from '../../lib/playerContextCore.jsx'
 import '../../styles/Player.css'
 
 export default function PlayerWidget() {

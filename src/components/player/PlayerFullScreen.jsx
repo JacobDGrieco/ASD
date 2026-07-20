@@ -12,7 +12,7 @@ import {
 	FaStepBackward,
 	FaStepForward,
 } from 'react-icons/fa';
-import { usePlayer } from '../../lib/playerContext.jsx';
+import { usePlayer } from '../../lib/playerContextCore.jsx';
 import PlayerLyricsPanel from './PlayerLyricsPanel.jsx';
 import PlayerQueuePanel from './PlayerQueuePanel.jsx';
 

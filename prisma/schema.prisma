@@ -269,6 +269,7 @@ model SongLyric {
   songId      String           @unique
   song        Song             @relation(fields: [songId], references: [id], onDelete: Cascade)
   text        String           @default("")
+  syncedLines Json             @default(dbgenerated("'[]'::jsonb"))
   annotations SongAnnotation[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import AnnotationPopup from './AnnotationPopup.jsx'
 import '../../styles/LyricsView.css'
 
@@ -6,6 +6,9 @@ function LyricLine({
   lineText,
   lineRanges,
   lineIndex,
+  isSynced,
+  isActive,
+  lineRef,
   hoveredAnnotationId,
   openAnnotationId,
   openAnnotationAnchorLineIndex,
@@ -20,7 +23,7 @@ function LyricLine({
 
   if (lineRanges.length === 0) {
     return (
-      <div className="lyrics-view-line">
+      <div ref={lineRef} className={`lyrics-view-line${isSynced ? ' lyrics-view-line-synced' : ''}${isActive ? ' lyrics-view-line-active' : ''}`.trim()}>
         <span className="lyrics-view-plain">{lineText}</span>
       </div>
     )
@@ -30,7 +33,7 @@ function LyricLine({
 
   return (
     <div className="lyrics-view-line-wrap">
-      <div className="lyrics-view-line">
+      <div ref={lineRef} className={`lyrics-view-line${isSynced ? ' lyrics-view-line-synced' : ''}${isActive ? ' lyrics-view-line-active' : ''}`.trim()}>
         {spans.map((span) => {
           if (!span.annotationId) {
             return <span key={`plain-${span.start}-${span.end}`} className="lyrics-view-plain">{span.text}</span>
@@ -84,10 +87,40 @@ function buildSpans(text, lineRanges) {
   return spans
 }
 
-export default function LyricsView({ lyric }) {
+function activeSyncedLineIndex(syncedLines, currentTime) {
+  if (!Array.isArray(syncedLines) || typeof currentTime !== 'number') return null
+  const currentMs = Math.max(0, currentTime * 1000)
+  const current = syncedLines.filter((line) => currentMs >= line.startMs).at(-1)
+  return current && currentMs < current.endMs ? current.lineIndex : null
+}
+
+function isBracketedLyricCue(line) {
+  const trimmed = String(line ?? '').trim()
+  return trimmed.length >= 2 && trimmed.startsWith('[') && trimmed.endsWith(']')
+}
+
+export default function LyricsView({ lyric, currentTime = null, autoFollow = false }) {
   const [openAnnotationId, setOpenAnnotationId] = useState(null)
   const [openAnnotationAnchorLineIndex, setOpenAnnotationAnchorLineIndex] = useState(-1)
   const [hoveredAnnotationId, setHoveredAnnotationId] = useState(null)
+  const lineRefs = useRef(new Map())
+
+  const syncedLines = useMemo(() => (
+    Array.isArray(lyric?.syncedLines)
+      ? lyric.syncedLines
+          .filter((line) => Number.isInteger(line.lineIndex) && Number.isFinite(line.startMs) && Number.isFinite(line.endMs))
+          .filter((line) => !isBracketedLyricCue(String(lyric?.text ?? '').split('\n')[line.lineIndex]))
+          .toSorted((left, right) => left.startMs - right.startMs)
+      : []
+  ), [lyric?.syncedLines, lyric?.text])
+  const activeLineIndex = activeSyncedLineIndex(syncedLines, currentTime)
+  const syncedLineIndexes = useMemo(() => new Set(syncedLines.map((line) => line.lineIndex)), [syncedLines])
+
+  useEffect(() => {
+    if (!autoFollow || activeLineIndex === null) return
+    const line = lineRefs.current.get(activeLineIndex)
+    line?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [activeLineIndex, autoFollow])
 
   if (!lyric) return null
 
@@ -120,13 +153,19 @@ export default function LyricsView({ lyric }) {
               lineText={line}
               lineRanges={lineRanges}
               lineIndex={i}
+              isSynced={syncedLineIndexes.has(i)}
+              isActive={activeLineIndex === i}
+              lineRef={(element) => {
+                if (element) lineRefs.current.set(i, element)
+                else lineRefs.current.delete(i)
+              }}
               hoveredAnnotationId={hoveredAnnotationId}
               openAnnotationId={openAnnotationId}
               openAnnotationAnchorLineIndex={openAnnotationAnchorLineIndex}
               setHoveredAnnotationId={setHoveredAnnotationId}
               setOpenAnnotationId={setOpenAnnotationId}
               setOpenAnnotationAnchorLineIndex={setOpenAnnotationAnchorLineIndex}
-              allAnnotations={lyric.annotations}
+              allAnnotations={lyric.annotations ?? []}
             />
           )
           lineOffset += line.length + 1

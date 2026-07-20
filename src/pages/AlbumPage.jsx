@@ -71,17 +71,17 @@ function AlbumHeader({ album }) {
 						{streamLinks.map((link) => {
 							const label = PROFILE_LINK_PLATFORM_LABELS[link.platform] ?? 'Link';
 							return (
-							<a
-								key={link.id}
-								href={hrefForProfileLink(link)}
-								target="_blank"
-								rel="noreferrer"
-								className="song-header-stream-link"
-								aria-label={label}
-								title={label}
-							>
-								<ProfileLinkIcon platform={link.platform} aria-hidden="true" />
-							</a>
+								<a
+									key={link.id}
+									href={hrefForProfileLink(link)}
+									target="_blank"
+									rel="noreferrer"
+									className="song-header-stream-link"
+									aria-label={label}
+									title={label}
+								>
+									<ProfileLinkIcon platform={link.platform} aria-hidden="true" />
+								</a>
 							);
 						})}
 					</div>
@@ -95,8 +95,8 @@ function AlbumHeader({ album }) {
 				<h1 className="song-header-title">{album.title}</h1>
 				<p className="song-header-meta">{year} · {album.type}</p>
 				<div className="player-header-actions">
-					<PlayButton type="album" id={album.id} sourceLabel={`Playing from ${album.title}`} label="Play Album" />
-					<PlayButton type="album" id={album.id} sourceLabel={`Playing from ${album.title}`} label="Shuffle Album" shuffle />
+					<PlayButton type="album" id={album.id} sourceLabel={`Playing from ${album.title}`} label="Play" />
+					<PlayButton type="album" id={album.id} sourceLabel={`Playing from ${album.title}`} label="Shuffle" shuffle />
 				</div>
 			</div>
 		</section>

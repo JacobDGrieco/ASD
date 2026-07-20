@@ -186,6 +186,12 @@
 	text-decoration: none;
 }
 
+.artist-hero-actions {
+	justify-content: flex-start;
+	width: 100%;
+	margin: -4px 0 0;
+}
+
 @media (max-width: 960px) {
 	.artist-hero-hero {
 		gap: 36px;
@@ -237,6 +243,10 @@
 	}
 
 	.artist-hero-links {
+		justify-content: center;
+	}
+
+	.artist-hero-actions {
 		justify-content: center;
 	}
 

@@ -1,12 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useLocation } from 'react-router-dom'
 import SoundCloudPlayer from '../components/shared/SoundCloudPlayer.jsx'
 import PlayerFullScreen from '../components/player/PlayerFullScreen.jsx'
 import PlayerWidget from '../components/player/PlayerWidget.jsx'
 import { prefetchApi } from './apiCache.js'
-
-const PlayerContext = createContext(null)
+import { PlayerContext } from './playerContextCore.jsx'
 
 function identityOrder(pool) {
   return pool.map((_, index) => index)
@@ -354,10 +353,4 @@ export function PlayerProvider({ children }) {
       {!isAdminPath && isFullScreenOpen && pool.length > 0 && <PlayerFullScreen />}
     </PlayerContext.Provider>
   )
-}
-
-export function usePlayer() {
-  const context = useContext(PlayerContext)
-  if (!context) throw new Error('usePlayer must be used within PlayerProvider')
-  return context
 }
