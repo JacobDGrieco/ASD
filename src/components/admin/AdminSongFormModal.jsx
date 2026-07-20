@@ -918,6 +918,23 @@ export default function AdminSongFormModal({
 		[albumById, form?.albumPlacements]
 	);
 	const songEditorTabCount = showSongLinksTab ? 4 : 3;
+	const previousShowSongLinksTabRef = useRef(showSongLinksTab);
+
+	useEffect(() => {
+		const previousShowSongLinksTab = previousShowSongLinksTabRef.current;
+		if (previousShowSongLinksTab === showSongLinksTab) return;
+
+		previousShowSongLinksTabRef.current = showSongLinksTab;
+
+		if (!previousShowSongLinksTab && showSongLinksTab && activeTabIndex >= 1) {
+			dispatchModal({ type: 'set-active-tab', index: activeTabIndex + 1 });
+			return;
+		}
+
+		if (previousShowSongLinksTab && !showSongLinksTab && activeTabIndex > 1) {
+			dispatchModal({ type: 'set-active-tab', index: activeTabIndex - 1 });
+		}
+	}, [activeTabIndex, showSongLinksTab]);
 
 	useEffect(() => {
 		const lastTabIndex = songEditorTabCount - 1;
