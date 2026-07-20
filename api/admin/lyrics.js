@@ -12,15 +12,62 @@
 import { prisma } from '../../src/lib/prisma.js'
 import { artistScopedSongWhere, canAccessAdminPage, isViewer, requireAdmin } from '../../src/lib/auth.js'
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
+import { isReleasedOnUtcDay } from '../../src/lib/releaseSchedule.js'
 
 async function loadSongForLyrics(session, songId) {
-  return prisma.song.findFirst({
+  const song = await prisma.song.findFirst({
     where: {
       id: songId,
       ...artistScopedSongWhere(session),
     },
-    select: { id: true, title: true, soundcloudUrl: true, duration: true },
+    select: {
+      id: true,
+      title: true,
+      soundcloudUrl: true,
+      privateSoundcloudUrl: true,
+      duration: true,
+      meta: {
+        select: { releaseDate: true },
+      },
+      placements: {
+        orderBy: [{ placementOrder: 'asc' }],
+        select: {
+          album: {
+            select: { releaseDate: true },
+          },
+        },
+      },
+    },
   })
+
+  return song ? formatSongForLyrics(song) : null
+}
+
+function trimUrl(value) {
+  const url = typeof value === 'string' ? value.trim() : ''
+  return url || null
+}
+
+function effectiveSongReleaseDate(song) {
+  if (song?.meta?.releaseDate) return song.meta.releaseDate
+  const releaseDates = (Array.isArray(song?.placements) ? song.placements : [])
+    .flatMap((placement) => (placement.album?.releaseDate ? [placement.album.releaseDate] : []))
+    .sort((left, right) => new Date(left).getTime() - new Date(right).getTime())
+  return releaseDates[0] ?? null
+}
+
+function formatSongForLyrics(song) {
+  const privateSoundcloudUrl = trimUrl(song.privateSoundcloudUrl)
+  const officialSoundcloudUrl = trimUrl(song.soundcloudUrl)
+  const releaseDate = effectiveSongReleaseDate(song)
+  const shouldUsePrivateSoundcloud = privateSoundcloudUrl && !isReleasedOnUtcDay(releaseDate)
+
+  return {
+    ...song,
+    adminSoundcloudUrl: shouldUsePrivateSoundcloud ? privateSoundcloudUrl : officialSoundcloudUrl,
+    adminSoundcloudSource: shouldUsePrivateSoundcloud ? 'private' : 'official',
+    effectiveReleaseDate: releaseDate,
+  }
 }
 
 function normalizeSyncedLines(input, text) {

@@ -3,6 +3,35 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRe
 const WIDGET_SCRIPT_SRC = 'https://w.soundcloud.com/player/api.js'
 const WIDGET_READY_TIMEOUT_MS = 8000
 
+function soundCloudEmbedUrl(value) {
+  const rawUrl = String(value ?? '').trim()
+  if (!rawUrl) return ''
+
+  try {
+    const parsed = new URL(rawUrl)
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '')
+    if (host !== 'soundcloud.com' && host !== 'on.soundcloud.com') return rawUrl
+
+    if (host === 'soundcloud.com') {
+      const pathParts = parsed.pathname.split('/').filter(Boolean)
+      const maybeSecretToken = pathParts[pathParts.length - 1] ?? ''
+      if (/^s-[A-Za-z0-9]+$/.test(maybeSecretToken) && pathParts.length >= 3) {
+        pathParts.pop()
+        parsed.pathname = `/${pathParts.join('/')}`
+        parsed.searchParams.set('secret_token', maybeSecretToken)
+      }
+    }
+
+    for (const key of [...parsed.searchParams.keys()]) {
+      if (key === 'si' || key.startsWith('utm_')) parsed.searchParams.delete(key)
+    }
+
+    return parsed.toString()
+  } catch {
+    return rawUrl
+  }
+}
+
 function loadWidgetApi() {
   if (typeof window === 'undefined') return Promise.resolve(null)
   if (window.SC?.Widget) return Promise.resolve(window.SC.Widget)
@@ -64,8 +93,9 @@ const SoundCloudPlayer = forwardRef(function SoundCloudPlayer({
     if (!url) return null
 
     const autoPlay = srcAutoPlayRef.current ? 'true' : 'false'
+    const embedUrl = soundCloudEmbedUrl(url)
 
-    return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23c8a96e&auto_play=${autoPlay}&hide_related=true&show_comments=false&show_user=false&show_reposts=false&visual=false`
+    return `https://w.soundcloud.com/player/?url=${encodeURIComponent(embedUrl)}&color=%23c8a96e&auto_play=${autoPlay}&hide_related=true&show_comments=false&show_user=false&show_reposts=false&visual=false`
   }, [url])
 
   useEffect(() => {

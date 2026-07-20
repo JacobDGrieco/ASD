@@ -384,6 +384,7 @@ function playerPoolSongSelect() {
     duration: true,
     artwork: true,
     soundcloudUrl: true,
+    privateSoundcloudUrl: true,
     images: {
       orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
       select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
@@ -413,8 +414,18 @@ function playerPoolAlbumSelect() {
   }
 }
 
-function songHasStream(song) {
-  return typeof song?.soundcloudUrl === 'string' && song.soundcloudUrl.trim().length > 0
+function trimStreamUrl(value) {
+  const url = typeof value === 'string' ? value.trim() : ''
+  return url || null
+}
+
+function playerSoundcloudUrlForContext(song, releaseDate, now, context) {
+  const officialUrl = trimStreamUrl(song?.soundcloudUrl)
+  const privateUrl = trimStreamUrl(song?.privateSoundcloudUrl)
+  if (context?.includeHidden && privateUrl && !isReleasedOnUtcDay(releaseDate, now)) {
+    return privateUrl
+  }
+  return officialUrl
 }
 
 function playerPoolDateValue(value) {
@@ -462,13 +473,15 @@ function comparePlayerPoolPlacements(left, right) {
 }
 
 function formatPlayerPoolItem(song, placement, now, context) {
-  if (!songHasStream(song) || !placement?.album) return null
+  if (!placement?.album) return null
 
   const album = placement.album
   if (!isPreviewArtistVisible(album.artist, context)) return null
   if (!isPreviewAlbumVisible(album, now, context)) return null
 
   const inheritedReleaseDate = song.meta?.releaseDate ?? earliestPlacementAlbumReleaseDate(song.placements ?? [placement])
+  const soundcloudUrl = playerSoundcloudUrlForContext(song, inheritedReleaseDate, now, context)
+  if (!soundcloudUrl) return null
   if (!isPreviewSongVisible({ ...song, releaseDate: inheritedReleaseDate }, album.releaseDate, now, context)) return null
 
   const displayAlbum = applyPublicArtistName(album)
@@ -490,7 +503,7 @@ function formatPlayerPoolItem(song, placement, now, context) {
     albumType: displayAlbum.type ?? '',
     albumPath: `/albums/${displayAlbum.id}`,
     artworkUrl,
-    soundcloudUrl: song.soundcloudUrl,
+    soundcloudUrl,
     duration: song.duration,
     songPath: `/songs/${song.id}`,
     releaseDate: inheritedReleaseDate ?? album.releaseDate ?? null,
@@ -1056,6 +1069,7 @@ async function getSong(res, id, context) {
 
   const songImages = formatSongImages(song)
   const songReleaseSource = publicSongReleaseSource(song, releasedPlacements, primaryAlbum)
+  delete song.privateSoundcloudUrl
 
   return res.status(200).json({
     ...song,
@@ -1095,7 +1109,14 @@ function publicPlayerPoolResponse(pool, sourceLabel, startIndex = 0) {
 async function getSitewidePlayerPool(context) {
   const now = new Date()
   const songs = await prisma.song.findMany({
-    where: { soundcloudUrl: { not: null } },
+    where: context.includeHidden
+      ? {
+          OR: [
+            { soundcloudUrl: { not: null } },
+            { privateSoundcloudUrl: { not: null } },
+          ],
+        }
+      : { soundcloudUrl: { not: null } },
     select: {
       ...playerPoolSongSelect(),
       placements: {
@@ -1111,7 +1132,6 @@ async function getSitewidePlayerPool(context) {
 
   return songs
     .flatMap((song) => {
-      if (!songHasStream(song)) return []
       const placement = song.placements
         .filter((candidate) => (
           isPreviewArtistVisible(candidate.album.artist, context) &&
@@ -1288,6 +1308,7 @@ async function getRecordPlayer(res, context) {
             isVisible: true,
             autoShowOnRelease: true,
             soundcloudUrl: true,
+            privateSoundcloudUrl: true,
             youtubeUrl: true,
             links: true,
             meta: {
@@ -1340,11 +1361,21 @@ async function getRecordPlayer(res, context) {
           const album = formatAlbumSummary(placement.album)
           const songReleaseSource = publicSongReleaseSource(track.song, track.song.placements, placement.album)
           const songReleaseDate = track.song.meta?.releaseDate ?? earliestPlacementAlbumReleaseDate(track.song.placements)
+          const releaseFields = publicSongReleaseFields(songReleaseSource)
+          const soundcloudUrl = playerSoundcloudUrlForContext(
+            { ...track.song, soundcloudUrl: releaseFields.soundcloudUrl },
+            songReleaseDate,
+            now,
+            context,
+          )
+
           return [{
             ...track,
             song: {
               ...track.song,
-              ...publicSongReleaseFields(songReleaseSource),
+              ...releaseFields,
+              soundcloudUrl,
+              privateSoundcloudUrl: undefined,
               meta: track.song.meta ? { ...track.song.meta, releaseDate: songReleaseDate ?? track.song.meta.releaseDate } : track.song.meta,
               isPubliclyVisible: isPublicSongReleased({ ...track.song, releaseDate: songReleaseDate }, placement.album.releaseDate, now)
                 && isPublicAlbumReleased(placement.album, now)

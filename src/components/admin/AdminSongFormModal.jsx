@@ -20,6 +20,7 @@ import {
 	roleEntryKey,
 } from '../../lib/adminSongForm.js';
 import { defaultVisibilityForReleaseDate } from '../../lib/contentVisibility.js';
+import { isReleasedOnUtcDay } from '../../lib/releaseSchedule.js';
 import { songPlacementsAllowOwnLinks, songPlacementsShareReleaseFields } from '../../lib/musicReleaseLinks.js';
 import { normalizeProfileLinks } from '../../lib/profileLinks.js';
 import { isOtherArtist, OTHER_ARTIST_NAME } from '../../lib/publicVisibility.js';
@@ -100,6 +101,15 @@ function earliestAlbumReleaseDateForPlacements(placements, albumById) {
 		})
 		.sort();
 	return releaseDates[0] ?? '';
+}
+
+function effectiveFormReleaseDate(form, albumById) {
+	return form?.releaseDate || earliestAlbumReleaseDateForPlacements(form?.albumPlacements, albumById);
+}
+
+function shouldShowPrivateSoundcloudField(form, albumById) {
+	const releaseDate = effectiveFormReleaseDate(form, albumById);
+	return Boolean(releaseDate) && !isReleasedOnUtcDay(releaseDate);
 }
 
 function compareAlbumOptions(left, right) {
@@ -704,7 +714,9 @@ function SongInfoTab({
 	);
 }
 
-function SongLinksTab({ form, setForm }) {
+function SongLinksTab({ form, setForm, albumById }) {
+	const showPrivateSoundcloudField = shouldShowPrivateSoundcloudField(form, albumById);
+
 	return (
 		<div className="admin-modal-grid">
 			<fieldset className="admin-modal-field admin-modal-field-full">
@@ -715,6 +727,22 @@ function SongLinksTab({ form, setForm }) {
 					showTypeField={false}
 				/>
 			</fieldset>
+			{showPrivateSoundcloudField && (
+				<div className="admin-modal-field admin-modal-field-full admin-song-private-link-field">
+					<label htmlFor="admin-song-private-soundcloud-url" className="admin-modal-label">Private SoundCloud Link</label>
+					<input
+						id="admin-song-private-soundcloud-url"
+						type="url"
+						placeholder="Private SoundCloud share link"
+						value={form.privateSoundcloudUrl ?? ''}
+						onChange={(event) => setForm((current) => ({ ...current, privateSoundcloudUrl: event.target.value }))}
+						className="admin-artists-page-input"
+					/>
+					<p className="admin-song-private-link-note">
+						Accepts private SoundCloud share links. Used only inside admin tools before release day.
+					</p>
+				</div>
+			)}
 		</div>
 	);
 }
@@ -857,7 +885,7 @@ function SongEditorTabs(props) {
 			? [{
 				key: 'links',
 				header: 'Links',
-				content: <SongLinksTab form={props.form} setForm={props.setForm} />,
+				content: <SongLinksTab form={props.form} setForm={props.setForm} albumById={props.albumById} />,
 			}]
 			: []),
 		{

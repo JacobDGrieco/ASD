@@ -536,6 +536,10 @@ function SyncedLyricsPanel({
 	const currentEntry = lineEntries[Math.min(currentEntryIndex, Math.max(lineEntries.length - 1, 0))] ?? null;
 	const currentMs = Math.round((position || 0) * 1000);
 	const maxDuration = Math.max(duration || 0, position || 0, 1);
+	const soundcloudUrl = song?.adminSoundcloudUrl || song?.soundcloudUrl || '';
+	const soundcloudSourceLabel = song?.adminSoundcloudSource === 'private'
+		? 'Private SoundCloud link'
+		: 'Official SoundCloud link';
 
 	const focusSyncPanel = useCallback(() => {
 		if (isViewer) return;
@@ -636,7 +640,7 @@ function SyncedLyricsPanel({
 							setIsPlaying((playing) => !playing);
 							focusSyncPanel();
 						}}
-						disabled={!song?.soundcloudUrl}
+						disabled={!soundcloudUrl}
 						aria-label={isPlaying ? 'Pause sync playback' : 'Play sync playback'}
 						title={isPlaying ? 'Pause' : 'Play'}
 					>
@@ -655,23 +659,26 @@ function SyncedLyricsPanel({
 				</div>
 			</div>
 
-			{song?.soundcloudUrl ? (
-				<SoundCloudPlayer
-					ref={playerRef}
-					url={song.soundcloudUrl}
-					isPlaying={isPlaying}
-					onPlaybackStart={() => {
-						setIsPlaying(true);
-						focusSyncPanel();
-					}}
-					onPlaybackPause={() => setIsPlaying(false)}
-					onPlaybackEnd={() => setIsPlaying(false)}
-					onReady={({ duration: nextDuration }) => setDuration(nextDuration || 0)}
-					onPlaybackProgress={({ position: nextPosition, duration: nextDuration }) => {
-						setPosition(nextPosition || 0);
-						if (nextDuration) setDuration(nextDuration);
-					}}
-				/>
+			{soundcloudUrl ? (
+				<div className="alp-sync-player-wrap">
+					<div className="alp-sync-source">{soundcloudSourceLabel}</div>
+					<SoundCloudPlayer
+						ref={playerRef}
+						url={soundcloudUrl}
+						isPlaying={isPlaying}
+						onPlaybackStart={() => {
+							setIsPlaying(true);
+							focusSyncPanel();
+						}}
+						onPlaybackPause={() => setIsPlaying(false)}
+						onPlaybackEnd={() => setIsPlaying(false)}
+						onReady={({ duration: nextDuration }) => setDuration(nextDuration || 0)}
+						onPlaybackProgress={({ position: nextPosition, duration: nextDuration }) => {
+							setPosition(nextPosition || 0);
+							if (nextDuration) setDuration(nextDuration);
+						}}
+					/>
+				</div>
 			) : (
 				<div className="alp-sync-empty">Add a SoundCloud URL to this song before syncing lyrics.</div>
 			)}

@@ -121,6 +121,11 @@ function normalizeExternalUrl(value) {
   }
 }
 
+function normalizeOptionalUrl(value) {
+  const url = typeof value === 'string' ? value.trim() : ''
+  return url || null
+}
+
 // Resolves each role credit's name to an existing Artist or MusicOutsideArtist by
 // id-then-name match, and auto-creates a new MusicOutsideArtist for any name that
 // matches neither — the same "typing a name registers a person" rule used for
@@ -628,6 +633,7 @@ export default async function handler(req, res) {
         title,
         duration,
         soundcloudUrl,
+        privateSoundcloudUrl,
         spotifyUrl,
         appleMusicUrl,
         youtubeUrl,
@@ -675,6 +681,7 @@ export default async function handler(req, res) {
           duration: normalizedDuration,
           artwork: primaryImageReference(normalizedImages),
           soundcloudUrl,
+          privateSoundcloudUrl: normalizeOptionalUrl(privateSoundcloudUrl),
           spotifyUrl,
           appleMusicUrl,
           youtubeUrl,
@@ -768,6 +775,7 @@ export default async function handler(req, res) {
       title,
       duration,
       soundcloudUrl,
+      privateSoundcloudUrl,
       spotifyUrl,
       appleMusicUrl,
       youtubeUrl,
@@ -813,6 +821,7 @@ export default async function handler(req, res) {
         duration: normalizedDuration,
         artwork: primaryImageReference(normalizedImages),
         soundcloudUrl,
+        privateSoundcloudUrl: normalizeOptionalUrl(privateSoundcloudUrl),
         spotifyUrl,
         appleMusicUrl,
         youtubeUrl,

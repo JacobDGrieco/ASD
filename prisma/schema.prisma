@@ -186,10 +186,11 @@ model Song {
   autoShowOnRelease Boolean             @default(false)
   duration          String              @default("")
   artwork           String              @default("")
-  soundcloudUrl     String?
-  spotifyUrl        String?
-  appleMusicUrl     String?
-  youtubeUrl        String?
+  soundcloudUrl         String?
+  privateSoundcloudUrl  String?
+  spotifyUrl            String?
+  appleMusicUrl         String?
+  youtubeUrl            String?
   links             Json                 @default(dbgenerated("'[]'::jsonb"))
   placements        SongAlbum[]
   images            SongImage[]
