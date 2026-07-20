@@ -240,6 +240,11 @@ function SongsTable({ songs, albumById, isViewer, loadingEditSongId, onEdit }) {
 								<td className="admin-artists-page-col-xl admin-links-col-centered"><AdminProfileLinksSummary links={links} /></td>
 								<td className="admin-songs-col-actions admin-artists-page-sticky-right-0">
 									<div className="admin-songs-actions">
+										{!isViewer && (
+											<button type="button" onClick={() => void onEdit(song)} disabled={loadingEditSongId === song.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit song" title="Edit">
+												<FaPencilAlt aria-hidden="true" />
+											</button>
+										)}
 										<Link
 											to={`/admin/lyrics/${song.id}`}
 											state={{ songTitle: song.title }}
@@ -250,11 +255,6 @@ function SongsTable({ songs, albumById, isViewer, loadingEditSongId, onEdit }) {
 										>
 											<FaStickyNote aria-hidden="true" />
 										</Link>
-										{!isViewer && (
-											<button type="button" onClick={() => void onEdit(song)} disabled={loadingEditSongId === song.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit song" title="Edit">
-												<FaPencilAlt aria-hidden="true" />
-											</button>
-										)}
 									</div>
 								</td>
 							</tr>

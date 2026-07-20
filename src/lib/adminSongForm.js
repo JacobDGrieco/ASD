@@ -178,17 +178,25 @@ export function buildSongFormFromDetail(detail) {
 
 /** Builds initial form state for a brand-new song, optionally prefilled (e.g. from "create song" launched off an Album's page with its release date/album already chosen). */
 export function initSongFormFromPrefill(prefill = {}) {
+	const releaseDate = prefill.releaseDate ?? '';
+	const visibilityDefaults = defaultVisibilityForReleaseDate(releaseDate);
+
 	return {
 		...emptySongForm,
 		title: prefill.title ?? '',
-		releaseDate: prefill.releaseDate ?? '',
+		isVisible: prefill.isVisible ?? visibilityDefaults.isVisible,
+		autoShowOnRelease: prefill.autoShowOnRelease ?? visibilityDefaults.autoShowOnRelease,
+		releaseDate,
+		aboutText: prefill.aboutText ?? '',
+		images: Array.isArray(prefill.images)
+			? prefill.images.map((image) => ({ ...image, usage: 'artwork' }))
+			: [],
 		links: profileLinksForSource(prefill, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
 		roles: roleEntriesFromSource((prefill.roles ?? []).filter(albumRoleAppliesToSongs)),
 		soundcloudUrl: prefill.soundcloudUrl ?? '',
 		spotifyUrl: prefill.spotifyUrl ?? '',
 		appleMusicUrl: prefill.appleMusicUrl ?? '',
 		youtubeUrl: prefill.youtubeUrl ?? '',
-		...defaultVisibilityForReleaseDate(prefill.releaseDate ?? ''),
 		albumPlacements: [{
 			...createAlbumPlacement(),
 			albumId: prefill.albumId ?? '',

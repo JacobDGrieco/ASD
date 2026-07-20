@@ -50,6 +50,9 @@ export const PROFILE_LINK_PLATFORM_LABELS = Object.fromEntries(
 );
 
 const PLATFORM_VALUES = new Set(PROFILE_LINK_PLATFORM_OPTIONS.map((option) => option.value));
+const PLATFORM_ORDER = Object.fromEntries(
+	PROFILE_LINK_PLATFORM_OPTIONS.map((option, index) => [option.value, index])
+);
 const LINK_TYPE_VALUES = new Set(PROFILE_LINK_TYPES.map((option) => option.value));
 const LINK_TYPE_ORDER = {
 	professional: 0,
@@ -86,14 +89,18 @@ export const MUSIC_RELEASE_LEGACY_LINK_FIELDS = [
 	{ field: 'youtubeUrl', platform: 'youtube', type: 'professional' },
 ];
 
-/** Professional links before personal — the display order used everywhere links are rendered. */
+/** Professional links before personal, then platforms in the same order as `PROFILE_LINK_PLATFORM_OPTIONS`. */
 export function sortProfileLinks(value) {
 	if (!Array.isArray(value)) return [];
 
 	return [...value].sort((a, b) => {
 		const aOrder = LINK_TYPE_ORDER[a?.type] ?? LINK_TYPE_ORDER.personal;
 		const bOrder = LINK_TYPE_ORDER[b?.type] ?? LINK_TYPE_ORDER.personal;
-		return aOrder - bOrder;
+		if (aOrder !== bOrder) return aOrder - bOrder;
+
+		const aPlatformOrder = PLATFORM_ORDER[a?.platform] ?? Number.MAX_SAFE_INTEGER;
+		const bPlatformOrder = PLATFORM_ORDER[b?.platform] ?? Number.MAX_SAFE_INTEGER;
+		return aPlatformOrder - bPlatformOrder;
 	});
 }
 

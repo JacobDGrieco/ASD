@@ -672,6 +672,11 @@ export default function AdminMusicAlbumsPage() {
 			setCreateSongPrefill({
 				albumId: saved.id,
 				title: saved.title ?? '',
+				releaseDate: normalizeAlbumReleaseDate(saved.releaseDate),
+				isVisible: saved.isVisible,
+				autoShowOnRelease: saved.autoShowOnRelease,
+				aboutText: saved.aboutText ?? '',
+				images: saved.images ?? [],
 				soundcloudUrl: saved.soundcloudUrl ?? '',
 				spotifyUrl: saved.spotifyUrl ?? '',
 				appleMusicUrl: saved.appleMusicUrl ?? '',
