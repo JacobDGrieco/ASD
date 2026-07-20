@@ -20,6 +20,10 @@ function shuffled(values) {
   return next
 }
 
+function randomPoolIndex(pool) {
+  return Math.floor(Math.random() * pool.length)
+}
+
 function buildShuffleOrder(pool, currentIndex, history = []) {
   const played = new Set([...history, currentIndex])
   const remaining = identityOrder(pool).filter((index) => !played.has(index))
@@ -100,10 +104,15 @@ export function PlayerProvider({ children }) {
     }
   }, [currentIndex, currentSong?.id, isAdminPath, isWidgetVisible, playOrder, pool])
 
-  const playPool = useCallback((nextPool, { startIndex = 0, source = '', shuffle = false } = {}) => {
+  const playPool = useCallback((nextPool, { startIndex = null, source = '', shuffle = false } = {}) => {
     if (!Array.isArray(nextPool) || nextPool.length === 0) return false
 
-    const safeStartIndex = Math.min(Math.max(Number(startIndex) || 0, 0), nextPool.length - 1)
+    const hasStartIndex = Number.isInteger(startIndex)
+    const safeStartIndex = hasStartIndex
+      ? Math.min(Math.max(startIndex, 0), nextPool.length - 1)
+      : shuffle
+        ? randomPoolIndex(nextPool)
+        : 0
     const nextHistory = []
     const nextOrder = shuffle
       ? buildShuffleOrder(nextPool, safeStartIndex, nextHistory)
@@ -256,7 +265,7 @@ export function PlayerProvider({ children }) {
     runPlayerViewTransition('close', () => setIsFullScreenOpen(false))
   }, [runPlayerViewTransition])
 
-  const dismiss = useCallback(() => {
+  const resetPlayer = useCallback(() => {
     soundCloudRef.current?.pause()
     setIsPlaying(false)
     setIsWidgetVisible(false)
@@ -271,6 +280,19 @@ export function PlayerProvider({ children }) {
     setPlayerError('')
     setLoopMode('off')
   }, [])
+
+  const dismiss = useCallback(() => {
+    if (location.pathname === '/music' && !isFullScreenOpen) {
+      const handled = !window.dispatchEvent(new CustomEvent('asd-player-home-return', {
+        cancelable: true,
+        detail: { resetPlayer },
+      }))
+      if (!handled) resetPlayer()
+      return
+    }
+
+    resetPlayer()
+  }, [isFullScreenOpen, location.pathname, resetPlayer])
 
   const value = useMemo(() => ({
     pool,

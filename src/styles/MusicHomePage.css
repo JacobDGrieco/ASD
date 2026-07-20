@@ -102,6 +102,83 @@
 	background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.018));
 }
 
+.home-ipod-wrap {
+	flex: 0 1 min(30%, 248px);
+	align-self: stretch;
+	display: flex;
+	min-width: 210px;
+	max-width: min(30%, 248px);
+	flex-direction: column;
+	align-items: flex-end;
+	justify-content: flex-end;
+	gap: 14px;
+	padding-bottom: 28px;
+}
+
+.home-ipod-player.player-widget {
+	position: relative;
+	right: auto;
+	bottom: auto;
+	z-index: 1;
+	width: 190px;
+	flex: 0 0 auto;
+	transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.home-ipod-player-launching {
+	opacity: 0;
+	transform: translate3d(0, 10px, 0) scale(0.98);
+	pointer-events: none;
+}
+
+.home-ipod-flight.player-widget {
+	box-sizing: border-box;
+	opacity: 1;
+	visibility: visible;
+}
+
+.home-ipod-wrap-player-active .home-ipod-player,
+.home-ipod-wrap-player-active .home-ipod-instruction {
+	visibility: hidden;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.home-ipod-idle-screen {
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	gap: 5px;
+	padding: 13px;
+	color: rgba(238, 232, 220, 0.82);
+	text-align: left;
+}
+
+.home-ipod-idle-screen span {
+	font-family: var(--font-nav-tab);
+	font-size: 0.62rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: rgba(238, 232, 220, 0.48);
+}
+
+.home-ipod-idle-screen strong {
+	font-size: 1.22rem;
+	font-weight: 500;
+	letter-spacing: 0.04em;
+	color: rgba(247, 237, 220, 0.95);
+}
+
+.home-ipod-instruction {
+	width: min(100%, 224px);
+	margin: 0;
+	color: var(--text-muted);
+	font-family: var(--font-readable);
+	font-size: 0.82rem;
+	line-height: 1.45;
+	text-align: right;
+}
+
 .home-about {
 	max-width: 1360px;
 	margin: 0 auto;
@@ -448,6 +525,19 @@
 		gap: 56px;
 	}
 
+	.home-ipod-wrap {
+		align-self: center;
+		align-items: center;
+		justify-content: center;
+		width: min(100%, 280px);
+		max-width: 280px;
+		padding-bottom: 0;
+	}
+
+	.home-ipod-instruction {
+		text-align: center;
+	}
+
 	.home-about {
 		padding: 64px 32px;
 		grid-template-columns: 1fr;
@@ -506,6 +596,11 @@
 
 	.home-shell-record-player-inner {
 		gap: 40px;
+	}
+
+	.home-ipod-wrap {
+		width: min(100%, 214px);
+		max-width: 214px;
 	}
 
 	.home-shell-record {

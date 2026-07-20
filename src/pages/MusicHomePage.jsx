@@ -1,13 +1,14 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaPlay } from 'react-icons/fa';
 import { prefetchApi, useApi } from '../hooks/useApi.js';
 import ArtistSplash from '../components/home/ArtistSplash.jsx';
 import RecordPlayer from '../components/home/RecordPlayer.jsx';
 import AlbumCard from '../components/artist/AlbumCard.jsx';
-import PlayButton from '../components/player/PlayButton.jsx';
+import PlayerIpod from '../components/player/PlayerIpod.jsx';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import { useAdminAuth } from '../lib/adminAuth.jsx';
+import { usePlayer } from '../lib/playerContextCore.jsx';
 import { buildAlbumPath, buildSongPath } from '../lib/publicVisibility.js';
 import { isAdminPreviewSession } from '../lib/publicPreview.js';
 import '../styles/MusicHomePage.css';
@@ -18,6 +19,7 @@ void prefetchApi('/api/crosshair');
 
 const HOME_LATEST_LIMIT = 8;
 const HOME_CROSSHAIR_LIMIT = 2;
+const HOME_IPOD_FLIGHT_MS = 620;
 
 function getHomePageApiMessage(isDev) {
 	if (isDev) {
@@ -60,6 +62,157 @@ function formatDate(value) {
 	const date = new Date(value);
 	if (Number.isNaN(date.getTime())) return null;
 	return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function bottomRightPlayerRect(sourceRect) {
+	const isCompact = window.matchMedia('(max-width: 820px)').matches;
+	const width = isCompact ? 168 : 190;
+	const inset = isCompact ? 14 : 22;
+	const scale = width / sourceRect.width;
+	const height = sourceRect.height * scale;
+	return {
+		left: window.innerWidth - inset - width,
+		top: window.innerHeight - inset - height,
+		width,
+		height,
+	};
+}
+
+async function animateIpodFlight(sourceElement, targetRect) {
+	if (!sourceElement || !targetRect) return;
+	const sourceRect = sourceElement.getBoundingClientRect();
+	if (!sourceRect.width || !sourceRect.height) return;
+
+	const clone = sourceElement.cloneNode(true);
+	clone.classList.add('home-ipod-flight');
+	clone.setAttribute('aria-hidden', 'true');
+	clone.querySelectorAll('button').forEach((button) => {
+		button.setAttribute('tabindex', '-1');
+		button.disabled = true;
+	});
+	Object.assign(clone.style, {
+		position: 'fixed',
+		top: `${sourceRect.top}px`,
+		left: `${sourceRect.left}px`,
+		width: `${sourceRect.width}px`,
+		height: `${sourceRect.height}px`,
+		right: 'auto',
+		bottom: 'auto',
+		margin: '0',
+		pointerEvents: 'none',
+		transformOrigin: 'top left',
+		zIndex: '240',
+	});
+	document.body.appendChild(clone);
+
+	const deltaX = targetRect.left - sourceRect.left;
+	const deltaY = targetRect.top - sourceRect.top;
+	const scaleX = targetRect.width / sourceRect.width;
+	const scaleY = targetRect.height / sourceRect.height;
+
+	if (typeof clone.animate !== 'function' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+		clone.remove();
+		return;
+	}
+
+	const animation = clone.animate([
+		{ opacity: 1, transform: 'translate3d(0, 0, 0) scale(1)' },
+		{ opacity: 1, transform: `translate3d(${deltaX}px, ${deltaY}px, 0) scale(${scaleX}, ${scaleY})` },
+	], {
+		duration: HOME_IPOD_FLIGHT_MS,
+		easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+		fill: 'both',
+	});
+
+	try {
+		await animation.finished;
+	} finally {
+		clone.remove();
+	}
+}
+
+function HomeShuffleIpod() {
+	const { currentSong, isPlaying, isWidgetVisible, playPause, playPool } = usePlayer();
+	const wrapRef = useRef(null);
+	const [isLaunching, setIsLaunching] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState('');
+	const isParkedInPlayer = Boolean(currentSong && isWidgetVisible);
+
+	useEffect(() => {
+		const handleReturn = async (event) => {
+			const resetPlayer = event.detail?.resetPlayer;
+			const sourceElement = document.querySelector('.player-widget:not(.home-ipod-player)');
+			const targetElement = wrapRef.current?.querySelector('.home-ipod-player');
+			if (typeof resetPlayer !== 'function' || !sourceElement || !targetElement) return;
+
+			event.preventDefault();
+			await animateIpodFlight(sourceElement, targetElement.getBoundingClientRect());
+			resetPlayer();
+		};
+
+		window.addEventListener('asd-player-home-return', handleReturn);
+		return () => window.removeEventListener('asd-player-home-return', handleReturn);
+	}, []);
+
+	const handlePlay = async () => {
+		if (isLoading) return;
+		if (currentSong) {
+			playPause();
+			return;
+		}
+
+		setIsLoading(true);
+		setError('');
+
+		try {
+			const data = await prefetchApi('/api/player-pool?type=sitewide', { maxAge: 30 * 1000 });
+			const pool = Array.isArray(data?.pool) ? data.pool : [];
+			if (!pool.length) {
+				setError('No streamable songs are available.');
+				return;
+			}
+
+			const sourceElement = wrapRef.current?.querySelector('.home-ipod-player');
+			setIsLaunching(true);
+			if (sourceElement) {
+				await animateIpodFlight(sourceElement, bottomRightPlayerRect(sourceElement.getBoundingClientRect()));
+			}
+			playPool(pool, {
+				source: data?.sourceLabel || 'Playing from A.S.D.',
+				shuffle: true,
+			});
+		} catch {
+			setError('Shuffle unavailable.');
+		} finally {
+			setIsLaunching(false);
+			setIsLoading(false);
+		}
+	};
+
+	return (
+		<div ref={wrapRef} className={`home-ipod-wrap ${isParkedInPlayer ? 'home-ipod-wrap-player-active' : ''}`.trim()}>
+			<PlayerIpod
+				className={`home-ipod-player ${isLaunching ? 'home-ipod-player-launching' : ''}`.trim()}
+				isPlaying={isLoading || isPlaying}
+				onClose={() => {}}
+				onHubClick={handlePlay}
+				onMenu={handlePlay}
+				onNext={handlePlay}
+				onPrev={handlePlay}
+				onScreenClick={handlePlay}
+				screenAriaLabel={currentSong ? 'Play or pause' : 'Shuffle all songs'}
+				screenContent={(
+					<span className="player-widget-art player-widget-art-empty home-ipod-idle-screen">
+						<span>A.S.D.</span>
+						<strong>{isLoading ? 'Loading' : 'Shuffle'}</strong>
+						<span>Full catalog</span>
+					</span>
+				)}
+			/>
+			<p className="home-ipod-instruction">{error || 'Press play to shuffle every streamable song on the site.'}</p>
+		</div>
+	);
 }
 
 export default function MusicHomePage() {
@@ -131,10 +284,6 @@ export default function MusicHomePage() {
 		<div className="page aurora-page">
 			<AuroraBackground />
 			<div className="aurora-page-content home-page-content">
-				<div className="home-player-actions player-page-actions">
-					<PlayButton type="sitewide" sourceLabel="Playing from A.S.D." label="Play All" />
-					<PlayButton type="sitewide" sourceLabel="Playing from A.S.D." label="Shuffle All" shuffle />
-				</div>
 				<div className="home-stage">
 					{artists?.length ? <ArtistSplash artists={artists} /> : artistsLoading ? <HomeHeroPlaceholder /> : null}
 					{tracksLoading ? (
@@ -143,6 +292,7 @@ export default function MusicHomePage() {
 						<RecordPlayer
 							tracks={tracks ?? []}
 							message={tracksError ? 'The home page could not load record-player tracks from the API.' : null}
+							leadingAccessory={<HomeShuffleIpod />}
 						/>
 					)}
 				</div>

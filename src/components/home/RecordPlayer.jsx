@@ -4,7 +4,7 @@ import VinylRack from './VinylRack.jsx'
 import { preloadImages } from '../../lib/publicPrefetch.js'
 import '../../styles/RecordPlayer.css'
 
-export default function RecordPlayer({ tracks, message = null }) {
+export default function RecordPlayer({ tracks, message = null, leadingAccessory = null }) {
   const hasTracks = Array.isArray(tracks) && tracks.length > 0
 
   useEffect(() => {
@@ -22,19 +22,22 @@ export default function RecordPlayer({ tracks, message = null }) {
   if (!hasTracks) {
     return (
       <section className="record-player-section">
-        <div className="record-player-empty">
-          <p className="record-player-empty-eyebrow">Record Player</p>
-          <h2>No tracks are loaded right now.</h2>
-          <p>{message ?? 'Assign active songs in the admin record-player page to show the vinyl rack on the home page.'}</p>
+        <div className="record-player-inner record-player-inner-empty">
+          {leadingAccessory}
+          <div className="record-player-empty">
+            <p className="record-player-empty-eyebrow">Record Player</p>
+            <h2>No tracks are loaded right now.</h2>
+            <p>{message ?? 'Assign active songs in the admin record-player page to show the vinyl rack on the home page.'}</p>
+          </div>
         </div>
       </section>
     )
   }
 
-  return <RecordPlayerDeck tracks={tracks} />
+  return <RecordPlayerDeck tracks={tracks} leadingAccessory={leadingAccessory} />
 }
 
-function RecordPlayerDeck({ tracks }) {
+function RecordPlayerDeck({ tracks, leadingAccessory = null }) {
   const [activeTrack, setActiveTrack] = useState(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [pendingAutoPlay, setPendingAutoPlay] = useState(false)
@@ -71,6 +74,7 @@ function RecordPlayerDeck({ tracks }) {
   return (
     <section className="record-player-section">
       <div className="record-player-inner">
+        {leadingAccessory}
         <Turntable
           activeTrack={activeTrack}
           isPlaying={isPlaying}

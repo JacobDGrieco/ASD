@@ -8,10 +8,14 @@
   max-width: 1720px;
   margin: 0 auto;
   display: flex;
-  gap: 120px;
+  gap: clamp(48px, 5.8vw, 96px);
   align-items: center;
   flex-wrap: wrap;
   justify-content: center;
+}
+
+.record-player-inner-empty {
+  align-items: stretch;
 }
 
 .record-player-empty {

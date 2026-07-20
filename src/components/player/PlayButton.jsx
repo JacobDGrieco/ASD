@@ -46,15 +46,18 @@ export default function PlayButton({
         return
       }
 
-      const startIndex = startSongId
+      const requestedStartIndex = startSongId
         ? Math.max(0, pool.findIndex((song) => song.id === startSongId))
         : Math.max(0, data?.startIndex ?? 0)
-
-      playPool(pool, {
-        startIndex,
+      const playOptions = {
         source: sourceLabel || data?.sourceLabel || '',
         shuffle,
-      })
+      }
+      if (!shuffle || startSongId) {
+        playOptions.startIndex = requestedStartIndex
+      }
+
+      playPool(pool, playOptions)
     } catch {
       setError('Player unavailable')
       window.setTimeout(() => setError(''), 2200)

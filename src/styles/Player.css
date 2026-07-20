@@ -296,26 +296,26 @@ body:has(.public-legal--board):has(.public-admin-preview-exit) .player-widget {
 	transform: translate(-50%, -50%);
 }
 
-:root[data-player-transition] .player-widget-art,
-:root[data-player-transition] .player-widget-art-empty,
-:root[data-player-transition] .player-fullscreen-art,
-:root[data-player-transition] .player-fullscreen-art-empty {
+:root[data-player-transition]:not([data-player-transition="launch"]):not([data-player-transition="launch-close"]) .player-widget:not(.home-ipod-player) .player-widget-art,
+:root[data-player-transition]:not([data-player-transition="launch"]):not([data-player-transition="launch-close"]) .player-widget:not(.home-ipod-player) .player-widget-art-empty,
+:root[data-player-transition]:not([data-player-transition="launch"]):not([data-player-transition="launch-close"]) .player-fullscreen-art,
+:root[data-player-transition]:not([data-player-transition="launch"]):not([data-player-transition="launch-close"]) .player-fullscreen-art-empty {
 	view-transition-name: player-current-art;
 	contain: layout;
 }
 
-:root[data-player-transition] .player-widget-shell {
+:root[data-player-transition]:not([data-player-transition="launch"]):not([data-player-transition="launch-close"]) .player-widget:not(.home-ipod-player) .player-widget-shell {
 	view-transition-name: player-widget-shell;
 	contain: layout;
 }
 
-:root[data-player-transition] .player-widget-shell::before,
-:root[data-player-transition] .player-widget-shell::after {
+:root[data-player-transition]:not([data-player-transition="launch"]):not([data-player-transition="launch-close"]) .player-widget:not(.home-ipod-player) .player-widget-shell::before,
+:root[data-player-transition]:not([data-player-transition="launch"]):not([data-player-transition="launch-close"]) .player-widget:not(.home-ipod-player) .player-widget-shell::after {
 	position: absolute;
 	content: "";
 }
 
-:root[data-player-transition] .player-widget-shell::before {
+:root[data-player-transition]:not([data-player-transition="launch"]):not([data-player-transition="launch-close"]) .player-widget:not(.home-ipod-player) .player-widget-shell::before {
 	top: 15px;
 	right: 13px;
 	left: 13px;
@@ -326,7 +326,7 @@ body:has(.public-legal--board):has(.public-admin-preview-exit) .player-widget {
 	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
-:root[data-player-transition] .player-widget-shell::after {
+:root[data-player-transition]:not([data-player-transition="launch"]):not([data-player-transition="launch-close"]) .player-widget:not(.home-ipod-player) .player-widget-shell::after {
 	right: 29px;
 	bottom: 17px;
 	width: 132px;
@@ -338,22 +338,30 @@ body:has(.public-legal--board):has(.public-admin-preview-exit) .player-widget {
 	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 -18px 42px rgba(0, 0, 0, 0.34), 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-:root[data-player-transition] .player-widget-title {
+:root[data-player-transition]:not([data-player-transition="launch"]):not([data-player-transition="launch-close"]) .player-widget:not(.home-ipod-player) .player-widget-title {
 	view-transition-name: player-widget-title;
 	contain: layout;
 }
 
-:root[data-player-transition] .player-widget-wheel-controls {
+:root[data-player-transition]:not([data-player-transition="launch"]):not([data-player-transition="launch-close"]) .player-widget:not(.home-ipod-player) .player-widget-wheel-controls {
 	view-transition-name: player-widget-controls;
 	contain: layout;
 }
 
-:root[data-player-transition] .side-rails {
+:root[data-player-transition="launch"] .home-ipod-player:not(.home-ipod-player-launching),
+:root[data-player-transition="launch-close"] .home-ipod-wrap:not(.home-ipod-wrap-player-active) .home-ipod-player,
+:root[data-player-transition="launch-close"] .player-widget:not(.home-ipod-player),
+:root[data-player-transition="launch"] .player-widget:not(.home-ipod-player) {
+	view-transition-name: player-widget-launch;
+	contain: layout;
+}
+
+:root[data-player-transition]:not([data-player-transition="launch"]):not([data-player-transition="launch-close"]) .side-rails {
 	view-transition-name: player-side-rails;
 	contain: layout;
 }
 
-:root[data-player-transition] .player-fullscreen {
+:root[data-player-transition]:not([data-player-transition="launch"]):not([data-player-transition="launch-close"]) .player-fullscreen {
 	view-transition-name: player-fullscreen-surface;
 	contain: layout;
 }
@@ -853,13 +861,13 @@ body:has(.player-fullscreen) .side-rails {
 		margin-top: 15px;
 	}
 
-	:root[data-player-transition] .player-widget-shell::before {
+	:root[data-player-transition]:not([data-player-transition="launch"]):not([data-player-transition="launch-close"]) .player-widget:not(.home-ipod-player) .player-widget-shell::before {
 		top: 13px;
 		right: 11px;
 		left: 11px;
 	}
 
-	:root[data-player-transition] .player-widget-shell::after {
+	:root[data-player-transition]:not([data-player-transition="launch"]):not([data-player-transition="launch-close"]) .player-widget:not(.home-ipod-player) .player-widget-shell::after {
 		right: 25px;
 		bottom: 15px;
 		width: 118px;
@@ -973,6 +981,21 @@ body:has(.player-fullscreen) .side-rails {
 		z-index: 230;
 		animation-duration: 0.96s;
 		animation-timing-function: linear;
+	}
+
+	:root[data-player-transition="launch"]::view-transition-group(player-widget-launch),
+	:root[data-player-transition="launch-close"]::view-transition-group(player-widget-launch) {
+		z-index: 240;
+		animation-duration: 0.62s;
+		animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+		animation-fill-mode: both;
+	}
+
+	:root[data-player-transition="launch"]::view-transition-old(player-widget-launch),
+	:root[data-player-transition="launch"]::view-transition-new(player-widget-launch),
+	:root[data-player-transition="launch-close"]::view-transition-old(player-widget-launch),
+	:root[data-player-transition="launch-close"]::view-transition-new(player-widget-launch) {
+		mix-blend-mode: normal;
 	}
 
 	:root[data-player-transition="open"]::view-transition-old(player-widget-shell) {
