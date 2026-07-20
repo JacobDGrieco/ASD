@@ -364,6 +364,133 @@ function publicSongReleaseFields(source) {
   }
 }
 
+function playerPoolSongSelect() {
+  return {
+    id: true,
+    title: true,
+    slug: true,
+    isVisible: true,
+    autoShowOnRelease: true,
+    duration: true,
+    artwork: true,
+    soundcloudUrl: true,
+    images: {
+      orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+      select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+    },
+    meta: {
+      select: { releaseDate: true },
+    },
+  }
+}
+
+function playerPoolAlbumSelect() {
+  return {
+    id: true,
+    title: true,
+    slug: true,
+    isVisible: true,
+    autoShowOnRelease: true,
+    type: true,
+    coverArt: true,
+    otherArtistName: true,
+    releaseDate: true,
+    images: {
+      orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+      select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+    },
+    artist: { select: publicArtistSelect() },
+  }
+}
+
+function songHasStream(song) {
+  return typeof song?.soundcloudUrl === 'string' && song.soundcloudUrl.trim().length > 0
+}
+
+function playerPoolDateValue(value) {
+  if (!value) return Number.MAX_SAFE_INTEGER
+  const timestamp = new Date(value).getTime()
+  return Number.isNaN(timestamp) ? Number.MAX_SAFE_INTEGER : timestamp
+}
+
+function comparePlayerPoolItems(left, right) {
+  const leftRelease = playerPoolDateValue(left.albumReleaseDate ?? left.releaseDate)
+  const rightRelease = playerPoolDateValue(right.albumReleaseDate ?? right.releaseDate)
+  if (leftRelease !== rightRelease) return rightRelease - leftRelease
+
+  const leftAlbum = `${left.artistName ?? ''}\u0000${left.albumTitle ?? ''}`
+  const rightAlbum = `${right.artistName ?? ''}\u0000${right.albumTitle ?? ''}`
+  const albumComparison = leftAlbum.localeCompare(rightAlbum)
+  if (albumComparison !== 0) return albumComparison
+
+  if (left.discNumber !== right.discNumber) return left.discNumber - right.discNumber
+  if (left.trackNumber !== right.trackNumber) return left.trackNumber - right.trackNumber
+  if (left.placementOrder !== right.placementOrder) return left.placementOrder - right.placementOrder
+  return left.title.localeCompare(right.title)
+}
+
+function comparePlayerPoolPlacements(left, right) {
+  const leftAlbum = applyPublicArtistName(left.album)
+  const rightAlbum = applyPublicArtistName(right.album)
+  return comparePlayerPoolItems({
+    title: left.song?.title ?? '',
+    artistName: leftAlbum.artist?.name ?? '',
+    albumTitle: leftAlbum.title ?? '',
+    albumReleaseDate: leftAlbum.releaseDate ?? null,
+    discNumber: left.discNumber ?? 1,
+    trackNumber: left.trackNumber ?? 0,
+    placementOrder: left.placementOrder ?? 0,
+  }, {
+    title: right.song?.title ?? '',
+    artistName: rightAlbum.artist?.name ?? '',
+    albumTitle: rightAlbum.title ?? '',
+    albumReleaseDate: rightAlbum.releaseDate ?? null,
+    discNumber: right.discNumber ?? 1,
+    trackNumber: right.trackNumber ?? 0,
+    placementOrder: right.placementOrder ?? 0,
+  })
+}
+
+function formatPlayerPoolItem(song, placement, now, context) {
+  if (!songHasStream(song) || !placement?.album) return null
+
+  const album = placement.album
+  if (!isPreviewArtistVisible(album.artist, context)) return null
+  if (!isPreviewAlbumVisible(album, now, context)) return null
+
+  const inheritedReleaseDate = song.meta?.releaseDate ?? earliestPlacementAlbumReleaseDate(song.placements ?? [placement])
+  if (!isPreviewSongVisible({ ...song, releaseDate: inheritedReleaseDate }, album.releaseDate, now, context)) return null
+
+  const displayAlbum = applyPublicArtistName(album)
+  const songImages = formatSongImages(song)
+  const albumImages = formatAlbumImages(displayAlbum)
+  const artworkUrl = albumImages[0]?.previewUrl
+    || displayAlbum.coverArt
+    || songImages[0]?.previewUrl
+    || song.artwork
+    || ''
+
+  return {
+    id: song.id,
+    title: song.title,
+    artistName: displayAlbum.artist?.name ?? '',
+    artistSlug: isPublicArtistVisible(album.artist) ? album.artist?.slug ?? '' : '',
+    albumId: displayAlbum.id,
+    albumTitle: displayAlbum.title,
+    albumType: displayAlbum.type ?? '',
+    albumPath: `/albums/${displayAlbum.id}`,
+    artworkUrl,
+    soundcloudUrl: song.soundcloudUrl,
+    duration: song.duration,
+    songPath: `/songs/${song.id}`,
+    releaseDate: inheritedReleaseDate ?? album.releaseDate ?? null,
+    albumReleaseDate: album.releaseDate ?? null,
+    discNumber: placement.discNumber ?? 1,
+    trackNumber: placement.trackNumber ?? 0,
+    placementOrder: placement.placementOrder ?? 0,
+  }
+}
+
 function formatPlacementSongs(placements, fallbackReleaseDate = null, now = new Date()) {
   return placements
     .slice()
@@ -929,6 +1056,163 @@ async function getSong(res, id, context) {
     artwork: songImages[0]?.previewUrl ?? song.artwork,
     images: songImages,
   })
+}
+
+function publicPlayerPoolResponse(pool, sourceLabel, startIndex = 0) {
+  return {
+    pool: pool.map((item) => {
+      const song = { ...item }
+      delete song.releaseDate
+      delete song.albumReleaseDate
+      delete song.discNumber
+      delete song.trackNumber
+      delete song.placementOrder
+      return song
+    }),
+    sourceLabel,
+    startIndex: Math.max(0, startIndex),
+  }
+}
+
+async function getSitewidePlayerPool(context) {
+  const now = new Date()
+  const songs = await prisma.song.findMany({
+    where: { soundcloudUrl: { not: null } },
+    select: {
+      ...playerPoolSongSelect(),
+      placements: {
+        orderBy: [{ placementOrder: 'asc' }],
+        include: {
+          album: {
+            select: playerPoolAlbumSelect(),
+          },
+        },
+      },
+    },
+  })
+
+  return songs
+    .flatMap((song) => {
+      if (!songHasStream(song)) return []
+      const placement = song.placements
+        .filter((candidate) => (
+          isPreviewArtistVisible(candidate.album.artist, context) &&
+          isPreviewAlbumVisible(candidate.album, now, context) &&
+          isPreviewSongVisible({
+            ...song,
+            releaseDate: song.meta?.releaseDate ?? earliestPlacementAlbumReleaseDate(song.placements),
+          }, candidate.album.releaseDate, now, context)
+        ))
+        .sort(comparePlayerPoolPlacements)[0]
+      const item = formatPlayerPoolItem(song, placement, now, context)
+      return item ? [item] : []
+    })
+    .sort(comparePlayerPoolItems)
+}
+
+async function getPlayerPool(res, { type, id, slug }, context) {
+  setPublicCache(res)
+  const now = new Date()
+
+  if (type === 'sitewide') {
+    const pool = await getSitewidePlayerPool(context)
+    return res.status(200).json(publicPlayerPoolResponse(pool, 'Playing from A.S.D.'))
+  }
+
+  if (type === 'song' && id) {
+    const pool = await getSitewidePlayerPool(context)
+    const startIndex = pool.findIndex((song) => song.id === id)
+    return res.status(200).json(publicPlayerPoolResponse(
+      pool,
+      'Playing from A.S.D.',
+      startIndex === -1 ? 0 : startIndex,
+    ))
+  }
+
+  if (type === 'album' && id) {
+    const album = await prisma.album.findUnique({
+      where: { id },
+      include: {
+        images: {
+          orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+        },
+        artist: { select: publicArtistSelect() },
+        songPlacements: {
+          include: {
+            song: {
+              select: playerPoolSongSelect(),
+            },
+          },
+          orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }, { placementOrder: 'asc' }],
+        },
+      },
+    })
+
+    if (!album) return res.status(404).json({ error: 'Album not found' })
+    if (!isPreviewArtistVisible(album.artist, context) || !isPreviewAlbumVisible(album, now, context)) {
+      return res.status(404).json({ error: 'Album not found' })
+    }
+
+    const pool = album.songPlacements.flatMap((placement) => {
+      const item = formatPlayerPoolItem(
+        { ...placement.song, placements: album.songPlacements.map((albumPlacement) => ({ ...albumPlacement, album })) },
+        { ...placement, album },
+        now,
+        context,
+      )
+      return item ? [item] : []
+    }).sort(comparePlayerPoolItems)
+
+    return res.status(200).json(publicPlayerPoolResponse(pool, `Playing from ${album.title}`))
+  }
+
+  if (type === 'artist' && slug) {
+    const artist = await prisma.artist.findUnique({
+      where: { slug },
+      include: {
+        albums: {
+          orderBy: [{ releaseDate: 'asc' }, { createdAt: 'asc' }],
+          include: {
+            images: {
+              orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+            },
+            songPlacements: {
+              include: {
+                song: {
+                  select: playerPoolSongSelect(),
+                },
+              },
+              orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }, { placementOrder: 'asc' }],
+            },
+          },
+        },
+      },
+    })
+
+    if (!artist) return res.status(404).json({ error: 'Artist not found' })
+    if (!isPreviewArtistVisible(artist, context)) return res.status(404).json({ error: 'Artist not found' })
+
+    const seenSongIds = new Set()
+    const pool = artist.albums.flatMap((album) => {
+      if (!isPreviewAlbumVisible(album, now, context)) return []
+      return album.songPlacements.flatMap((placement) => {
+        if (seenSongIds.has(placement.song.id)) return []
+        const item = formatPlayerPoolItem(
+          { ...placement.song, placements: album.songPlacements.map((albumPlacement) => ({ ...albumPlacement, album: { ...album, artist } })) },
+          { ...placement, album: { ...album, artist } },
+          now,
+          context,
+        )
+        if (!item) return []
+        seenSongIds.add(placement.song.id)
+        return [item]
+      })
+    }).sort(comparePlayerPoolItems)
+
+    return res.status(200).json(publicPlayerPoolResponse(pool, `Playing from ${artist.name}`))
+  }
+
+  return res.status(400).json({ error: 'Invalid player pool request' })
 }
 
 async function getRecordPlayer(res, context) {
@@ -1512,11 +1796,13 @@ export default async function handler(req, res) {
   const resource = typeof req.query.resource === 'string' ? req.query.resource : ''
   const slug = normalizeSlug(req.query.slug)
   const id = typeof req.query.id === 'string' ? req.query.id.trim() : null
+  const type = typeof req.query.type === 'string' ? req.query.type.trim() : ''
 
   if (resource === 'artists') return getArtists(res, context)
   if (resource === 'artist' && slug) return getArtist(res, slug, context)
   if (resource === 'album' && id) return getAlbum(res, id, context)
   if (resource === 'song' && id) return getSong(res, id, context)
+  if (resource === 'playerPool') return getPlayerPool(res, { type, id, slug }, context)
   if (resource === 'crosshair') return getCrosshairVideos(res, context)
   if (resource === 'recordPlayer') return getRecordPlayer(res, context)
   if (resource === 'boardPosts') return getBoardPosts(res, context)

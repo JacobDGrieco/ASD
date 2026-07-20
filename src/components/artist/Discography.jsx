@@ -67,6 +67,9 @@ export default function Discography({ albums, artistSlug, artist = null, adminPr
                     albumHref={`/albums/${openAlbum.id}`}
                     albumTitle={openAlbum.title}
                     allowHidden={adminPreview}
+                    playerPoolType="album"
+                    playerPoolId={openAlbum.id}
+                    playerSourceLabel={`Playing from ${openAlbum.title}`}
                   />
                 </div>
               )}

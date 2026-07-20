@@ -177,11 +177,6 @@ a.song-person-card:focus-visible {
 	color: var(--text-muted);
 }
 
-.song-header-player {
-	margin-top: 12px;
-	max-width: 700px;
-}
-
 .song-header-stream-links {
 	display: flex;
 	flex-direction: row;
@@ -259,12 +254,6 @@ a.song-person-card:focus-visible {
 
 	.song-header-artist-links {
 		justify-content: center;
-	}
-
-	.song-header-player {
-		width: 100%;
-		margin-left: auto;
-		margin-right: auto;
 	}
 
 	.song-header-stream-links {

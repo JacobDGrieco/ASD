@@ -31,9 +31,9 @@
 
 .lyrics-view-annotated {
 	text-align: left;
-	background: none;
+	background: rgba(200, 169, 110, 0.045);
 	border: none;
-	padding: 0;
+	padding: 0 0.08em;
 	font: inherit;
 	color: var(--text);
 	cursor: pointer;
@@ -42,25 +42,24 @@
 	position: relative;
 	text-decoration-line: underline;
 	text-decoration-style: dashed;
-	text-decoration-color: var(--accent);
+	text-decoration-color: rgba(200, 169, 110, 0.58);
 	text-decoration-thickness: 1px;
 	text-underline-offset: 0.18em;
 }
 
 .lyrics-view-annotated:hover,
+.lyrics-view-hovered,
 .lyrics-view-active {
-	color: var(--accent);
-	background: var(--accent-dim);
-	border-left: 2px solid var(--accent);
-	padding-left: 10px;
-	margin-left: -12px;
+	color: rgba(232, 232, 232, 0.94);
+	background: rgba(200, 169, 110, 0.12);
+	text-decoration-color: rgba(200, 169, 110, 0.78);
 }
 
 .lyrics-view-popup-overlay {
 	position: absolute;
 	top: 0;
-	left: calc(100% + 24px);
-	width: min(340px, 32vw);
+	left: calc(100% + 10px);
+	width: min(300px, 28vw);
 	z-index: 5;
 }
 

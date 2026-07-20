@@ -5,6 +5,7 @@ import { prefetchApi, useApi } from '../hooks/useApi.js';
 import ArtistSplash from '../components/home/ArtistSplash.jsx';
 import RecordPlayer from '../components/home/RecordPlayer.jsx';
 import AlbumCard from '../components/artist/AlbumCard.jsx';
+import PlayButton from '../components/player/PlayButton.jsx';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import { useAdminAuth } from '../lib/adminAuth.jsx';
 import { buildAlbumPath, buildSongPath } from '../lib/publicVisibility.js';
@@ -130,6 +131,10 @@ export default function MusicHomePage() {
 		<div className="page aurora-page">
 			<AuroraBackground />
 			<div className="aurora-page-content home-page-content">
+				<div className="home-player-actions player-page-actions">
+					<PlayButton type="sitewide" sourceLabel="Playing from A.S.D." label="Play All" />
+					<PlayButton type="sitewide" sourceLabel="Playing from A.S.D." label="Shuffle All" shuffle />
+				</div>
 				<div className="home-stage">
 					{artists?.length ? <ArtistSplash artists={artists} /> : artistsLoading ? <HomeHeroPlaceholder /> : null}
 					{tracksLoading ? (

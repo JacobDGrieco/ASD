@@ -21,6 +21,10 @@
 			"destination": "/api/public?resource=album&id=:id"
 		},
 		{
+			"source": "/api/player-pool",
+			"destination": "/api/public?resource=playerPool"
+		},
+		{
 			"source": "/api/record-player",
 			"destination": "/api/public?resource=recordPlayer"
 		},

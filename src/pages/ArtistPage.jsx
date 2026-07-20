@@ -4,6 +4,7 @@ import { useApi } from '../hooks/useApi.js'
 import ArtistHero from '../components/artist/ArtistHero.jsx'
 import Discography from '../components/artist/Discography.jsx'
 import FeaturedOn from '../components/artist/FeaturedOn.jsx'
+import PlayButton from '../components/player/PlayButton.jsx'
 import AuroraBackground from '../components/shared/AuroraBackground.jsx'
 import { useAdminAuth } from '../lib/adminAuth.jsx'
 import { usePageTitle } from '../lib/pageTitle.js'
@@ -27,6 +28,10 @@ export default function ArtistPage() {
       {artist && (
         <div className="aurora-page-content">
           <ArtistHero artist={artist} />
+          <div className="player-page-actions">
+            <PlayButton type="artist" slug={artist.slug} sourceLabel={`Playing from ${artist.name}`} label="Play Artist" />
+            <PlayButton type="artist" slug={artist.slug} sourceLabel={`Playing from ${artist.name}`} label="Shuffle Artist" shuffle />
+          </div>
           <Discography albums={artist.albums} artistSlug={artist.slug} artist={artist} adminPreview={adminPreview} />
           <FeaturedOn featuredIn={artist.featuredIn} adminPreview={adminPreview} />
         </div>

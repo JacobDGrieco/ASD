@@ -1,0 +1,363 @@
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
+import { useLocation } from 'react-router-dom'
+import SoundCloudPlayer from '../components/shared/SoundCloudPlayer.jsx'
+import PlayerFullScreen from '../components/player/PlayerFullScreen.jsx'
+import PlayerWidget from '../components/player/PlayerWidget.jsx'
+import { prefetchApi } from './apiCache.js'
+
+const PlayerContext = createContext(null)
+
+function identityOrder(pool) {
+  return pool.map((_, index) => index)
+}
+
+function shuffled(values) {
+  const next = [...values]
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1))
+    ;[next[index], next[swapIndex]] = [next[swapIndex], next[index]]
+  }
+  return next
+}
+
+function buildShuffleOrder(pool, currentIndex, history = []) {
+  const played = new Set([...history, currentIndex])
+  const remaining = identityOrder(pool).filter((index) => !played.has(index))
+  return [...history, currentIndex, ...shuffled(remaining)]
+}
+
+function pauseExternalAudio() {
+  window.dispatchEvent(new Event('asd-player-pause-external-audio'))
+}
+
+export function PlayerProvider({ children }) {
+  const location = useLocation()
+  const soundCloudRef = useRef(null)
+  const [pool, setPool] = useState([])
+  const [poolSourceLabel, setPoolSourceLabel] = useState('')
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [playOrder, setPlayOrder] = useState([])
+  const [isShuffled, setIsShuffled] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [position, setPosition] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [history, setHistory] = useState([])
+  const [isWidgetVisible, setIsWidgetVisible] = useState(false)
+  const [isFullScreenOpen, setIsFullScreenOpen] = useState(false)
+  const [playerError, setPlayerError] = useState('')
+  const [loopMode, setLoopMode] = useState('off')
+
+  const isAdminPath = location.pathname === '/admin' || location.pathname.startsWith('/admin/')
+  const currentSong = pool[currentIndex] ?? null
+
+  useEffect(() => {
+    if (isAdminPath) setIsPlaying(false)
+  }, [isAdminPath])
+
+  useEffect(() => {
+    setPosition(0)
+    setDuration(0)
+    setPlayerError('')
+  }, [currentSong?.id])
+
+  useEffect(() => {
+    if (isAdminPath || !isWidgetVisible || !currentSong?.id || !pool.length) return undefined
+
+    let cancelled = false
+    const timeoutIds = []
+    const order = playOrder.length ? playOrder : identityOrder(pool)
+    const cursor = order.indexOf(currentIndex)
+    const orderedIndexes = (cursor === -1 ? order : order.slice(cursor + 1)).concat(order)
+    const preloadIds = orderedIndexes
+      .map((index) => pool[index]?.id)
+      .filter((id, index, ids) => id && id !== currentSong.id && ids.indexOf(id) === index)
+
+    prefetchApi(`/api/songs/${currentSong.id}`).catch(() => {})
+
+    const preloadUpcoming = () => {
+      preloadIds.forEach((songId, index) => {
+        const timeoutId = window.setTimeout(() => {
+          if (!cancelled) {
+            prefetchApi(`/api/songs/${songId}`).catch(() => {})
+          }
+        }, index * 120)
+        timeoutIds.push(timeoutId)
+      })
+    }
+
+    const idleId = 'requestIdleCallback' in window
+      ? window.requestIdleCallback(preloadUpcoming, { timeout: 1200 })
+      : window.setTimeout(preloadUpcoming, 250)
+
+    return () => {
+      cancelled = true
+      timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId))
+      if ('cancelIdleCallback' in window && typeof idleId === 'number') {
+        window.cancelIdleCallback(idleId)
+      } else {
+        window.clearTimeout(idleId)
+      }
+    }
+  }, [currentIndex, currentSong?.id, isAdminPath, isWidgetVisible, playOrder, pool])
+
+  const playPool = useCallback((nextPool, { startIndex = 0, source = '', shuffle = false } = {}) => {
+    if (!Array.isArray(nextPool) || nextPool.length === 0) return false
+
+    const safeStartIndex = Math.min(Math.max(Number(startIndex) || 0, 0), nextPool.length - 1)
+    const nextHistory = []
+    const nextOrder = shuffle
+      ? buildShuffleOrder(nextPool, safeStartIndex, nextHistory)
+      : identityOrder(nextPool)
+
+    pauseExternalAudio()
+    setPool(nextPool)
+    setPoolSourceLabel(source)
+    setCurrentIndex(safeStartIndex)
+    setPlayOrder(nextOrder)
+    setIsShuffled(shuffle)
+    setHistory(nextHistory)
+    setPosition(0)
+    setDuration(0)
+    setPlayerError('')
+    setIsWidgetVisible(true)
+    setIsPlaying(!isAdminPath)
+    return true
+  }, [isAdminPath])
+
+  const seekTo = useCallback((seconds) => {
+    const nextSeconds = Math.max(0, Number(seconds) || 0)
+    soundCloudRef.current?.seekTo(nextSeconds)
+    setPosition(nextSeconds)
+  }, [])
+
+  const next = useCallback(({ fromFinish = false } = {}) => {
+    if (!pool.length || currentIndex < 0) return
+
+    if (fromFinish && loopMode === 'one') {
+      soundCloudRef.current?.seekTo(0)
+      setPosition(0)
+      setIsPlaying(true)
+      return
+    }
+
+    const order = playOrder.length ? playOrder : identityOrder(pool)
+    const cursor = order.indexOf(currentIndex)
+    let nextIndex = cursor === -1 ? currentIndex + 1 : order[cursor + 1]
+
+    if (typeof nextIndex !== 'number') {
+      if (loopMode === 'all' && order.length > 0) {
+        nextIndex = order[0]
+      } else {
+        setIsPlaying(false)
+        return
+      }
+    }
+
+    setHistory((previous) => [...previous, currentIndex])
+    setCurrentIndex(nextIndex)
+    setPosition(0)
+    setIsPlaying(true)
+    pauseExternalAudio()
+  }, [currentIndex, loopMode, playOrder, pool])
+
+  const prev = useCallback(() => {
+    if (!pool.length || currentIndex < 0) return
+
+    if (position > 3) {
+      seekTo(0)
+      return
+    }
+
+    const previousIndex = history[history.length - 1]
+    if (typeof previousIndex !== 'number') {
+      seekTo(0)
+      return
+    }
+
+    setHistory((previous) => previous.slice(0, -1))
+    setCurrentIndex(previousIndex)
+    setPosition(0)
+    setIsPlaying(true)
+    pauseExternalAudio()
+  }, [currentIndex, history, pool.length, position, seekTo])
+
+  const playPause = useCallback(() => {
+    if (!currentSong) return
+    setIsPlaying((currentlyPlaying) => {
+      const nextPlaying = !currentlyPlaying
+      if (nextPlaying) pauseExternalAudio()
+      return nextPlaying
+    })
+    setIsWidgetVisible(true)
+  }, [currentSong])
+
+  const toggleShuffle = useCallback(() => {
+    if (!pool.length) return
+
+    setIsShuffled((currentlyShuffled) => {
+      const nextShuffled = !currentlyShuffled
+      setPlayOrder(nextShuffled ? buildShuffleOrder(pool, currentIndex, history) : identityOrder(pool))
+      return nextShuffled
+    })
+  }, [currentIndex, history, pool])
+
+  const toggleLoopMode = useCallback(() => {
+    setLoopMode((currentMode) => {
+      if (currentMode === 'off') return 'all'
+      if (currentMode === 'all') return 'one'
+      return 'off'
+    })
+  }, [])
+
+  const jumpTo = useCallback((poolIndex) => {
+    const nextIndex = Number(poolIndex)
+    if (!pool[nextIndex]) return
+
+    if (nextIndex !== currentIndex) {
+      setHistory((previous) => [...previous, currentIndex])
+    }
+
+    setCurrentIndex(nextIndex)
+    setPosition(0)
+    setIsPlaying(true)
+    setIsWidgetVisible(true)
+    pauseExternalAudio()
+  }, [currentIndex, pool])
+
+  const runPlayerViewTransition = useCallback((direction, update) => {
+    if (
+      typeof document === 'undefined' ||
+      typeof document.startViewTransition !== 'function' ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      update()
+      return
+    }
+
+    const root = document.documentElement
+    root.dataset.playerTransition = direction
+
+    const transition = document.startViewTransition(() => {
+      flushSync(update)
+    })
+
+    transition.finished.finally(() => {
+      if (root.dataset.playerTransition === direction) {
+        delete root.dataset.playerTransition
+      }
+    })
+  }, [])
+
+  const openFullScreen = useCallback(() => {
+    runPlayerViewTransition('open', () => setIsFullScreenOpen(true))
+  }, [runPlayerViewTransition])
+
+  const closeFullScreen = useCallback(() => {
+    runPlayerViewTransition('close', () => setIsFullScreenOpen(false))
+  }, [runPlayerViewTransition])
+
+  const dismiss = useCallback(() => {
+    soundCloudRef.current?.pause()
+    setIsPlaying(false)
+    setIsWidgetVisible(false)
+    setIsFullScreenOpen(false)
+    setPool([])
+    setPoolSourceLabel('')
+    setCurrentIndex(0)
+    setPlayOrder([])
+    setHistory([])
+    setPosition(0)
+    setDuration(0)
+    setPlayerError('')
+    setLoopMode('off')
+  }, [])
+
+  const value = useMemo(() => ({
+    pool,
+    poolSourceLabel,
+    currentIndex,
+    currentSong,
+    playOrder: playOrder.length ? playOrder : identityOrder(pool),
+    isShuffled,
+    isPlaying,
+    position,
+    duration,
+    history,
+    isWidgetVisible,
+    isFullScreenOpen,
+    playerError,
+    loopMode,
+    playPool,
+    playPause,
+    next,
+    prev,
+    seekTo,
+    toggleShuffle,
+    toggleLoopMode,
+    jumpTo,
+    openFullScreen,
+    closeFullScreen,
+    dismiss,
+  }), [
+    closeFullScreen,
+    currentIndex,
+    currentSong,
+    dismiss,
+    duration,
+    history,
+    isFullScreenOpen,
+    isPlaying,
+    isShuffled,
+    isWidgetVisible,
+    jumpTo,
+    loopMode,
+    next,
+    openFullScreen,
+    playOrder,
+    playPause,
+    playPool,
+    playerError,
+    pool,
+    poolSourceLabel,
+    position,
+    prev,
+    seekTo,
+    toggleLoopMode,
+    toggleShuffle,
+  ])
+
+  return (
+    <PlayerContext.Provider value={value}>
+      {children}
+      {currentSong?.soundcloudUrl && (
+        <SoundCloudPlayer
+          ref={soundCloudRef}
+          url={currentSong.soundcloudUrl}
+          hidden
+          isPlaying={isPlaying}
+          autoPlayOnReady={isPlaying}
+          respondsToGlobalPause={false}
+          onReady={({ duration: nextDuration }) => setDuration(nextDuration || 0)}
+          onPlaybackProgress={({ position: nextPosition, duration: nextDuration }) => {
+            setPosition(nextPosition || 0)
+            if (nextDuration) setDuration(nextDuration)
+          }}
+          onPlaybackEnd={() => next({ fromFinish: true })}
+          onWidgetApiError={() => {
+            setPlayerError("Couldn't load this track")
+            setIsPlaying(false)
+          }}
+        />
+      )}
+      {!isAdminPath && isWidgetVisible && !isFullScreenOpen && pool.length > 0 && <PlayerWidget />}
+      {!isAdminPath && isFullScreenOpen && pool.length > 0 && <PlayerFullScreen />}
+    </PlayerContext.Provider>
+  )
+}
+
+export function usePlayer() {
+  const context = useContext(PlayerContext)
+  if (!context) throw new Error('usePlayer must be used within PlayerProvider')
+  return context
+}

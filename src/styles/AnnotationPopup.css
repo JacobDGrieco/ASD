@@ -1,7 +1,7 @@
 .annotation-popup-popup {
   padding: 16px 20px;
-  background: var(--bg-raised);
-  border-left: 3px solid var(--accent);
+  background: rgba(26, 26, 26, 0.72);
+  border-left: 2px solid rgba(200, 169, 110, 0.66);
   border-radius: 0 var(--radius) var(--radius) 0;
   animation: slide-in 0.15s ease;
 }

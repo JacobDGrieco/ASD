@@ -1,12 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { track } from '@vercel/analytics'
 import { prefetchArtistPage } from '../../lib/publicPrefetch.js'
 import { PROFILE_LINK_PLATFORM_LABELS, hrefForProfileLink, normalizeProfileLinks } from '../../lib/profileLinks.js'
 import { buildAlbumPath, isOtherArtist } from '../../lib/publicVisibility.js'
-import AppleMusicPlayer from '../shared/AppleMusicPlayer.jsx'
-import SoundCloudPlayer from '../shared/SoundCloudPlayer.jsx'
-import SpotifyPlayer from '../shared/SpotifyPlayer.jsx'
+import PlayButton from '../player/PlayButton.jsx'
 import ArtworkGallery from '../shared/ArtworkGallery.jsx'
 import ProfileLinkIcon from '../shared/ProfileLinkIcon.jsx'
 import SongPersonCard from './SongPersonCard.jsx'
@@ -54,12 +51,12 @@ function songGalleryImages(song) {
 }
 
 export default function SongHeader({ song, adminPreview = false }) {
-  const hasTrackedPlay = useRef(false)
   const galleryImages = useMemo(() => songGalleryImages(song), [song])
   const hasSongArtwork = Array.isArray(song.images) && song.images.length > 0
+  const albumArtwork = song.album?.coverArt || song.album?.images?.[0]?.previewUrl || song.album?.images?.[0]?.url || ''
   const artwork = hasSongArtwork
-    ? song.images[0]?.previewUrl || song.images[0]?.url || song.artwork || song.album.coverArt
-    : song.album.coverArt
+    ? albumArtwork || song.images[0]?.previewUrl || song.images[0]?.url || song.artwork
+    : albumArtwork || song.artwork
   const artistLinkData = song.album?.artist
     ? { slug: song.album.artist.slug, images: [], portrait: song.album.coverArt }
     : null
@@ -79,23 +76,6 @@ export default function SongHeader({ song, adminPreview = false }) {
     ? song.meta.featuredArtistLinks
     : song.meta?.roleGroups?.['Featured Artist'] ?? []
   const streamLinks = normalizeProfileLinks(song.links)
-  const playerUrl = song.soundcloudUrl || song.spotifyUrl || song.appleMusicUrl || null
-  const handleFirstPlay = useCallback(() => {
-    if (hasTrackedPlay.current) return
-
-    hasTrackedPlay.current = true
-    track('song_played', {
-      song: song.title,
-      artist: song.album.artist.name,
-      player: song.soundcloudUrl ? 'soundcloud'
-        : song.spotifyUrl ? 'spotify'
-          : 'applemusic',
-    })
-  }, [song])
-
-  useEffect(() => {
-    hasTrackedPlay.current = false
-  }, [song.id])
 
   return (
     <section className={`song-header-header ${song.isPubliclyVisible === false ? 'song-header-hidden' : ''}`.trim()}>
@@ -153,16 +133,10 @@ export default function SongHeader({ song, adminPreview = false }) {
             {releaseDate}
           </p>
         ) : null}
-        {playerUrl && (
-          <div className="song-header-player">
-            {song.soundcloudUrl
-              ? <SoundCloudPlayer url={song.soundcloudUrl} autoPlay={false} onPlaybackStart={handleFirstPlay} />
-              : song.spotifyUrl
-                ? <SpotifyPlayer url={song.spotifyUrl} onPlay={handleFirstPlay} />
-                : <AppleMusicPlayer url={song.appleMusicUrl} onPlay={handleFirstPlay} />
-            }
-          </div>
-        )}
+        <div className="player-header-actions">
+          <PlayButton type="song" id={song.id} startSongId={song.id} sourceLabel="Playing from A.S.D." label="Play Song" disabled={!song.soundcloudUrl} />
+          {!song.soundcloudUrl && <span className="player-action-note">No streamable track</span>}
+        </div>
       </div>
     </section>
   )

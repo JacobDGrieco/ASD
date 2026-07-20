@@ -2,7 +2,18 @@ import { useState } from 'react'
 import AnnotationPopup from './AnnotationPopup.jsx'
 import '../../styles/LyricsView.css'
 
-function LyricLine({ lineText, lineRanges, openAnnotationId, setOpenAnnotationId, allAnnotations }) {
+function LyricLine({
+  lineText,
+  lineRanges,
+  lineIndex,
+  hoveredAnnotationId,
+  openAnnotationId,
+  openAnnotationAnchorLineIndex,
+  setHoveredAnnotationId,
+  setOpenAnnotationId,
+  setOpenAnnotationAnchorLineIndex,
+  allAnnotations,
+}) {
   if (lineText.trim() === '') {
     return <div className="lyrics-view-line lyrics-view-line-blank" aria-hidden="true" />
   }
@@ -26,19 +37,27 @@ function LyricLine({ lineText, lineRanges, openAnnotationId, setOpenAnnotationId
           }
           const annotation = allAnnotations.find(a => a.id === span.annotationId)
           const isOpen = openAnnotationId === span.annotationId
+          const isHovered = hoveredAnnotationId === span.annotationId
           return (
             <button
               type="button"
               key={`${span.annotationId}-${span.start}-${span.end}`}
-              className={`lyrics-view-annotated ${isOpen ? 'lyrics-view-active' : ''}`}
-              onClick={() => setOpenAnnotationId(isOpen ? null : span.annotationId)}
+              className={`lyrics-view-annotated ${isHovered ? 'lyrics-view-hovered' : ''} ${isOpen ? 'lyrics-view-active' : ''}`.trim()}
+              onMouseEnter={() => setHoveredAnnotationId(span.annotationId)}
+              onMouseLeave={() => setHoveredAnnotationId((currentId) => (currentId === span.annotationId ? null : currentId))}
+              onFocus={() => setHoveredAnnotationId(span.annotationId)}
+              onBlur={() => setHoveredAnnotationId((currentId) => (currentId === span.annotationId ? null : currentId))}
+              onClick={() => {
+                setOpenAnnotationId(isOpen && openAnnotationAnchorLineIndex === lineIndex ? null : span.annotationId)
+                setOpenAnnotationAnchorLineIndex(isOpen && openAnnotationAnchorLineIndex === lineIndex ? -1 : lineIndex)
+              }}
             >
               {span.text}
             </button>
           )
         })}
       </div>
-      {openAnnotationId && spans.some(s => s.annotationId === openAnnotationId) && (() => {
+      {openAnnotationId && lineIndex === openAnnotationAnchorLineIndex && spans.some(s => s.annotationId === openAnnotationId) && (() => {
         const openAnnotation = allAnnotations.find(a => a.id === openAnnotationId)
         return openAnnotation ? <AnnotationPopup annotation={openAnnotation} className="lyrics-view-popup-overlay" /> : null
       })()}
@@ -67,6 +86,8 @@ function buildSpans(text, lineRanges) {
 
 export default function LyricsView({ lyric }) {
   const [openAnnotationId, setOpenAnnotationId] = useState(null)
+  const [openAnnotationAnchorLineIndex, setOpenAnnotationAnchorLineIndex] = useState(-1)
+  const [hoveredAnnotationId, setHoveredAnnotationId] = useState(null)
 
   if (!lyric) return null
 
@@ -98,8 +119,13 @@ export default function LyricsView({ lyric }) {
               key={`line-${lineStart}`}
               lineText={line}
               lineRanges={lineRanges}
+              lineIndex={i}
+              hoveredAnnotationId={hoveredAnnotationId}
               openAnnotationId={openAnnotationId}
+              openAnnotationAnchorLineIndex={openAnnotationAnchorLineIndex}
+              setHoveredAnnotationId={setHoveredAnnotationId}
               setOpenAnnotationId={setOpenAnnotationId}
+              setOpenAnnotationAnchorLineIndex={setOpenAnnotationAnchorLineIndex}
               allAnnotations={lyric.annotations}
             />
           )

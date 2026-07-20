@@ -24,6 +24,7 @@ import AdminRoute from './components/admin/AdminRoute.jsx';
 import SideRails from './components/shared/SideRails.jsx';
 import PublicLegalFooter from './components/shared/PublicLegalFooter.jsx';
 import { AdminProvider, useAdminAuth } from './lib/adminAuth.jsx';
+import { PlayerProvider } from './lib/playerContext.jsx';
 import { clearAdminFilterState } from './lib/adminFilterState.js';
 import { isAdminPreviewSession } from './lib/publicPreview.js';
 import { ADMIN_PAGE_KEYS, firstAccessibleAdminPath, hasAdminPageAccess } from './lib/adminPageAccess.js';
@@ -153,59 +154,61 @@ function AdminPageAccessRoute({ pageKey, children }) {
 export default function App() {
 	return (
 		<AdminProvider>
-			<PageTitle />
-			<ClearAdminFiltersOnExit />
-			<Suspense fallback={<RouteFallback />}>
-				<Routes>
-					<Route element={<PublicLayout />}>
-						<Route path="/" element={<HomePage />} />
-						<Route path="/music" element={<MusicHomePage />} />
-						<Route path="/about" element={<AboutPage />} />
-						<Route path="/board" element={<BoardPage />} />
-						<Route path="/shelf" element={<ShelfPage />} />
-						<Route path="/crosshair" element={<CrosshairPage />} />
-						<Route path="/artists/:slug" element={<ArtistPage />} />
-						<Route path="/albums/:albumId" element={<AlbumPage />} />
-						<Route path="/songs/:songId" element={<SongPage />} />
-						<Route path="/fashion" element={<FashionHomePage />} />
-						<Route path="/fashion/talent" element={<FashionTalentPage />} />
-						<Route path="/fashion/talent/:slug" element={<FashionTalentProfilePage />} />
-						<Route path="/fashion/catalogue" element={<FashionCataloguePage />} />
-						<Route path="/fashion/looks/:slug" element={<FashionLookPage />} />
-						<Route path="/fashion/collections/:slug" element={<FashionCollectionPage />} />
-						<Route
-							path="/terms-of-service"
-							element={<LegalPage title="Terms of Service" documentSrc="/legal/terms-of-service.html" />}
-						/>
-						<Route
-							path="/privacy-policy"
-							element={<LegalPage title="Privacy Policy" documentSrc="/legal/privacy-policy.html" />}
-						/>
-						<Route path="*" element={<NotFoundPage />} />
-					</Route>
-					<Route path="/admin/login" element={<AdminLoginPage />} />
-					<Route element={<AdminRoute />}>
-						<Route element={<AdminLayout />}>
-							<Route path="/admin" element={<AdminHomeRedirect />} />
-							<Route path="/admin/accounts" element={<AdminSuperRoute><AdminAccountsPage /></AdminSuperRoute>} />
-							<Route path="/admin/about" element={<AdminSuperRoute><AdminAboutPage /></AdminSuperRoute>} />
-							<Route path="/admin/artists" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_ARTISTS}><AdminMusicArtistsPage /></AdminPageAccessRoute>} />
-							<Route path="/admin/outside-artists" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_OUTSIDE_ARTISTS}><AdminMusicOutsideArtistsPage /></AdminPageAccessRoute>} />
-							<Route path="/admin/albums" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_ALBUMS}><AdminMusicAlbumsPage /></AdminPageAccessRoute>} />
-							<Route path="/admin/board" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.BOARD}><AdminMusicBoardPage /></AdminPageAccessRoute>} />
-							<Route path="/admin/crosshair" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_CROSSHAIR}><AdminMusicCrosshairPage /></AdminPageAccessRoute>} />
-							<Route path="/admin/songs" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_SONGS}><AdminMusicSongsPage /></AdminPageAccessRoute>} />
-							<Route path="/admin/lyrics/:songId" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_SONGS}><AdminMusicLyricsPage /></AdminPageAccessRoute>} />
-							<Route path="/admin/record-player" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_RECORD_PLAYER}><AdminMusicRecordPlayerPage /></AdminPageAccessRoute>} />
-							<Route path="/admin/fashion/talent" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.FASHION_TALENT}><AdminFashionTalentPage /></AdminPageAccessRoute>} />
-							<Route path="/admin/fashion/outside_talent" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.FASHION_OUTSIDE_TALENT}><AdminFashionOutsideTalentPage /></AdminPageAccessRoute>} />
-							<Route path="/admin/fashion/looks" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.FASHION_LOOKS}><AdminFashionLooksPage /></AdminPageAccessRoute>} />
-							<Route path="/admin/fashion/collections" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.FASHION_COLLECTIONS}><AdminFashionCollectionsPage /></AdminPageAccessRoute>} />
+			<PlayerProvider>
+				<PageTitle />
+				<ClearAdminFiltersOnExit />
+				<Suspense fallback={<RouteFallback />}>
+					<Routes>
+						<Route element={<PublicLayout />}>
+							<Route path="/" element={<HomePage />} />
+							<Route path="/music" element={<MusicHomePage />} />
+							<Route path="/about" element={<AboutPage />} />
+							<Route path="/board" element={<BoardPage />} />
+							<Route path="/shelf" element={<ShelfPage />} />
+							<Route path="/crosshair" element={<CrosshairPage />} />
+							<Route path="/artists/:slug" element={<ArtistPage />} />
+							<Route path="/albums/:albumId" element={<AlbumPage />} />
+							<Route path="/songs/:songId" element={<SongPage />} />
+							<Route path="/fashion" element={<FashionHomePage />} />
+							<Route path="/fashion/talent" element={<FashionTalentPage />} />
+							<Route path="/fashion/talent/:slug" element={<FashionTalentProfilePage />} />
+							<Route path="/fashion/catalogue" element={<FashionCataloguePage />} />
+							<Route path="/fashion/looks/:slug" element={<FashionLookPage />} />
+							<Route path="/fashion/collections/:slug" element={<FashionCollectionPage />} />
+							<Route
+								path="/terms-of-service"
+								element={<LegalPage title="Terms of Service" documentSrc="/legal/terms-of-service.html" />}
+							/>
+							<Route
+								path="/privacy-policy"
+								element={<LegalPage title="Privacy Policy" documentSrc="/legal/privacy-policy.html" />}
+							/>
+							<Route path="*" element={<NotFoundPage />} />
 						</Route>
-					</Route>
-				</Routes>
-			</Suspense>
-			<SideRails />
+						<Route path="/admin/login" element={<AdminLoginPage />} />
+						<Route element={<AdminRoute />}>
+							<Route element={<AdminLayout />}>
+								<Route path="/admin" element={<AdminHomeRedirect />} />
+								<Route path="/admin/accounts" element={<AdminSuperRoute><AdminAccountsPage /></AdminSuperRoute>} />
+								<Route path="/admin/about" element={<AdminSuperRoute><AdminAboutPage /></AdminSuperRoute>} />
+								<Route path="/admin/artists" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_ARTISTS}><AdminMusicArtistsPage /></AdminPageAccessRoute>} />
+								<Route path="/admin/outside-artists" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_OUTSIDE_ARTISTS}><AdminMusicOutsideArtistsPage /></AdminPageAccessRoute>} />
+								<Route path="/admin/albums" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_ALBUMS}><AdminMusicAlbumsPage /></AdminPageAccessRoute>} />
+								<Route path="/admin/board" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.BOARD}><AdminMusicBoardPage /></AdminPageAccessRoute>} />
+								<Route path="/admin/crosshair" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_CROSSHAIR}><AdminMusicCrosshairPage /></AdminPageAccessRoute>} />
+								<Route path="/admin/songs" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_SONGS}><AdminMusicSongsPage /></AdminPageAccessRoute>} />
+								<Route path="/admin/lyrics/:songId" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_SONGS}><AdminMusicLyricsPage /></AdminPageAccessRoute>} />
+								<Route path="/admin/record-player" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_RECORD_PLAYER}><AdminMusicRecordPlayerPage /></AdminPageAccessRoute>} />
+								<Route path="/admin/fashion/talent" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.FASHION_TALENT}><AdminFashionTalentPage /></AdminPageAccessRoute>} />
+								<Route path="/admin/fashion/outside_talent" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.FASHION_OUTSIDE_TALENT}><AdminFashionOutsideTalentPage /></AdminPageAccessRoute>} />
+								<Route path="/admin/fashion/looks" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.FASHION_LOOKS}><AdminFashionLooksPage /></AdminPageAccessRoute>} />
+								<Route path="/admin/fashion/collections" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.FASHION_COLLECTIONS}><AdminFashionCollectionsPage /></AdminPageAccessRoute>} />
+							</Route>
+						</Route>
+					</Routes>
+				</Suspense>
+				<SideRails />
+			</PlayerProvider>
 		</AdminProvider>
 	);
 }

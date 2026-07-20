@@ -4,6 +4,7 @@ import { TabPanel } from 'primereact/tabview';
 import { useApi } from '../hooks/useApi.js';
 import AlbumDetails from '../components/album/AlbumDetails.jsx';
 import TrackList from '../components/artist/TrackList.jsx';
+import PlayButton from '../components/player/PlayButton.jsx';
 import SongPersonCard from '../components/song/SongPersonCard.jsx';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import ArtworkGallery from '../components/shared/ArtworkGallery.jsx';
@@ -38,7 +39,7 @@ export default function AlbumPage() {
 					<div className="song-page-body">
 						<PageTabs tabCount={2}>
 							<TabPanel header="Tracklist">
-								<TrackList songs={album.songs} allowHidden={adminPreview} />
+								<TrackList songs={album.songs} allowHidden={adminPreview} playerPoolType="album" playerPoolId={album.id} playerSourceLabel={`Playing from ${album.title}`} />
 							</TabPanel>
 							<TabPanel header="About & Info">
 								<AlbumDetails album={album} />
@@ -93,6 +94,10 @@ function AlbumHeader({ album }) {
 				</div>
 				<h1 className="song-header-title">{album.title}</h1>
 				<p className="song-header-meta">{year} · {album.type}</p>
+				<div className="player-header-actions">
+					<PlayButton type="album" id={album.id} sourceLabel={`Playing from ${album.title}`} label="Play Album" />
+					<PlayButton type="album" id={album.id} sourceLabel={`Playing from ${album.title}`} label="Shuffle Album" shuffle />
+				</div>
 			</div>
 		</section>
 	);
