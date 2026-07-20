@@ -28,8 +28,10 @@ function primaryImage(images) {
 function isSongHidden(song) {
 	const album = song?.album ?? song?.placements?.[0]?.album ?? null;
 	const placementReleaseDates = (Array.isArray(song?.placements) ? song.placements : [])
-		.map((placement) => placement.album?.releaseDate ? String(placement.album.releaseDate).slice(0, 10) : '')
-		.filter(Boolean)
+		.flatMap((placement) => {
+			const releaseDate = placement.album?.releaseDate ? String(placement.album.releaseDate).slice(0, 10) : '';
+			return releaseDate ? [releaseDate] : [];
+		})
 		.sort();
 	const releaseDate = song?.meta?.releaseDate ?? placementReleaseDates[0] ?? album?.releaseDate ?? null;
 	return (
@@ -73,9 +75,11 @@ function primaryAlbum(song, albumById) {
 
 function earliestAlbumReleaseDateForSong(song, albumById) {
 	const releaseDates = placementAlbumIds(song)
-		.map((albumId) => albumById[albumId]?.releaseDate ?? song.placements?.find((placement) => placement.albumId === albumId)?.album?.releaseDate ?? '')
-		.map(normalizeReleaseDate)
-		.filter(Boolean)
+		.flatMap((albumId) => {
+			const rawDate = albumById[albumId]?.releaseDate ?? song.placements?.find((placement) => placement.albumId === albumId)?.album?.releaseDate ?? '';
+			const normalized = normalizeReleaseDate(rawDate);
+			return normalized ? [normalized] : [];
+		})
 		.sort();
 	return releaseDates[0] ?? '';
 }

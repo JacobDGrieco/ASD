@@ -352,11 +352,10 @@ function songRoleCopy(role) {
 }
 
 function albumRolesToCopy(previousRoles, nextRoles) {
-  const previousByKey = new Map(
-    (Array.isArray(previousRoles) ? previousRoles : [])
-      .filter((role) => role?.role && role?.name)
-      .map((role) => [roleSyncKey(role), role])
-  )
+  const previousByKey = new Map()
+  for (const role of Array.isArray(previousRoles) ? previousRoles : []) {
+    if (role?.role && role?.name) previousByKey.set(roleSyncKey(role), role)
+  }
 
   return (Array.isArray(nextRoles) ? nextRoles : []).filter((role) => {
     if (!role?.role || !role?.name || role.applyToSongs === false) return false
@@ -413,22 +412,24 @@ async function copyAlbumRolesToAttachedSongs(albumId, rolesToCopy) {
   if (!songIds.length) return
 
   await Promise.all([
-    ...metas.map((meta) => {
+    ...metas.flatMap((meta) => {
       const nextRoles = mergeSongRoles(meta.roles, rolesToCopy)
-      if (nextRoles.length === (Array.isArray(meta.roles) ? meta.roles.length : 0)) return null
-      return prisma.songMeta.update({
+      if (nextRoles.length === (Array.isArray(meta.roles) ? meta.roles.length : 0)) return []
+      return [prisma.songMeta.update({
         where: { songId: meta.songId },
         data: { roles: nextRoles },
-      })
-    }).filter(Boolean),
-    ...songIds
-      .filter((songId) => !songIdsWithMeta.has(songId))
-      .map((songId) => prisma.songMeta.create({
-        data: {
-          songId,
-          roles: rolesToCopy.map(songRoleCopy),
-        },
-      })),
+      })]
+    }),
+    ...songIds.flatMap((songId) => (
+      songIdsWithMeta.has(songId)
+        ? []
+        : [prisma.songMeta.create({
+            data: {
+              songId,
+              roles: rolesToCopy.map(songRoleCopy),
+            },
+          })]
+    )),
   ])
 }
 

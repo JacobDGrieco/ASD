@@ -460,16 +460,14 @@ function songListInclude() {
 function effectiveSongReleaseDate(song) {
   if (song?.meta?.releaseDate) return song.meta.releaseDate
   const releaseDates = (Array.isArray(song?.placements) ? song.placements : [])
-    .map((placement) => placement.album?.releaseDate)
-    .filter(Boolean)
+    .flatMap((placement) => (placement.album?.releaseDate ? [placement.album.releaseDate] : []))
     .sort((left, right) => new Date(left).getTime() - new Date(right).getTime())
   return releaseDates[0] ?? null
 }
 
 function earliestAlbumReleaseDate(albums) {
   const releaseDates = (Array.isArray(albums) ? albums : [])
-    .map((album) => album?.releaseDate)
-    .filter(Boolean)
+    .flatMap((album) => (album?.releaseDate ? [album.releaseDate] : []))
     .sort((left, right) => new Date(left).getTime() - new Date(right).getTime())
   return releaseDates[0] ?? null
 }

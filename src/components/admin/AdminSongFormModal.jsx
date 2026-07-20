@@ -94,8 +94,10 @@ function albumMatchesSearch(album, query) {
 
 function earliestAlbumReleaseDateForPlacements(placements, albumById) {
 	const releaseDates = (Array.isArray(placements) ? placements : [])
-		.map((placement) => albumById[placement.albumId]?.releaseDate?.slice?.(0, 10) ?? '')
-		.filter(Boolean)
+		.flatMap((placement) => {
+			const releaseDate = albumById[placement.albumId]?.releaseDate?.slice?.(0, 10) ?? '';
+			return releaseDate ? [releaseDate] : [];
+		})
 		.sort();
 	return releaseDates[0] ?? '';
 }
@@ -395,7 +397,7 @@ function SongDurationInput({ value, invalid, onChange }) {
 
 	useEffect(() => {
 		if (!focusedPart) setDraftParts(songDurationToParts(value));
-	}, [focusedPart, value]);
+	}, [value]);
 
 	const updatePart = (part, rawValue) => {
 		const nextValue = rawValue.replace(/\D/g, '').slice(0, 2);
@@ -430,7 +432,10 @@ function SongDurationInput({ value, invalid, onChange }) {
 					setFocusedPart('minutes');
 					event.currentTarget.select();
 				}}
-				onBlur={() => setFocusedPart(null)}
+				onBlur={() => {
+					setFocusedPart(null);
+					setDraftParts(songDurationToParts(value));
+				}}
 				onChange={(event) => updatePart('minutes', event.target.value)}
 				className="admin-song-duration-part"
 				aria-label="Duration minutes"
@@ -448,7 +453,10 @@ function SongDurationInput({ value, invalid, onChange }) {
 					setFocusedPart('seconds');
 					event.currentTarget.select();
 				}}
-				onBlur={() => setFocusedPart(null)}
+				onBlur={() => {
+					setFocusedPart(null);
+					setDraftParts(songDurationToParts(value));
+				}}
 				onChange={(event) => updatePart('seconds', event.target.value)}
 				className="admin-song-duration-part"
 				aria-label="Duration seconds"

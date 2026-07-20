@@ -90,8 +90,10 @@ function sharedReleaseAlbum(song) {
 
 function earliestPlacementAlbumReleaseDate(song) {
 	const releaseDates = (Array.isArray(song?.placements) ? song.placements : [])
-		.map((placement) => placement.album?.releaseDate ? String(placement.album.releaseDate).slice(0, 10) : '')
-		.filter(Boolean)
+		.flatMap((placement) => {
+			const releaseDate = placement.album?.releaseDate ? String(placement.album.releaseDate).slice(0, 10) : '';
+			return releaseDate ? [releaseDate] : [];
+		})
 		.sort();
 	return releaseDates[0] ?? '';
 }

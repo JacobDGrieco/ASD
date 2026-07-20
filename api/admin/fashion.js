@@ -668,8 +668,10 @@ async function handleLooks(req, res, session) {
       const normalizedPieceImages = pieces === undefined
         ? null
         : (Array.isArray(pieces) ? pieces : [])
-            .map((piece) => normalizeImageInput(piece?.image ? [piece.image] : [], 'piece')[0])
-            .filter(Boolean)
+            .flatMap((piece) => {
+              const normalizedImage = normalizeImageInput(piece?.image ? [piece.image] : [], 'piece')[0]
+              return normalizedImage ? [normalizedImage] : []
+            })
 
       // Replace child collections (pieces, piece credits, look credits) wholesale to keep
       // the form-driven CMS simple, matching the same pattern used for Album/Artist image

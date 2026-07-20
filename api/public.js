@@ -435,8 +435,7 @@ function resolvePrimaryPlacement(placements) {
 
 function earliestPlacementAlbumReleaseDate(placements) {
   const releaseDates = (Array.isArray(placements) ? placements : [])
-    .map((placement) => placement.album?.releaseDate)
-    .filter(Boolean)
+    .flatMap((placement) => (placement.album?.releaseDate ? [placement.album.releaseDate] : []))
     .sort((left, right) => new Date(left).getTime() - new Date(right).getTime())
   return releaseDates[0] ?? null
 }
