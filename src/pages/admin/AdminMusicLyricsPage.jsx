@@ -527,6 +527,7 @@ function SyncedLyricsPanel({
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [isCapturing, setIsCapturing] = useState(false);
 	const [currentEntryIndex, setCurrentEntryIndex] = useState(0);
+	const [timeDrafts, setTimeDrafts] = useState({});
 
 	const lineEntries = useMemo(() => lyricLineEntries(lyricText), [lyricText]);
 	const timingByLineIndex = useMemo(() => new Map(
@@ -604,6 +605,21 @@ function SyncedLyricsPanel({
 	};
 
 	const updateTimeField = (lineIndex, field, value) => {
+		const draftKey = `${lineIndex}:${field}`;
+		setTimeDrafts((drafts) => ({ ...drafts, [draftKey]: value }));
+		const parsed = parseSyncTime(value);
+		if (parsed === null) return;
+		updateLineTiming(lineIndex, { [field]: parsed });
+	};
+
+	const commitTimeField = (lineIndex, field, value) => {
+		const draftKey = `${lineIndex}:${field}`;
+		setTimeDrafts((drafts) => {
+			const nextDrafts = { ...drafts };
+			delete nextDrafts[draftKey];
+			return nextDrafts;
+		});
+
 		const parsed = parseSyncTime(value);
 		if (parsed === null) return;
 		updateLineTiming(lineIndex, { [field]: parsed });
@@ -724,18 +740,20 @@ function SyncedLyricsPanel({
 							<div className="alp-sync-line-times">
 								<input
 									type="text"
-									value={timing ? formatSyncTime(timing.startMs) : ''}
+									value={timing ? timeDrafts[`${entry.lineIndex}:startMs`] ?? formatSyncTime(timing.startMs) : ''}
 									placeholder="0:00.000"
 									disabled={isViewer || !timing}
 									onChange={(event) => updateTimeField(entry.lineIndex, 'startMs', event.target.value)}
+									onBlur={(event) => commitTimeField(entry.lineIndex, 'startMs', event.target.value)}
 									aria-label={`Start time for ${entry.line}`}
 								/>
 								<input
 									type="text"
-									value={timing ? formatSyncTime(timing.endMs) : ''}
+									value={timing ? timeDrafts[`${entry.lineIndex}:endMs`] ?? formatSyncTime(timing.endMs) : ''}
 									placeholder="0:00.000"
 									disabled={isViewer || !timing}
 									onChange={(event) => updateTimeField(entry.lineIndex, 'endMs', event.target.value)}
+									onBlur={(event) => commitTimeField(entry.lineIndex, 'endMs', event.target.value)}
 									aria-label={`End time for ${entry.line}`}
 								/>
 							</div>
