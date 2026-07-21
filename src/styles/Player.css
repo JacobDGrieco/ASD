@@ -81,16 +81,24 @@
 	transition: bottom var(--transition), transform var(--transition);
 }
 
+.player-widget-returning-home {
+	visibility: hidden;
+	pointer-events: none;
+}
+
 .player-widget-shell {
 	position: absolute;
 	inset: 0;
 	z-index: 0;
-	border: 1px solid rgba(255, 255, 255, 0.16);
+	border: 1px solid rgba(255, 255, 255, 0.72);
 	border-radius: 18px;
 	background:
-		linear-gradient(150deg, rgba(255, 255, 255, 0.1), transparent 28%),
-		linear-gradient(180deg, rgba(39, 39, 38, 0.98), rgba(13, 13, 13, 0.98));
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -18px 38px rgba(0, 0, 0, 0.28), 0 22px 60px rgba(0, 0, 0, 0.46);
+		linear-gradient(145deg, rgba(255, 255, 255, 0.76), transparent 24%),
+		linear-gradient(180deg, rgba(224, 224, 220, 0.98), rgba(151, 151, 147, 0.98) 54%, rgba(92, 92, 90, 0.98));
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.84),
+		inset 0 -18px 34px rgba(70, 70, 68, 0.28),
+		0 22px 60px rgba(0, 0, 0, 0.4);
 	pointer-events: none;
 }
 
@@ -197,9 +205,12 @@ body:has(.public-legal--board):has(.public-admin-preview-exit) .player-widget {
 	margin: 18px auto 0;
 	border-radius: 50%;
 	background:
-		radial-gradient(circle at center, rgba(34, 34, 33, 0.98) 0 24%, transparent 25%),
-		linear-gradient(145deg, rgba(25, 25, 24, 0.98), rgba(8, 8, 8, 0.98));
-	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 -18px 42px rgba(0, 0, 0, 0.34), 0 1px 0 rgba(255, 255, 255, 0.08);
+		radial-gradient(circle at center, rgba(230, 230, 226, 0.98) 0 24%, transparent 25%),
+		linear-gradient(145deg, rgba(205, 205, 200, 0.98), rgba(127, 127, 123, 0.98));
+	box-shadow:
+		inset 0 0 0 1px rgba(255, 255, 255, 0.64),
+		inset 0 -18px 38px rgba(70, 70, 68, 0.22),
+		0 1px 0 rgba(255, 255, 255, 0.42);
 }
 
 .player-widget-wheel-controls {
@@ -213,7 +224,8 @@ body:has(.public-legal--board):has(.public-admin-preview-exit) .player-widget {
 	align-items: center;
 	justify-content: center;
 	padding: 0;
-	color: rgba(232, 232, 232, 0.82);
+	color: rgba(248, 248, 244, 0.9);
+	filter: drop-shadow(0 1px 1px rgba(40, 40, 38, 0.52));
 }
 
 .player-wheel-menu {
@@ -251,7 +263,7 @@ body:has(.public-legal--board):has(.public-admin-preview-exit) .player-widget {
 	left: 50%;
 	margin-top: 0;
 	transform: translateX(-50%);
-	color: rgba(232, 232, 232, 0.86);
+	color: rgba(248, 248, 244, 0.92);
 }
 
 .player-wheel-close-mark {
@@ -286,13 +298,15 @@ body:has(.public-legal--board):has(.public-admin-preview-exit) .player-widget {
 	left: 50%;
 	width: 46px;
 	height: 46px;
-	border: 1px solid rgba(255, 255, 255, 0.12);
+	border: 1px solid rgba(255, 255, 255, 0.68);
 	border-radius: 50%;
 	background:
-		radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.1), transparent 36%),
-		linear-gradient(180deg, rgba(43, 43, 42, 0.96), rgba(20, 20, 20, 0.96));
-	color: var(--accent);
-	box-shadow: inset 0 1px 8px rgba(255, 255, 255, 0.06), inset 0 -8px 18px rgba(0, 0, 0, 0.3);
+		radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.72), transparent 38%),
+		linear-gradient(180deg, rgba(232, 232, 228, 0.98), rgba(126, 126, 122, 0.98));
+	color: rgba(248, 248, 244, 0.95);
+	box-shadow:
+		inset 0 1px 8px rgba(255, 255, 255, 0.46),
+		inset 0 -8px 18px rgba(70, 70, 68, 0.24);
 	transform: translate(-50%, -50%);
 }
 
@@ -333,9 +347,12 @@ body:has(.public-legal--board):has(.public-admin-preview-exit) .player-widget {
 	height: 132px;
 	border-radius: 50%;
 	background:
-		radial-gradient(circle at center, rgba(34, 34, 33, 0.98) 0 24%, transparent 25%),
-		linear-gradient(145deg, rgba(25, 25, 24, 0.98), rgba(8, 8, 8, 0.98));
-	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 -18px 42px rgba(0, 0, 0, 0.34), 0 1px 0 rgba(255, 255, 255, 0.08);
+		radial-gradient(circle at center, rgba(230, 230, 226, 0.98) 0 24%, transparent 25%),
+		linear-gradient(145deg, rgba(205, 205, 200, 0.98), rgba(127, 127, 123, 0.98));
+	box-shadow:
+		inset 0 0 0 1px rgba(255, 255, 255, 0.64),
+		inset 0 -18px 38px rgba(70, 70, 68, 0.22),
+		0 1px 0 rgba(255, 255, 255, 0.42);
 }
 
 :root[data-player-transition]:not([data-player-transition="launch"]):not([data-player-transition="launch-close"]) .player-widget:not(.home-ipod-player) .player-widget-title {

@@ -137,8 +137,33 @@
 	visibility: visible;
 }
 
-.home-ipod-wrap-player-active .home-ipod-player,
-.home-ipod-wrap-player-active .home-ipod-instruction {
+.home-ipod-flight-crossfade .player-widget-screen > :not(.home-ipod-flight-screen-next) {
+	animation: home-ipod-flight-screen-out 0.34s ease 0.18s both;
+}
+
+.home-ipod-flight-screen-next {
+	position: absolute;
+	inset: 0;
+	z-index: 4;
+	opacity: 0;
+	pointer-events: none;
+	animation: home-ipod-flight-screen-in 0.34s ease 0.24s both;
+}
+
+.home-ipod-flight-song-screen {
+	display: block;
+	background: rgba(5, 5, 5, 0.96);
+}
+
+.home-ipod-flight-song-screen .player-widget-art {
+	display: block;
+}
+
+.home-ipod-flight-song-screen .player-widget-title {
+	z-index: 2;
+}
+
+.home-ipod-wrap-player-active .home-ipod-player {
 	visibility: hidden;
 	opacity: 0;
 	pointer-events: none;
@@ -147,11 +172,12 @@
 .home-ipod-idle-screen {
 	display: flex;
 	flex-direction: column;
-	justify-content: flex-end;
+	align-items: center;
+	justify-content: center;
 	gap: 5px;
 	padding: 13px;
 	color: rgba(238, 232, 220, 0.82);
-	text-align: left;
+	text-align: center;
 }
 
 .home-ipod-idle-screen span {
@@ -177,6 +203,40 @@
 	font-size: 0.82rem;
 	line-height: 1.45;
 	text-align: right;
+	opacity: 1;
+	visibility: visible;
+	transition:
+		opacity 0.22s ease,
+		visibility 0s linear 0s;
+}
+
+.home-ipod-wrap-player-active .home-ipod-instruction {
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition:
+		opacity 0.22s ease,
+		visibility 0s linear 0.22s;
+}
+
+@keyframes home-ipod-flight-screen-out {
+	from {
+		opacity: 1;
+	}
+
+	to {
+		opacity: 0;
+	}
+}
+
+@keyframes home-ipod-flight-screen-in {
+	from {
+		opacity: 0;
+	}
+
+	to {
+		opacity: 1;
+	}
 }
 
 .home-about {

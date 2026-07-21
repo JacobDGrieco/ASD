@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { FaPlay } from 'react-icons/fa';
 import { prefetchApi, useApi } from '../hooks/useApi.js';
@@ -78,13 +79,73 @@ function bottomRightPlayerRect(sourceRect) {
 	};
 }
 
-async function animateIpodFlight(sourceElement, targetRect) {
+function waitForNextFrame() {
+	return new Promise((resolve) => {
+		window.requestAnimationFrame(() => resolve());
+	});
+}
+
+function createIdleFlightScreen() {
+	const idleScreen = document.createElement('span');
+	idleScreen.className = 'home-ipod-flight-screen-next player-widget-art player-widget-art-empty home-ipod-idle-screen';
+
+	const title = document.createElement('strong');
+	title.textContent = 'Shuffle';
+
+	const detail = document.createElement('span');
+	detail.textContent = 'all songs on A.S.D.';
+
+	idleScreen.append(title, detail);
+	return idleScreen;
+}
+
+function createSongFlightScreen(song) {
+	const screen = document.createElement('span');
+	screen.className = 'home-ipod-flight-screen-next home-ipod-flight-song-screen';
+
+	if (song?.artworkUrl) {
+		const artwork = document.createElement('img');
+		artwork.src = song.artworkUrl;
+		artwork.alt = '';
+		artwork.className = 'player-widget-art';
+		screen.appendChild(artwork);
+	} else {
+		const artworkFallback = document.createElement('span');
+		artworkFallback.className = 'player-widget-art player-widget-art-empty';
+		screen.appendChild(artworkFallback);
+	}
+
+	const title = document.createElement('span');
+	title.className = 'player-widget-title';
+
+	const titleText = document.createElement('span');
+	titleText.className = 'player-widget-title-text';
+	titleText.textContent = song?.title || 'A.S.D.';
+
+	title.appendChild(titleText);
+	screen.appendChild(title);
+
+	return screen;
+}
+
+function installIpodFlightScreen(clone, nextScreen) {
+	if (!nextScreen) return;
+
+	const screen = clone.querySelector('.player-widget-screen');
+	if (!screen) return;
+
+	clone.classList.add('home-ipod-flight-crossfade');
+	screen.appendChild(nextScreen);
+}
+
+async function animateIpodFlight(sourceElement, targetRect, { onArrive = null, nextScreen = null } = {}) {
 	if (!sourceElement || !targetRect) return;
 	const sourceRect = sourceElement.getBoundingClientRect();
 	if (!sourceRect.width || !sourceRect.height) return;
 
 	const clone = sourceElement.cloneNode(true);
 	clone.classList.add('home-ipod-flight');
+	installIpodFlightScreen(clone, nextScreen);
 	clone.setAttribute('aria-hidden', 'true');
 	clone.querySelectorAll('button').forEach((button) => {
 		button.setAttribute('tabindex', '-1');
@@ -111,6 +172,7 @@ async function animateIpodFlight(sourceElement, targetRect) {
 	const scaleY = targetRect.height / sourceRect.height;
 
 	if (typeof clone.animate !== 'function' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+		onArrive?.();
 		clone.remove();
 		return;
 	}
@@ -126,6 +188,10 @@ async function animateIpodFlight(sourceElement, targetRect) {
 
 	try {
 		await animation.finished;
+		animation.commitStyles?.();
+		animation.cancel();
+		onArrive?.();
+		await waitForNextFrame();
 	} finally {
 		clone.remove();
 	}
@@ -147,8 +213,17 @@ function HomeShuffleIpod() {
 			if (typeof resetPlayer !== 'function' || !sourceElement || !targetElement) return;
 
 			event.preventDefault();
-			await animateIpodFlight(sourceElement, targetElement.getBoundingClientRect());
-			resetPlayer();
+			sourceElement.classList.add('player-widget-returning-home');
+			try {
+				await animateIpodFlight(sourceElement, targetElement.getBoundingClientRect(), {
+					nextScreen: createIdleFlightScreen(),
+					onArrive: () => flushSync(resetPlayer),
+				});
+			} finally {
+				if (sourceElement.isConnected) {
+					sourceElement.classList.remove('player-widget-returning-home');
+				}
+			}
 		};
 
 		window.addEventListener('asd-player-home-return', handleReturn);
@@ -173,15 +248,28 @@ function HomeShuffleIpod() {
 				return;
 			}
 
+			const startIndex = Math.floor(Math.random() * pool.length);
+			const nextSong = pool[startIndex];
 			const sourceElement = wrapRef.current?.querySelector('.home-ipod-player');
 			setIsLaunching(true);
 			if (sourceElement) {
-				await animateIpodFlight(sourceElement, bottomRightPlayerRect(sourceElement.getBoundingClientRect()));
+				await animateIpodFlight(sourceElement, bottomRightPlayerRect(sourceElement.getBoundingClientRect()), {
+					nextScreen: createSongFlightScreen(nextSong),
+					onArrive: () => flushSync(() => {
+						playPool(pool, {
+							startIndex,
+							source: data?.sourceLabel || 'Playing from A.S.D.',
+							shuffle: true,
+						});
+					}),
+				});
+			} else {
+				playPool(pool, {
+					startIndex,
+					source: data?.sourceLabel || 'Playing from A.S.D.',
+					shuffle: true,
+				});
 			}
-			playPool(pool, {
-				source: data?.sourceLabel || 'Playing from A.S.D.',
-				shuffle: true,
-			});
 		} catch {
 			setError('Shuffle unavailable.');
 		} finally {
@@ -204,9 +292,8 @@ function HomeShuffleIpod() {
 				screenAriaLabel={currentSong ? 'Play or pause' : 'Shuffle all songs'}
 				screenContent={(
 					<span className="player-widget-art player-widget-art-empty home-ipod-idle-screen">
-						<span>A.S.D.</span>
 						<strong>{isLoading ? 'Loading' : 'Shuffle'}</strong>
-						<span>Full catalog</span>
+						<span>all songs on A.S.D.</span>
 					</span>
 				)}
 			/>

@@ -43,16 +43,15 @@ export default function Turntable({
           />
         </div>
       </div>
-      {title && (
-        <div
-          className="turntable-now-playing"
-          aria-label="Now playing"
-          aria-live="polite"
-        >
-          <span className="turntable-track-title">{title}</span>
-          <span className="turntable-track-artist">{artist}</span>
-        </div>
-      )}
+      <div
+        className={`turntable-now-playing ${title ? '' : 'turntable-now-playing-empty'}`.trim()}
+        aria-label={title ? 'Now playing' : undefined}
+        aria-live={title ? 'polite' : undefined}
+        aria-hidden={title ? undefined : 'true'}
+      >
+        <span className="turntable-track-title">{title}</span>
+        <span className="turntable-track-artist">{artist}</span>
+      </div>
       {scUrl && (
         <div className="turntable-player">
           <SoundCloudPlayer

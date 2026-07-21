@@ -2,6 +2,8 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRe
 
 const WIDGET_SCRIPT_SRC = 'https://w.soundcloud.com/player/api.js'
 const WIDGET_READY_TIMEOUT_MS = 8000
+const HIDDEN_WIDGET_WIDTH = 300
+const HIDDEN_WIDGET_HEIGHT = 166
 
 function soundCloudEmbedUrl(value) {
   const rawUrl = String(value ?? '').trim()
@@ -60,6 +62,7 @@ const SoundCloudPlayer = forwardRef(function SoundCloudPlayer({
   isPlaying = false,
   hidden = false,
   autoPlayOnReady = false,
+  restartToken = 0,
   respondsToGlobalPause = true,
   onPlaybackStart = null,
   onPlaybackPause = null,
@@ -106,6 +109,10 @@ const SoundCloudPlayer = forwardRef(function SoundCloudPlayer({
     onReadyRef.current = onReady
     onWidgetApiErrorRef.current = onWidgetApiError
   }, [onPlaybackEnd, onPlaybackPause, onPlaybackProgress, onPlaybackStart, onReady, onWidgetApiError])
+
+  useEffect(() => {
+    hasStartedTrackRef.current = false
+  }, [restartToken])
 
   const reportWidgetApiError = useCallback(() => {
     if (hasReportedWidgetErrorRef.current) return
@@ -241,7 +248,7 @@ const SoundCloudPlayer = forwardRef(function SoundCloudPlayer({
     }
 
     widgetRef.current.pause()
-  }, [autoPlayOnReady, isPlaying, isReady, url])
+  }, [autoPlayOnReady, isPlaying, isReady, restartToken, url])
 
   useEffect(() => {
     if (!respondsToGlobalPause) return undefined
@@ -261,8 +268,8 @@ const SoundCloudPlayer = forwardRef(function SoundCloudPlayer({
       key={src}
       ref={iframeRef}
       title="SoundCloud Player"
-      width={hidden ? '1' : '100%'}
-      height={hidden ? '1' : '166'}
+      width={hidden ? String(HIDDEN_WIDGET_WIDTH) : '100%'}
+      height={hidden ? String(HIDDEN_WIDGET_HEIGHT) : '166'}
       scrolling="no"
       frameBorder="no"
       allow="autoplay; encrypted-media"
@@ -270,10 +277,13 @@ const SoundCloudPlayer = forwardRef(function SoundCloudPlayer({
       style={
         hidden
           ? {
-              position: 'absolute',
-              width: '1px',
-              height: '1px',
+              position: 'fixed',
+              left: `-${HIDDEN_WIDGET_WIDTH + 100}px`,
+              top: `-${HIDDEN_WIDGET_HEIGHT + 100}px`,
+              width: `${HIDDEN_WIDGET_WIDTH}px`,
+              height: `${HIDDEN_WIDGET_HEIGHT}px`,
               opacity: 0,
+              border: 0,
               pointerEvents: 'none',
             }
           : { borderRadius: '4px' }

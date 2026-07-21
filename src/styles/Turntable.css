@@ -154,18 +154,37 @@
 	flex-direction: column;
 	align-items: center;
 	gap: 6px;
+	justify-content: center;
+	width: min(100%, 520px);
+	height: 4.85rem;
 	text-align: center;
 }
 
+.turntable-now-playing-empty {
+	visibility: hidden;
+}
+
 .turntable-track-title {
+	display: -webkit-box;
+	overflow: hidden;
+	max-width: 100%;
 	font-size: 1.35rem;
 	letter-spacing: 0.04em;
+	line-height: 1.18;
 	color: var(--text);
+	text-overflow: ellipsis;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
 }
 
 .turntable-track-artist {
+	overflow: hidden;
+	max-width: 100%;
 	font-size: 1rem;
+	line-height: 1.2;
 	color: var(--text-muted);
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .turntable-player {
@@ -202,6 +221,7 @@
 
 	.turntable-now-playing {
 		gap: 4px;
+		height: 4.35rem;
 	}
 
 	.turntable-track-title {

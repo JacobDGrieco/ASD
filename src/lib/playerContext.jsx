@@ -49,6 +49,7 @@ export function PlayerProvider({ children }) {
   const [isWidgetVisible, setIsWidgetVisible] = useState(false)
   const [isFullScreenOpen, setIsFullScreenOpen] = useState(false)
   const [playerError, setPlayerError] = useState('')
+  const [playerSessionKey, setPlayerSessionKey] = useState(0)
   const [loopMode, setLoopMode] = useState('off')
 
   const isAdminPath = location.pathname === '/admin' || location.pathname.startsWith('/admin/')
@@ -118,7 +119,9 @@ export function PlayerProvider({ children }) {
       ? buildShuffleOrder(nextPool, safeStartIndex, nextHistory)
       : identityOrder(nextPool)
 
+    soundCloudRef.current?.pause()
     pauseExternalAudio()
+    setPlayerSessionKey((previous) => previous + 1)
     setPool(nextPool)
     setPoolSourceLabel(source)
     setCurrentIndex(safeStartIndex)
@@ -278,6 +281,7 @@ export function PlayerProvider({ children }) {
     setPosition(0)
     setDuration(0)
     setPlayerError('')
+    setPlayerSessionKey(0)
     setLoopMode('off')
   }, [])
 
@@ -358,6 +362,7 @@ export function PlayerProvider({ children }) {
           hidden
           isPlaying={isPlaying}
           autoPlayOnReady={isPlaying}
+          restartToken={playerSessionKey}
           respondsToGlobalPause={false}
           onReady={({ duration: nextDuration }) => setDuration(nextDuration || 0)}
           onPlaybackProgress={({ position: nextPosition, duration: nextDuration }) => {
