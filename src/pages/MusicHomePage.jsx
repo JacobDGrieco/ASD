@@ -7,9 +7,11 @@ import ArtistSplash from '../components/home/ArtistSplash.jsx';
 import RecordPlayer from '../components/home/RecordPlayer.jsx';
 import AlbumCard from '../components/artist/AlbumCard.jsx';
 import PlayerIpod from '../components/player/PlayerIpod.jsx';
+import { preloadSoundCloudWidgetApi } from '../components/shared/SoundCloudPlayer.jsx';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import { useAdminAuth } from '../lib/adminAuth.jsx';
 import { usePlayer } from '../lib/playerContextCore.jsx';
+import { cancelIdleWork, prefetchPlayerPool, scheduleIdleWork } from '../lib/publicPrefetch.js';
 import { buildAlbumPath, buildSongPath } from '../lib/publicVisibility.js';
 import { isAdminPreviewSession } from '../lib/publicPreview.js';
 import '../styles/MusicHomePage.css';
@@ -206,6 +208,15 @@ function HomeShuffleIpod() {
 	const isParkedInPlayer = Boolean(currentSong && isWidgetVisible);
 
 	useEffect(() => {
+		const idleId = scheduleIdleWork(() => {
+			void preloadSoundCloudWidgetApi();
+			void prefetchPlayerPool('/api/player-pool?type=sitewide', { maxAge: 30 * 1000, artworkLimit: 8 }).catch(() => {});
+		}, { timeout: 1800 });
+
+		return () => cancelIdleWork(idleId);
+	}, []);
+
+	useEffect(() => {
 		const handleReturn = async (event) => {
 			const resetPlayer = event.detail?.resetPlayer;
 			const sourceElement = document.querySelector('.player-widget:not(.home-ipod-player)');
@@ -241,7 +252,8 @@ function HomeShuffleIpod() {
 		setError('');
 
 		try {
-			const data = await prefetchApi('/api/player-pool?type=sitewide', { maxAge: 30 * 1000 });
+			void preloadSoundCloudWidgetApi();
+			const data = await prefetchPlayerPool('/api/player-pool?type=sitewide', { maxAge: 30 * 1000, artworkLimit: 8 });
 			const pool = Array.isArray(data?.pool) ? data.pool : [];
 			if (!pool.length) {
 				setError('No streamable songs are available.');

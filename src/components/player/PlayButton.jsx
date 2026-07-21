@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { FaPlay, FaRandom } from 'react-icons/fa'
-import { prefetchApi } from '../../hooks/useApi.js'
+import { prefetchPlayerPool } from '../../lib/publicPrefetch.js'
 import { usePlayer } from '../../lib/playerContextCore.jsx'
+import { preloadSoundCloudWidgetApi } from '../shared/SoundCloudPlayer.jsx'
 
 function playerPoolUrl({ type, id, slug }) {
   const params = new URLSearchParams({ type })
@@ -30,6 +31,13 @@ export default function PlayButton({
   const isDisabled = disabled || loading || empty
   const title = empty ? 'No streamable tracks' : error || label
 
+  const warmPlayer = useCallback(() => {
+    if (disabled || empty) return
+
+    void preloadSoundCloudWidgetApi()
+    void prefetchPlayerPool(url, { maxAge: 30 * 1000, artworkLimit: 5 }).catch(() => {})
+  }, [disabled, empty, url])
+
   const handleClick = async (event) => {
     event.preventDefault()
     event.stopPropagation()
@@ -39,7 +47,8 @@ export default function PlayButton({
     setError('')
 
     try {
-      const data = await prefetchApi(url, { maxAge: 30 * 1000 })
+      void preloadSoundCloudWidgetApi()
+      const data = await prefetchPlayerPool(url, { maxAge: 30 * 1000, artworkLimit: 5 })
       const pool = Array.isArray(data?.pool) ? data.pool : []
       if (!pool.length) {
         setEmpty(true)
@@ -71,6 +80,9 @@ export default function PlayButton({
       type="button"
       className={`player-play-button ${iconOnly ? 'player-play-button-icon' : ''} ${className}`.trim()}
       onClick={handleClick}
+      onMouseEnter={warmPlayer}
+      onFocus={warmPlayer}
+      onTouchStart={warmPlayer}
       disabled={isDisabled}
       title={title}
       aria-label={title}

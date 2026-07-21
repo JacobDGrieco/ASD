@@ -4,6 +4,31 @@ const WIDGET_SCRIPT_SRC = 'https://w.soundcloud.com/player/api.js'
 const WIDGET_READY_TIMEOUT_MS = 8000
 const HIDDEN_WIDGET_WIDTH = 300
 const HIDDEN_WIDGET_HEIGHT = 166
+let widgetApiRequest = null
+let soundCloudConsoleFilterInstalled = false
+
+function isSoundCloudEmbedBanner(args) {
+  const message = args
+    .flatMap((arg) => (typeof arg === 'string' ? [arg] : []))
+    .join(' ')
+
+  return message.includes('SoundCloud Embed Player') && message.includes('api-web')
+}
+
+function installSoundCloudConsoleFilter() {
+  if (typeof window === 'undefined' || soundCloudConsoleFilterInstalled) return
+
+  soundCloudConsoleFilterInstalled = true
+  ;['log', 'info'].forEach((method) => {
+    const original = window.console?.[method]
+    if (typeof original !== 'function') return
+
+    window.console[method] = (...args) => {
+      if (isSoundCloudEmbedBanner(args)) return
+      original.apply(window.console, args)
+    }
+  })
+}
 
 function soundCloudEmbedUrl(value) {
   const rawUrl = String(value ?? '').trim()
@@ -36,25 +61,39 @@ function soundCloudEmbedUrl(value) {
 
 function loadWidgetApi() {
   if (typeof window === 'undefined') return Promise.resolve(null)
+  installSoundCloudConsoleFilter()
   if (window.SC?.Widget) return Promise.resolve(window.SC.Widget)
+  if (widgetApiRequest) return widgetApiRequest
 
   const existingScript = document.querySelector(`script[src="${WIDGET_SCRIPT_SRC}"]`)
 
-  if (existingScript) {
-    return new Promise((resolve, reject) => {
-      existingScript.addEventListener('load', () => resolve(window.SC?.Widget ?? null), { once: true })
-      existingScript.addEventListener('error', reject, { once: true })
-    })
-  }
-
-  return new Promise((resolve, reject) => {
+  widgetApiRequest = new Promise((resolve, reject) => {
     const script = document.createElement('script')
-    script.src = WIDGET_SCRIPT_SRC
-    script.async = true
-    script.onload = () => resolve(window.SC?.Widget ?? null)
-    script.onerror = reject
-    document.body.appendChild(script)
+    const activeScript = existingScript || script
+
+    activeScript.addEventListener('load', () => resolve(window.SC?.Widget ?? null), { once: true })
+    activeScript.addEventListener('error', reject, { once: true })
+
+    if (!existingScript) {
+      script.src = WIDGET_SCRIPT_SRC
+      script.async = true
+      document.body.appendChild(script)
+    }
   })
+    .then((Widget) => {
+      if (!Widget) widgetApiRequest = null
+      return Widget
+    })
+    .catch((error) => {
+      widgetApiRequest = null
+      throw error
+    })
+
+  return widgetApiRequest
+}
+
+export function preloadSoundCloudWidgetApi() {
+  return loadWidgetApi().catch(() => null)
 }
 
 const SoundCloudPlayer = forwardRef(function SoundCloudPlayer({

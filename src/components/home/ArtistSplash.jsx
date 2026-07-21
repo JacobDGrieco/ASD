@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { preloadImage, preloadImages, prefetchArtistPage } from '../../lib/publicPrefetch.js';
+import { preloadImage, preloadImages, prefetchArtistPage, prefetchArtistPagesInIdle } from '../../lib/publicPrefetch.js';
 import musicStageBackdrop from '../../assets/music-tour-stage-backdrop.png';
 import '../../styles/ArtistSplash.css';
 
@@ -642,6 +642,8 @@ function ArtistSpotlightCarousel({ artists }) {
 
 export default function ArtistSplash({ artists, skipEntranceAnimation = false }) {
 	const isMobileSpotlight = useMediaQuery(MOBILE_SPOTLIGHT_QUERY);
+
+	useEffect(() => prefetchArtistPagesInIdle(artists, { limit: 6 }), [artists]);
 
 	return (
 		<section className={`artist-splash-splash ${skipEntranceAnimation ? 'artist-splash-from-portal' : ''}`.trim()}>
