@@ -145,14 +145,16 @@ export default function HomePage() {
 	};
 
 	const enterSection = (section) => {
+		const navigationOptions = { state: { fromPortal: section.key } };
+
 		if (prefersReducedMotion) {
-			navigate(section.path);
+			navigate(section.path, navigationOptions);
 			return;
 		}
 
 		const nextExpansionFrame = getExpansionFrame(section);
 		if (!nextExpansionFrame) {
-			navigate(section.path);
+			navigate(section.path, navigationOptions);
 			return;
 		}
 
@@ -161,10 +163,10 @@ export default function HomePage() {
 		window.setTimeout(() => {
 			if (document.startViewTransition) {
 				document.startViewTransition(() => {
-					flushSync(() => navigate(section.path));
+					flushSync(() => navigate(section.path, navigationOptions));
 				});
 			} else {
-				navigate(section.path);
+				navigate(section.path, navigationOptions);
 			}
 		}, EXPAND_MS);
 	};

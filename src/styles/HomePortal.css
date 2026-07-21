@@ -8,6 +8,10 @@
 	isolation: isolate;
 }
 
+.portal-home-expanding {
+	z-index: 90;
+}
+
 .portal-bottom-bar {
 	position: absolute;
 	left: 50%;

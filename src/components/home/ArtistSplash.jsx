@@ -640,11 +640,11 @@ function ArtistSpotlightCarousel({ artists }) {
 	);
 }
 
-export default function ArtistSplash({ artists }) {
+export default function ArtistSplash({ artists, skipEntranceAnimation = false }) {
 	const isMobileSpotlight = useMediaQuery(MOBILE_SPOTLIGHT_QUERY);
 
 	return (
-		<section className="artist-splash-splash">
+		<section className={`artist-splash-splash ${skipEntranceAnimation ? 'artist-splash-from-portal' : ''}`.trim()}>
 			<img src={musicStageBackdrop} alt="" className="artist-splash-stage-backdrop" aria-hidden="true" />
 			<div className="artist-splash-overlay" />
 			{isMobileSpotlight ? <ArtistSpotlightCarousel artists={artists} /> : <ArtistSplashRail artists={artists} />}

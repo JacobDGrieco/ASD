@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { FaPlay } from 'react-icons/fa';
 import { prefetchApi, useApi } from '../hooks/useApi.js';
 import ArtistSplash from '../components/home/ArtistSplash.jsx';
@@ -216,6 +216,7 @@ function HomeShuffleIpod() {
 }
 
 export default function MusicHomePage() {
+	const location = useLocation();
 	const { session, token } = useAdminAuth();
 	const adminPreview = isAdminPreviewSession(session, token);
 	const artistApiUrl = '/api/artists';
@@ -243,6 +244,7 @@ export default function MusicHomePage() {
 		refreshAtUtcMidnight: true,
 	});
 	const apiMessage = getHomePageApiMessage(import.meta.env.DEV);
+	const skipHeroEntranceAnimation = location.state?.fromPortal === 'music';
 
 	const latestReleases = useMemo(() => {
 		return (artists ?? [])
@@ -285,7 +287,9 @@ export default function MusicHomePage() {
 			<AuroraBackground />
 			<div className="aurora-page-content home-page-content">
 				<div className="home-stage">
-					{artists?.length ? <ArtistSplash artists={artists} /> : artistsLoading ? <HomeHeroPlaceholder /> : null}
+					{artists?.length ? (
+						<ArtistSplash artists={artists} skipEntranceAnimation={skipHeroEntranceAnimation} />
+					) : artistsLoading ? <HomeHeroPlaceholder /> : null}
 					{tracksLoading ? (
 						<HomeRecordPlayerPlaceholder />
 					) : (
