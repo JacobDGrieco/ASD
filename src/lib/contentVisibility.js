@@ -14,7 +14,7 @@
  * Runs in both server (`api/public.js`, `api/admin/*.js`) and admin-client
  * (form default-visibility logic) contexts — pure functions, no I/O.
  */
-import { isReleasedOnUtcDay } from './releaseSchedule.js'
+import { isReleasedOnUtcDay } from './releaseSchedule.js';
 
 /**
  * Default `isVisible`/`autoShowOnRelease` pair for a new record given its release
@@ -23,17 +23,17 @@ import { isReleasedOnUtcDay } from './releaseSchedule.js'
  * caller doesn't explicitly set `isVisible`.
  */
 export function defaultVisibilityForReleaseDate(releaseDate, now = new Date()) {
-  if (releaseDate && !isReleasedOnUtcDay(releaseDate, now)) {
-    return {
-      isVisible: false,
-      autoShowOnRelease: true,
-    }
-  }
+	if (releaseDate && !isReleasedOnUtcDay(releaseDate, now)) {
+		return {
+			isVisible: false,
+			autoShowOnRelease: true,
+		};
+	}
 
-  return {
-    isVisible: true,
-    autoShowOnRelease: false,
-  }
+	return {
+		isVisible: true,
+		autoShowOnRelease: false,
+	};
 }
 
 /**
@@ -43,17 +43,17 @@ export function defaultVisibilityForReleaseDate(releaseDate, now = new Date()) {
  * an admin manually showing a record overrides any pending auto-show.
  */
 export function normalizeVisibilityInput(
-  { isVisible, autoShowOnRelease, releaseDate },
-  now = new Date()
+	{ isVisible, autoShowOnRelease, releaseDate },
+	now = new Date()
 ) {
-  if (typeof isVisible !== 'boolean') {
-    return defaultVisibilityForReleaseDate(releaseDate, now)
-  }
+	if (typeof isVisible !== 'boolean') {
+		return defaultVisibilityForReleaseDate(releaseDate, now);
+	}
 
-  return {
-    isVisible,
-    autoShowOnRelease: isVisible ? false : Boolean(autoShowOnRelease),
-  }
+	return {
+		isVisible,
+		autoShowOnRelease: isVisible ? false : Boolean(autoShowOnRelease),
+	};
 }
 
 /**
@@ -66,23 +66,23 @@ export function normalizeVisibilityInput(
  * @returns {{isVisible: boolean, autoShowOnRelease: boolean, shouldMaterialize: boolean}}
  */
 export function resolveEffectiveVisibility(
-  { isVisible, autoShowOnRelease, releaseDate },
-  now = new Date()
+	{ isVisible, autoShowOnRelease, releaseDate },
+	now = new Date()
 ) {
-  const released = isReleasedOnUtcDay(releaseDate, now)
-  const shouldAutoShow = Boolean(autoShowOnRelease) && released
-  return {
-    isVisible: Boolean(isVisible) || shouldAutoShow,
-    autoShowOnRelease: Boolean(autoShowOnRelease) && !released,
-    shouldMaterialize: shouldAutoShow,
-  }
+	const released = isReleasedOnUtcDay(releaseDate, now);
+	const shouldAutoShow = Boolean(autoShowOnRelease) && released;
+	return {
+		isVisible: Boolean(isVisible) || shouldAutoShow,
+		autoShowOnRelease: Boolean(autoShowOnRelease) && !released,
+		shouldMaterialize: shouldAutoShow,
+	};
 }
 
 /** Convenience wrapper: just the boolean from `resolveEffectiveVisibility`. */
 export function isEffectivelyVisible(entity, releaseDate, now = new Date()) {
-  return resolveEffectiveVisibility({
-    isVisible: entity?.isVisible,
-    autoShowOnRelease: entity?.autoShowOnRelease,
-    releaseDate,
-  }, now).isVisible
+	return resolveEffectiveVisibility({
+		isVisible: entity?.isVisible,
+		autoShowOnRelease: entity?.autoShowOnRelease,
+		releaseDate,
+	}, now).isVisible;
 }

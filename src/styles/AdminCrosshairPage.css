@@ -1,112 +1,112 @@
 .admin-crosshair-page-note {
-  margin-bottom: 20px;
-  color: var(--text-muted);
-  font-size: 0.92rem;
+	margin-bottom: 20px;
+	color: var(--text-muted);
+	font-size: 0.92rem;
 }
 
 .admin-crosshair-page-new-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
 }
 
 .admin-crosshair-page-header-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 8px;
 }
 
 .admin-crosshair-page-header-actions button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+	opacity: 0.45;
+	cursor: not-allowed;
 }
 
 .admin-crosshair-page-message {
-  margin: 0 0 14px;
-  padding: 10px 12px;
-  border: 1px solid rgba(224, 96, 96, 0.35);
-  background: rgba(224, 96, 96, 0.08);
-  color: #e0a8a8;
-  font-size: 0.9rem;
+	margin: 0 0 14px;
+	padding: 10px 12px;
+	border: 1px solid rgba(224, 96, 96, 0.35);
+	background: rgba(224, 96, 96, 0.08);
+	color: #e0a8a8;
+	font-size: 0.9rem;
 }
 
 .admin-crosshair-page-description {
-  display: -webkit-box;
-  margin-top: 6px;
-  overflow: hidden;
-  color: var(--text-muted);
-  font-size: 0.82rem;
-  line-height: 1.35;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+	display: -webkit-box;
+	margin-top: 6px;
+	overflow: hidden;
+	color: var(--text-muted);
+	font-size: 0.82rem;
+	line-height: 1.35;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
 }
 
 .admin-crosshair-page-hidden-row .admin-artists-page-cell-value,
 .admin-crosshair-page-hidden-row .admin-crosshair-page-description {
-  opacity: 0.54;
-  text-decoration: line-through;
-  text-decoration-thickness: 2px;
-  text-decoration-color: rgba(224, 96, 96, 0.85);
+	opacity: 0.54;
+	text-decoration: line-through;
+	text-decoration-thickness: 2px;
+	text-decoration-color: rgba(224, 96, 96, 0.85);
 }
 
 .admin-crosshair-page-empty {
-  padding: 28px 12px;
-  color: var(--text-muted);
-  text-align: center;
+	padding: 28px 12px;
+	color: var(--text-muted);
+	text-align: center;
 }
 
 .admin-crosshair-page-modal .admin-modal-header {
-  padding: 22px 30px;
+	padding: 22px 30px;
 }
 
 .admin-crosshair-page-modal .admin-modal-body {
-  padding: 24px 30px;
+	padding: 24px 30px;
 }
 
 .admin-crosshair-page-modal .admin-modal-footer {
-  padding: 18px 30px;
+	padding: 18px 30px;
 }
 
 .admin-crosshair-page-form-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px 18px;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: 16px 18px;
 }
 
 .admin-crosshair-page-form-grid .admin-modal-field-full {
-  grid-column: 1 / -1;
+	grid-column: 1 / -1;
 }
 
 .admin-crosshair-page-title-row .admin-artists-page-name-field {
-  grid-template-columns: auto minmax(0, 1fr);
+	grid-template-columns: auto minmax(0, 1fr);
 }
 
 .admin-crosshair-page-thumbnail-row {
-  gap: 10px;
+	gap: 10px;
 }
 
 .admin-crosshair-page-thumbnail-row .admin-artists-page-image-field {
-  gap: 16px;
+	gap: 16px;
 }
 
 .admin-crosshair-page-description-input {
-  min-height: 120px;
+	min-height: 120px;
 }
 
 .admin-crosshair-page-table .admin-artists-page-thumb {
-  margin: 0 auto;
+	margin: 0 auto;
 }
 
 @media (max-width: 720px) {
-  .admin-crosshair-page-form-grid {
-    grid-template-columns: 1fr;
-  }
+	.admin-crosshair-page-form-grid {
+		grid-template-columns: 1fr;
+	}
 
-  .admin-crosshair-page-modal .admin-modal-header,
-  .admin-crosshair-page-modal .admin-modal-body,
-  .admin-crosshair-page-modal .admin-modal-footer {
-    padding-left: 18px;
-    padding-right: 18px;
-  }
+	.admin-crosshair-page-modal .admin-modal-header,
+	.admin-crosshair-page-modal .admin-modal-body,
+	.admin-crosshair-page-modal .admin-modal-footer {
+		padding-left: 18px;
+		padding-right: 18px;
+	}
 }

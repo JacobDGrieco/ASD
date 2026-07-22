@@ -1,107 +1,107 @@
 .vinyl-record-record {
-  width: var(--vinyl-record-size, 114px);
-  height: var(--vinyl-record-size, 114px);
-  flex-shrink: 0;
-  cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-  transform: perspective(400px) rotateY(-12deg);
-  border-radius: 9px;
-  overflow: hidden;
-  background: var(--bg-raised);
-  outline: none;
-  position: relative;
-  border: 1px solid rgba(255,255,255,0.08);
+	width: var(--vinyl-record-size, 114px);
+	height: var(--vinyl-record-size, 114px);
+	flex-shrink: 0;
+	cursor: pointer;
+	transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+	transform: perspective(400px) rotateY(-12deg);
+	border-radius: 9px;
+	overflow: hidden;
+	background: var(--bg-raised);
+	outline: none;
+	position: relative;
+	border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .vinyl-record-record:hover {
-  transform: perspective(400px) rotateY(0deg) translateY(-12px) scale(1.035);
-  box-shadow: 0 14px 32px rgba(0,0,0,0.6);
-  border-color: rgba(255,255,255,0.2);
-  z-index: 2;
+	transform: perspective(400px) rotateY(0deg) translateY(-12px) scale(1.035);
+	box-shadow: 0 14px 32px rgba(0, 0, 0, 0.6);
+	border-color: rgba(255, 255, 255, 0.2);
+	z-index: 2;
 }
 
 .vinyl-record-active {
-  transform: perspective(400px) rotateY(0deg) translateY(-18px) scale(1.045) !important;
-  box-shadow: 0 0 0 2px var(--accent), 0 16px 36px rgba(0,0,0,0.7) !important;
-  border-color: rgba(255,255,255,0.18);
+	transform: perspective(400px) rotateY(0deg) translateY(-18px) scale(1.045) !important;
+	box-shadow: 0 0 0 2px var(--accent), 0 16px 36px rgba(0, 0, 0, 0.7) !important;
+	border-color: rgba(255, 255, 255, 0.18);
 }
 
 .vinyl-record-sleeve {
-  width: 100%;
-  height: 100%;
+	width: 100%;
+	height: 100%;
 }
 
 .vinyl-record-art {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
 }
 
 .vinyl-record-meta {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 34px 10px 10px;
-  background: linear-gradient(transparent, rgba(0,0,0,0.94));
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 0.25s ease, transform 0.25s ease;
-  text-align: left;
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	padding: 34px 10px 10px;
+	background: linear-gradient(transparent, rgba(0, 0, 0, 0.94));
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	opacity: 0;
+	transform: translateY(14px);
+	transition: opacity 0.25s ease, transform 0.25s ease;
+	text-align: left;
 }
 
 .vinyl-record-record:hover .vinyl-record-meta,
 .vinyl-record-record:focus-visible .vinyl-record-meta,
 .vinyl-record-active .vinyl-record-meta {
-  opacity: 1;
-  transform: translateY(0);
+	opacity: 1;
+	transform: translateY(0);
 }
 
 .vinyl-record-title {
-  color: var(--text);
-  font-size: 0.76rem;
-  line-height: 1.25;
+	color: var(--text);
+	font-size: 0.76rem;
+	line-height: 1.25;
 }
 
 .vinyl-record-artist {
-  color: var(--text-muted);
-  font-size: 0.67rem;
+	color: var(--text-muted);
+	font-size: 0.67rem;
 }
 
 @media (max-width: 900px) {
-  .vinyl-record-record {
-    width: var(--vinyl-record-size, 120px);
-    height: var(--vinyl-record-size, 120px);
-  }
+	.vinyl-record-record {
+		width: var(--vinyl-record-size, 120px);
+		height: var(--vinyl-record-size, 120px);
+	}
 
-  .vinyl-record-record:hover {
-    transform: perspective(400px) rotateY(0deg) translateY(-12px) scale(1.03);
-  }
+	.vinyl-record-record:hover {
+		transform: perspective(400px) rotateY(0deg) translateY(-12px) scale(1.03);
+	}
 
-  .vinyl-record-active {
-    transform: perspective(400px) rotateY(0deg) translateY(-18px) scale(1.04) !important;
-  }
+	.vinyl-record-active {
+		transform: perspective(400px) rotateY(0deg) translateY(-18px) scale(1.04) !important;
+	}
 
-  .vinyl-record-meta {
-    opacity: 1;
-    transform: none;
-    padding: 42px 10px 10px;
-  }
+	.vinyl-record-meta {
+		opacity: 1;
+		transform: none;
+		padding: 42px 10px 10px;
+	}
 
-  .vinyl-record-title {
-    font-size: 0.82rem;
-  }
+	.vinyl-record-title {
+		font-size: 0.82rem;
+	}
 
-  .vinyl-record-artist {
-    font-size: 0.72rem;
-  }
+	.vinyl-record-artist {
+		font-size: 0.72rem;
+	}
 }
 
 @media (max-width: 640px) {
-  .vinyl-record-meta {
-    display: none;
-  }
+	.vinyl-record-meta {
+		display: none;
+	}
 }

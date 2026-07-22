@@ -42,10 +42,10 @@ function normalizedRole(role, extra = {}) {
 		...(extra.omitApplyToSongs
 			? {}
 			: extra.applyToSongs !== undefined
-			? { applyToSongs: extra.applyToSongs }
-			: role.applyToSongs !== undefined
-				? { applyToSongs: role.applyToSongs !== false }
-				: {}),
+				? { applyToSongs: extra.applyToSongs }
+				: role.applyToSongs !== undefined
+					? { applyToSongs: role.applyToSongs !== false }
+					: {}),
 	};
 }
 

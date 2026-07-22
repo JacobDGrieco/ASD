@@ -137,7 +137,7 @@
 	visibility: visible;
 }
 
-.home-ipod-flight-crossfade .player-widget-screen > :not(.home-ipod-flight-screen-next) {
+.home-ipod-flight-crossfade .player-widget-screen> :not(.home-ipod-flight-screen-next) {
 	animation: home-ipod-flight-screen-out 0.34s ease 0.18s both;
 }
 

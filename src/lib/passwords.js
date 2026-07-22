@@ -4,24 +4,24 @@
  * dedicated password-hashing library — stored as `scrypt:<hexSalt>:<hexHash>` so
  * the algorithm is versioned into the value itself. Server-only.
  */
-import crypto from 'node:crypto'
+import crypto from 'node:crypto';
 
-const HASH_ALGORITHM = 'scrypt'
-const SCRYPT_KEYLEN = 64
+const HASH_ALGORITHM = 'scrypt';
+const SCRYPT_KEYLEN = 64;
 
 function randomSalt() {
-  return crypto.randomBytes(16).toString('hex')
+	return crypto.randomBytes(16).toString('hex');
 }
 
 function deriveKey(password, salt) {
-  return crypto.scryptSync(password, salt, SCRYPT_KEYLEN)
+	return crypto.scryptSync(password, salt, SCRYPT_KEYLEN);
 }
 
 /** Hashes `password` with a fresh random salt, returning the storable `scrypt:salt:hash` string. */
 export function hashPassword(password) {
-  const salt = randomSalt()
-  const hash = deriveKey(password, salt).toString('hex')
-  return `${HASH_ALGORITHM}:${salt}:${hash}`
+	const salt = randomSalt();
+	const hash = deriveKey(password, salt).toString('hex');
+	return `${HASH_ALGORITHM}:${salt}:${hash}`;
 }
 
 /**
@@ -30,14 +30,14 @@ export function hashPassword(password) {
  * about how much of the hash matched.
  */
 export function verifyPassword(password, storedHash) {
-  if (!password || !storedHash) return false
+	if (!password || !storedHash) return false;
 
-  const [algorithm, salt, hashHex] = String(storedHash).split(':')
-  if (algorithm !== HASH_ALGORITHM || !salt || !hashHex) return false
+	const [algorithm, salt, hashHex] = String(storedHash).split(':');
+	if (algorithm !== HASH_ALGORITHM || !salt || !hashHex) return false;
 
-  const derived = deriveKey(password, salt)
-  const stored = Buffer.from(hashHex, 'hex')
-  if (stored.length !== derived.length) return false
+	const derived = deriveKey(password, salt);
+	const stored = Buffer.from(hashHex, 'hex');
+	if (stored.length !== derived.length) return false;
 
-  return crypto.timingSafeEqual(derived, stored)
+	return crypto.timingSafeEqual(derived, stored);
 }

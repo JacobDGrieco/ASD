@@ -665,7 +665,7 @@ export default function AdminMusicAlbumsPage() {
 				setOutsideArtists(outsideArtistList);
 				primeAdminResource('music-outside-artists-list', token, outsideArtistList);
 			})
-			.catch(() => {});
+			.catch(() => { });
 		closeForm();
 
 		if (!isEdit && saved.type === 'SINGLE') {

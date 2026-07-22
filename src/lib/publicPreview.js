@@ -5,5 +5,5 @@
  * draw the existing hidden/cross overlays.
  */
 export function isAdminPreviewSession(session, token) {
-  return Boolean(session?.role && token)
+	return Boolean(session?.role && token);
 }

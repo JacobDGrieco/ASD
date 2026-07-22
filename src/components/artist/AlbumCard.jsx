@@ -61,17 +61,17 @@ export default function AlbumCard({ album, isOpen, isUnreleased = false, isDisab
 					{streamLinks.map((link) => {
 						const label = PROFILE_LINK_PLATFORM_LABELS[link.platform] ?? 'Link';
 						return (
-						<a
-							key={link.id}
-							href={hrefForProfileLink(link)}
-							target="_blank"
-							rel="noreferrer"
-							className="album-card-stream-link"
-							aria-label={label}
-							title={label}
-						>
-							<ProfileLinkIcon platform={link.platform} aria-hidden="true" />
-						</a>
+							<a
+								key={link.id}
+								href={hrefForProfileLink(link)}
+								target="_blank"
+								rel="noreferrer"
+								className="album-card-stream-link"
+								aria-label={label}
+								title={label}
+							>
+								<ProfileLinkIcon platform={link.platform} aria-hidden="true" />
+							</a>
 						);
 					})}
 				</div>

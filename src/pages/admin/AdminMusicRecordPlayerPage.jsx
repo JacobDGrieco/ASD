@@ -12,7 +12,7 @@ function loadSlots(token) {
 		.then((tracks) => {
 			slotsCache = tracks;
 			return tracks;
-		})
+		});
 }
 
 function makeSlots(tracks) {

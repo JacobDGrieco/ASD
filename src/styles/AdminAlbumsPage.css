@@ -1,33 +1,33 @@
 /* Albums page reuses AdminArtistsPage.css styles via shared import */
 
 .admin-albums-modal-meta-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content minmax(170px, 0.6fr);
-  gap: 12px;
-  align-items: end;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) max-content minmax(170px, 0.6fr);
+	gap: 12px;
+	align-items: end;
 }
 
 .admin-albums-modal-meta-row .admin-artists-page-input,
 .admin-albums-modal-meta-row select,
 .admin-albums-modal-meta-row input[type='date'] {
-  height: 44px;
+	height: 44px;
 }
 
 .admin-albums-modal-meta-type select {
-  width: max-content;
-  min-width: 110px;
+	width: max-content;
+	min-width: 110px;
 }
 
 .admin-albums-modal-meta-date {
-  min-width: 0;
+	min-width: 0;
 }
 
 @media (max-width: 768px) {
-  .admin-albums-modal-meta-row {
-    grid-template-columns: 1fr;
-  }
+	.admin-albums-modal-meta-row {
+		grid-template-columns: 1fr;
+	}
 
-  .admin-albums-modal-meta-type select {
-    width: 100%;
-  }
+	.admin-albums-modal-meta-type select {
+		width: 100%;
+	}
 }

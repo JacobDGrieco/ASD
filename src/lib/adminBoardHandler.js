@@ -16,55 +16,55 @@
  *   reserved `Artist` row for A.S.D. the first time it's used, rather than requiring
  *   it to pre-exist.
  */
-import { prisma } from './prisma.js'
-import { isArtistAdmin, isSuperAdmin, isViewer } from './auth.js'
-import { collectBlobPathnames, deleteRemovedBlobPathnames, deleteUnusedBlobPathnames } from './blobCleanup.js'
-import { extractBoardBodyImagePathnames, validateBoardBodyMarkdown } from './boardMarkdown.js'
-import { ASD_RECORDS_ARTIST_NAME, ASD_RECORDS_ARTIST_OPTION_ID, ASD_RECORDS_ARTIST_SLUG, OTHER_ARTIST_SLUG } from './publicVisibility.js'
+import { prisma } from './prisma.js';
+import { isArtistAdmin, isSuperAdmin, isViewer } from './auth.js';
+import { collectBlobPathnames, deleteRemovedBlobPathnames, deleteUnusedBlobPathnames } from './blobCleanup.js';
+import { extractBoardBodyImagePathnames, validateBoardBodyMarkdown } from './boardMarkdown.js';
+import { ASD_RECORDS_ARTIST_NAME, ASD_RECORDS_ARTIST_OPTION_ID, ASD_RECORDS_ARTIST_SLUG, OTHER_ARTIST_SLUG } from './publicVisibility.js';
 
-const BOARD_COUNT_CAP = 25
-const BOARD_AGE_DAYS = 90
-const MAX_BODY_IMAGES = 1
-const MAX_BODY_LINKS = 5
+const BOARD_COUNT_CAP = 25;
+const BOARD_AGE_DAYS = 90;
+const MAX_BODY_IMAGES = 1;
+const MAX_BODY_LINKS = 5;
 
 function now() {
-  return new Date()
+	return new Date();
 }
 
 function ageCapDate() {
-  const d = new Date()
-  d.setDate(d.getDate() - BOARD_AGE_DAYS)
-  return d
+	const d = new Date();
+	d.setDate(d.getDate() - BOARD_AGE_DAYS);
+	return d;
 }
 
 function publicWhere() {
-  return {
-    publishedAt: { not: null, lte: now() },
-    archivedAt: null,
-    OR: [{ expiresAt: null }, { expiresAt: { gt: now() } }],
-    AND: [{ publishedAt: { gte: ageCapDate() } }],
-    artist: {
-      isVisible: true,
-      slug: { not: OTHER_ARTIST_SLUG },
-    },
-  }
+	return {
+		publishedAt: { not: null, lte: now() },
+		archivedAt: null,
+		OR: [{ expiresAt: null }, { expiresAt: { gt: now() } }],
+		AND: [{ publishedAt: { gte: ageCapDate() } }],
+		artist: {
+			isVisible: true,
+			slug: { not: OTHER_ARTIST_SLUG },
+		},
+	};
 }
 
 function artistScopedWhere(session) {
-  if (isSuperAdmin(session)) return {}
-  if (isArtistAdmin(session)) return { artistId: session.artistId }
-  return { artistId: '__none__' }
+	if (isSuperAdmin(session)) return {};
+	if (isArtistAdmin(session)) return { artistId: session.artistId };
+	return { artistId: '__none__' };
 }
 
 function includeArtist() {
-  return { select: { id: true, name: true, slug: true } }
+	return { select: { id: true, name: true, slug: true } };
 }
 
 function validateBoardBody(body) {
-  return validateBoardBodyMarkdown(body, {
-    maxImages: MAX_BODY_IMAGES,
-    maxLinks: MAX_BODY_LINKS,
-  }) || null
+	return validateBoardBodyMarkdown(body, {
+		maxImages: MAX_BODY_IMAGES,
+		maxLinks: MAX_BODY_LINKS,
+	}) || null;
 }
 
 // Resolves the artistId a post should be saved under. Non-super-admins are always
@@ -72,25 +72,25 @@ function validateBoardBody(body) {
 // artist (ASD_RECORDS_ARTIST_OPTION_ID is a client-side sentinel, not a real id) —
 // the first time that's used, the corresponding Artist row is created on demand.
 async function resolveBoardArtistId(session, artistId) {
-  if (!isSuperAdmin(session)) return session.artistId
-  if (!artistId) return null
-  if (artistId !== ASD_RECORDS_ARTIST_OPTION_ID) return artistId
+	if (!isSuperAdmin(session)) return session.artistId;
+	if (!artistId) return null;
+	if (artistId !== ASD_RECORDS_ARTIST_OPTION_ID) return artistId;
 
-  const labelArtist = await prisma.artist.upsert({
-    where: { slug: ASD_RECORDS_ARTIST_SLUG },
-    update: { name: ASD_RECORDS_ARTIST_NAME },
-    create: {
-      name: ASD_RECORDS_ARTIST_NAME,
-      slug: ASD_RECORDS_ARTIST_SLUG,
-      bio: '',
-      aboutMe: '',
-      portrait: '',
-      order: 999998,
-    },
-    select: { id: true },
-  })
+	const labelArtist = await prisma.artist.upsert({
+		where: { slug: ASD_RECORDS_ARTIST_SLUG },
+		update: { name: ASD_RECORDS_ARTIST_NAME },
+		create: {
+			name: ASD_RECORDS_ARTIST_NAME,
+			slug: ASD_RECORDS_ARTIST_SLUG,
+			bio: '',
+			aboutMe: '',
+			portrait: '',
+			order: 999998,
+		},
+		select: { id: true },
+	});
 
-  return labelArtist.id
+	return labelArtist.id;
 }
 
 // Enforces BOARD_COUNT_CAP by archiving the single oldest publicly-active post once
@@ -98,20 +98,20 @@ async function resolveBoardArtistId(session, artistId) {
 // post — a post-hoc cap rather than a pre-check, so it always resolves back down to
 // at most BOARD_COUNT_CAP active posts regardless of how the cap was crossed.
 async function autoArchiveOldest() {
-  const count = await prisma.boardPost.count({ where: publicWhere() })
-  if (count <= BOARD_COUNT_CAP) return
+	const count = await prisma.boardPost.count({ where: publicWhere() });
+	if (count <= BOARD_COUNT_CAP) return;
 
-  const oldest = await prisma.boardPost.findFirst({
-    where: publicWhere(),
-    orderBy: { publishedAt: 'asc' },
-    select: { id: true },
-  })
-  if (!oldest) return
+	const oldest = await prisma.boardPost.findFirst({
+		where: publicWhere(),
+		orderBy: { publishedAt: 'asc' },
+		select: { id: true },
+	});
+	if (!oldest) return;
 
-  await prisma.boardPost.update({
-    where: { id: oldest.id },
-    data: { archivedAt: now() },
-  })
+	await prisma.boardPost.update({
+		where: { id: oldest.id },
+		data: { archivedAt: now() },
+	});
 }
 
 /**
@@ -121,140 +121,140 @@ async function autoArchiveOldest() {
  * restricted to SUPER_ADMIN. See module header for the full permission matrix.
  */
 export async function handleAdminBoard(req, res, session) {
-  const { id, action } = req.query
+	const { id, action } = req.query;
 
-  if (id) {
-    const post = await prisma.boardPost.findFirst({
-      where: { id, ...artistScopedWhere(session) },
-      include: { artist: includeArtist() },
-    })
-    if (!post) return res.status(404).json({ error: 'Post not found' })
+	if (id) {
+		const post = await prisma.boardPost.findFirst({
+			where: { id, ...artistScopedWhere(session) },
+			include: { artist: includeArtist() },
+		});
+		if (!post) return res.status(404).json({ error: 'Post not found' });
 
-    if (req.method === 'PUT') {
-      if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
-      if (isArtistAdmin(session) && post.artistId !== session.artistId) {
-        return res.status(403).json({ error: 'Forbidden' })
-      }
-      const { title, headline, body, imageUrl, pinColor, expiresAt, publishedAt, artistId } = req.body
-      if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' })
-      if (!headline?.trim()) return res.status(400).json({ error: 'Headline is required.' })
-      const bodyError = validateBoardBody(body)
-      if (bodyError) return res.status(400).json({ error: bodyError })
-      const resolvedArtistId = await resolveBoardArtistId(session, artistId ?? post.artistId)
-      if (!resolvedArtistId) return res.status(400).json({ error: 'Artist is required.' })
+		if (req.method === 'PUT') {
+			if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' });
+			if (isArtistAdmin(session) && post.artistId !== session.artistId) {
+				return res.status(403).json({ error: 'Forbidden' });
+			}
+			const { title, headline, body, imageUrl, pinColor, expiresAt, publishedAt, artistId } = req.body;
+			if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' });
+			if (!headline?.trim()) return res.status(400).json({ error: 'Headline is required.' });
+			const bodyError = validateBoardBody(body);
+			if (bodyError) return res.status(400).json({ error: bodyError });
+			const resolvedArtistId = await resolveBoardArtistId(session, artistId ?? post.artistId);
+			if (!resolvedArtistId) return res.status(400).json({ error: 'Artist is required.' });
 
-      const updated = await prisma.boardPost.update({
-        where: { id },
-        data: {
-          artistId: resolvedArtistId,
-          title: title.trim(),
-          headline: headline.trim(),
-          body: body ?? '',
-          imageUrl: imageUrl || null,
-          pinColor: pinColor || null,
-          expiresAt: expiresAt ? new Date(expiresAt) : null,
-          publishedAt: publishedAt ? new Date(publishedAt) : null,
-        },
-        include: { artist: includeArtist() },
-      })
+			const updated = await prisma.boardPost.update({
+				where: { id },
+				data: {
+					artistId: resolvedArtistId,
+					title: title.trim(),
+					headline: headline.trim(),
+					body: body ?? '',
+					imageUrl: imageUrl || null,
+					pinColor: pinColor || null,
+					expiresAt: expiresAt ? new Date(expiresAt) : null,
+					publishedAt: publishedAt ? new Date(publishedAt) : null,
+				},
+				include: { artist: includeArtist() },
+			});
 
-      if (updated.publishedAt) await autoArchiveOldest()
-      await deleteRemovedBlobPathnames(
-        [post.imageUrl, [...extractBoardBodyImagePathnames(post.body)]],
-        [imageUrl, [...extractBoardBodyImagePathnames(body)]],
-      )
-      return res.status(200).json(updated)
-    }
+			if (updated.publishedAt) await autoArchiveOldest();
+			await deleteRemovedBlobPathnames(
+				[post.imageUrl, [...extractBoardBodyImagePathnames(post.body)]],
+				[imageUrl, [...extractBoardBodyImagePathnames(body)]],
+			);
+			return res.status(200).json(updated);
+		}
 
-    if (req.method === 'DELETE') {
-      if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
-      if (isArtistAdmin(session) && post.artistId !== session.artistId) {
-        return res.status(403).json({ error: 'Forbidden' })
-      }
-      const blobPathnames = collectBlobPathnames(
-        post.imageUrl,
-        [...extractBoardBodyImagePathnames(post.body)],
-      )
-      await prisma.boardPost.delete({ where: { id } })
-      await deleteUnusedBlobPathnames(blobPathnames)
-      return res.status(204).end()
-    }
+		if (req.method === 'DELETE') {
+			if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' });
+			if (isArtistAdmin(session) && post.artistId !== session.artistId) {
+				return res.status(403).json({ error: 'Forbidden' });
+			}
+			const blobPathnames = collectBlobPathnames(
+				post.imageUrl,
+				[...extractBoardBodyImagePathnames(post.body)],
+			);
+			await prisma.boardPost.delete({ where: { id } });
+			await deleteUnusedBlobPathnames(blobPathnames);
+			return res.status(204).end();
+		}
 
-    if (req.method === 'PATCH') {
-      if (!isSuperAdmin(session)) return res.status(403).json({ error: 'Forbidden' })
+		if (req.method === 'PATCH') {
+			if (!isSuperAdmin(session)) return res.status(403).json({ error: 'Forbidden' });
 
-      if (action === 'position') {
-        const { posX, posY, rotation, positionPinnedUntil } = req.body
-        const updated = await prisma.boardPost.update({
-          where: { id },
-          data: {
-            posX: posX != null ? Number(posX) : null,
-            posY: posY != null ? Number(posY) : null,
-            rotation: rotation != null ? Number(rotation) : null,
-            positionPinnedUntil: positionPinnedUntil ? new Date(positionPinnedUntil) : null,
-          },
-          include: { artist: includeArtist() },
-        })
-        return res.status(200).json(updated)
-      }
+			if (action === 'position') {
+				const { posX, posY, rotation, positionPinnedUntil } = req.body;
+				const updated = await prisma.boardPost.update({
+					where: { id },
+					data: {
+						posX: posX != null ? Number(posX) : null,
+						posY: posY != null ? Number(posY) : null,
+						rotation: rotation != null ? Number(rotation) : null,
+						positionPinnedUntil: positionPinnedUntil ? new Date(positionPinnedUntil) : null,
+					},
+					include: { artist: includeArtist() },
+				});
+				return res.status(200).json(updated);
+			}
 
-      if (action === 'archive') {
-        const { archive } = req.body
-        const updated = await prisma.boardPost.update({
-          where: { id },
-          data: { archivedAt: archive ? now() : null },
-          include: { artist: includeArtist() },
-        })
-        return res.status(200).json(updated)
-      }
+			if (action === 'archive') {
+				const { archive } = req.body;
+				const updated = await prisma.boardPost.update({
+					where: { id },
+					data: { archivedAt: archive ? now() : null },
+					include: { artist: includeArtist() },
+				});
+				return res.status(200).json(updated);
+			}
 
-      return res.status(400).json({ error: 'Unknown action' })
-    }
+			return res.status(400).json({ error: 'Unknown action' });
+		}
 
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
 
-  if (req.method === 'GET') {
-    const posts = await prisma.boardPost.findMany({
-      where: artistScopedWhere(session),
-      orderBy: [
-        { publishedAt: { sort: 'desc', nulls: 'last' } },
-        { createdAt: 'desc' },
-      ],
-      include: { artist: includeArtist() },
-    })
-    return res.status(200).json(posts)
-  }
+	if (req.method === 'GET') {
+		const posts = await prisma.boardPost.findMany({
+			where: artistScopedWhere(session),
+			orderBy: [
+				{ publishedAt: { sort: 'desc', nulls: 'last' } },
+				{ createdAt: 'desc' },
+			],
+			include: { artist: includeArtist() },
+		});
+		return res.status(200).json(posts);
+	}
 
-  if (req.method === 'POST') {
-    if (!isArtistAdmin(session) && !isSuperAdmin(session)) {
-      return res.status(403).json({ error: 'Only artist or super admin accounts can create posts.' })
-    }
-    const { title, headline, body, imageUrl, pinColor, expiresAt, publishedAt, artistId } = req.body
-    if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' })
-    if (!headline?.trim()) return res.status(400).json({ error: 'Headline is required.' })
-    const bodyError = validateBoardBody(body)
-    if (bodyError) return res.status(400).json({ error: bodyError })
-    const resolvedArtistId = await resolveBoardArtistId(session, artistId)
-    if (!resolvedArtistId) return res.status(400).json({ error: 'Artist is required.' })
+	if (req.method === 'POST') {
+		if (!isArtistAdmin(session) && !isSuperAdmin(session)) {
+			return res.status(403).json({ error: 'Only artist or super admin accounts can create posts.' });
+		}
+		const { title, headline, body, imageUrl, pinColor, expiresAt, publishedAt, artistId } = req.body;
+		if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' });
+		if (!headline?.trim()) return res.status(400).json({ error: 'Headline is required.' });
+		const bodyError = validateBoardBody(body);
+		if (bodyError) return res.status(400).json({ error: bodyError });
+		const resolvedArtistId = await resolveBoardArtistId(session, artistId);
+		if (!resolvedArtistId) return res.status(400).json({ error: 'Artist is required.' });
 
-    const post = await prisma.boardPost.create({
-      data: {
-        artistId: resolvedArtistId,
-        title: title.trim(),
-        headline: headline.trim(),
-        body: body ?? '',
-        imageUrl: imageUrl || null,
-        pinColor: pinColor || null,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
-        publishedAt: publishedAt ? new Date(publishedAt) : null,
-      },
-      include: { artist: includeArtist() },
-    })
+		const post = await prisma.boardPost.create({
+			data: {
+				artistId: resolvedArtistId,
+				title: title.trim(),
+				headline: headline.trim(),
+				body: body ?? '',
+				imageUrl: imageUrl || null,
+				pinColor: pinColor || null,
+				expiresAt: expiresAt ? new Date(expiresAt) : null,
+				publishedAt: publishedAt ? new Date(publishedAt) : null,
+			},
+			include: { artist: includeArtist() },
+		});
 
-    if (post.publishedAt) await autoArchiveOldest()
-    return res.status(201).json(post)
-  }
+		if (post.publishedAt) await autoArchiveOldest();
+		return res.status(201).json(post);
+	}
 
-  return res.status(405).json({ error: 'Method not allowed' })
+	return res.status(405).json({ error: 'Method not allowed' });
 }

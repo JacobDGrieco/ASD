@@ -48,31 +48,31 @@
 	align-items: start;
 }
 
-.shelf-page-grid > .album-card-card {
+.shelf-page-grid>.album-card-card {
 	width: 100%;
 	min-width: 0;
 	align-items: center;
 	background: rgba(10, 10, 10, 0.24);
 }
 
-.shelf-page-grid > .album-card-card .album-card-primary-action,
-.shelf-page-grid > .album-card-card .album-card-info {
+.shelf-page-grid>.album-card-card .album-card-primary-action,
+.shelf-page-grid>.album-card-card .album-card-info {
 	width: 100%;
 	align-items: center;
 	text-align: center;
 }
 
-.shelf-page-grid > .album-card-card .album-card-cover-wrap {
+.shelf-page-grid>.album-card-card .album-card-cover-wrap {
 	width: min(100%, 208px);
 	height: auto;
 	aspect-ratio: 1;
 }
 
-.shelf-page-grid > .album-card-card .album-card-title {
+.shelf-page-grid>.album-card-card .album-card-title {
 	max-width: 100%;
 }
 
-.shelf-page-grid > .album-card-card .album-card-stream-links {
+.shelf-page-grid>.album-card-card .album-card-stream-links {
 	justify-content: center;
 }
 
@@ -117,7 +117,7 @@
 		gap: 10px;
 	}
 
-	.shelf-page-grid > .album-card-card {
+	.shelf-page-grid>.album-card-card {
 		padding: 8px;
 	}
 }

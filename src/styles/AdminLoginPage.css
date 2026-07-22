@@ -1,69 +1,69 @@
 .admin-login-page-page {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background: var(--bg);
-  font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 100vh;
+	background: var(--bg);
+	font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
 }
 
 .admin-login-page-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: min(360px, 90vw);
-  padding: 40px 32px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	width: min(360px, 90vw);
+	padding: 40px 32px;
+	background: var(--bg-surface);
+	border: 1px solid var(--border);
 }
 
 .admin-login-page-title {
-  font-size: 1.5rem;
-  color: var(--accent);
-  letter-spacing: 0.05em;
-  font-family: 'Playfair Display', Georgia, serif;
+	font-size: 1.5rem;
+	color: var(--accent);
+	letter-spacing: 0.05em;
+	font-family: 'Playfair Display', Georgia, serif;
 }
 
 .admin-login-page-input {
-  padding: 10px 12px;
-  background: var(--bg-raised);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font: inherit;
-  font-size: 1rem;
-  outline: none;
+	padding: 10px 12px;
+	background: var(--bg-raised);
+	border: 1px solid var(--border);
+	color: var(--text);
+	font: inherit;
+	font-size: 1rem;
+	outline: none;
 }
 
 .admin-login-page-input:focus {
-  border-color: var(--accent);
+	border-color: var(--accent);
 }
 
 .admin-login-page-error {
-  color: #e06060;
-  font-size: 0.875rem;
+	color: #e06060;
+	font-size: 0.875rem;
 }
 
 .admin-login-page-button {
-  padding: 10px 16px;
-  background: var(--accent);
-  color: #000;
-  font-weight: bold;
-  letter-spacing: 0.04em;
-  transition: opacity var(--transition);
+	padding: 10px 16px;
+	background: var(--accent);
+	color: #000;
+	font-weight: bold;
+	letter-spacing: 0.04em;
+	transition: opacity var(--transition);
 }
 
 .admin-login-page-button:hover:not(:disabled) {
-  opacity: 0.85;
+	opacity: 0.85;
 }
 
 .admin-login-page-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+	opacity: 0.5;
+	cursor: not-allowed;
 }
 
 .admin-login-page-viewer-hint {
-  margin-top: 12px;
-  font-size: 0.8rem;
-  color: var(--text-muted, #888);
-  text-align: center;
+	margin-top: 12px;
+	font-size: 0.8rem;
+	color: var(--text-muted, #888);
+	text-align: center;
 }

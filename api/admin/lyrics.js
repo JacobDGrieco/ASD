@@ -9,143 +9,143 @@
  *
  * Server-only (Vercel Function). Consumed by `AdminMusicLyricsPage.jsx`.
  */
-import { prisma } from '../../src/lib/prisma.js'
-import { artistScopedSongWhere, canAccessAdminPage, isViewer, requireAdmin } from '../../src/lib/auth.js'
-import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js'
-import { isReleasedOnUtcDay } from '../../src/lib/releaseSchedule.js'
+import { prisma } from '../../src/lib/prisma.js';
+import { artistScopedSongWhere, canAccessAdminPage, isViewer, requireAdmin } from '../../src/lib/auth.js';
+import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js';
+import { isReleasedOnUtcDay } from '../../src/lib/releaseSchedule.js';
 
 async function loadSongForLyrics(session, songId) {
-  const song = await prisma.song.findFirst({
-    where: {
-      id: songId,
-      ...artistScopedSongWhere(session),
-    },
-    select: {
-      id: true,
-      title: true,
-      soundcloudUrl: true,
-      privateSoundcloudUrl: true,
-      duration: true,
-      meta: {
-        select: { releaseDate: true },
-      },
-      placements: {
-        orderBy: [{ placementOrder: 'asc' }],
-        select: {
-          album: {
-            select: { releaseDate: true },
-          },
-        },
-      },
-    },
-  })
+	const song = await prisma.song.findFirst({
+		where: {
+			id: songId,
+			...artistScopedSongWhere(session),
+		},
+		select: {
+			id: true,
+			title: true,
+			soundcloudUrl: true,
+			privateSoundcloudUrl: true,
+			duration: true,
+			meta: {
+				select: { releaseDate: true },
+			},
+			placements: {
+				orderBy: [{ placementOrder: 'asc' }],
+				select: {
+					album: {
+						select: { releaseDate: true },
+					},
+				},
+			},
+		},
+	});
 
-  return song ? formatSongForLyrics(song) : null
+	return song ? formatSongForLyrics(song) : null;
 }
 
 function trimUrl(value) {
-  const url = typeof value === 'string' ? value.trim() : ''
-  return url || null
+	const url = typeof value === 'string' ? value.trim() : '';
+	return url || null;
 }
 
 function effectiveSongReleaseDate(song) {
-  if (song?.meta?.releaseDate) return song.meta.releaseDate
-  const releaseDates = (Array.isArray(song?.placements) ? song.placements : [])
-    .flatMap((placement) => (placement.album?.releaseDate ? [placement.album.releaseDate] : []))
-    .sort((left, right) => new Date(left).getTime() - new Date(right).getTime())
-  return releaseDates[0] ?? null
+	if (song?.meta?.releaseDate) return song.meta.releaseDate;
+	const releaseDates = (Array.isArray(song?.placements) ? song.placements : [])
+		.flatMap((placement) => (placement.album?.releaseDate ? [placement.album.releaseDate] : []))
+		.sort((left, right) => new Date(left).getTime() - new Date(right).getTime());
+	return releaseDates[0] ?? null;
 }
 
 function formatSongForLyrics(song) {
-  const privateSoundcloudUrl = trimUrl(song.privateSoundcloudUrl)
-  const officialSoundcloudUrl = trimUrl(song.soundcloudUrl)
-  const releaseDate = effectiveSongReleaseDate(song)
-  const shouldUsePrivateSoundcloud = privateSoundcloudUrl && !isReleasedOnUtcDay(releaseDate)
+	const privateSoundcloudUrl = trimUrl(song.privateSoundcloudUrl);
+	const officialSoundcloudUrl = trimUrl(song.soundcloudUrl);
+	const releaseDate = effectiveSongReleaseDate(song);
+	const shouldUsePrivateSoundcloud = privateSoundcloudUrl && !isReleasedOnUtcDay(releaseDate);
 
-  return {
-    ...song,
-    adminSoundcloudUrl: shouldUsePrivateSoundcloud ? privateSoundcloudUrl : officialSoundcloudUrl,
-    adminSoundcloudSource: shouldUsePrivateSoundcloud ? 'private' : 'official',
-    effectiveReleaseDate: releaseDate,
-  }
+	return {
+		...song,
+		adminSoundcloudUrl: shouldUsePrivateSoundcloud ? privateSoundcloudUrl : officialSoundcloudUrl,
+		adminSoundcloudSource: shouldUsePrivateSoundcloud ? 'private' : 'official',
+		effectiveReleaseDate: releaseDate,
+	};
 }
 
 function normalizeSyncedLines(input, text) {
-  if (!Array.isArray(input)) return []
+	if (!Array.isArray(input)) return [];
 
-  const lines = String(text ?? '').split('\n')
-  const seen = new Set()
-  const normalized = []
+	const lines = String(text ?? '').split('\n');
+	const seen = new Set();
+	const normalized = [];
 
-  for (const item of input) {
-    const lineIndex = Number(item?.lineIndex)
-    const startMs = Math.round(Number(item?.startMs))
-    const endMs = Math.round(Number(item?.endMs))
+	for (const item of input) {
+		const lineIndex = Number(item?.lineIndex);
+		const startMs = Math.round(Number(item?.startMs));
+		const endMs = Math.round(Number(item?.endMs));
 
-    if (!Number.isInteger(lineIndex) || lineIndex < 0 || lineIndex >= lines.length) continue
-    if (!lines[lineIndex]?.trim()) continue
-    if (isBracketedLyricCue(lines[lineIndex])) continue
-    if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) continue
-    if (startMs < 0 || endMs <= startMs) continue
-    if (seen.has(lineIndex)) continue
+		if (!Number.isInteger(lineIndex) || lineIndex < 0 || lineIndex >= lines.length) continue;
+		if (!lines[lineIndex]?.trim()) continue;
+		if (isBracketedLyricCue(lines[lineIndex])) continue;
+		if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) continue;
+		if (startMs < 0 || endMs <= startMs) continue;
+		if (seen.has(lineIndex)) continue;
 
-    seen.add(lineIndex)
-    normalized.push({ lineIndex, startMs, endMs })
-  }
+		seen.add(lineIndex);
+		normalized.push({ lineIndex, startMs, endMs });
+	}
 
-  return normalized.sort((left, right) => left.lineIndex - right.lineIndex)
+	return normalized.sort((left, right) => left.lineIndex - right.lineIndex);
 }
 
 function isBracketedLyricCue(line) {
-  const trimmed = String(line ?? '').trim()
-  return trimmed.length >= 2 && trimmed.startsWith('[') && trimmed.endsWith(']')
+	const trimmed = String(line ?? '').trim();
+	return trimmed.length >= 2 && trimmed.startsWith('[') && trimmed.endsWith(']');
 }
 
 export default async function handler(req, res) {
-  const session = requireAdmin(req, res)
-  if (!session) return
-  if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_SONGS)) return res.status(403).json({ error: 'Forbidden' })
+	const session = requireAdmin(req, res);
+	if (!session) return;
+	if (!canAccessAdminPage(session, ADMIN_PAGE_KEYS.MUSIC_SONGS)) return res.status(403).json({ error: 'Forbidden' });
 
-  const { songId } = req.query
+	const { songId } = req.query;
 
-  if (!songId) return res.status(400).json({ error: 'songId required' })
+	if (!songId) return res.status(400).json({ error: 'songId required' });
 
-  const song = await loadSongForLyrics(session, songId)
-  if (!song) return res.status(404).json({ error: 'Song not found' })
+	const song = await loadSongForLyrics(session, songId);
+	if (!song) return res.status(404).json({ error: 'Song not found' });
 
-  if (req.method === 'GET') {
-    const lyric = await prisma.songLyric.findUnique({
-      where: { songId },
-      include: {
-        annotations: {
-          orderBy: { createdAt: 'asc' },
-          include: { ranges: { orderBy: { startChar: 'asc' } } },
-        },
-      },
-    })
+	if (req.method === 'GET') {
+		const lyric = await prisma.songLyric.findUnique({
+			where: { songId },
+			include: {
+				annotations: {
+					orderBy: { createdAt: 'asc' },
+					include: { ranges: { orderBy: { startChar: 'asc' } } },
+				},
+			},
+		});
 
-    if (!lyric) {
-      return res.status(200).json({ id: null, songId, text: '', syncedLines: [], annotations: [], song })
-    }
+		if (!lyric) {
+			return res.status(200).json({ id: null, songId, text: '', syncedLines: [], annotations: [], song });
+		}
 
-    return res.status(200).json({ ...lyric, song })
-  }
+		return res.status(200).json({ ...lyric, song });
+	}
 
-  if (req.method === 'PUT') {
-    if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' })
+	if (req.method === 'PUT') {
+		if (isViewer(session)) return res.status(403).json({ error: 'Forbidden' });
 
-    const { text, syncedLines } = req.body
-    const normalizedText = typeof text === 'string' ? text : ''
-    const normalizedSyncedLines = normalizeSyncedLines(syncedLines, normalizedText)
+		const { text, syncedLines } = req.body;
+		const normalizedText = typeof text === 'string' ? text : '';
+		const normalizedSyncedLines = normalizeSyncedLines(syncedLines, normalizedText);
 
-    const upserted = await prisma.songLyric.upsert({
-      where: { songId },
-      create: { songId, text: normalizedText, syncedLines: normalizedSyncedLines },
-      update: { text: normalizedText, syncedLines: normalizedSyncedLines },
-    })
+		const upserted = await prisma.songLyric.upsert({
+			where: { songId },
+			create: { songId, text: normalizedText, syncedLines: normalizedSyncedLines },
+			update: { text: normalizedText, syncedLines: normalizedSyncedLines },
+		});
 
-    return res.status(200).json(upserted)
-  }
+		return res.status(200).json(upserted);
+	}
 
-  return res.status(405).json({ error: 'Method not allowed' })
+	return res.status(405).json({ error: 'Method not allowed' });
 }

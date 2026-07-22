@@ -1,383 +1,383 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { flushSync } from 'react-dom'
-import { useLocation } from 'react-router-dom'
-import SoundCloudPlayer from '../components/shared/SoundCloudPlayer.jsx'
-import PlayerFullScreen from '../components/player/PlayerFullScreen.jsx'
-import PlayerWidget from '../components/player/PlayerWidget.jsx'
-import { prefetchApi } from './apiCache.js'
-import { PlayerContext } from './playerContextCore.jsx'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
+import { useLocation } from 'react-router-dom';
+import SoundCloudPlayer from '../components/shared/SoundCloudPlayer.jsx';
+import PlayerFullScreen from '../components/player/PlayerFullScreen.jsx';
+import PlayerWidget from '../components/player/PlayerWidget.jsx';
+import { prefetchApi } from './apiCache.js';
+import { PlayerContext } from './playerContextCore.jsx';
 
 function identityOrder(pool) {
-  return pool.map((_, index) => index)
+	return pool.map((_, index) => index);
 }
 
 function shuffled(values) {
-  const next = [...values]
-  for (let index = next.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1))
-    ;[next[index], next[swapIndex]] = [next[swapIndex], next[index]]
-  }
-  return next
+	const next = [...values];
+	for (let index = next.length - 1; index > 0; index -= 1) {
+		const swapIndex = Math.floor(Math.random() * (index + 1))
+			;[next[index], next[swapIndex]] = [next[swapIndex], next[index]];
+	}
+	return next;
 }
 
 function randomPoolIndex(pool) {
-  return Math.floor(Math.random() * pool.length)
+	return Math.floor(Math.random() * pool.length);
 }
 
 function buildShuffleOrder(pool, currentIndex, history = []) {
-  const played = new Set([...history, currentIndex])
-  const remaining = identityOrder(pool).filter((index) => !played.has(index))
-  return [...history, currentIndex, ...shuffled(remaining)]
+	const played = new Set([...history, currentIndex]);
+	const remaining = identityOrder(pool).filter((index) => !played.has(index));
+	return [...history, currentIndex, ...shuffled(remaining)];
 }
 
 function pauseExternalAudio() {
-  window.dispatchEvent(new Event('asd-player-pause-external-audio'))
+	window.dispatchEvent(new Event('asd-player-pause-external-audio'));
 }
 
 export function PlayerProvider({ children }) {
-  const location = useLocation()
-  const soundCloudRef = useRef(null)
-  const [pool, setPool] = useState([])
-  const [poolSourceLabel, setPoolSourceLabel] = useState('')
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [playOrder, setPlayOrder] = useState([])
-  const [isShuffled, setIsShuffled] = useState(false)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [position, setPosition] = useState(0)
-  const [duration, setDuration] = useState(0)
-  const [history, setHistory] = useState([])
-  const [isWidgetVisible, setIsWidgetVisible] = useState(false)
-  const [isFullScreenOpen, setIsFullScreenOpen] = useState(false)
-  const [playerError, setPlayerError] = useState('')
-  const [playerSessionKey, setPlayerSessionKey] = useState(0)
-  const [loopMode, setLoopMode] = useState('off')
+	const location = useLocation();
+	const soundCloudRef = useRef(null);
+	const [pool, setPool] = useState([]);
+	const [poolSourceLabel, setPoolSourceLabel] = useState('');
+	const [currentIndex, setCurrentIndex] = useState(0);
+	const [playOrder, setPlayOrder] = useState([]);
+	const [isShuffled, setIsShuffled] = useState(false);
+	const [isPlaying, setIsPlaying] = useState(false);
+	const [position, setPosition] = useState(0);
+	const [duration, setDuration] = useState(0);
+	const [history, setHistory] = useState([]);
+	const [isWidgetVisible, setIsWidgetVisible] = useState(false);
+	const [isFullScreenOpen, setIsFullScreenOpen] = useState(false);
+	const [playerError, setPlayerError] = useState('');
+	const [playerSessionKey, setPlayerSessionKey] = useState(0);
+	const [loopMode, setLoopMode] = useState('off');
 
-  const isAdminPath = location.pathname === '/admin' || location.pathname.startsWith('/admin/')
-  const currentSong = pool[currentIndex] ?? null
+	const isAdminPath = location.pathname === '/admin' || location.pathname.startsWith('/admin/');
+	const currentSong = pool[currentIndex] ?? null;
 
-  useEffect(() => {
-    if (isAdminPath) setIsPlaying(false)
-  }, [isAdminPath])
+	useEffect(() => {
+		if (isAdminPath) setIsPlaying(false);
+	}, [isAdminPath]);
 
-  useEffect(() => {
-    setPosition(0)
-    setDuration(0)
-    setPlayerError('')
-  }, [currentSong?.id])
+	useEffect(() => {
+		setPosition(0);
+		setDuration(0);
+		setPlayerError('');
+	}, [currentSong?.id]);
 
-  useEffect(() => {
-    if (isAdminPath || !isWidgetVisible || !currentSong?.id || !pool.length) return undefined
+	useEffect(() => {
+		if (isAdminPath || !isWidgetVisible || !currentSong?.id || !pool.length) return undefined;
 
-    let cancelled = false
-    const timeoutIds = []
-    const order = playOrder.length ? playOrder : identityOrder(pool)
-    const cursor = order.indexOf(currentIndex)
-    const orderedIndexes = (cursor === -1 ? order : order.slice(cursor + 1)).concat(order)
-    const preloadIds = orderedIndexes
-      .map((index) => pool[index]?.id)
-      .filter((id, index, ids) => id && id !== currentSong.id && ids.indexOf(id) === index)
+		let cancelled = false;
+		const timeoutIds = [];
+		const order = playOrder.length ? playOrder : identityOrder(pool);
+		const cursor = order.indexOf(currentIndex);
+		const orderedIndexes = (cursor === -1 ? order : order.slice(cursor + 1)).concat(order);
+		const preloadIds = orderedIndexes
+			.map((index) => pool[index]?.id)
+			.filter((id, index, ids) => id && id !== currentSong.id && ids.indexOf(id) === index);
 
-    prefetchApi(`/api/songs/${currentSong.id}`).catch(() => {})
+		prefetchApi(`/api/songs/${currentSong.id}`).catch(() => { });
 
-    const preloadUpcoming = () => {
-      preloadIds.forEach((songId, index) => {
-        const timeoutId = window.setTimeout(() => {
-          if (!cancelled) {
-            prefetchApi(`/api/songs/${songId}`).catch(() => {})
-          }
-        }, index * 120)
-        timeoutIds.push(timeoutId)
-      })
-    }
+		const preloadUpcoming = () => {
+			preloadIds.forEach((songId, index) => {
+				const timeoutId = window.setTimeout(() => {
+					if (!cancelled) {
+						prefetchApi(`/api/songs/${songId}`).catch(() => { });
+					}
+				}, index * 120);
+				timeoutIds.push(timeoutId);
+			});
+		};
 
-    const idleId = 'requestIdleCallback' in window
-      ? window.requestIdleCallback(preloadUpcoming, { timeout: 1200 })
-      : window.setTimeout(preloadUpcoming, 250)
+		const idleId = 'requestIdleCallback' in window
+			? window.requestIdleCallback(preloadUpcoming, { timeout: 1200 })
+			: window.setTimeout(preloadUpcoming, 250);
 
-    return () => {
-      cancelled = true
-      timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId))
-      if ('cancelIdleCallback' in window && typeof idleId === 'number') {
-        window.cancelIdleCallback(idleId)
-      } else {
-        window.clearTimeout(idleId)
-      }
-    }
-  }, [currentIndex, currentSong?.id, isAdminPath, isWidgetVisible, playOrder, pool])
+		return () => {
+			cancelled = true;
+			timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
+			if ('cancelIdleCallback' in window && typeof idleId === 'number') {
+				window.cancelIdleCallback(idleId);
+			} else {
+				window.clearTimeout(idleId);
+			}
+		};
+	}, [currentIndex, currentSong?.id, isAdminPath, isWidgetVisible, playOrder, pool]);
 
-  const playPool = useCallback((nextPool, { startIndex = null, source = '', shuffle = false } = {}) => {
-    if (!Array.isArray(nextPool) || nextPool.length === 0) return false
+	const playPool = useCallback((nextPool, { startIndex = null, source = '', shuffle = false } = {}) => {
+		if (!Array.isArray(nextPool) || nextPool.length === 0) return false;
 
-    const hasStartIndex = Number.isInteger(startIndex)
-    const safeStartIndex = hasStartIndex
-      ? Math.min(Math.max(startIndex, 0), nextPool.length - 1)
-      : shuffle
-        ? randomPoolIndex(nextPool)
-        : 0
-    const nextHistory = []
-    const nextOrder = shuffle
-      ? buildShuffleOrder(nextPool, safeStartIndex, nextHistory)
-      : identityOrder(nextPool)
+		const hasStartIndex = Number.isInteger(startIndex);
+		const safeStartIndex = hasStartIndex
+			? Math.min(Math.max(startIndex, 0), nextPool.length - 1)
+			: shuffle
+				? randomPoolIndex(nextPool)
+				: 0;
+		const nextHistory = [];
+		const nextOrder = shuffle
+			? buildShuffleOrder(nextPool, safeStartIndex, nextHistory)
+			: identityOrder(nextPool);
 
-    soundCloudRef.current?.pause()
-    pauseExternalAudio()
-    setPlayerSessionKey((previous) => previous + 1)
-    setPool(nextPool)
-    setPoolSourceLabel(source)
-    setCurrentIndex(safeStartIndex)
-    setPlayOrder(nextOrder)
-    setIsShuffled(shuffle)
-    setHistory(nextHistory)
-    setPosition(0)
-    setDuration(0)
-    setPlayerError('')
-    setIsWidgetVisible(true)
-    setIsPlaying(!isAdminPath)
-    return true
-  }, [isAdminPath])
+		soundCloudRef.current?.pause();
+		pauseExternalAudio();
+		setPlayerSessionKey((previous) => previous + 1);
+		setPool(nextPool);
+		setPoolSourceLabel(source);
+		setCurrentIndex(safeStartIndex);
+		setPlayOrder(nextOrder);
+		setIsShuffled(shuffle);
+		setHistory(nextHistory);
+		setPosition(0);
+		setDuration(0);
+		setPlayerError('');
+		setIsWidgetVisible(true);
+		setIsPlaying(!isAdminPath);
+		return true;
+	}, [isAdminPath]);
 
-  const seekTo = useCallback((seconds) => {
-    const nextSeconds = Math.max(0, Number(seconds) || 0)
-    soundCloudRef.current?.seekTo(nextSeconds)
-    setPosition(nextSeconds)
-  }, [])
+	const seekTo = useCallback((seconds) => {
+		const nextSeconds = Math.max(0, Number(seconds) || 0);
+		soundCloudRef.current?.seekTo(nextSeconds);
+		setPosition(nextSeconds);
+	}, []);
 
-  const next = useCallback(({ fromFinish = false } = {}) => {
-    if (!pool.length || currentIndex < 0) return
+	const next = useCallback(({ fromFinish = false } = {}) => {
+		if (!pool.length || currentIndex < 0) return;
 
-    if (fromFinish && loopMode === 'one') {
-      soundCloudRef.current?.seekTo(0)
-      setPosition(0)
-      setIsPlaying(true)
-      return
-    }
+		if (fromFinish && loopMode === 'one') {
+			soundCloudRef.current?.seekTo(0);
+			setPosition(0);
+			setIsPlaying(true);
+			return;
+		}
 
-    const order = playOrder.length ? playOrder : identityOrder(pool)
-    const cursor = order.indexOf(currentIndex)
-    let nextIndex = cursor === -1 ? currentIndex + 1 : order[cursor + 1]
+		const order = playOrder.length ? playOrder : identityOrder(pool);
+		const cursor = order.indexOf(currentIndex);
+		let nextIndex = cursor === -1 ? currentIndex + 1 : order[cursor + 1];
 
-    if (typeof nextIndex !== 'number') {
-      if (loopMode === 'all' && order.length > 0) {
-        nextIndex = order[0]
-      } else {
-        setIsPlaying(false)
-        return
-      }
-    }
+		if (typeof nextIndex !== 'number') {
+			if (loopMode === 'all' && order.length > 0) {
+				nextIndex = order[0];
+			} else {
+				setIsPlaying(false);
+				return;
+			}
+		}
 
-    setHistory((previous) => [...previous, currentIndex])
-    setCurrentIndex(nextIndex)
-    setPosition(0)
-    setIsPlaying(true)
-    pauseExternalAudio()
-  }, [currentIndex, loopMode, playOrder, pool])
+		setHistory((previous) => [...previous, currentIndex]);
+		setCurrentIndex(nextIndex);
+		setPosition(0);
+		setIsPlaying(true);
+		pauseExternalAudio();
+	}, [currentIndex, loopMode, playOrder, pool]);
 
-  const prev = useCallback(() => {
-    if (!pool.length || currentIndex < 0) return
+	const prev = useCallback(() => {
+		if (!pool.length || currentIndex < 0) return;
 
-    if (position > 3) {
-      seekTo(0)
-      return
-    }
+		if (position > 3) {
+			seekTo(0);
+			return;
+		}
 
-    const previousIndex = history[history.length - 1]
-    if (typeof previousIndex !== 'number') {
-      seekTo(0)
-      return
-    }
+		const previousIndex = history[history.length - 1];
+		if (typeof previousIndex !== 'number') {
+			seekTo(0);
+			return;
+		}
 
-    setHistory((previous) => previous.slice(0, -1))
-    setCurrentIndex(previousIndex)
-    setPosition(0)
-    setIsPlaying(true)
-    pauseExternalAudio()
-  }, [currentIndex, history, pool.length, position, seekTo])
+		setHistory((previous) => previous.slice(0, -1));
+		setCurrentIndex(previousIndex);
+		setPosition(0);
+		setIsPlaying(true);
+		pauseExternalAudio();
+	}, [currentIndex, history, pool.length, position, seekTo]);
 
-  const playPause = useCallback(() => {
-    if (!currentSong) return
-    setIsPlaying((currentlyPlaying) => {
-      const nextPlaying = !currentlyPlaying
-      if (nextPlaying) pauseExternalAudio()
-      return nextPlaying
-    })
-    setIsWidgetVisible(true)
-  }, [currentSong])
+	const playPause = useCallback(() => {
+		if (!currentSong) return;
+		setIsPlaying((currentlyPlaying) => {
+			const nextPlaying = !currentlyPlaying;
+			if (nextPlaying) pauseExternalAudio();
+			return nextPlaying;
+		});
+		setIsWidgetVisible(true);
+	}, [currentSong]);
 
-  const toggleShuffle = useCallback(() => {
-    if (!pool.length) return
+	const toggleShuffle = useCallback(() => {
+		if (!pool.length) return;
 
-    setIsShuffled((currentlyShuffled) => {
-      const nextShuffled = !currentlyShuffled
-      setPlayOrder(nextShuffled ? buildShuffleOrder(pool, currentIndex, history) : identityOrder(pool))
-      return nextShuffled
-    })
-  }, [currentIndex, history, pool])
+		setIsShuffled((currentlyShuffled) => {
+			const nextShuffled = !currentlyShuffled;
+			setPlayOrder(nextShuffled ? buildShuffleOrder(pool, currentIndex, history) : identityOrder(pool));
+			return nextShuffled;
+		});
+	}, [currentIndex, history, pool]);
 
-  const toggleLoopMode = useCallback(() => {
-    setLoopMode((currentMode) => {
-      if (currentMode === 'off') return 'all'
-      if (currentMode === 'all') return 'one'
-      return 'off'
-    })
-  }, [])
+	const toggleLoopMode = useCallback(() => {
+		setLoopMode((currentMode) => {
+			if (currentMode === 'off') return 'all';
+			if (currentMode === 'all') return 'one';
+			return 'off';
+		});
+	}, []);
 
-  const jumpTo = useCallback((poolIndex) => {
-    const nextIndex = Number(poolIndex)
-    if (!pool[nextIndex]) return
+	const jumpTo = useCallback((poolIndex) => {
+		const nextIndex = Number(poolIndex);
+		if (!pool[nextIndex]) return;
 
-    if (nextIndex !== currentIndex) {
-      setHistory((previous) => [...previous, currentIndex])
-    }
+		if (nextIndex !== currentIndex) {
+			setHistory((previous) => [...previous, currentIndex]);
+		}
 
-    setCurrentIndex(nextIndex)
-    setPosition(0)
-    setIsPlaying(true)
-    setIsWidgetVisible(true)
-    pauseExternalAudio()
-  }, [currentIndex, pool])
+		setCurrentIndex(nextIndex);
+		setPosition(0);
+		setIsPlaying(true);
+		setIsWidgetVisible(true);
+		pauseExternalAudio();
+	}, [currentIndex, pool]);
 
-  const runPlayerViewTransition = useCallback((direction, update) => {
-    if (
-      typeof document === 'undefined' ||
-      typeof document.startViewTransition !== 'function' ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    ) {
-      update()
-      return
-    }
+	const runPlayerViewTransition = useCallback((direction, update) => {
+		if (
+			typeof document === 'undefined' ||
+			typeof document.startViewTransition !== 'function' ||
+			window.matchMedia('(prefers-reduced-motion: reduce)').matches
+		) {
+			update();
+			return;
+		}
 
-    const root = document.documentElement
-    root.dataset.playerTransition = direction
+		const root = document.documentElement;
+		root.dataset.playerTransition = direction;
 
-    const transition = document.startViewTransition(() => {
-      flushSync(update)
-    })
+		const transition = document.startViewTransition(() => {
+			flushSync(update);
+		});
 
-    transition.finished.finally(() => {
-      if (root.dataset.playerTransition === direction) {
-        delete root.dataset.playerTransition
-      }
-    })
-  }, [])
+		transition.finished.finally(() => {
+			if (root.dataset.playerTransition === direction) {
+				delete root.dataset.playerTransition;
+			}
+		});
+	}, []);
 
-  const openFullScreen = useCallback(() => {
-    runPlayerViewTransition('open', () => setIsFullScreenOpen(true))
-  }, [runPlayerViewTransition])
+	const openFullScreen = useCallback(() => {
+		runPlayerViewTransition('open', () => setIsFullScreenOpen(true));
+	}, [runPlayerViewTransition]);
 
-  const closeFullScreen = useCallback(() => {
-    runPlayerViewTransition('close', () => setIsFullScreenOpen(false))
-  }, [runPlayerViewTransition])
+	const closeFullScreen = useCallback(() => {
+		runPlayerViewTransition('close', () => setIsFullScreenOpen(false));
+	}, [runPlayerViewTransition]);
 
-  const resetPlayer = useCallback(() => {
-    soundCloudRef.current?.pause()
-    setIsPlaying(false)
-    setIsWidgetVisible(false)
-    setIsFullScreenOpen(false)
-    setPool([])
-    setPoolSourceLabel('')
-    setCurrentIndex(0)
-    setPlayOrder([])
-    setHistory([])
-    setPosition(0)
-    setDuration(0)
-    setPlayerError('')
-    setPlayerSessionKey(0)
-    setLoopMode('off')
-  }, [])
+	const resetPlayer = useCallback(() => {
+		soundCloudRef.current?.pause();
+		setIsPlaying(false);
+		setIsWidgetVisible(false);
+		setIsFullScreenOpen(false);
+		setPool([]);
+		setPoolSourceLabel('');
+		setCurrentIndex(0);
+		setPlayOrder([]);
+		setHistory([]);
+		setPosition(0);
+		setDuration(0);
+		setPlayerError('');
+		setPlayerSessionKey(0);
+		setLoopMode('off');
+	}, []);
 
-  const dismiss = useCallback(() => {
-    if (location.pathname === '/music' && !isFullScreenOpen) {
-      const handled = !window.dispatchEvent(new CustomEvent('asd-player-home-return', {
-        cancelable: true,
-        detail: { resetPlayer },
-      }))
-      if (!handled) resetPlayer()
-      return
-    }
+	const dismiss = useCallback(() => {
+		if (location.pathname === '/music' && !isFullScreenOpen) {
+			const handled = !window.dispatchEvent(new CustomEvent('asd-player-home-return', {
+				cancelable: true,
+				detail: { resetPlayer },
+			}));
+			if (!handled) resetPlayer();
+			return;
+		}
 
-    resetPlayer()
-  }, [isFullScreenOpen, location.pathname, resetPlayer])
+		resetPlayer();
+	}, [isFullScreenOpen, location.pathname, resetPlayer]);
 
-  const value = useMemo(() => ({
-    pool,
-    poolSourceLabel,
-    currentIndex,
-    currentSong,
-    playOrder: playOrder.length ? playOrder : identityOrder(pool),
-    isShuffled,
-    isPlaying,
-    position,
-    duration,
-    history,
-    isWidgetVisible,
-    isFullScreenOpen,
-    playerError,
-    loopMode,
-    playPool,
-    playPause,
-    next,
-    prev,
-    seekTo,
-    toggleShuffle,
-    toggleLoopMode,
-    jumpTo,
-    openFullScreen,
-    closeFullScreen,
-    dismiss,
-  }), [
-    closeFullScreen,
-    currentIndex,
-    currentSong,
-    dismiss,
-    duration,
-    history,
-    isFullScreenOpen,
-    isPlaying,
-    isShuffled,
-    isWidgetVisible,
-    jumpTo,
-    loopMode,
-    next,
-    openFullScreen,
-    playOrder,
-    playPause,
-    playPool,
-    playerError,
-    pool,
-    poolSourceLabel,
-    position,
-    prev,
-    seekTo,
-    toggleLoopMode,
-    toggleShuffle,
-  ])
+	const value = useMemo(() => ({
+		pool,
+		poolSourceLabel,
+		currentIndex,
+		currentSong,
+		playOrder: playOrder.length ? playOrder : identityOrder(pool),
+		isShuffled,
+		isPlaying,
+		position,
+		duration,
+		history,
+		isWidgetVisible,
+		isFullScreenOpen,
+		playerError,
+		loopMode,
+		playPool,
+		playPause,
+		next,
+		prev,
+		seekTo,
+		toggleShuffle,
+		toggleLoopMode,
+		jumpTo,
+		openFullScreen,
+		closeFullScreen,
+		dismiss,
+	}), [
+		closeFullScreen,
+		currentIndex,
+		currentSong,
+		dismiss,
+		duration,
+		history,
+		isFullScreenOpen,
+		isPlaying,
+		isShuffled,
+		isWidgetVisible,
+		jumpTo,
+		loopMode,
+		next,
+		openFullScreen,
+		playOrder,
+		playPause,
+		playPool,
+		playerError,
+		pool,
+		poolSourceLabel,
+		position,
+		prev,
+		seekTo,
+		toggleLoopMode,
+		toggleShuffle,
+	]);
 
-  return (
-    <PlayerContext.Provider value={value}>
-      {children}
-      {currentSong?.soundcloudUrl && (
-        <SoundCloudPlayer
-          ref={soundCloudRef}
-          url={currentSong.soundcloudUrl}
-          hidden
-          isPlaying={isPlaying}
-          autoPlayOnReady={isPlaying}
-          restartToken={playerSessionKey}
-          respondsToGlobalPause={false}
-          onReady={({ duration: nextDuration }) => setDuration(nextDuration || 0)}
-          onPlaybackProgress={({ position: nextPosition, duration: nextDuration }) => {
-            setPosition(nextPosition || 0)
-            if (nextDuration) setDuration(nextDuration)
-          }}
-          onPlaybackEnd={() => next({ fromFinish: true })}
-          onWidgetApiError={() => {
-            setPlayerError("Couldn't load this track")
-            setIsPlaying(false)
-          }}
-        />
-      )}
-      {!isAdminPath && isWidgetVisible && !isFullScreenOpen && pool.length > 0 && <PlayerWidget />}
-      {!isAdminPath && isFullScreenOpen && pool.length > 0 && <PlayerFullScreen />}
-    </PlayerContext.Provider>
-  )
+	return (
+		<PlayerContext.Provider value={value}>
+			{children}
+			{currentSong?.soundcloudUrl && (
+				<SoundCloudPlayer
+					ref={soundCloudRef}
+					url={currentSong.soundcloudUrl}
+					hidden
+					isPlaying={isPlaying}
+					autoPlayOnReady={isPlaying}
+					restartToken={playerSessionKey}
+					respondsToGlobalPause={false}
+					onReady={({ duration: nextDuration }) => setDuration(nextDuration || 0)}
+					onPlaybackProgress={({ position: nextPosition, duration: nextDuration }) => {
+						setPosition(nextPosition || 0);
+						if (nextDuration) setDuration(nextDuration);
+					}}
+					onPlaybackEnd={() => next({ fromFinish: true })}
+					onWidgetApiError={() => {
+						setPlayerError("Couldn't load this track");
+						setIsPlaying(false);
+					}}
+				/>
+			)}
+			{!isAdminPath && isWidgetVisible && !isFullScreenOpen && pool.length > 0 && <PlayerWidget />}
+			{!isAdminPath && isFullScreenOpen && pool.length > 0 && <PlayerFullScreen />}
+		</PlayerContext.Provider>
+	);
 }

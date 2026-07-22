@@ -1,163 +1,163 @@
 .song-info-links-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  font-size: 0.95rem;
-  line-height: 1.75;
-  color: var(--text);
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+	font-size: 0.95rem;
+	line-height: 1.75;
+	color: var(--text);
 }
 
 .song-info-links-block {
-  padding: 26px 0;
-  border-top: 1px solid var(--border);
+	padding: 26px 0;
+	border-top: 1px solid var(--border);
 }
 
 .song-info-links-block:first-child {
-  padding-top: 0;
-  border-top: none;
+	padding-top: 0;
+	border-top: none;
 }
 
 .song-info-links-heading {
-  margin: 0 0 16px;
-  font: inherit;
-  letter-spacing: 0;
-  text-transform: uppercase;
-  color: var(--text);
+	margin: 0 0 16px;
+	font: inherit;
+	letter-spacing: 0;
+	text-transform: uppercase;
+	color: var(--text);
 }
 
 .song-info-links-about {
-  max-width: 640px;
-  margin: 0 0 18px;
-  font: inherit;
-  color: var(--text);
+	max-width: 640px;
+	margin: 0 0 18px;
+	font: inherit;
+	color: var(--text);
 }
 
 .song-info-links-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
 }
 
 .song-info-links-list--people {
-  --song-info-role-label-width: clamp(112px, 18vw, 150px);
-  --song-info-person-card-width: max-content;
-  display: grid;
-  grid-template-columns: var(--song-info-role-label-width) max-content;
-  column-gap: 20px;
-  row-gap: 12px;
-  width: fit-content;
-  max-width: 100%;
-  align-items: start;
+	--song-info-role-label-width: clamp(112px, 18vw, 150px);
+	--song-info-person-card-width: max-content;
+	display: grid;
+	grid-template-columns: var(--song-info-role-label-width) max-content;
+	column-gap: 20px;
+	row-gap: 12px;
+	width: fit-content;
+	max-width: 100%;
+	align-items: start;
 }
 
 .song-info-links-list--people .song-info-links-row {
-  display: contents;
+	display: contents;
 }
 
 .song-info-links-row {
-  display: grid;
-  grid-template-columns: 140px minmax(0, 1fr);
-  column-gap: 20px;
-  align-items: center;
-  font: inherit;
+	display: grid;
+	grid-template-columns: 140px minmax(0, 1fr);
+	column-gap: 20px;
+	align-items: center;
+	font: inherit;
 }
 
 .song-info-links-row--people {
-  align-items: start;
+	align-items: start;
 }
 
 .song-info-links-row--tags {
-  margin-top: 10px;
+	margin-top: 10px;
 }
 
 .song-info-links-label {
-  color: var(--text);
-  text-align: left;
-  white-space: nowrap;
+	color: var(--text);
+	text-align: left;
+	white-space: nowrap;
 }
 
 .song-info-links-value {
-  color: var(--text);
-  min-width: 0;
+	color: var(--text);
+	min-width: 0;
 }
 
 .song-info-links-person-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
-  width: var(--song-info-person-card-width);
-  max-width: 100%;
-  justify-items: stretch;
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 10px;
+	width: var(--song-info-person-card-width);
+	max-width: 100%;
+	justify-items: stretch;
 }
 
 .song-info-links-person-grid .song-person-card {
-  width: 100%;
-  max-width: none;
-  padding-right: 18px;
+	width: 100%;
+	max-width: none;
+	padding-right: 18px;
 }
 
 .song-info-links-person-grid .song-person-card-copy {
-  min-width: max-content;
+	min-width: max-content;
 }
 
 .song-info-links-person-grid .song-person-card-role,
 .song-info-links-person-grid .song-person-card-name {
-  overflow: visible;
-  text-overflow: clip;
+	overflow: visible;
+	text-overflow: clip;
 }
 
 .song-info-links-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 0;
-  min-width: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 0;
+	min-width: 0;
 }
 
 .song-info-links-tag {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  color: var(--text);
-  font: inherit;
-  background: var(--bg-raised);
+	display: inline-flex;
+	align-items: center;
+	min-height: 28px;
+	padding: 0 10px;
+	border: 1px solid var(--border);
+	border-radius: 999px;
+	color: var(--text);
+	font: inherit;
+	background: var(--bg-raised);
 }
 
 @media (max-width: 640px) {
-  .song-info-links-block {
-    padding: 22px 0;
-  }
+	.song-info-links-block {
+		padding: 22px 0;
+	}
 
-  .song-info-links-row {
-    grid-template-columns: 1fr;
-    row-gap: 8px;
-    column-gap: 14px;
-  }
+	.song-info-links-row {
+		grid-template-columns: 1fr;
+		row-gap: 8px;
+		column-gap: 14px;
+	}
 
-  .song-info-links-list--people {
-    --song-info-role-label-width: 100%;
-    grid-template-columns: minmax(0, 1fr);
-    width: 100%;
-    max-width: none;
-  }
+	.song-info-links-list--people {
+		--song-info-role-label-width: 100%;
+		grid-template-columns: minmax(0, 1fr);
+		width: 100%;
+		max-width: none;
+	}
 
-  .song-info-links-list--people .song-info-links-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-  }
+	.song-info-links-list--people .song-info-links-row {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+	}
 
-  .song-info-links-person-grid {
-    grid-template-columns: minmax(0, 1fr);
-    width: var(--song-info-person-card-width);
-    max-width: calc(100% - clamp(16px, 6vw, 28px));
-    margin-left: clamp(16px, 6vw, 28px);
-  }
+	.song-info-links-person-grid {
+		grid-template-columns: minmax(0, 1fr);
+		width: var(--song-info-person-card-width);
+		max-width: calc(100% - clamp(16px, 6vw, 28px));
+		margin-left: clamp(16px, 6vw, 28px);
+	}
 
-  .song-info-links-label {
-    white-space: normal;
-  }
+	.song-info-links-label {
+		white-space: normal;
+	}
 }

@@ -901,6 +901,7 @@
 }
 
 @keyframes fashion-home-scroll-cue-bounce {
+
 	0%,
 	100% {
 		transform: translateX(-50%) translateY(-4px);
@@ -1792,7 +1793,7 @@ a.fashion-piece-credit-mini-card:focus-visible .fashion-piece-credit-mini-image 
 		padding: 48px 20px;
 	}
 
-	.fashion-home-showcase-grid > :nth-child(n + 3) {
+	.fashion-home-showcase-grid> :nth-child(n + 3) {
 		display: none;
 	}
 

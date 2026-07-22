@@ -1,128 +1,143 @@
 .board-drag-hint {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 200;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(4px);
-  color: #888;
-  font-size: 11px;
-  letter-spacing: 1px;
-  padding: 8px 18px;
-  border-radius: 20px;
-  border: 1px solid #2a2a2a;
-  pointer-events: none;
-  animation: boardHintFade 1s ease 4s forwards;
+	position: fixed;
+	bottom: 24px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 200;
+	background: rgba(0, 0, 0, 0.65);
+	backdrop-filter: blur(4px);
+	color: #888;
+	font-size: 11px;
+	letter-spacing: 1px;
+	padding: 8px 18px;
+	border-radius: 20px;
+	border: 1px solid #2a2a2a;
+	pointer-events: none;
+	animation: boardHintFade 1s ease 4s forwards;
 }
 
 @keyframes boardHintFade {
-  to { opacity: 0; }
+	to {
+		opacity: 0;
+	}
 }
 
 .board-edit-fab {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 200;
-  background: #1a1008;
-  border: 1px solid #c8a96e;
-  color: #c8a96e;
-  padding: 10px 18px;
-  border-radius: 6px;
-  font-size: 12px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background 0.2s;
+	position: fixed;
+	bottom: 24px;
+	right: 24px;
+	z-index: 200;
+	background: #1a1008;
+	border: 1px solid #c8a96e;
+	color: #c8a96e;
+	padding: 10px 18px;
+	border-radius: 6px;
+	font-size: 12px;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: background 0.2s;
 }
 
-.board-edit-fab:hover { background: #2a2010; }
-.board-edit-fab-active { background: #c8a96e; color: #1a1008; }
-.board-edit-fab-active:hover { background: #b89860; }
+.board-edit-fab:hover {
+	background: #2a2010;
+}
+
+.board-edit-fab-active {
+	background: #c8a96e;
+	color: #1a1008;
+}
+
+.board-edit-fab-active:hover {
+	background: #b89860;
+}
 
 /* When stacked above the "Return to Public View" button */
-.board-edit-fab-stacked { bottom: 72px; }
+.board-edit-fab-stacked {
+	bottom: 72px;
+}
 
 @media (max-width: 640px) {
-  .board-edit-fab-stacked { bottom: 64px; }
+	.board-edit-fab-stacked {
+		bottom: 64px;
+	}
 }
 
 body:has(.board-viewport) {
-  background-color: #1e1208;
+	background-color: #1e1208;
 }
 
 .board-instructions {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 200;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(4px);
-  color: #666;
-  font-size: 11px;
-  letter-spacing: 1px;
-  padding: 8px 18px;
-  border-radius: 20px;
-  border: 1px solid #2a2a2a;
-  pointer-events: none;
-  white-space: nowrap;
+	position: fixed;
+	bottom: 24px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 200;
+	background: rgba(0, 0, 0, 0.65);
+	backdrop-filter: blur(4px);
+	color: #666;
+	font-size: 11px;
+	letter-spacing: 1px;
+	padding: 8px 18px;
+	border-radius: 20px;
+	border: 1px solid #2a2a2a;
+	pointer-events: none;
+	white-space: nowrap;
 }
 
 .board-context-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 300;
+	position: fixed;
+	inset: 0;
+	z-index: 300;
 }
 
 .board-context-menu {
-  position: fixed;
-  z-index: 301;
-  background: #1a1008;
-  border: 1px solid #3a2a14;
-  border-radius: 6px;
-  overflow: hidden;
-  min-width: 160px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+	position: fixed;
+	z-index: 301;
+	background: #1a1008;
+	border: 1px solid #3a2a14;
+	border-radius: 6px;
+	overflow: hidden;
+	min-width: 160px;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
 }
 
 .board-context-item {
-  display: block;
-  width: 100%;
-  padding: 9px 14px;
-  text-align: left;
-  background: none;
-  border: none;
-  border-top: 1px solid #2a1e0a;
-  color: #c8a96e;
-  font-size: 12px;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  transition: background 0.15s;
+	display: block;
+	width: 100%;
+	padding: 9px 14px;
+	text-align: left;
+	background: none;
+	border: none;
+	border-top: 1px solid #2a1e0a;
+	color: #c8a96e;
+	font-size: 12px;
+	letter-spacing: 0.5px;
+	cursor: pointer;
+	transition: background 0.15s;
 }
 
 .board-context-item:first-child {
-  border-top: none;
+	border-top: none;
 }
 
 .board-context-item:hover {
-  background: #2a2010;
+	background: #2a2010;
 }
 
 @media (max-width: 640px) {
-  .board-drag-hint {
-    bottom: 18px;
-    width: calc(100vw - 32px);
-    padding: 8px 12px;
-    font-size: 10px;
-    text-align: center;
-  }
+	.board-drag-hint {
+		bottom: 18px;
+		width: calc(100vw - 32px);
+		padding: 8px 12px;
+		font-size: 10px;
+		text-align: center;
+	}
 
-  .board-edit-fab {
-    right: 16px;
-    bottom: 16px;
-    padding: 10px 14px;
-    font-size: 11px;
-  }
+	.board-edit-fab {
+		right: 16px;
+		bottom: 16px;
+		padding: 10px 14px;
+		font-size: 11px;
+	}
 }

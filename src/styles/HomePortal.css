@@ -89,7 +89,7 @@
 	padding: clamp(34px, 5vw, 70px) clamp(24px, 5vw, 72px);
 }
 
-.portal-band-section + .portal-band-section {
+.portal-band-section+.portal-band-section {
 	border-left: 1px solid rgba(242, 234, 220, 0.12);
 }
 
@@ -161,9 +161,7 @@
 		0 2px 5px rgba(0, 0, 0, 0.36);
 	overflow: hidden;
 	transform:
-		translateX(calc(-50% + ((var(--portal-board-post-index) - 1) * 54px)))
-		translateY(calc(var(--portal-board-post-index) * 14px))
-		rotate(calc((var(--portal-board-post-index) - 1) * 9deg));
+		translateX(calc(-50% + ((var(--portal-board-post-index) - 1) * 54px))) translateY(calc(var(--portal-board-post-index) * 14px)) rotate(calc((var(--portal-board-post-index) - 1) * 9deg));
 }
 
 .portal-board-post::before {
@@ -886,7 +884,7 @@
 		padding: 34px clamp(20px, 6vw, 48px);
 	}
 
-	.portal-band-section + .portal-band-section {
+	.portal-band-section+.portal-band-section {
 		border-top: 1px solid rgba(242, 234, 220, 0.12);
 		border-left: 0;
 	}

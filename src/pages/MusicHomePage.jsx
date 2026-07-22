@@ -210,7 +210,7 @@ function HomeShuffleIpod() {
 	useEffect(() => {
 		const idleId = scheduleIdleWork(() => {
 			void preloadSoundCloudWidgetApi();
-			void prefetchPlayerPool('/api/player-pool?type=sitewide', { maxAge: 30 * 1000, artworkLimit: 8 }).catch(() => {});
+			void prefetchPlayerPool('/api/player-pool?type=sitewide', { maxAge: 30 * 1000, artworkLimit: 8 }).catch(() => { });
 		}, { timeout: 1800 });
 
 		return () => cancelIdleWork(idleId);
@@ -295,7 +295,7 @@ function HomeShuffleIpod() {
 			<PlayerIpod
 				className={`home-ipod-player ${isLaunching ? 'home-ipod-player-launching' : ''}`.trim()}
 				isPlaying={isLoading || isPlaying}
-				onClose={() => {}}
+				onClose={() => { }}
 				onHubClick={handlePlay}
 				onMenu={handlePlay}
 				onNext={handlePlay}

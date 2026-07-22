@@ -1,144 +1,144 @@
 .side-rails {
-  display: none;
-  view-transition-name: side-rails;
+	display: none;
+	view-transition-name: side-rails;
 }
 
 .side-rails-rail {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  width: 140px;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	width: 140px;
+	pointer-events: none;
+	z-index: 0;
+	overflow: hidden;
 }
 
 .side-rails-rail-left {
-  left: 0;
+	left: 0;
 }
 
 .side-rails-rail-right {
-  right: 0;
+	right: 0;
 }
 
 .side-rails-column {
-  display: flex;
-  flex-direction: column;
-  gap: 3rem;
-  align-items: center;
-  min-height: 100%;
-  user-select: none;
+	display: flex;
+	flex-direction: column;
+	gap: 3rem;
+	align-items: center;
+	min-height: 100%;
+	user-select: none;
 }
 
 .side-rails-column span {
-  font-family: var(--font-body);
-  color: rgba(200, 169, 110, 0.2);
-  text-transform: uppercase;
-  white-space: nowrap;
+	font-family: var(--font-body);
+	color: rgba(200, 169, 110, 0.2);
+	text-transform: uppercase;
+	white-space: nowrap;
 }
 
 .side-rails-text {
-  position: relative;
-  isolation: isolate;
+	position: relative;
+	isolation: isolate;
 }
 
 .side-rails-text::before {
-  content: attr(data-text);
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  color: rgba(206, 178, 132, 0.92);
-  font-family: 'DiskoFill', 'Disko', Georgia, serif;
-  -webkit-text-fill-color: rgba(206, 178, 132, 0.92);
+	content: attr(data-text);
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	color: rgba(206, 178, 132, 0.92);
+	font-family: 'DiskoFill', 'Disko', Georgia, serif;
+	-webkit-text-fill-color: rgba(206, 178, 132, 0.92);
 }
 
 .side-rails-text-outline {
-  position: relative;
-  z-index: 1;
-  color: inherit;
+	position: relative;
+	z-index: 1;
+	color: inherit;
 }
 
 .side-rails-column-left {
-  justify-content: flex-start;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
+	justify-content: flex-start;
+	writing-mode: vertical-rl;
+	transform: rotate(180deg);
 }
 
 .side-rails-column-left span {
-  font-size: 5rem;
-  letter-spacing: 0.2em;
-  color: rgba(176, 136, 78, 0.94);
+	font-size: 5rem;
+	letter-spacing: 0.2em;
+	color: rgba(176, 136, 78, 0.94);
 }
 
 .side-rails-right-stack {
-  position: relative;
-  width: 100%;
-  min-height: 100%;
+	position: relative;
+	width: 100%;
+	min-height: 100%;
 }
 
 .side-rails-rail-right .side-rails-column-right {
-  position: absolute;
-  inset: 0;
+	position: absolute;
+	inset: 0;
 }
 
 .side-rails-column-right {
-  justify-content: flex-start;
-  writing-mode: vertical-rl;
-  transform: rotate(0deg);
-  will-change: transform, opacity;
+	justify-content: flex-start;
+	writing-mode: vertical-rl;
+	transform: rotate(0deg);
+	will-change: transform, opacity;
 }
 
 .side-rails-column-right span {
-  font-size: 3.5rem;
-  letter-spacing: 0.12em;
-  color: rgba(162, 122, 66, 0.95);
+	font-size: 3.5rem;
+	letter-spacing: 0.12em;
+	color: rgba(162, 122, 66, 0.95);
 }
 
 .side-rails-column-right-enter {
-  animation: side-rails-artists-enter 760ms cubic-bezier(0.2, 0.72, 0.18, 1) both;
+	animation: side-rails-artists-enter 760ms cubic-bezier(0.2, 0.72, 0.18, 1) both;
 }
 
 .side-rails-column-right-exit {
-  animation: side-rails-artists-exit 760ms cubic-bezier(0.2, 0.72, 0.18, 1) both;
+	animation: side-rails-artists-exit 760ms cubic-bezier(0.2, 0.72, 0.18, 1) both;
 }
 
 @media (min-width: 1600px) {
-  .side-rails {
-    display: flex;
-    transition: opacity 0.5s ease;
-  }
+	.side-rails {
+		display: flex;
+		transition: opacity 0.5s ease;
+	}
 
-  .side-rails-hiding {
-    opacity: 0;
-  }
+	.side-rails-hiding {
+		opacity: 0;
+	}
 }
 
 @starting-style {
-  .side-rails {
-    opacity: 0;
-  }
+	.side-rails {
+		opacity: 0;
+	}
 }
 
 @keyframes side-rails-artists-enter {
-  from {
-    opacity: 0;
-    transform: translateY(-72px);
-  }
+	from {
+		opacity: 0;
+		transform: translateY(-72px);
+	}
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 @keyframes side-rails-artists-exit {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
+	from {
+		opacity: 1;
+		transform: translateY(0);
+	}
 
-  to {
-    opacity: 0;
-    transform: translateY(72px);
-  }
+	to {
+		opacity: 0;
+		transform: translateY(72px);
+	}
 }

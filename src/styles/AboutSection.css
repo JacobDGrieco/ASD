@@ -1,30 +1,30 @@
 .about-section-section {
-  padding: 40px 0;
-  border-top: 1px solid var(--border);
+	padding: 40px 0;
+	border-top: 1px solid var(--border);
 }
 
 .about-section-heading {
-  font-size: 0.7rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 16px;
+	font-size: 0.7rem;
+	letter-spacing: 0.15em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+	margin-bottom: 16px;
 }
 
 .about-section-text {
-  font-family: var(--font-description);
-  font-size: 0.95rem;
-  line-height: 1.9;
-  color: var(--text-muted);
-  max-width: 620px;
+	font-family: var(--font-description);
+	font-size: 0.95rem;
+	line-height: 1.9;
+	color: var(--text-muted);
+	max-width: 620px;
 }
 
 @media (max-width: 640px) {
-  .about-section-section {
-    padding: 28px 0;
-  }
+	.about-section-section {
+		padding: 28px 0;
+	}
 
-  .about-section-text {
-    line-height: 1.75;
-  }
+	.about-section-text {
+		line-height: 1.75;
+	}
 }

@@ -1048,20 +1048,19 @@ export default function AdminSongFormModal({
 			})),
 		}));
 
-	const setAlbumPlacement = (index, key) => (event) =>
-		{
-			const nextValue = key === 'albumId'
-				? event.target.value
-				: event.target.value === '' ? '' : Number(event.target.value);
-			dispatchModal({
-				type: 'set-album-placement',
-				index,
-				fieldName: key,
-				value: nextValue,
-				albumById,
-				visibilityTouched: visibilityTouchedRef.current,
-			});
-		};
+	const setAlbumPlacement = (index, key) => (event) => {
+		const nextValue = key === 'albumId'
+			? event.target.value
+			: event.target.value === '' ? '' : Number(event.target.value);
+		dispatchModal({
+			type: 'set-album-placement',
+			index,
+			fieldName: key,
+			value: nextValue,
+			albumById,
+			visibilityTouched: visibilityTouchedRef.current,
+		});
+	};
 
 	const addAlbumPlacement = () => {
 		dispatchModal({ type: 'add-album-placement' });

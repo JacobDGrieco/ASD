@@ -1,77 +1,77 @@
 .album-details-section {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  padding: 28px 24px 32px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  font-size: 0.95rem;
-  line-height: 1.75;
-  color: var(--text);
+	display: flex;
+	flex-direction: column;
+	gap: 32px;
+	padding: 28px 24px 32px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+	font-size: 0.95rem;
+	line-height: 1.75;
+	color: var(--text);
 }
 
 .album-details-copy,
 .album-details-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
 }
 
 .album-details-heading {
-  font: inherit;
-  letter-spacing: 0;
-  text-transform: uppercase;
-  color: var(--text);
-  margin: 0 0 16px;
+	font: inherit;
+	letter-spacing: 0;
+	text-transform: uppercase;
+	color: var(--text);
+	margin: 0 0 16px;
 }
 
 .album-details-text {
-  font: inherit;
-  color: var(--text);
-  max-width: 640px;
-  margin: 0;
+	font: inherit;
+	color: var(--text);
+	max-width: 640px;
+	margin: 0;
 }
 
 .album-details-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
 }
 
 .album-details-row {
-  display: grid;
-  grid-template-columns: 132px minmax(0, 1fr);
-  column-gap: 20px;
-  align-items: baseline;
-  font: inherit;
+	display: grid;
+	grid-template-columns: 132px minmax(0, 1fr);
+	column-gap: 20px;
+	align-items: baseline;
+	font: inherit;
 }
 
 .album-details-label {
-  color: var(--text);
-  white-space: nowrap;
+	color: var(--text);
+	white-space: nowrap;
 }
 
 .album-details-value {
-  color: var(--text);
-  min-width: 0;
+	color: var(--text);
+	min-width: 0;
 }
 
 .album-details-empty {
-  font: inherit;
-  margin: 0;
-  color: var(--text);
+	font: inherit;
+	margin: 0;
+	color: var(--text);
 }
 
 @media (max-width: 640px) {
-  .album-details-section {
-    padding: 24px 18px 28px;
-  }
+	.album-details-section {
+		padding: 24px 18px 28px;
+	}
 
-  .album-details-row {
-    grid-template-columns: 104px minmax(0, 1fr);
-    column-gap: 14px;
-  }
+	.album-details-row {
+		grid-template-columns: 104px minmax(0, 1fr);
+		column-gap: 14px;
+	}
 
-  .album-details-label {
-    white-space: normal;
-  }
+	.album-details-label {
+		white-space: normal;
+	}
 }
