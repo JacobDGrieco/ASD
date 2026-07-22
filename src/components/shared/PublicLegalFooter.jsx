@@ -13,8 +13,6 @@ const LEGAL_POLICIES = [
 ];
 
 export default function PublicLegalFooter({ variant = 'default' }) {
-	const currentYear = new Date().getFullYear();
-
 	return (
 		<footer className={`public-legal public-legal--${variant}`} aria-label="Site legal">
 			<nav className="public-legal-links" aria-label="Legal links">
@@ -29,7 +27,9 @@ export default function PublicLegalFooter({ variant = 'default' }) {
 					</Link>
 				))}
 			</nav>
-			<p className="public-legal-copy">&copy; {currentYear} A.S.D. | All site content &copy; respective artists | Built by HeadInTheCloudsHaven LLC</p>
+			<p className="public-legal-copy">© {new Date().getFullYear()} A.S.D | All site content © respective creators | Website built by {' '}
+				<a href="https://www.headinthecloudshaven.com">HeadInTheCloudsHaven LLC</a>
+			</p>
 		</footer>
 	);
 }
