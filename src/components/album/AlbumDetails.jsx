@@ -1,3 +1,9 @@
+/**
+ * Public album detail body.
+ *
+ * Displays tracklist, release credits, release links, artwork, and role groups for
+ * one formatted album payload.
+ */
 import { SONG_ROLES, ROLE_DISPLAY_LABELS } from '../../lib/songRoles.js';
 import SongPersonCard from '../song/SongPersonCard.jsx';
 import '../../styles/AlbumDetails.css';

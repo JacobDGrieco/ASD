@@ -1,3 +1,7 @@
+/// Prisma schema for the A.S.D. PostgreSQL database.
+///
+/// The schema is the source of truth for music, fashion, board, admin-account,
+/// lyric, upload metadata, and company/about content models used by the API.
 generator client {
   provider = "prisma-client-js"
 }

@@ -1,3 +1,4 @@
+/* Styles decorative side rails used around public page content. */
 .side-rails {
 	display: none;
 	view-transition-name: side-rails;

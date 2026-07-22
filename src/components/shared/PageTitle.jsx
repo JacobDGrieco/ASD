@@ -1,3 +1,6 @@
+/**
+ * Route helper for updating `document.title` from React-rendered pages.
+ */
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { formatPageTitle } from '../../lib/pageTitle.js';

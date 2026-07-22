@@ -1,3 +1,9 @@
+/**
+ * Music admin artist-management route.
+ *
+ * Handles artist CRUD, artist profile links/images, videos, and account-scoped
+ * editing rules.
+ */
 import { useEffect, useRef, useState } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { TabPanel } from 'primereact/tabview';

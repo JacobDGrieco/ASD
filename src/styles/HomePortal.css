@@ -1,3 +1,4 @@
+/* Styles the root music/fashion portal landing experience. */
 .portal-home {
 	position: relative;
 	min-height: calc(100dvh - var(--nav-height));

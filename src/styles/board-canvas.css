@@ -1,3 +1,4 @@
+/* Styles the Board canvas, viewport, and positioning layer. */
 .board-viewport {
 	position: fixed;
 	inset: 0;

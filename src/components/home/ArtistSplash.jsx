@@ -1,3 +1,9 @@
+/**
+ * Music homepage artist/release splash.
+ *
+ * Drives the animated carousel-like introduction and player handoff for featured
+ * music content.
+ */
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { preloadImage, preloadImages, prefetchArtistPage, prefetchArtistPagesInIdle } from '../../lib/publicPrefetch.js';

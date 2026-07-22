@@ -1,3 +1,8 @@
+/**
+ * Public Board route.
+ *
+ * Fetches visible board posts and renders the pinboard/detail experience.
+ */
 import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi.js';
 import { useAdminAuth } from '../lib/adminAuth.jsx';

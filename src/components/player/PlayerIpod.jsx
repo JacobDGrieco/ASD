@@ -1,3 +1,6 @@
+/**
+ * Visual iPod-style shell for the music homepage/player presentation.
+ */
 import { useEffect, useRef, useState } from 'react';
 import { FaPause, FaPlay, FaStepBackward, FaStepForward } from 'react-icons/fa';
 import '../../styles/Player.css';

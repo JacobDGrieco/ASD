@@ -1,3 +1,6 @@
+/**
+ * Public card for a fashion look in catalogue and collection grids.
+ */
 import { Link } from 'react-router-dom';
 import '../../styles/AlbumCard.css';
 

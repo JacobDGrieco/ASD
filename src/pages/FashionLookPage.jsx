@@ -1,3 +1,8 @@
+/**
+ * Public fashion look detail route.
+ *
+ * Renders one look with gallery images, pieces, collection placement, and credits.
+ */
 import { useParams, Link } from 'react-router-dom';
 import { useMemo, useRef, useState, useEffect, useSyncExternalStore } from 'react';
 import { FaShoppingBag, FaUsers, FaChevronLeft, FaChevronRight } from 'react-icons/fa';

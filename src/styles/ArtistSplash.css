@@ -1,3 +1,4 @@
+/* Styles the music-home artist splash carousel. */
 .artist-splash-splash {
 	position: relative;
 	min-height: calc(100dvh - var(--nav-height));

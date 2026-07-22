@@ -1,3 +1,6 @@
+/**
+ * Interactive board post card for the public/admin board canvas.
+ */
 import { LazyMotion, domAnimation, m, useMotionValue } from 'framer-motion';
 import '../../styles/board-card.css';
 

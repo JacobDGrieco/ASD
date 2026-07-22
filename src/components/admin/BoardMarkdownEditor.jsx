@@ -1,3 +1,9 @@
+/**
+ * Admin markdown editor for Board posts.
+ *
+ * Provides the restricted formatting controls supported by the public board
+ * markdown renderer.
+ */
 import { useId, useRef, useState } from 'react';
 import { upload } from '@vercel/blob/client';
 import DOMPurify from 'dompurify';

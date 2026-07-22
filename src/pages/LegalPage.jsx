@@ -1,3 +1,9 @@
+/**
+ * Public legal-document route.
+ *
+ * Loads static third-party-generated HTML files from `public/legal/` and displays
+ * them inside the site shell.
+ */
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import '../styles/LegalPage.css';
 

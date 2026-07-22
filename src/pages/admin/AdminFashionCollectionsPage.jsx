@@ -1,3 +1,9 @@
+/**
+ * Fashion admin collections route.
+ *
+ * Manages collection metadata, ordered look placement, credits, and loose-look
+ * grouping collections.
+ */
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash, FaPencilAlt } from 'react-icons/fa';

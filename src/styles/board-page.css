@@ -1,3 +1,4 @@
+/* Styles the public/admin Board page shell and drag hints. */
 .board-drag-hint {
 	position: fixed;
 	bottom: 24px;

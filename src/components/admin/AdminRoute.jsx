@@ -1,3 +1,6 @@
+/**
+ * Admin route guards for authenticated, super-admin, and page-access-gated routes.
+ */
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 

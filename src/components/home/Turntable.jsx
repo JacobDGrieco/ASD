@@ -1,3 +1,8 @@
+/**
+ * Music-home turntable display.
+ *
+ * Connects visual playback state to the SoundCloud-backed player surface.
+ */
 import SoundCloudPlayer from '../shared/SoundCloudPlayer.jsx';
 import '../../styles/Turntable.css';
 

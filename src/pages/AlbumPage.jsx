@@ -1,3 +1,8 @@
+/**
+ * Public album detail route.
+ *
+ * Loads one album/release with tracks, credits, release links, and player context.
+ */
 import { useParams } from 'react-router-dom';
 import { useMemo } from 'react';
 import { TabPanel } from 'primereact/tabview';

@@ -1,3 +1,4 @@
+/* Styles the shared public navigation bar and mobile menu. */
 .nav-nav {
 	--nav-pad-block: 8px;
 	--nav-pad-inline: clamp(18px, 4vw, 40px);

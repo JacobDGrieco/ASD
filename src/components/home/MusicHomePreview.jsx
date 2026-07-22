@@ -1,3 +1,8 @@
+/**
+ * Portal preview panel for the music section.
+ *
+ * Fetches lightweight public music data shown before entering `/music`.
+ */
 import { useApi } from '../../hooks/useApi.js';
 import musicStageBackdrop from '../../assets/music-tour-stage-backdrop.png';
 import '../../styles/ArtistSplash.css';

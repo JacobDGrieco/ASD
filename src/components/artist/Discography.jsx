@@ -1,3 +1,8 @@
+/**
+ * Public artist discography section.
+ *
+ * Groups and renders an artist's releases with responsive carousel/list behavior.
+ */
 import { Fragment, useEffect, useRef, useState } from 'react';
 import AlbumCard from './AlbumCard.jsx';
 import TrackList from './TrackList.jsx';

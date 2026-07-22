@@ -1,3 +1,9 @@
+/**
+ * Public Spotify embed wrapper.
+ *
+ * Builds an iframe URL from Spotify release/profile links and keeps embed sizing
+ * consistent across song, album, and artist surfaces.
+ */
 import { useMemo } from 'react';
 
 const EMBED_HEIGHT_BY_TYPE = {

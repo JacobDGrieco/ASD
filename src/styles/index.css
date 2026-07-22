@@ -1,3 +1,4 @@
+/* Global font declarations, reset rules, and site-wide design tokens. */
 @font-face {
 	font-family: 'Accessories';
 	src: url('../../fonts/accessories soft.ttf') format('truetype');

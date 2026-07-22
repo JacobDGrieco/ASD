@@ -1,3 +1,8 @@
+/**
+ * Public Crosshair video route.
+ *
+ * Presents synced/manual video entries with filtering and a selected-video player.
+ */
 import { useMemo, useState } from 'react';
 import { FaExternalLinkAlt, FaPlay } from 'react-icons/fa';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';

@@ -1,3 +1,14 @@
+/**
+ * Global SoundCloud-backed player state for public music playback.
+ *
+ * `PlayerProvider` owns the current pool, queue order, shuffle history, loop mode,
+ * widget/fullscreen UI state, SoundCloud iframe control, and prefetching of current
+ * and upcoming song pages. It intentionally pauses on `/admin/*` routes so CMS work
+ * does not keep public playback running in the background.
+ *
+ * The provider is mounted once in `src/App.jsx`; playback controls consume it via
+ * `usePlayer()` from `playerContextCore.jsx`.
+ */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useLocation } from 'react-router-dom';
@@ -24,12 +35,16 @@ function randomPoolIndex(pool) {
 	return Math.floor(Math.random() * pool.length);
 }
 
+// Shuffle order keeps already-played indexes at the front so "previous" can walk
+// through real listener history instead of re-randomizing the queue.
 function buildShuffleOrder(pool, currentIndex, history = []) {
 	const played = new Set([...history, currentIndex]);
 	const remaining = identityOrder(pool).filter((index) => !played.has(index));
 	return [...history, currentIndex, ...shuffled(remaining)];
 }
 
+// Broadcasts a site-wide pause request that embedded media players listen for.
+// The hidden SoundCloud iframe owned here opts out to avoid pausing itself.
 function pauseExternalAudio() {
 	window.dispatchEvent(new Event('asd-player-pause-external-audio'));
 }
@@ -105,6 +120,13 @@ export function PlayerProvider({ children }) {
 		};
 	}, [currentIndex, currentSong?.id, isAdminPath, isWidgetVisible, playOrder, pool]);
 
+	/**
+	 * Starts playback from a server-built player pool.
+	 *
+	 * Returns `false` for empty/invalid pools so buttons can report an empty state.
+	 * `startIndex` is clamped because player-pool responses may come from cached or
+	 * user-controlled contexts, while `shuffle` can choose a random first track.
+	 */
 	const playPool = useCallback((nextPool, { startIndex = null, source = '', shuffle = false } = {}) => {
 		if (!Array.isArray(nextPool) || nextPool.length === 0) return false;
 
@@ -145,6 +167,8 @@ export function PlayerProvider({ children }) {
 	const next = useCallback(({ fromFinish = false } = {}) => {
 		if (!pool.length || currentIndex < 0) return;
 
+		// Loop-one restarts the current SoundCloud embed instead of advancing the
+		// queue when playback ends naturally.
 		if (fromFinish && loopMode === 'one') {
 			soundCloudRef.current?.seekTo(0);
 			setPosition(0);
@@ -175,6 +199,8 @@ export function PlayerProvider({ children }) {
 	const prev = useCallback(() => {
 		if (!pool.length || currentIndex < 0) return;
 
+		// Match common media-player behavior: after a few seconds, "previous" means
+		// restart the current track rather than jump to the previous history item.
 		if (position > 3) {
 			seekTo(0);
 			return;
@@ -246,6 +272,8 @@ export function PlayerProvider({ children }) {
 			return;
 		}
 
+		// CSS in ViewTransitions.css keys off this transient dataset value to choose
+		// open vs. close animations for the full-screen player.
 		const root = document.documentElement;
 		root.dataset.playerTransition = direction;
 
@@ -287,6 +315,8 @@ export function PlayerProvider({ children }) {
 
 	const dismiss = useCallback(() => {
 		if (location.pathname === '/music' && !isFullScreenOpen) {
+			// The music homepage can intercept dismissal to animate the mini player
+			// back into its hero iPod before the shared player state is reset.
 			const handled = !window.dispatchEvent(new CustomEvent('asd-player-home-return', {
 				cancelable: true,
 				detail: { resetPlayer },

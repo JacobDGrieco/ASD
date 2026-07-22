@@ -1,3 +1,6 @@
+/**
+ * Public card for fashion talent list and featured talent sections.
+ */
 import { Link } from 'react-router-dom';
 import '../../styles/AlbumCard.css';
 

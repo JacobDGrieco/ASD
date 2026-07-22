@@ -1,3 +1,8 @@
+/**
+ * Fullscreen-player queue panel.
+ *
+ * Renders the current play order and scrolls the active queue item into view.
+ */
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlayer } from '../../lib/playerContextCore.jsx';
 

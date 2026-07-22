@@ -1,3 +1,9 @@
+/**
+ * Public artist hero component.
+ *
+ * Presents artist imagery, profile links, bio/about content, and image-carousel
+ * state for artist profile pages.
+ */
 import { useEffect, useMemo, useReducer, useRef } from 'react';
 import { PROFILE_LINK_PLATFORM_LABELS, hrefForProfileLink, normalizeProfileLinks } from '../../lib/profileLinks.js';
 import { preloadImage, preloadImages } from '../../lib/publicPrefetch.js';

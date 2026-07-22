@@ -1,3 +1,9 @@
+/**
+ * ESLint flat configuration for project linting.
+ *
+ * Current gaps are documented in the docs pass: JSX parsing, Node globals, and
+ * generated Prisma output need configuration before `npm run lint` can pass.
+ */
 import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';

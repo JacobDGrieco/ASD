@@ -1,3 +1,8 @@
+/**
+ * Public song hero/header component.
+ *
+ * Displays artwork, title, artist/release metadata, and the play action for a song.
+ */
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { prefetchArtistPage } from '../../lib/publicPrefetch.js';

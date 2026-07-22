@@ -1,3 +1,9 @@
+/**
+ * Fashion admin talent-management route.
+ *
+ * Manages internal talent profiles, images, links, agency fields, and account
+ * permissions.
+ */
 import { useEffect, useRef, useState } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { TabPanel } from 'primereact/tabview';

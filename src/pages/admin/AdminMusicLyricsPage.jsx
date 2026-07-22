@@ -1,3 +1,11 @@
+/**
+ * Admin lyrics editor for one song.
+ *
+ * This page coordinates three related editing surfaces: raw lyric text, synced
+ * playback timings, and annotation ranges. Lyrics are saved through
+ * `api/admin/lyrics.js`; annotation creates/updates/deletes are saved through
+ * `api/admin/annotations.js`.
+ */
 import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
 import { TabPanel } from 'primereact/tabview';
@@ -40,6 +48,8 @@ function normalizeLyricLineForSync(line) {
 	return String(line ?? '').trim().replace(/\s+/g, ' ');
 }
 
+// When lyric text changes, keep existing sync timings only for lines we can still
+// match by normalized text. Bracketed cue lines are intentionally not syncable.
 function reconcileSyncedLinesForTextChange(oldText, newText, syncedLines) {
 	if (!Array.isArray(syncedLines) || syncedLines.length === 0) return [];
 
@@ -150,6 +160,8 @@ function createScrollRestorer(element) {
 	};
 }
 
+// Saves the lyric row first so new annotations always have a SongLyric id to
+// reference, then upserts each annotation's ranges through the separate endpoint.
 async function saveLyricsAndAnnotations({
 	isSaving,
 	annotations,

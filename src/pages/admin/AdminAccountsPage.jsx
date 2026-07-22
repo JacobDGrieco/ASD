@@ -1,3 +1,9 @@
+/**
+ * Super-admin account-management route.
+ *
+ * Creates and updates artist/talent admin accounts, page access, active flags, and
+ * password changes.
+ */
 import { Navigate } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { FaEye, FaEyeSlash, FaPencilAlt } from 'react-icons/fa';

@@ -1,3 +1,8 @@
+/**
+ * Admin autocomplete field for music role people.
+ *
+ * Allows selecting existing artists/outside artists or keeping a typed credit name.
+ */
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 

@@ -1,3 +1,9 @@
+/**
+ * Admin login route.
+ *
+ * Posts credentials to the cookie-based admin session endpoint and redirects
+ * authenticated users into the CMS.
+ */
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';

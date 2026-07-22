@@ -1,3 +1,9 @@
+/**
+ * Browser entry point for the React application.
+ *
+ * Mounts routing, global providers from `App`, PrimeReact styles, project CSS,
+ * and Vercel Analytics into the `#root` element defined by `index.html`.
+ */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';

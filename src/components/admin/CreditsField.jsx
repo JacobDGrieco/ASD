@@ -1,3 +1,6 @@
+/**
+ * Shared fashion credits editor for talent, crew, and free-text credit rows.
+ */
 import { useId } from 'react';
 import { FaTrash } from 'react-icons/fa';
 import CrewPickerField from './CrewPickerField.jsx';

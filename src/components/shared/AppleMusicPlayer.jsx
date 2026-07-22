@@ -1,3 +1,6 @@
+/**
+ * Public Apple Music embed wrapper for release/profile links.
+ */
 import { useMemo } from 'react';
 
 function buildAppleMusicEmbedUrl(url) {

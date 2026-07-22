@@ -1,3 +1,4 @@
+/* Styles the shared admin shell, sidebar, topbar, and content area. */
 .admin-layout-layout {
 	display: flex;
 	height: 100vh;

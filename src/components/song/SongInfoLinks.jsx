@@ -1,3 +1,9 @@
+/**
+ * Public song/release-link section.
+ *
+ * Groups streaming, purchase, social, and reference links for display on song
+ * detail pages.
+ */
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import '../../styles/SongInfoLinks.css';
 import { SONG_ROLES, ROLE_DISPLAY_LABELS } from '../../lib/songRoles.js';

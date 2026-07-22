@@ -1,3 +1,9 @@
+/**
+ * Public music landing route.
+ *
+ * Coordinates the animated hero/player handoff, featured release previews, and
+ * prefetching for the broader music section.
+ */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';

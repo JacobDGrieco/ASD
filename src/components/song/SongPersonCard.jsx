@@ -1,3 +1,6 @@
+/**
+ * Small linked credit card for people shown on song/release pages.
+ */
 import { Link } from 'react-router-dom';
 import '../../styles/SongHeader.css';
 

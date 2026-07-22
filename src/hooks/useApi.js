@@ -1,3 +1,14 @@
+/**
+ * Public-data fetch hook with module-level in-memory caching.
+ *
+ * Most public pages use this instead of calling `fetch` directly. It partitions
+ * cache entries for admin preview sessions, because the same `/api/*` URL can
+ * return hidden/unreleased content when the HttpOnly admin cookie is present.
+ *
+ * `refreshAtUtcMidnight` is historical naming: the timer actually uses the
+ * America/New_York release-day boundary from `releaseSchedule.js`, matching the
+ * auto-show-on-release business rule.
+ */
 import { useEffect, useReducer } from 'react';
 import { clearCachedApiEntry, getCachedApiEntry, prefetchApi } from '../lib/apiCache.js';
 import { useAdminAuth } from '../lib/adminAuth.jsx';
@@ -25,6 +36,13 @@ function apiStateReducer(state, action) {
 
 export { prefetchApi };
 
+/**
+ * Fetches JSON from `url`, returning `{ data, loading, error }`.
+ *
+ * `maxAge` controls client memory-cache lifetime; `maxAge: 0` forces a fresh
+ * request. Passing `url: null` disables loading, which keeps conditional pages
+ * from issuing meaningless requests while route params are unavailable.
+ */
 export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = false, headers, cacheKey = url } = {}) {
 	const auth = useAdminAuth();
 	const adminPreview = isAdminPreviewSession(auth?.session, auth?.token);
@@ -74,6 +92,8 @@ export function useApi(url, { maxAge = 5 * 60 * 1000, refreshAtUtcMidnight = fal
 		let timeoutId = null;
 
 		const scheduleRefresh = () => {
+			// Recompute the delay after every refresh so DST and date-boundary changes
+			// are handled by releaseSchedule.js rather than a fixed 24-hour interval.
 			timeoutId = window.setTimeout(() => {
 				clearCachedApiEntry(effectiveCacheKey);
 

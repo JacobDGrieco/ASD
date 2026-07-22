@@ -1,3 +1,6 @@
+/**
+ * Shared admin date input with native-picker affordance where supported.
+ */
 import { useRef } from 'react';
 
 export default function AdminDateInput({

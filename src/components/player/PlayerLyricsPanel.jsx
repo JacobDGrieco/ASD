@@ -1,3 +1,9 @@
+/**
+ * Fullscreen-player lyrics panel.
+ *
+ * Syncs lyric scrolling/highlighting with player position when synced line timing
+ * data is available.
+ */
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useApi } from '../../hooks/useApi.js';
 import { usePlayer } from '../../lib/playerContextCore.jsx';

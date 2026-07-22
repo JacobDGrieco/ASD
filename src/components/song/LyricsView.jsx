@@ -1,3 +1,9 @@
+/**
+ * Public lyrics and annotations renderer.
+ *
+ * Converts stored lyric text, synced lines, and annotation ranges into the
+ * interactive lyric display used by song pages and the player.
+ */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import AnnotationPopup from './AnnotationPopup.jsx';
 import '../../styles/LyricsView.css';

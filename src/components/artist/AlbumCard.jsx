@@ -1,3 +1,6 @@
+/**
+ * Release card used by discography, featured-on, and music preview sections.
+ */
 import { Link } from 'react-router-dom';
 import { PROFILE_LINK_PLATFORM_LABELS, hrefForProfileLink, normalizeProfileLinks } from '../../lib/profileLinks.js';
 import { prefetchSongPage } from '../../lib/publicPrefetch.js';

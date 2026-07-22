@@ -1,3 +1,7 @@
+/**
+ * Artist profile section for releases where the artist appears as a credit rather
+ * than the primary release owner.
+ */
 import AlbumCard from './AlbumCard.jsx';
 import { buildAlbumPath, buildSongPath, isOtherArtist } from '../../lib/publicVisibility.js';
 import '../../styles/Discography.css';

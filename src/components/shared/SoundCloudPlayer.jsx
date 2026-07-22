@@ -1,3 +1,11 @@
+/**
+ * Thin React wrapper around the SoundCloud iframe widget API.
+ *
+ * Used both as visible embeds and as the hidden transport for the global player in
+ * `src/lib/playerContext.jsx`. The wrapper normalizes SoundCloud private-track
+ * URLs, loads the widget script once, reports widget failures, and listens for the
+ * global `asd-player-pause-external-audio` event unless explicitly opted out.
+ */
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
 const WIDGET_SCRIPT_SRC = 'https://w.soundcloud.com/player/api.js';
@@ -30,6 +38,8 @@ function installSoundCloudConsoleFilter() {
 		});
 }
 
+// SoundCloud private links often end with `/s-...`; the widget expects that token
+// as `secret_token`, while share/tracking params can be dropped for stable embeds.
 function soundCloudEmbedUrl(value) {
 	const rawUrl = String(value ?? '').trim();
 	if (!rawUrl) return '';

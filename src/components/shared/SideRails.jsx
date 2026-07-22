@@ -1,3 +1,9 @@
+/**
+ * Decorative side-rail layout component for public pages.
+ *
+ * Measures viewport/content state to keep rail ornaments aligned without
+ * interfering with route content.
+ */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useApi } from '../../hooks/useApi.js';

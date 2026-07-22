@@ -1,3 +1,6 @@
+/**
+ * Decorative animated background layer used by selected public pages.
+ */
 import '../../styles/AuroraBackground.css';
 
 export default function AuroraBackground() {

@@ -1,3 +1,9 @@
+/**
+ * Icon mapper for profile/release link platforms.
+ *
+ * Keeps platform-name to icon selection centralized for public and admin link
+ * displays.
+ */
 import {
 	SiApplemusic,
 	SiAudiomack,

@@ -1,3 +1,9 @@
+/**
+ * Public company-profile hook used by shared footer/about surfaces.
+ *
+ * Wraps `useApi` around the `/api/public?resource=about` payload so consumers can
+ * read the singleton profile and member list without duplicating endpoint details.
+ */
 import { useApi } from './useApi.js';
 import { COMPANY_LEADERS, COMPANY_SUMMARY } from '../lib/companyProfile.js';
 

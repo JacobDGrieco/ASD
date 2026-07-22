@@ -1,3 +1,6 @@
+/**
+ * Admin autocomplete field for reusable fashion crew/outside-talent credits.
+ */
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 

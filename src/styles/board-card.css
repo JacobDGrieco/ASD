@@ -1,3 +1,4 @@
+/* Styles Board post cards and their interaction states. */
 .board-card {
 	position: absolute;
 	cursor: pointer;

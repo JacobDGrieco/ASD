@@ -1,3 +1,9 @@
+/**
+ * Board layout canvas.
+ *
+ * Positions board cards using saved or generated coordinates and reports canvas
+ * measurements to drag/reposition behavior.
+ */
 import { useRef, useEffect } from 'react';
 import { LazyMotion, domAnimation, m, useMotionValue } from 'framer-motion';
 import '../../styles/board-canvas.css';

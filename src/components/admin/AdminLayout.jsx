@@ -1,3 +1,9 @@
+/**
+ * Shared admin shell.
+ *
+ * Renders CMS navigation, logout controls, responsive sidebar state, and nested
+ * admin route content.
+ */
 import { useEffect, useState } from 'react';
 import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import { FaBars, FaBullseye, FaBullhorn, FaChevronDown, FaChevronLeft, FaChevronRight, FaCompactDisc, FaInfoCircle, FaMicrophoneAlt, FaMusic, FaSignOutAlt, FaTimes, FaUserFriends, FaUserShield, FaRecordVinyl, FaTshirt, FaUsers } from 'react-icons/fa';

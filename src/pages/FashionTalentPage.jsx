@@ -1,3 +1,8 @@
+/**
+ * Public fashion talent index route.
+ *
+ * Lists visible talent profiles and links into individual talent pages.
+ */
 import { useApi } from '../hooks/useApi.js';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import TalentCard from '../components/fashion/TalentCard.jsx';

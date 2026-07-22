@@ -1,3 +1,6 @@
+/**
+ * Shared tab-strip component for compact public page navigation.
+ */
 import { useState } from 'react';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { TabView } from 'primereact/tabview';

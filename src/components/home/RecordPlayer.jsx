@@ -1,3 +1,8 @@
+/**
+ * Public record-player preview component.
+ *
+ * Loads active record-player slots and exposes play actions for featured songs.
+ */
 import { useEffect, useState } from 'react';
 import Turntable from './Turntable.jsx';
 import VinylRack from './VinylRack.jsx';

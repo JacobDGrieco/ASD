@@ -1,3 +1,6 @@
+/**
+ * Responsive catalogue grid for fashion collections and loose groupings.
+ */
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import CollectionCard from './CollectionCard.jsx';

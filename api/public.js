@@ -1,3 +1,18 @@
+/**
+ * Public read API for the site, routed by `vercel.json` rewrites into a single
+ * Vercel Function with a `resource` query parameter.
+ *
+ * This module is the read-side boundary between public React pages and Prisma. It
+ * applies release visibility, admin-preview inclusion, reserved-artist filtering,
+ * legacy image/link normalization, music role linking, player-pool assembly, and
+ * fashion catalogue shaping before returning client-facing JSON.
+ *
+ * Public responses deliberately use `Cache-Control: no-store`; browser-side
+ * in-memory caching happens in `src/hooks/useApi.js`. If a valid admin cookie is
+ * present, `publicRequestContext` enables preview access to hidden/unreleased
+ * content, so do not expose fields here unless they are safe for an authenticated
+ * admin preview session.
+ */
 import { prisma } from '../src/lib/prisma.js';
 import { isEffectivelyVisible } from '../src/lib/contentVisibility.js';
 import { clientImage, clientImages, mergeLegacyImages } from '../src/lib/images.js';
@@ -335,6 +350,8 @@ async function buildMusicRoleGroups(roles) {
 	return roleGroups;
 }
 
+// Compilation/various-artist albums are stored under the reserved "Other" artist,
+// but the public site should show the album-specific `otherArtistName` instead.
 function applyPublicArtistName(album) {
 	if (!album?.artist || !isOtherArtist(album.artist) || !album.otherArtistName?.trim()) return album;
 
@@ -428,6 +445,8 @@ function playerSoundcloudUrlForContext(song, releaseDate, now, context) {
 	return officialUrl;
 }
 
+// Sitewide and contextual player pools must be stable enough to feel predictable:
+// newest releases first, then artist/album grouping, then track placement.
 function playerPoolDateValue(value) {
 	if (!value) return Number.MAX_SAFE_INTEGER;
 	const timestamp = new Date(value).getTime();
@@ -518,6 +537,8 @@ function addPlayerPoolItem(poolBySongId, song, placement, now, context) {
 	const item = formatPlayerPoolItem(song, placement, now, context);
 	if (!item) return;
 
+	// A song can appear on multiple albums. Keep the earliest item according to
+	// `comparePlayerPoolItems` so each song appears once in the pool.
 	const existing = poolBySongId.get(item.id);
 	if (!existing || comparePlayerPoolItems(item, existing) < 0) {
 		poolBySongId.set(item.id, item);
@@ -1721,6 +1742,9 @@ async function getFashionCatalogue(res, context) {
 	return res.status(200).json(all);
 }
 
+// Catalogue ordering prefers explicit/effective release dates, with manual order
+// only used when dates are absent. This keeps loose looks and collections sortable
+// together despite their different source models.
 function compareFashionCatalogueItems(left, right) {
 	const leftReleaseValue = left.effectiveReleaseDate ?? left.releaseDate;
 	const rightReleaseValue = right.effectiveReleaseDate ?? right.releaseDate;

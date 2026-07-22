@@ -1,3 +1,4 @@
+/* Styles album and artist track lists. */
 .track-list-list {
 	display: flex;
 	flex-direction: column;

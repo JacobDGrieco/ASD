@@ -1,3 +1,4 @@
+/* Styles public lyrics, synced lines, and annotation interactions. */
 .lyrics-view-lyrics {
 	display: flex;
 	flex-direction: column;

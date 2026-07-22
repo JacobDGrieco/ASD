@@ -1,3 +1,6 @@
+/**
+ * Home/music visual rack of vinyl records.
+ */
 import VinylRecord from './VinylRecord.jsx';
 import '../../styles/VinylRack.css';
 

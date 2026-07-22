@@ -1,3 +1,6 @@
+/**
+ * Shared admin confirmation button for destructive or sensitive actions.
+ */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 

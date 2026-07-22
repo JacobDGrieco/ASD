@@ -1,3 +1,6 @@
+/**
+ * Shared admin token/chip field for free-form list values.
+ */
 import { useState } from 'react';
 
 function normalizeTags(tags) {

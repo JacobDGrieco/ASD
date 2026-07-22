@@ -1,3 +1,8 @@
+/**
+ * Public fashion talent profile route.
+ *
+ * Loads one talent profile, image gallery, links, and featured look credits by slug.
+ */
 import { useParams } from 'react-router-dom';
 import { useMemo } from 'react';
 import { Image } from 'primereact/image';

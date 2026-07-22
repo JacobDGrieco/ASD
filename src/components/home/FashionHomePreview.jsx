@@ -1,3 +1,8 @@
+/**
+ * Portal preview panel for the fashion section.
+ *
+ * Fetches and rotates featured fashion catalogue imagery for the root portal.
+ */
 import { useEffect, useMemo, useState } from 'react';
 import { useApi } from '../../hooks/useApi.js';
 import runwayBackdrop from '../../assets/fashion-runway-backdrop.png';

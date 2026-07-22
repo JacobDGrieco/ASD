@@ -1,3 +1,9 @@
+/**
+ * Admin about-page route.
+ *
+ * Edits the company profile singleton and visible/sorted company member rows shown
+ * on the public about page.
+ */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash, FaPencilAlt } from 'react-icons/fa';

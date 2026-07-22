@@ -1,3 +1,8 @@
+/**
+ * Shared play/pause button for song, album, artist, and record-player contexts.
+ *
+ * Fetches or receives a player pool and delegates playback state to `usePlayer`.
+ */
 import { useCallback, useMemo, useState } from 'react';
 import { FaPlay, FaRandom } from 'react-icons/fa';
 import { prefetchPlayerPool } from '../../lib/publicPrefetch.js';

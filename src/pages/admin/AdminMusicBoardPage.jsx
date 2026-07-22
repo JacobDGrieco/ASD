@@ -1,3 +1,9 @@
+/**
+ * Music admin Board route.
+ *
+ * Manages board post CRUD, markdown content, archive state, publish timing, and
+ * drag-position persistence.
+ */
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { FaArchive, FaThumbtack, FaTrash, FaUndo } from 'react-icons/fa';
 import BoardMarkdownEditor from '../../components/admin/BoardMarkdownEditor.jsx';

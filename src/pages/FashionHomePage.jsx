@@ -1,3 +1,12 @@
+/**
+ * Public fashion landing page.
+ *
+ * Besides rendering public catalogue/talent data, this page exposes a small
+ * admin-preview affordance: authenticated admins can change which image `usage`
+ * is featured for a look by saving the look through `api/admin/fashion?resource=looks`.
+ * That mixed public/admin behavior is intentional in code but still needs product
+ * confirmation before being described as a permanent editorial workflow.
+ */
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
@@ -55,6 +64,8 @@ function getImageKey(image) {
 	return image?.id ?? image?.pathname ?? image?.url ?? '';
 }
 
+// Preserve the full look payload and only adjust the selected image's usage, since
+// the admin look endpoint replaces image collections wholesale when images are sent.
 function buildLookPayloadWithImageUsage(look, imageKey, usage) {
 	return {
 		...look,

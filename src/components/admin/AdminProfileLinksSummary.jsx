@@ -1,3 +1,6 @@
+/**
+ * Read-only summary renderer for normalized profile/release links in admin cards.
+ */
 import { PROFILE_LINK_PLATFORM_LABELS, hrefForProfileLink, normalizeProfileLinks } from '../../lib/profileLinks.js';
 import ProfileLinkIcon from '../shared/ProfileLinkIcon.jsx';
 

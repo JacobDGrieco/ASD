@@ -1,3 +1,9 @@
+/**
+ * Public song placement component.
+ *
+ * Shows the albums/releases where a song appears and preserves track/disc ordering
+ * context from `SongAlbum` placements.
+ */
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import AlbumCard from '../artist/AlbumCard.jsx';
 import TrackList from '../artist/TrackList.jsx';

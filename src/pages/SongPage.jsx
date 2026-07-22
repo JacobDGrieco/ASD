@@ -1,3 +1,9 @@
+/**
+ * Public song detail route.
+ *
+ * Loads song metadata, release links, lyrics, annotations, and player context for
+ * `/songs/:songId`.
+ */
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { TabPanel } from 'primereact/tabview';

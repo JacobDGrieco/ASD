@@ -1,3 +1,8 @@
+/**
+ * Music admin outside-artist route.
+ *
+ * Manages external/freelance music credit people used by album and song roles.
+ */
 import { useEffect, useState } from 'react';
 import { FaExternalLinkAlt } from 'react-icons/fa';
 import AdminEntityCard from '../../components/admin/AdminEntityCard.jsx';

@@ -1,3 +1,4 @@
+/* Styles the music-home turntable and embedded playback presentation. */
 .turntable-wrap {
 	display: flex;
 	flex-direction: column;

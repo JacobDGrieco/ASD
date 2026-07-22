@@ -1,3 +1,9 @@
+/**
+ * Static import smoke check for Vercel API handlers.
+ *
+ * Vercel discovers functions by filesystem convention, so this script imports the
+ * handlers directly to catch syntax/module errors during local validation.
+ */
 import about from '../api/admin/about.js';
 import accounts from '../api/admin/accounts.js';
 import albums from '../api/admin/albums.js';

@@ -1,3 +1,6 @@
+/**
+ * Visual vinyl-record element used by home/music animations.
+ */
 import '../../styles/VinylRecord.css';
 
 export default function VinylRecord({ track, isActive, onClick, imagePriority = 'auto', shouldEagerLoad = false }) {

@@ -1,3 +1,9 @@
+/**
+ * Music admin album-management route.
+ *
+ * Lists and edits releases, including album images, release links, visibility,
+ * roles, and single-release synchronization.
+ */
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { FaEye, FaEyeSlash, FaPencilAlt, FaPlus, FaTrash } from 'react-icons/fa';
 import { TabPanel } from 'primereact/tabview';

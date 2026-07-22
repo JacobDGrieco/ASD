@@ -1,3 +1,8 @@
+/**
+ * Fullscreen global-player surface.
+ *
+ * Combines transport controls, queue, lyrics, and metadata for the active song.
+ */
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';

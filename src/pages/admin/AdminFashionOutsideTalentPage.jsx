@@ -1,3 +1,9 @@
+/**
+ * Fashion admin outside-talent route.
+ *
+ * Manages reusable outside/crew credit people created directly or through
+ * free-text fashion credits.
+ */
 import { useEffect, useState } from 'react';
 import { FaExternalLinkAlt } from 'react-icons/fa';
 import AdminEntityCard from '../../components/admin/AdminEntityCard.jsx';

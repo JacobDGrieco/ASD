@@ -1,3 +1,6 @@
+/**
+ * Public footer with links to the static legal document routes.
+ */
 import { Link } from 'react-router-dom';
 import '../../styles/PublicLegalFooter.css';
 

@@ -1,3 +1,8 @@
+/**
+ * Normalizes song duration input between free-text admin fields and the stored
+ * `MM:SS` string used by the API. Empty input is valid and stored as an empty
+ * string; malformed input returns `null` so callers can show validation errors.
+ */
 const MAX_SONG_DURATION_MINUTES = 99;
 
 function formatSongDuration(minutes, seconds) {

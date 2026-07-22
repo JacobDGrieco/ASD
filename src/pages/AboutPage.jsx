@@ -1,3 +1,8 @@
+/**
+ * Public about route.
+ *
+ * Displays the company profile singleton and visible member rows from the public API.
+ */
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import { useCompanyProfile } from '../hooks/useCompanyProfile.js';
 import { getCompanyMemberImage } from '../lib/companyProfile.js';

@@ -1,3 +1,6 @@
+/**
+ * Admin editor for the ordered pieces that make up a fashion look.
+ */
 import { FaArrowDown, FaArrowUp, FaTrash } from 'react-icons/fa';
 import ImageCollectionField from './ImageCollectionField.jsx';
 import CreditsField from './CreditsField.jsx';

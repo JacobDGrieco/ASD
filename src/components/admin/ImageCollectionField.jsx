@@ -1,3 +1,9 @@
+/**
+ * Shared admin image-collection field.
+ *
+ * Supports local uploads, remote imports, per-image metadata, and usage labels
+ * consumed by public pages.
+ */
 import { useId, useState } from 'react';
 import { upload } from '@vercel/blob/client';
 import { FaLink, FaTrash, FaUpload } from 'react-icons/fa';

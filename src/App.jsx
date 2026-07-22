@@ -1,3 +1,9 @@
+/**
+ * Top-level route map and layout composition for the site.
+ *
+ * This file connects public routes, admin routes, preview-aware public layout,
+ * document-title updates, and the global admin/player providers.
+ */
 import { Suspense, lazy, useEffect, useRef } from 'react';
 import { Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom';
 import Nav from './components/shared/Nav.jsx';

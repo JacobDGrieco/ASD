@@ -1,3 +1,9 @@
+/**
+ * Vite build and local-dev configuration for the React client.
+ *
+ * The dev proxy mirrors the Vercel `/api` boundary so browser pages can call
+ * serverless routes during local development.
+ */
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 

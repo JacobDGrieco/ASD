@@ -1,3 +1,8 @@
+/**
+ * Public artist profile route.
+ *
+ * Loads artist details, videos, discography, featured credits, and player pools.
+ */
 import { useParams } from 'react-router-dom';
 import { useMemo } from 'react';
 import { useApi } from '../hooks/useApi.js';

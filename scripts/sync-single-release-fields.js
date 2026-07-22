@@ -1,3 +1,14 @@
+/**
+ * Manual data repair/synchronization script for release-level links and credits.
+ *
+ * The app treats `SINGLE` albums and their songs as one release, so links and
+ * credit roles should be harmonized between both records. This script recomputes
+ * that shared state, then copies album roles marked `applyToSongs !== false` into
+ * song metadata for non-single releases.
+ *
+ * Run with `--dry-run` first. Without it, this writes Album, Song, and SongMeta
+ * rows in the database selected by `.env.local`/`DATABASE_URL`.
+ */
 import fs from 'node:fs';
 import path from 'node:path';
 import { sortMusicRoleEntries } from '../src/lib/songRoles.js';
@@ -74,6 +85,8 @@ function mergeAlbumRoles(albumRoles, ...songRoleSets) {
 	return sortMusicRoleEntries(merged);
 }
 
+// Song roles do not store the album-editor-only `applyToSongs` flag, so this
+// strips it while preserving person identity and display order.
 function normalizeSongRoles(roles) {
 	const merged = [];
 	const seen = new Set();
@@ -89,6 +102,8 @@ function normalizeSongRoles(roles) {
 	return sortMusicRoleEntries(merged);
 }
 
+// Builds the intended final song-role list after inheriting album roles that the
+// album editor has explicitly allowed to cascade down to songs.
 function copyAlbumRolesToSongRoles(songRoles, albumRoles) {
 	const merged = normalizeSongRoles(songRoles);
 	const seen = new Set(merged.map(roleKey));

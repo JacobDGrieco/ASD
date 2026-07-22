@@ -1,3 +1,6 @@
+/**
+ * Board post detail overlay with sanitized markdown body rendering.
+ */
 import { AnimatePresence, LazyMotion, domAnimation, m } from 'framer-motion';
 import DOMPurify from 'dompurify';
 import { renderBoardBodyMarkdown } from '../../lib/boardMarkdown.js';

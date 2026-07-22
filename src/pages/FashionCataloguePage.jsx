@@ -1,3 +1,8 @@
+/**
+ * Public fashion catalogue route.
+ *
+ * Displays collection and loose-look groupings returned by the public catalogue API.
+ */
 import { useApi } from '../hooks/useApi.js';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';
 import FashionCatalogueGrid from '../components/fashion/FashionCatalogueGrid.jsx';

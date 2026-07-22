@@ -1,3 +1,9 @@
+/**
+ * Music admin Crosshair route.
+ *
+ * Manages manual video entries and triggers YouTube channel sync for public video
+ * playback.
+ */
 import { useEffect, useMemo, useState } from 'react';
 import { FaExternalLinkAlt, FaEye, FaEyeSlash, FaPencilAlt, FaPlus, FaSyncAlt } from 'react-icons/fa';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';

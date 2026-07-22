@@ -1,3 +1,11 @@
+/**
+ * Development seed data for local/demo databases.
+ *
+ * This script clears the main content tables, then creates placeholder music and
+ * fashion records using Picsum images. It is configured as Prisma's seed command
+ * in `package.json`, so run it only against disposable/local databases unless the
+ * destructive reset behavior is intentionally desired.
+ */
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();

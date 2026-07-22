@@ -1,3 +1,4 @@
+/* Styles the reusable vinyl-record visual element. */
 .vinyl-record-record {
 	width: var(--vinyl-record-size, 114px);
 	height: var(--vinyl-record-size, 114px);

@@ -1,3 +1,8 @@
+/**
+ * Music admin record-player route.
+ *
+ * Manages the fixed public record-player slots and their associated song picks.
+ */
 import { useEffect, useState } from 'react';
 import { useAdminAuth } from '../../lib/adminAuth.jsx';
 import { loadAdminResource, primeAdminResource } from '../../lib/adminResourceCache.js';

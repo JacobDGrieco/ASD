@@ -1,3 +1,4 @@
+/* Styles public album detail sections and release metadata. */
 .album-details-section {
 	display: flex;
 	flex-direction: column;

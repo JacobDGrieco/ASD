@@ -1,3 +1,4 @@
+/* Defines route/player view-transition animations and reduced-motion fallbacks. */
 @media (prefers-reduced-motion: no-preference) {
 
 	/* Old root (dark portal panel background) disappears instantly */

@@ -1,3 +1,6 @@
+/**
+ * Reusable public artwork/gallery viewer for image collections.
+ */
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Image } from 'primereact/image';

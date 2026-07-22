@@ -1,3 +1,11 @@
+/**
+ * Song create/edit modal used by the music admin.
+ *
+ * The modal owns the client-side form state for song details, release links,
+ * album placements, images, roles, private SoundCloud URLs, and validation. The
+ * submitted payload matches `api/admin/songs.js`, where placements, role linking,
+ * single-release sync, visibility, and image persistence are enforced again.
+ */
 import { useEffect, useId, useMemo, useReducer, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { TabPanel } from 'primereact/tabview';
@@ -112,6 +120,8 @@ function shouldShowPrivateSoundcloudField(form, albumById) {
 	return Boolean(releaseDate) && !isReleasedOnUtcDay(releaseDate);
 }
 
+// Album pickers are ordered by release recency first because admins most often add
+// songs to current releases; title/artist/id only break same-date ties.
 function compareAlbumOptions(left, right) {
 	const leftDate = normalizeSongReleaseDate(left.releaseDate);
 	const rightDate = normalizeSongReleaseDate(right.releaseDate);

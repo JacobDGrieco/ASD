@@ -1,3 +1,9 @@
+/**
+ * Public portal route for choosing between music and fashion sections.
+ *
+ * Handles the entrance interaction, hover/keyboard focus previews, and prefetching
+ * for the two main verticals.
+ */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';

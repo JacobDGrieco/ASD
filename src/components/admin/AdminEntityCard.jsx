@@ -1,3 +1,6 @@
+/**
+ * Shared admin list card for editable content entities.
+ */
 import { FaPencilAlt, FaUser } from 'react-icons/fa';
 import AdminProfileLinksSummary from './AdminProfileLinksSummary.jsx';
 

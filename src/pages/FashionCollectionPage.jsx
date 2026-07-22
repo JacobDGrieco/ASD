@@ -1,3 +1,8 @@
+/**
+ * Public fashion collection detail route.
+ *
+ * Shows a collection or loose-look grouping with its ordered looks and credits.
+ */
 import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { TabPanel } from 'primereact/tabview';

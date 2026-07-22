@@ -1,3 +1,6 @@
+/**
+ * Compact global-player widget shown over public music pages.
+ */
 import { usePlayer } from '../../lib/playerContextCore.jsx';
 import PlayerIpod from './PlayerIpod.jsx';
 

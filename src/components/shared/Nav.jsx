@@ -1,3 +1,9 @@
+/**
+ * Shared public navigation shell.
+ *
+ * Handles section-aware links, mobile menu state, and admin-preview affordances in
+ * public layouts.
+ */
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { FaBullhorn, FaChevronDown, FaCompactDisc, FaHome, FaInfoCircle, FaMusic, FaTshirt, FaUserFriends } from 'react-icons/fa';

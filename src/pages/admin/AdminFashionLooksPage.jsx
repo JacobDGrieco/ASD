@@ -1,3 +1,9 @@
+/**
+ * Fashion admin looks route.
+ *
+ * Manages look images, pieces, credits, collection placement, and talent-scoped
+ * ownership rules.
+ */
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash, FaPencilAlt, FaTrash } from 'react-icons/fa';

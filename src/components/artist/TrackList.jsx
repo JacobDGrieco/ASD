@@ -1,3 +1,8 @@
+/**
+ * Public track list component for album/release pages.
+ *
+ * Handles song navigation and play actions while preserving album placement order.
+ */
 import { Link, useNavigate } from 'react-router-dom';
 import PlayButton from '../player/PlayButton.jsx';
 import { prefetchSongPage } from '../../lib/publicPrefetch.js';

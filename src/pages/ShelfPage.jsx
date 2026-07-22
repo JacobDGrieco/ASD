@@ -1,3 +1,8 @@
+/**
+ * Public music shelf route.
+ *
+ * Displays released/previewable albums and singles as a browsable music library.
+ */
 import { useMemo } from 'react';
 import AlbumCard from '../components/artist/AlbumCard.jsx';
 import AuroraBackground from '../components/shared/AuroraBackground.jsx';

@@ -1,3 +1,6 @@
+/**
+ * Reusable admin editor for structured profile/release links.
+ */
 import { FaPlus, FaTrash } from 'react-icons/fa';
 import {
 	PROFILE_LINK_PLATFORM_LABELS,

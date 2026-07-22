@@ -1,3 +1,9 @@
+/**
+ * Music admin song-management route.
+ *
+ * Lists, filters, creates, edits, and deletes songs while coordinating the shared
+ * song form modal and artist-scoped permissions.
+ */
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaArrowLeft, FaArrowRight, FaPencilAlt, FaStickyNote } from 'react-icons/fa';
