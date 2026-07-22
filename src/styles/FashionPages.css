@@ -51,16 +51,16 @@
 	gap: 16px;
 }
 
-.fashion-talent-grid .album-card-card {
+.fashion-talent-grid .content-card-card {
 	width: 240px;
 }
 
-.fashion-talent-grid .album-card-cover-wrap {
+.fashion-talent-grid .content-card-cover-wrap {
 	width: 220px;
 	height: 220px;
 }
 
-.fashion-talent-grid .album-card-title {
+.fashion-talent-grid .content-card-title {
 	max-width: 220px;
 }
 
@@ -724,33 +724,33 @@
 	padding-top: 8px;
 }
 
-.fashion-home-showcase-grid .album-card-card {
+.fashion-home-showcase-grid .content-card-card {
 	width: 100%;
 	min-width: 0;
 	background: rgba(10, 10, 10, 0.24);
 }
 
-.fashion-home-showcase-grid .album-card-primary-action {
+.fashion-home-showcase-grid .content-card-primary-action {
 	width: 100%;
 }
 
-.fashion-home-showcase-grid .album-card-cover-wrap {
+.fashion-home-showcase-grid .content-card-cover-wrap {
 	width: 100%;
 	height: auto;
 	aspect-ratio: 1 / 1;
 }
 
-.fashion-home-showcase-grid .album-card-info {
+.fashion-home-showcase-grid .content-card-info {
 	width: 100%;
 	min-width: 0;
 }
 
-.fashion-home-showcase-grid .album-card-title,
-.fashion-home-showcase-grid .album-card-meta {
+.fashion-home-showcase-grid .content-card-title,
+.fashion-home-showcase-grid .content-card-meta {
 	max-width: 100%;
 }
 
-.fashion-home-showcase-grid .album-card-title {
+.fashion-home-showcase-grid .content-card-title {
 	display: -webkit-box;
 	width: 100%;
 	overflow: hidden;
@@ -764,7 +764,7 @@
 	min-height: 2.3em;
 }
 
-.fashion-home-showcase-grid .album-card-meta {
+.fashion-home-showcase-grid .content-card-meta {
 	display: block;
 	width: 100%;
 	overflow: hidden;
@@ -1910,11 +1910,11 @@ a.fashion-piece-credit-mini-card:focus-visible .fashion-piece-credit-mini-image 
 	gap: 16px;
 }
 
-.fashion-catalogue-grid .album-card-card {
+.fashion-catalogue-grid .content-card-card {
 	width: 240px;
 }
 
-.fashion-catalogue-grid .album-card-cover-wrap {
+.fashion-catalogue-grid .content-card-cover-wrap {
 	width: 220px;
 	height: 220px;
 }
@@ -2018,11 +2018,11 @@ a.fashion-piece-credit-mini-card:focus-visible .fashion-piece-credit-mini-image 
 	gap: 16px;
 }
 
-.fashion-catalogue-expand-grid .album-card-card {
+.fashion-catalogue-expand-grid .content-card-card {
 	width: 200px;
 }
 
-.fashion-catalogue-expand-grid .album-card-cover-wrap {
+.fashion-catalogue-expand-grid .content-card-cover-wrap {
 	width: 180px;
 	height: 180px;
 }
@@ -2035,32 +2035,32 @@ a.fashion-piece-credit-mini-card:focus-visible .fashion-piece-credit-mini-image 
 		justify-items: stretch;
 	}
 
-	.fashion-catalogue-grid .album-card-card {
+	.fashion-catalogue-grid .content-card-card {
 		width: 100%;
 		max-width: 156px;
 		padding: 8px;
 		justify-self: center;
 	}
 
-	.fashion-catalogue-grid .album-card-primary-action,
-	.fashion-catalogue-grid .album-card-info {
+	.fashion-catalogue-grid .content-card-primary-action,
+	.fashion-catalogue-grid .content-card-info {
 		width: 100%;
 		min-width: 0;
 	}
 
-	.fashion-catalogue-grid .album-card-cover-wrap {
+	.fashion-catalogue-grid .content-card-cover-wrap {
 		width: 100%;
 		height: auto;
 		aspect-ratio: 1;
 	}
 
-	.fashion-catalogue-grid .album-card-title {
+	.fashion-catalogue-grid .content-card-title {
 		max-width: 100%;
 		font-size: 0.9rem;
 		letter-spacing: 0.04rem;
 	}
 
-	.fashion-catalogue-grid .album-card-meta {
+	.fashion-catalogue-grid .content-card-meta {
 		max-width: 100%;
 		overflow: hidden;
 		font-size: 0.74rem;
@@ -2079,7 +2079,7 @@ a.fashion-piece-credit-mini-card:focus-visible .fashion-piece-credit-mini-image 
 		justify-items: stretch;
 	}
 
-	.fashion-catalogue-expand-grid .album-card-card {
+	.fashion-catalogue-expand-grid .content-card-card {
 		width: 100%;
 		max-width: 140px;
 		justify-self: center;
@@ -2172,24 +2172,24 @@ a.fashion-piece-credit-mini-card:focus-visible .fashion-piece-credit-mini-image 
 	gap: clamp(18px, 2vw, 28px);
 }
 
-.fashion-collection-looks-panel .fashion-talent-grid .album-card-card {
+.fashion-collection-looks-panel .fashion-talent-grid .content-card-card {
 	width: 100%;
 	min-width: 0;
 }
 
-.fashion-collection-looks-panel .fashion-talent-grid .album-card-primary-action,
-.fashion-collection-looks-panel .fashion-talent-grid .album-card-info {
+.fashion-collection-looks-panel .fashion-talent-grid .content-card-primary-action,
+.fashion-collection-looks-panel .fashion-talent-grid .content-card-info {
 	width: 100%;
 	min-width: 0;
 }
 
-.fashion-collection-looks-panel .fashion-talent-grid .album-card-cover-wrap {
+.fashion-collection-looks-panel .fashion-talent-grid .content-card-cover-wrap {
 	width: 100%;
 	height: auto;
 	aspect-ratio: 1;
 }
 
-.fashion-collection-looks-panel .fashion-talent-grid .album-card-title {
+.fashion-collection-looks-panel .fashion-talent-grid .content-card-title {
 	display: -webkit-box;
 	max-width: 100%;
 	overflow: hidden;
@@ -2200,7 +2200,7 @@ a.fashion-piece-credit-mini-card:focus-visible .fashion-piece-credit-mini-image 
 	white-space: normal;
 }
 
-.fashion-collection-looks-panel .fashion-talent-grid .album-card-meta {
+.fashion-collection-looks-panel .fashion-talent-grid .content-card-meta {
 	max-width: 100%;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -2272,16 +2272,16 @@ a.fashion-piece-credit-mini-card:focus-visible .fashion-piece-credit-mini-image 
 		gap: 12px 10px;
 	}
 
-	.fashion-collection-looks-panel .fashion-talent-grid .album-card-card {
+	.fashion-collection-looks-panel .fashion-talent-grid .content-card-card {
 		padding: 8px;
 	}
 
-	.fashion-collection-looks-panel .fashion-talent-grid .album-card-title {
+	.fashion-collection-looks-panel .fashion-talent-grid .content-card-title {
 		font-size: 0.9rem;
 		letter-spacing: 0.04rem;
 	}
 
-	.fashion-collection-looks-panel .fashion-talent-grid .album-card-meta {
+	.fashion-collection-looks-panel .fashion-talent-grid .content-card-meta {
 		font-size: 0.74rem;
 		letter-spacing: 0.04rem;
 	}

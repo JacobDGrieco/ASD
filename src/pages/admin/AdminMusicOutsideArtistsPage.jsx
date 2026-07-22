@@ -98,10 +98,10 @@ export default function AdminMusicOutsideArtistsPage() {
 
 	return (
 		<div>
-			<div className="admin-artists-page-sticky-top">
-				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Music - Outside Artists</h1>
-					<button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Outside Artist</button>
+			<div className="admin-sticky-top">
+				<div className="admin-page-header">
+					<h1 className="admin-page-title">Music - Outside Artists</h1>
+					<button type="button" onClick={openCreate} className="admin-button-primary">New Outside Artist</button>
 				</div>
 			</div>
 
@@ -133,7 +133,7 @@ export default function AdminMusicOutsideArtistsPage() {
 			</div>
 
 			{form && (
-				<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm(); }}>
+				<div className="admin-modal-overlay" role="presentation">
 					<div className="admin-modal">
 						<div className="admin-modal-header">
 							<h2 className="admin-modal-title">{form.id ? 'Edit Outside Artist' : 'New Outside Artist'}</h2>
@@ -149,7 +149,7 @@ export default function AdminMusicOutsideArtistsPage() {
 										placeholder="Full name"
 										value={form.name}
 										onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-										className="admin-artists-page-input"
+										className="admin-field-input"
 									/>
 								</div>
 								<div className="admin-modal-field admin-modal-field-full">
@@ -168,7 +168,7 @@ export default function AdminMusicOutsideArtistsPage() {
 										id="admin-music-outside-artist-role"
 										value={form.role}
 										onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))}
-										className="admin-artists-page-input"
+										className="admin-field-input"
 									>
 										<option value="">- Select role -</option>
 										{SONG_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
@@ -182,7 +182,7 @@ export default function AdminMusicOutsideArtistsPage() {
 										placeholder="https://instagram.com/name"
 										value={form.externalUrl}
 										onChange={(event) => setForm((current) => ({ ...current, externalUrl: event.target.value }))}
-										className="admin-artists-page-input"
+										className="admin-field-input"
 									/>
 								</div>
 							</div>
@@ -196,7 +196,7 @@ export default function AdminMusicOutsideArtistsPage() {
 											await handleDelete(form.id);
 											closeForm();
 										}}
-										buttonClassName="admin-artists-page-danger-btn"
+										buttonClassName="admin-button-danger"
 										buttonAriaLabel="Delete outside artist"
 										buttonTitle="Delete"
 									>
@@ -204,8 +204,8 @@ export default function AdminMusicOutsideArtistsPage() {
 									</ConfirmActionButton>
 								)}
 							</div>
-							<button type="button" onClick={closeForm} className="admin-artists-page-ghost-btn">Cancel</button>
-							<button type="button" onClick={handleSave} className="admin-artists-page-primary-btn">Save</button>
+							<button type="button" onClick={closeForm} className="admin-button-secondary">Cancel</button>
+							<button type="button" onClick={handleSave} className="admin-button-primary">Save</button>
 						</div>
 					</div>
 				</div>

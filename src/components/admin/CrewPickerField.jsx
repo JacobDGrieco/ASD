@@ -169,7 +169,7 @@ export default function CrewPickerField({ creditName, talentId, crewId, talentOp
 			<div className="crew-picker-input-row">
 				<input
 					type="text"
-					className="admin-artists-page-input crew-picker-input"
+					className="admin-field-input crew-picker-input"
 					placeholder="Search talent or outside talent..."
 					value={open ? filter : (creditName || '')}
 					onChange={handleInputChange}

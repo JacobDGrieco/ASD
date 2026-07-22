@@ -43,7 +43,7 @@
 	-webkit-box-orient: vertical;
 }
 
-.admin-crosshair-page-hidden-row .admin-artists-page-cell-value,
+.admin-crosshair-page-hidden-row .admin-table-cell-value,
 .admin-crosshair-page-hidden-row .admin-crosshair-page-description {
 	opacity: 0.54;
 	text-decoration: line-through;
@@ -79,7 +79,7 @@
 	grid-column: 1 / -1;
 }
 
-.admin-crosshair-page-title-row .admin-artists-page-name-field {
+.admin-crosshair-page-title-row .admin-artist-name-field {
 	grid-template-columns: auto minmax(0, 1fr);
 }
 
@@ -87,7 +87,7 @@
 	gap: 10px;
 }
 
-.admin-crosshair-page-thumbnail-row .admin-artists-page-image-field {
+.admin-crosshair-page-thumbnail-row .admin-image-field {
 	gap: 16px;
 }
 
@@ -95,7 +95,7 @@
 	min-height: 120px;
 }
 
-.admin-crosshair-page-table .admin-artists-page-thumb {
+.admin-crosshair-page-table .admin-thumb {
 	margin: 0 auto;
 }
 

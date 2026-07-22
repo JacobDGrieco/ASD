@@ -2,7 +2,7 @@
  * Public card for fashion talent list and featured talent sections.
  */
 import { Link } from 'react-router-dom';
-import '../../styles/AlbumCard.css';
+import '../../styles/ContentCard.css';
 
 const ROLE_LABEL = {
 	MODEL: 'Model',
@@ -17,18 +17,18 @@ export default function TalentCard({ talent }) {
 	const image = talent.images?.[0];
 
 	return (
-		<Link to={`/fashion/talent/${talent.slug}`} className={`album-card-card${talent.isVisible === false ? ' album-card-hidden' : ''}`}>
-			<div className="album-card-primary-action">
-				<div className="album-card-cover-wrap">
+		<Link to={`/fashion/talent/${talent.slug}`} className={`content-card-card${talent.isVisible === false ? ' content-card-hidden' : ''}`}>
+			<div className="content-card-primary-action">
+				<div className="content-card-cover-wrap">
 					{image ? (
-						<img src={image.previewUrl || image.url} alt={talent.name} className="album-card-cover" />
+						<img src={image.previewUrl || image.url} alt={talent.name} className="content-card-cover" />
 					) : (
-						<div className="album-card-cover-blank" />
+						<div className="content-card-cover-blank" />
 					)}
 				</div>
-				<div className="album-card-info">
-					<span className="album-card-title">{talent.name}</span>
-					<span className="album-card-meta">{ROLE_LABEL[talent.role] ?? talent.role}</span>
+				<div className="content-card-info">
+					<span className="content-card-title">{talent.name}</span>
+					<span className="content-card-meta">{ROLE_LABEL[talent.role] ?? talent.role}</span>
 				</div>
 			</div>
 		</Link>

@@ -184,18 +184,18 @@ function imageCell(song, albumById) {
 	const songImage = primaryImage(song.images);
 	const displayImage = albumImage ?? songImage;
 
-	if (!displayImage) return <span className="admin-artists-page-empty-value">-</span>;
+	if (!displayImage) return <span className="admin-empty-value">-</span>;
 
 	const albumCount = album ? (album.imageCount ?? album.images?.length ?? 0) : 0;
 	const songCount = song.imageCount ?? song.images?.length ?? 0;
 	const count = albumCount + songCount;
 
 	return (
-		<div className="admin-artists-page-image-summary">
-			<div className={`admin-artists-page-thumb-frame ${isSongHidden(song) ? 'admin-artists-page-thumb-frame-hidden' : ''}`.trim()}>
-				<img src={displayImage.previewUrl || displayImage.url} alt={song.title} className="admin-artists-page-thumb" />
+		<div className="admin-image-summary">
+			<div className={`admin-thumb-frame ${isSongHidden(song) ? 'admin-thumb-frame-hidden' : ''}`.trim()}>
+				<img src={displayImage.previewUrl || displayImage.url} alt={song.title} className="admin-thumb" />
 			</div>
-			<span className="admin-artists-page-image-count">
+			<span className="admin-image-count">
 				{count} image{count === 1 ? '' : 's'}
 			</span>
 		</div>
@@ -204,34 +204,34 @@ function imageCell(song, albumById) {
 
 function cell(value) {
 	return value ? (
-		<span className="admin-artists-page-cell-value" title={String(value)}>{String(value)}</span>
+		<span className="admin-table-cell-value" title={String(value)}>{String(value)}</span>
 	) : (
-		<span className="admin-artists-page-empty-value">-</span>
+		<span className="admin-empty-value">-</span>
 	);
 }
 
 function wrapCell(value) {
 	return value ? (
-		<span className="admin-artists-page-wrap-value" title={String(value)}>{String(value)}</span>
+		<span className="admin-table-wrap-value" title={String(value)}>{String(value)}</span>
 	) : (
-		<span className="admin-artists-page-empty-value">-</span>
+		<span className="admin-empty-value">-</span>
 	);
 }
 
 function SongsTable({ songs, albumById, isViewer, loadingEditSongId, onEdit }) {
 	return (
-		<div className="admin-artists-page-table-wrap">
-			<table className="admin-artists-page-table admin-songs-table">
+		<div className="admin-table-wrap">
+			<table className="admin-table admin-songs-table">
 				<thead>
 					<tr>
-						<th className="admin-artists-page-col-image">Images</th>
-						<th className="admin-songs-col-track admin-artists-page-center-cell">#</th>
+						<th className="admin-table-col-image">Images</th>
+						<th className="admin-songs-col-track admin-table-center-cell">#</th>
 						<th className="admin-songs-col-title">Title</th>
 						<th className="admin-songs-col-artist">Artist</th>
 						<th className="admin-songs-col-album">Album</th>
 						<th className="admin-songs-col-date">Release Date</th>
-						<th className="admin-artists-page-col-xl admin-links-col-centered">Links</th>
-						<th className="admin-songs-col-actions admin-artists-page-sticky-right-0"></th>
+						<th className="admin-table-col-xl admin-links-col-centered">Links</th>
+						<th className="admin-songs-col-actions admin-table-sticky-right-0"></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -240,25 +240,25 @@ function SongsTable({ songs, albumById, isViewer, loadingEditSongId, onEdit }) {
 						const dateStr = releaseDate ? String(releaseDate).slice(0, 10) : '';
 						const links = songDisplayLinks(song, albumById);
 						return (
-							<tr key={song.id} className={isSongHidden(song) ? 'admin-artists-page-hidden-row' : ''}>
-								<td className="admin-artists-page-col-image">{imageCell(song, albumById)}</td>
-								<td className="admin-songs-col-track admin-artists-page-center-cell">{cell(primaryTrackNumber(song))}</td>
+							<tr key={song.id} className={isSongHidden(song) ? 'admin-table-hidden-row' : ''}>
+								<td className="admin-table-col-image">{imageCell(song, albumById)}</td>
+								<td className="admin-songs-col-track admin-table-center-cell">{cell(primaryTrackNumber(song))}</td>
 								<td className="admin-songs-col-title">{cell(song.title)}</td>
 								<td className="admin-songs-col-artist">{cell(displayArtistName(song, albumById))}</td>
 								<td className="admin-songs-col-album">{wrapCell(albumTitles(song, albumById))}</td>
 								<td className="admin-songs-col-date">{cell(dateStr)}</td>
-								<td className="admin-artists-page-col-xl admin-links-col-centered"><AdminProfileLinksSummary links={links} /></td>
-								<td className="admin-songs-col-actions admin-artists-page-sticky-right-0">
+								<td className="admin-table-col-xl admin-links-col-centered"><AdminProfileLinksSummary links={links} /></td>
+								<td className="admin-songs-col-actions admin-table-sticky-right-0">
 									<div className="admin-songs-actions">
 										{!isViewer && (
-											<button type="button" onClick={() => void onEdit(song)} disabled={loadingEditSongId === song.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit song" title="Edit">
+											<button type="button" onClick={() => void onEdit(song)} disabled={loadingEditSongId === song.id} className="admin-button-secondary admin-button-icon" aria-label="Edit song" title="Edit">
 												<FaPencilAlt aria-hidden="true" />
 											</button>
 										)}
 										<Link
 											to={`/admin/lyrics/${song.id}`}
 											state={{ songTitle: song.title }}
-											className="admin-artists-page-ghost-btn admin-artists-page-icon-btn"
+											className="admin-button-secondary admin-button-icon"
 											style={{ textDecoration: 'none' }}
 											aria-label="Edit lyrics"
 											title="Edit lyrics"
@@ -445,11 +445,11 @@ export default function AdminMusicSongsPage() {
 
 	return (
 		<div>
-			<div className="admin-artists-page-sticky-top">
-				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Music — Songs</h1>
+			<div className="admin-sticky-top">
+				<div className="admin-page-header">
+					<h1 className="admin-page-title">Music — Songs</h1>
 					{!isViewer && (
-						<button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Song</button>
+						<button type="button" onClick={openCreate} className="admin-button-primary">New Song</button>
 					)}
 				</div>
 

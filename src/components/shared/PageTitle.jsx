@@ -29,7 +29,7 @@ const EXACT_ROUTE_TITLES = {
 	'/admin/songs': ['Songs', 'Music', 'Admin'],
 	'/admin/record-player': ['Record Player', 'Music', 'Admin'],
 	'/admin/fashion/talent': ['Talent', 'Fashion', 'Admin'],
-	'/admin/fashion/outside_talent': ['Outside Talent', 'Fashion', 'Admin'],
+	'/admin/fashion/outside-talent': ['Outside Talent', 'Fashion', 'Admin'],
 	'/admin/fashion/looks': ['Looks', 'Fashion', 'Admin'],
 	'/admin/fashion/collections': ['Collections', 'Fashion', 'Admin'],
 };

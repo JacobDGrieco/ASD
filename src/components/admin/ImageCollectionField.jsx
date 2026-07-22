@@ -180,8 +180,8 @@ export default function ImageCollectionField({ value, onChange, token, folder, e
 	};
 
 	return (
-		<div className="admin-artists-page-image-field">
-			<div className="admin-artists-page-upload-controls">
+		<div className="admin-image-field">
+			<div className="admin-upload-controls">
 				<input
 					type="url"
 					value={imageUrl}
@@ -193,13 +193,13 @@ export default function ImageCollectionField({ value, onChange, token, folder, e
 						}
 					}}
 					placeholder="Paste image URL to download and store"
-					className="admin-artists-page-input"
+					className="admin-field-input"
 					disabled={uploading}
 				/>
 				<button
 					type="button"
 					onClick={() => void handleImportFromUrl()}
-					className="admin-artists-page-ghost-btn admin-artists-page-upload-btn"
+					className="admin-button-secondary admin-upload-button"
 					disabled={uploading || !imageUrl.trim()}
 					title="Import image from URL"
 					aria-label="Import image from URL"
@@ -208,7 +208,7 @@ export default function ImageCollectionField({ value, onChange, token, folder, e
 				</button>
 				<label
 					htmlFor={inputId}
-					className="admin-artists-page-ghost-btn admin-artists-page-upload-btn"
+					className="admin-button-secondary admin-upload-button"
 					aria-label="Upload images"
 					title="Upload images"
 				>
@@ -220,21 +220,21 @@ export default function ImageCollectionField({ value, onChange, token, folder, e
 					accept="image/*"
 					multiple
 					onChange={handleUpload}
-					className="admin-artists-page-file-input"
+					className="admin-file-input"
 					disabled={uploading}
 					aria-label="Upload images"
 				/>
 			</div>
 
 			{images.length > 0 ? (
-				<div className="admin-artists-page-image-list">
+				<div className="admin-image-list">
 					{images.map((image, index) => (
 						<div
 							key={image.id ?? image.pathname ?? image.url ?? index}
 							className={[
-								'admin-artists-page-image-card',
-								dragIndex === index ? 'admin-artists-page-image-card-dragging' : '',
-								dropIndex === index ? 'admin-artists-page-image-card-drop-target' : '',
+								'admin-image-card',
+								dragIndex === index ? 'admin-image-card-dragging' : '',
+								dropIndex === index ? 'admin-image-card-drop-target' : '',
 							].filter(Boolean).join(' ')}
 							draggable
 							onDragStart={() => handleDragStart(index)}
@@ -245,12 +245,12 @@ export default function ImageCollectionField({ value, onChange, token, folder, e
 							<img
 								src={image.previewUrl || image.url}
 								alt={image.altText || entityLabel || 'Uploaded image'}
-								className="admin-artists-page-thumb"
+								className="admin-thumb"
 							/>
 							<button
 								type="button"
 								onClick={() => removeImage(index)}
-								className="admin-artists-page-image-delete"
+								className="admin-image-delete"
 								title="Remove image"
 								aria-label="Remove image"
 							>
@@ -261,7 +261,7 @@ export default function ImageCollectionField({ value, onChange, token, folder, e
 				</div>
 			) : ""}
 
-			{error ? <p className="admin-artists-page-upload-error">{error}</p> : null}
+			{error ? <p className="admin-upload-error">{error}</p> : null}
 		</div>
 	);
 }

@@ -6,7 +6,7 @@ import ProfileLinkIcon from '../shared/ProfileLinkIcon.jsx';
 
 export default function AdminProfileLinksSummary({ links }) {
 	const normalizedLinks = normalizeProfileLinks(links);
-	if (!normalizedLinks.length) return <span className="admin-artists-page-empty-value">-</span>;
+	if (!normalizedLinks.length) return <span className="admin-empty-value">-</span>;
 
 	const firstPersonalIndex = normalizedLinks.findIndex((link) => link.type === 'personal');
 

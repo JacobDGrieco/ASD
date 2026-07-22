@@ -92,8 +92,8 @@ body:has(.admin-layout-layout) #root {
 	font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
 }
 
-.admin-layout-layout .admin-artists-page-title,
-.admin-layout-layout .admin-artists-page-form-title,
+.admin-layout-layout .admin-page-title,
+.admin-layout-layout .admin-form-title,
 .admin-layout-layout .admin-modal-title,
 .admin-layout-layout .admin-board-page-title,
 .admin-layout-layout .admin-record-player-page-title,
@@ -140,7 +140,7 @@ body:has(.admin-layout-layout) #root {
 	letter-spacing: 0.1em;
 	text-transform: uppercase;
 	text-decoration: solid;
-	border-radius: 12px;
+	border-radius: var(--radius-panel);
 }
 
 .admin-layout-brand-icon {
@@ -261,7 +261,7 @@ body:has(.admin-layout-layout) #root {
 	font-size: 0.9rem;
 	text-decoration: none;
 	transition: color var(--transition), background-color var(--transition);
-	border-radius: 12px;
+	border-radius: var(--radius-panel);
 }
 
 .admin-layout-link:hover {
@@ -307,7 +307,7 @@ body:has(.admin-layout-layout) #root {
 	color: oklch(72% 0.13 28);
 	font-size: 0.9rem;
 	cursor: pointer;
-	border-radius: 12px;
+	border-radius: var(--radius-panel);
 }
 
 .admin-layout-logout:hover {

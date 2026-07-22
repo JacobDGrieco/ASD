@@ -228,13 +228,13 @@
 	gap: 12px;
 }
 
-.admin-song-metadata-grid .admin-artists-page-input,
+.admin-song-metadata-grid .admin-field-input,
 .admin-song-duration-control {
 	height: var(--admin-song-metadata-control-height);
 	min-height: var(--admin-song-metadata-control-height);
 }
 
-.admin-song-metadata-grid .admin-artists-page-input {
+.admin-song-metadata-grid .admin-field-input {
 	display: block;
 	line-height: 1.2;
 }
@@ -346,7 +346,7 @@
 	min-width: 0;
 }
 
-.admin-song-role-row .admin-artists-page-danger-btn {
+.admin-song-role-row .admin-button-danger {
 	grid-area: delete;
 }
 
@@ -406,7 +406,7 @@
 			"apply delete role";
 	}
 
-	.admin-song-role-row .admin-artists-page-danger-btn {
+	.admin-song-role-row .admin-button-danger {
 		width: 38px;
 		height: 38px;
 		padding: 0;

@@ -53,7 +53,7 @@ function MusicArtistFormModal({ form, setForm, token, onClose, onSave, onDelete,
 	};
 
 	return (
-		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+		<div className="admin-modal-overlay" role="presentation">
 			<div className="admin-modal">
 				<div className="admin-modal-header">
 					<h2 className="admin-modal-title">{form.id ? 'Edit Artist' : 'New Artist'}</h2>
@@ -64,17 +64,17 @@ function MusicArtistFormModal({ form, setForm, token, onClose, onSave, onDelete,
 						<TabPanel header="Artist">
 							<div className="admin-modal-grid">
 								<div className="admin-modal-field admin-modal-field-full">
-									<div className="admin-artists-page-name-field">
+									<div className="admin-artist-name-field">
 										<button
 											type="button"
 											onClick={() => setForm((current) => ({ ...current, isVisible: !current.isVisible }))}
-											className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
+											className={`admin-visibility-toggle ${form.isVisible ? '' : 'admin-visibility-toggle-hidden'}`.trim()}
 											aria-label={form.isVisible ? 'Artist is visible to the public. Click to hide.' : 'Artist is hidden from the public. Click to show.'}
 											title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
 										>
 											{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
 										</button>
-										<div className="admin-artists-page-name-field-main">
+										<div className="admin-artist-name-field-main">
 											<label htmlFor="admin-music-artist-name" className="admin-modal-label">Name</label>
 											<input
 												id="admin-music-artist-name"
@@ -82,7 +82,7 @@ function MusicArtistFormModal({ form, setForm, token, onClose, onSave, onDelete,
 												placeholder="Name"
 												value={form.name}
 												onChange={updateField('name')}
-												className="admin-artists-page-input"
+												className="admin-field-input"
 											/>
 										</div>
 									</div>
@@ -104,7 +104,7 @@ function MusicArtistFormModal({ form, setForm, token, onClose, onSave, onDelete,
 										placeholder="Bio"
 										value={form.bio}
 										onChange={updateField('bio')}
-										className="admin-artists-page-input admin-modal-textarea"
+										className="admin-field-input admin-modal-textarea"
 										rows={5}
 									/>
 								</div>
@@ -115,7 +115,7 @@ function MusicArtistFormModal({ form, setForm, token, onClose, onSave, onDelete,
 										placeholder="About Me"
 										value={form.aboutMe}
 										onChange={updateField('aboutMe')}
-										className="admin-artists-page-input admin-modal-textarea"
+										className="admin-field-input admin-modal-textarea"
 										rows={5}
 									/>
 								</div>
@@ -140,7 +140,7 @@ function MusicArtistFormModal({ form, setForm, token, onClose, onSave, onDelete,
 							<ConfirmActionButton
 								message="Delete this artist and all their albums/songs?"
 								onConfirm={onDelete}
-								buttonClassName="admin-artists-page-danger-btn"
+								buttonClassName="admin-button-danger"
 								buttonAriaLabel="Delete artist"
 								buttonTitle="Delete"
 							>
@@ -148,8 +148,8 @@ function MusicArtistFormModal({ form, setForm, token, onClose, onSave, onDelete,
 							</ConfirmActionButton>
 						)}
 					</div>
-					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
-					<button type="button" onClick={onSave} className="admin-artists-page-primary-btn">Save</button>
+					<button type="button" onClick={onClose} className="admin-button-secondary">Cancel</button>
+					<button type="button" onClick={onSave} className="admin-button-primary">Save</button>
 				</div>
 			</div>
 		</div>
@@ -302,10 +302,10 @@ export default function AdminMusicArtistsPage() {
 
 	return (
 		<div>
-			<div className="admin-artists-page-sticky-top">
-				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Music — Artists</h1>
-					{isSuperAdmin && !isViewer && <button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Artist</button>}
+			<div className="admin-sticky-top">
+				<div className="admin-page-header">
+					<h1 className="admin-page-title">Music — Artists</h1>
+					{isSuperAdmin && !isViewer && <button type="button" onClick={openCreate} className="admin-button-primary">New Artist</button>}
 				</div>
 			</div>
 

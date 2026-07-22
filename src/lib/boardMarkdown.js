@@ -152,6 +152,8 @@ export function validateBoardBodyMarkdown(body, { maxImages = IMAGE_LIMIT, maxLi
 }
 
 function restoreTokens(value, tokens) {
+	// Tokens are intentionally wrapped in NUL sentinels so user text cannot collide with generated placeholders.
+	// eslint-disable-next-line no-control-regex
 	return value.replace(/\u0000(\d+)\u0000/g, (_, index) => tokens[Number(index)] ?? '');
 }
 

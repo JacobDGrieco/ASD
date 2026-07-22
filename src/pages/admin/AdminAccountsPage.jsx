@@ -185,52 +185,52 @@ export default function AdminAccountsPage() {
 
 	return (
 		<div>
-			<div className="admin-artists-page-sticky-top">
-				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Admin - Accounts</h1>
+			<div className="admin-sticky-top">
+				<div className="admin-page-header">
+					<h1 className="admin-page-title">Admin - Accounts</h1>
 				</div>
 			</div>
 
-			<div className="admin-artists-page-table-wrap">
-				<table className="admin-artists-page-table">
+			<div className="admin-table-wrap">
+				<table className="admin-table">
 					<thead>
 						<tr>
-							<th className="admin-artists-page-col-lg">Name</th>
-							<th className="admin-artists-page-col-md">Type</th>
-							<th className="admin-artists-page-col-sm">Has Account</th>
-							<th className="admin-artists-page-col-sm">Active</th>
-							<th className="admin-artists-page-col-md">Access</th>
-							<th className="admin-artists-page-col-lg">Updated</th>
-							<th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
+							<th className="admin-table-col-lg">Name</th>
+							<th className="admin-table-col-md">Type</th>
+							<th className="admin-table-col-sm">Has Account</th>
+							<th className="admin-table-col-sm">Active</th>
+							<th className="admin-table-col-md">Access</th>
+							<th className="admin-table-col-lg">Updated</th>
+							<th className="admin-table-actions-col admin-table-sticky-right-0"></th>
 						</tr>
 					</thead>
 					<tbody>
 						{rows.map((row) => (
 							<tr key={row.rowId}>
-								<td className="admin-artists-page-col-lg">
-									<span className="admin-artists-page-cell-value">{row.subject.name}</span>
+								<td className="admin-table-col-lg">
+									<span className="admin-table-cell-value">{row.subject.name}</span>
 								</td>
-								<td className="admin-artists-page-col-md">
-									<span className="admin-artists-page-cell-value">{accountTypeLabel(row)}</span>
+								<td className="admin-table-col-md">
+									<span className="admin-table-cell-value">{accountTypeLabel(row)}</span>
 								</td>
-								<td className="admin-artists-page-col-sm">
-									<span className="admin-artists-page-cell-value">{row.hasAccount ? 'Yes' : 'No'}</span>
+								<td className="admin-table-col-sm">
+									<span className="admin-table-cell-value">{row.hasAccount ? 'Yes' : 'No'}</span>
 								</td>
-								<td className="admin-artists-page-col-sm">
-									<span className="admin-artists-page-cell-value">{row.account ? (row.account.active ? 'Yes' : 'No') : '-'}</span>
+								<td className="admin-table-col-sm">
+									<span className="admin-table-cell-value">{row.account ? (row.account.active ? 'Yes' : 'No') : '-'}</span>
 								</td>
-								<td className="admin-artists-page-col-md">
-									<span className="admin-artists-page-cell-value">{formatAccess(row)}</span>
+								<td className="admin-table-col-md">
+									<span className="admin-table-cell-value">{formatAccess(row)}</span>
 								</td>
-								<td className="admin-artists-page-col-lg">
-									<span className="admin-artists-page-cell-value">{row.account ? formatDate(row.account.updatedAt) : '-'}</span>
+								<td className="admin-table-col-lg">
+									<span className="admin-table-cell-value">{row.account ? formatDate(row.account.updatedAt) : '-'}</span>
 								</td>
-								<td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
-									<div className="admin-artists-page-actions">
+								<td className="admin-table-action-cell admin-table-actions-col admin-table-sticky-right-0">
+									<div className="admin-table-actions">
 										<button
 											type="button"
 											onClick={() => openEdit(row)}
-											className="admin-artists-page-ghost-btn admin-artists-page-icon-btn"
+											className="admin-button-secondary admin-button-icon"
 											aria-label={row.hasAccount ? 'Edit account' : 'Create account'}
 											title={row.hasAccount ? 'Edit account' : 'Create account'}
 										>
@@ -245,7 +245,7 @@ export default function AdminAccountsPage() {
 			</div>
 
 			{form && (
-				<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm(); }}>
+				<div className="admin-modal-overlay" role="presentation">
 					<div className="admin-modal">
 						<div className="admin-modal-header">
 							<h2 className="admin-modal-title">{form.id ? 'Edit Account' : 'New Account'}</h2>
@@ -257,7 +257,7 @@ export default function AdminAccountsPage() {
 									<button
 										type="button"
 										onClick={() => updateForm({ active: !form.active })}
-										className={`admin-artists-page-visibility-toggle ${form.active ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
+										className={`admin-visibility-toggle ${form.active ? '' : 'admin-visibility-toggle-hidden'}`.trim()}
 										aria-label={form.active ? 'Account is active. Click to deactivate.' : 'Account is inactive. Click to activate.'}
 										title={form.active ? 'Active account' : 'Inactive account'}
 									>
@@ -270,7 +270,7 @@ export default function AdminAccountsPage() {
 											type="text"
 											value={form.name}
 											onChange={(event) => updateForm({ name: event.target.value })}
-											className="admin-artists-page-input"
+											className="admin-field-input"
 										/>
 									</div>
 									<div className="admin-modal-field admin-account-password-field">
@@ -281,7 +281,7 @@ export default function AdminAccountsPage() {
 											value={form.password}
 											onChange={(event) => updateForm({ password: event.target.value })}
 											placeholder={form.id ? 'Leave blank to keep current password' : 'Set password'}
-											className="admin-artists-page-input"
+											className="admin-field-input"
 										/>
 									</div>
 								</div>
@@ -322,7 +322,7 @@ export default function AdminAccountsPage() {
 											const deleted = await handleDelete(form);
 											if (deleted) closeForm();
 										}}
-										buttonClassName="admin-artists-page-danger-btn"
+										buttonClassName="admin-button-danger"
 										buttonAriaLabel="Delete account"
 										buttonTitle="Delete account"
 									>
@@ -330,8 +330,8 @@ export default function AdminAccountsPage() {
 									</ConfirmActionButton>
 								) : null}
 							</div>
-							<button type="button" onClick={closeForm} className="admin-artists-page-ghost-btn">Cancel</button>
-							<button type="button" onClick={handleSave} className="admin-artists-page-primary-btn">Save</button>
+							<button type="button" onClick={closeForm} className="admin-button-secondary">Cancel</button>
+							<button type="button" onClick={handleSave} className="admin-button-primary">Save</button>
 						</div>
 					</div>
 				</div>

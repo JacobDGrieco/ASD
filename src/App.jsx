@@ -206,7 +206,7 @@ export default function App() {
 								<Route path="/admin/lyrics/:songId" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_SONGS}><AdminMusicLyricsPage /></AdminPageAccessRoute>} />
 								<Route path="/admin/record-player" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.MUSIC_RECORD_PLAYER}><AdminMusicRecordPlayerPage /></AdminPageAccessRoute>} />
 								<Route path="/admin/fashion/talent" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.FASHION_TALENT}><AdminFashionTalentPage /></AdminPageAccessRoute>} />
-								<Route path="/admin/fashion/outside_talent" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.FASHION_OUTSIDE_TALENT}><AdminFashionOutsideTalentPage /></AdminPageAccessRoute>} />
+								<Route path="/admin/fashion/outside-talent" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.FASHION_OUTSIDE_TALENT}><AdminFashionOutsideTalentPage /></AdminPageAccessRoute>} />
 								<Route path="/admin/fashion/looks" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.FASHION_LOOKS}><AdminFashionLooksPage /></AdminPageAccessRoute>} />
 								<Route path="/admin/fashion/collections" element={<AdminPageAccessRoute pageKey={ADMIN_PAGE_KEYS.FASHION_COLLECTIONS}><AdminFashionCollectionsPage /></AdminPageAccessRoute>} />
 							</Route>

@@ -6,7 +6,7 @@ import { PROFILE_LINK_PLATFORM_LABELS, hrefForProfileLink, normalizeProfileLinks
 import { prefetchSongPage } from '../../lib/publicPrefetch.js';
 import ArtworkGallery from '../shared/ArtworkGallery.jsx';
 import ProfileLinkIcon from '../shared/ProfileLinkIcon.jsx';
-import '../../styles/AlbumCard.css';
+import '../../styles/ContentCard.css';
 
 function getSongIdFromPath(path) {
 	if (!path) return null;
@@ -17,23 +17,23 @@ function getSongIdFromPath(path) {
 
 export default function AlbumCard({ album, isOpen, isUnreleased = false, isDisabled = false, onClick, to, subtitle, className = '' }) {
 	const year = new Date(album.releaseDate).getFullYear();
-	const cardClassName = `album-card-card ${isOpen ? 'album-card-open' : ''} ${isDisabled ? 'album-card-disabled' : ''} ${album.isPubliclyVisible === false ? 'album-card-hidden' : ''} ${className}`.trim();
+	const cardClassName = `content-card-card ${isOpen ? 'content-card-open' : ''} ${isDisabled ? 'content-card-disabled' : ''} ${album.isPubliclyVisible === false ? 'content-card-hidden' : ''} ${className}`.trim();
 	const streamLinks = normalizeProfileLinks(album.links);
 
 	const content = (
 		<>
-			<div className="album-card-cover-wrap">
-				{isUnreleased && <span className="album-card-ribbon">Empty</span>}
-				<ArtworkGallery images={album.images} title={album.title} className="album-card-gallery-trigger" />
+			<div className="content-card-cover-wrap">
+				{isUnreleased && <span className="content-card-ribbon">Empty</span>}
+				<ArtworkGallery images={album.images} title={album.title} className="content-card-gallery-trigger" />
 				{album.coverArt ? (
-					<img src={album.coverArt} alt={album.title} className="album-card-cover" />
+					<img src={album.coverArt} alt={album.title} className="content-card-cover" />
 				) : (
-					<div className="album-card-cover-blank" />
+					<div className="content-card-cover-blank" />
 				)}
 			</div>
-			<div className="album-card-info">
-				<span className="album-card-title">{album.title}</span>
-				<span className="album-card-meta">{year} · {subtitle ?? album.type}</span>
+			<div className="content-card-info">
+				<span className="content-card-title">{album.title}</span>
+				<span className="content-card-meta">{year} · {subtitle ?? album.type}</span>
 			</div>
 		</>
 	);
@@ -43,7 +43,7 @@ export default function AlbumCard({ album, isOpen, isUnreleased = false, isDisab
 			{to ? (
 				<Link
 					to={to}
-					className="album-card-primary-action"
+					className="content-card-primary-action"
 					onMouseEnter={() => { const s = getSongIdFromPath(to); if (s) prefetchSongPage(s, album.coverArt); }}
 					onFocus={() => { const s = getSongIdFromPath(to); if (s) prefetchSongPage(s, album.coverArt); }}
 					onTouchStart={() => { const s = getSongIdFromPath(to); if (s) prefetchSongPage(s, album.coverArt); }}
@@ -51,16 +51,16 @@ export default function AlbumCard({ album, isOpen, isUnreleased = false, isDisab
 					{content}
 				</Link>
 			) : onClick ? (
-				<button type="button" className="album-card-primary-action" onClick={onClick}>
+				<button type="button" className="content-card-primary-action" onClick={onClick}>
 					{content}
 				</button>
 			) : (
-				<div className="album-card-primary-action">
+				<div className="content-card-primary-action">
 					{content}
 				</div>
 			)}
 			{streamLinks.length > 0 && (
-				<div className="album-card-stream-links">
+				<div className="content-card-stream-links">
 					{streamLinks.map((link) => {
 						const label = PROFILE_LINK_PLATFORM_LABELS[link.platform] ?? 'Link';
 						return (
@@ -69,7 +69,7 @@ export default function AlbumCard({ album, isOpen, isUnreleased = false, isDisab
 								href={hrefForProfileLink(link)}
 								target="_blank"
 								rel="noreferrer"
-								className="album-card-stream-link"
+								className="content-card-stream-link"
 								aria-label={label}
 								title={label}
 							>

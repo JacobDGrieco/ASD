@@ -113,10 +113,10 @@ export default function ConfirmActionButton({
 				>
 					<p className="admin-inline-confirm-message">{message}</p>
 					<div className="admin-inline-confirm-actions">
-						<button type="button" onClick={() => setOpen(false)} className="admin-artists-page-ghost-btn">
+						<button type="button" onClick={() => setOpen(false)} className="admin-button-secondary">
 							{cancelLabel}
 						</button>
-						<button type="button" onClick={() => void handleConfirm()} className="admin-artists-page-danger-btn">
+						<button type="button" onClick={() => void handleConfirm()} className="admin-button-danger">
 							{confirmLabel}
 						</button>
 					</div>

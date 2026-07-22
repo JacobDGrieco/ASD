@@ -232,7 +232,7 @@ function songModalReducer(state, action) {
 				validationErrors: clearFieldError(state.validationErrors, action.fieldName),
 			};
 		}
-		case 'set-release-date':
+		case 'set-release-date': {
 			const releaseDateForVisibility = action.value || earliestAlbumReleaseDateForPlacements(state.form.albumPlacements, action.albumById);
 			return {
 				...state,
@@ -243,6 +243,7 @@ function songModalReducer(state, action) {
 				},
 				validationErrors: clearFieldError(state.validationErrors, 'releaseDate'),
 			};
+		}
 		case 'set-album-placement': {
 			const previousAlbumId = state.form.albumPlacements[action.index]?.albumId ?? '';
 			const nextPlacements = state.form.albumPlacements.map((placement, i) =>
@@ -654,20 +655,20 @@ function SongInfoTab({
 	return (
 		<div className="admin-modal-grid">
 			<div className="admin-modal-field admin-modal-field-full">
-				<div className="admin-artists-page-name-field">
+				<div className="admin-artist-name-field">
 					<button
 						type="button"
 						onClick={() => {
 							visibilityTouchedRef.current = true;
 							setForm((current) => ({ ...current, isVisible: !current.isVisible, autoShowOnRelease: false }));
 						}}
-						className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
+						className={`admin-visibility-toggle ${form.isVisible ? '' : 'admin-visibility-toggle-hidden'}`.trim()}
 						aria-label={form.isVisible ? 'Song is visible to the public. Click to hide.' : 'Song is hidden from the public. Click to show.'}
 						title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
 					>
 						{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
 					</button>
-					<div className="admin-artists-page-name-field-main">
+					<div className="admin-artist-name-field-main">
 						<label htmlFor="admin-song-title" className="admin-modal-label">Title <span className="admin-modal-label-required">*</span></label>
 						<input id="admin-song-title" type="text" placeholder="Title" value={form.title} onChange={setField('title')} className={songFieldClassName('title')} aria-invalid={Boolean(validationErrors?.title)} />
 					</div>
@@ -698,11 +699,11 @@ function SongInfoTab({
 				</div>
 				<div className="admin-modal-field admin-song-metadata-field-bpm">
 					<label htmlFor="admin-song-bpm" className="admin-modal-label">BPM</label>
-					<input id="admin-song-bpm" type="number" min="0" max="999" step="1" placeholder="e.g. 120" value={form.bpm} onChange={setBpm} className="admin-artists-page-input" />
+					<input id="admin-song-bpm" type="number" min="0" max="999" step="1" placeholder="e.g. 120" value={form.bpm} onChange={setBpm} className="admin-field-input" />
 				</div>
 				<div className="admin-modal-field">
 					<label htmlFor="admin-song-key" className="admin-modal-label">Key</label>
-					<select id="admin-song-key" value={form.key} onChange={setField('key')} className="admin-artists-page-input">
+					<select id="admin-song-key" value={form.key} onChange={setField('key')} className="admin-field-input">
 						<option value="">- Key -</option>
 						{SONG_KEYS.map((key) => <option key={key} value={key}>{key}</option>)}
 					</select>
@@ -710,7 +711,7 @@ function SongInfoTab({
 			</div>
 			<div className="admin-modal-field admin-modal-field-full">
 				<label htmlFor="admin-song-about" className="admin-modal-label">About</label>
-				<textarea id="admin-song-about" placeholder="About this song..." value={form.aboutText} onChange={setField('aboutText')} className="admin-artists-page-input admin-modal-textarea" rows={5} />
+				<textarea id="admin-song-about" placeholder="About this song..." value={form.aboutText} onChange={setField('aboutText')} className="admin-field-input admin-modal-textarea" rows={5} />
 			</div>
 			<div className="admin-modal-field admin-modal-field-full">
 				<div className="admin-modal-label">Tags</div>
@@ -746,7 +747,7 @@ function SongLinksTab({ form, setForm, albumById }) {
 						placeholder="Private SoundCloud share link"
 						value={form.privateSoundcloudUrl ?? ''}
 						onChange={(event) => setForm((current) => ({ ...current, privateSoundcloudUrl: event.target.value }))}
-						className="admin-artists-page-input"
+						className="admin-field-input"
 					/>
 					<p className="admin-song-private-link-note">
 						Accepts private SoundCloud share links. Used only inside admin tools before release day.
@@ -776,7 +777,7 @@ function SongAlbumsTab({
 							<div className="admin-song-album-card-header">
 								<h3 className="admin-song-album-card-title">Album {index + 1}</h3>
 								{form.albumPlacements.length > 1 && (
-									<button type="button" onClick={() => removeAlbumPlacement(index)} className="admin-artists-page-danger-btn">Remove</button>
+									<button type="button" onClick={() => removeAlbumPlacement(index)} className="admin-button-danger">Remove</button>
 								)}
 							</div>
 							<div className="admin-modal-grid admin-song-album-grid">
@@ -810,7 +811,7 @@ function SongAlbumsTab({
 				<button
 					type="button"
 					onClick={addAlbumPlacement}
-					className="admin-artists-page-ghost-btn admin-song-add-album-btn"
+					className="admin-button-secondary admin-song-add-album-btn"
 					aria-label={isArtistScoped ? 'Add album placement' : 'Add album'}
 					title={isArtistScoped ? 'Add album placement' : 'Add album'}
 				>
@@ -858,10 +859,10 @@ function SongRolesTab({ form, artistOptions, outsideArtistOptions, addRole, remo
 										onChange={(patch) => updateRole(index, patch)}
 									/>
 								</div>
-								<select value={entry.role} onChange={(e) => updateRole(index, 'role', e.target.value)} className="admin-artists-page-input admin-song-role-select" aria-label={`Role type ${index + 1}`}>
+								<select value={entry.role} onChange={(e) => updateRole(index, 'role', e.target.value)} className="admin-field-input admin-song-role-select" aria-label={`Role type ${index + 1}`}>
 									{SONG_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
 								</select>
-								<button type="button" onClick={() => removeRole(index)} className="admin-artists-page-danger-btn admin-artists-page-icon-btn" aria-label="Remove role" title="Remove role">
+								<button type="button" onClick={() => removeRole(index)} className="admin-button-danger admin-button-icon" aria-label="Remove role" title="Remove role">
 									<FaTrash aria-hidden="true" />
 								</button>
 							</div>
@@ -873,7 +874,7 @@ function SongRolesTab({ form, artistOptions, outsideArtistOptions, addRole, remo
 				<button
 					type="button"
 					onClick={addRole}
-					className="admin-artists-page-ghost-btn admin-song-add-role-btn"
+					className="admin-button-secondary admin-song-add-role-btn"
 					aria-label="Add role"
 					title="Add role"
 				>
@@ -1134,13 +1135,13 @@ export default function AdminSongFormModal({
 	};
 
 	const songFieldClassName = (fieldName) =>
-		`admin-artists-page-input${validationErrors?.[fieldName] ? ' admin-artists-page-input-invalid' : ''}`;
+		`admin-field-input${validationErrors?.[fieldName] ? ' admin-field-input-invalid' : ''}`;
 
 	const placementFieldClassName = (index, fieldName) =>
-		`admin-artists-page-input${validationErrors?.albumPlacements?.[index]?.[fieldName] ? ' admin-artists-page-input-invalid' : ''}`;
+		`admin-field-input${validationErrors?.albumPlacements?.[index]?.[fieldName] ? ' admin-field-input-invalid' : ''}`;
 
 	return (
-		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+		<div className="admin-modal-overlay" role="presentation">
 			<div className="admin-modal admin-song-modal">
 				<div className="admin-modal-header">
 					<h2 className="admin-modal-title">{form?.id ? 'Edit Song' : 'New Song'}</h2>
@@ -1187,7 +1188,7 @@ export default function AdminSongFormModal({
 							<ConfirmActionButton
 								message="Delete this song and all its lyrics/annotations?"
 								onConfirm={() => onDelete(form)}
-								buttonClassName="admin-artists-page-danger-btn"
+								buttonClassName="admin-button-danger"
 								buttonAriaLabel="Delete song"
 								buttonTitle="Delete"
 							>
@@ -1195,9 +1196,9 @@ export default function AdminSongFormModal({
 							</ConfirmActionButton>
 						)}
 					</div>
-					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
+					<button type="button" onClick={onClose} className="admin-button-secondary">Cancel</button>
 					{!isViewer && (
-						<button type="button" onClick={handleSave} disabled={!form} className="admin-artists-page-primary-btn">Save</button>
+						<button type="button" onClick={handleSave} disabled={!form} className="admin-button-primary">Save</button>
 					)}
 				</div>
 			</div>

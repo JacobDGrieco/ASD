@@ -12,31 +12,31 @@
 	align-items: flex-start;
 }
 
-.song-albums-grid>.album-card-card {
+.song-albums-grid>.content-card-card {
 	flex: 0 0 calc((100% - (8px * (var(--song-albums-columns) - 1))) / var(--song-albums-columns));
 	width: calc((100% - (8px * (var(--song-albums-columns) - 1))) / var(--song-albums-columns));
 	align-items: center;
 	text-align: center;
 }
 
-.song-albums-grid>.album-card-card .album-card-primary-action,
-.song-albums-grid>.album-card-card .album-card-info {
+.song-albums-grid>.content-card-card .content-card-primary-action,
+.song-albums-grid>.content-card-card .content-card-info {
 	align-items: center;
 	width: 100%;
 	text-align: center;
 }
 
-.song-albums-grid>.album-card-card .album-card-cover-wrap {
+.song-albums-grid>.content-card-card .content-card-cover-wrap {
 	width: min(100%, 180px);
 	height: auto;
 	aspect-ratio: 1;
 }
 
-.song-albums-grid>.album-card-card .album-card-title {
+.song-albums-grid>.content-card-card .content-card-title {
 	max-width: 100%;
 }
 
-.song-albums-grid>.album-card-card .album-card-stream-links {
+.song-albums-grid>.content-card-card .content-card-stream-links {
 	justify-content: center;
 }
 

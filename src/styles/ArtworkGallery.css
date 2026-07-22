@@ -21,8 +21,8 @@
 	transition: opacity 180ms ease, transform 180ms ease, border-color var(--transition), background var(--transition);
 }
 
-.album-card-card:hover .artwork-gallery-trigger,
-.album-card-card:focus-within .artwork-gallery-trigger,
+.content-card-card:hover .artwork-gallery-trigger,
+.content-card-card:focus-within .artwork-gallery-trigger,
 .artist-hero-portrait-frame:hover .artwork-gallery-trigger,
 .artist-hero-portrait-frame:focus-within .artwork-gallery-trigger,
 .song-header-art-wrap:hover .artwork-gallery-trigger,

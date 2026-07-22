@@ -61,7 +61,7 @@ function isTalentHidden(talent) {
 
 function TalentFormModal({ form, setForm, token, onClose, onSave, onDelete, canDelete }) {
 	return (
-		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+		<div className="admin-modal-overlay" role="presentation">
 			<div className="admin-modal">
 				<div className="admin-modal-header">
 					<h2 className="admin-modal-title">{form.id ? 'Edit Talent' : 'New Talent'}</h2>
@@ -72,17 +72,17 @@ function TalentFormModal({ form, setForm, token, onClose, onSave, onDelete, canD
 						<TabPanel header="Talent">
 							<div className="admin-modal-grid">
 								<div className="admin-modal-field admin-modal-field-full">
-									<div className="admin-artists-page-name-field">
+									<div className="admin-artist-name-field">
 										<button
 											type="button"
 											onClick={() => setForm((current) => ({ ...current, isVisible: !current.isVisible }))}
-											className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
+											className={`admin-visibility-toggle ${form.isVisible ? '' : 'admin-visibility-toggle-hidden'}`.trim()}
 											aria-label={form.isVisible ? 'Talent is visible to the public. Click to hide.' : 'Talent is hidden from the public. Click to show.'}
 											title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
 										>
 											{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
 										</button>
-										<div className="admin-artists-page-name-field-main">
+										<div className="admin-artist-name-field-main">
 											<label htmlFor="admin-fashion-talent-name" className="admin-modal-label">Name</label>
 											<input
 												id="admin-fashion-talent-name"
@@ -90,7 +90,7 @@ function TalentFormModal({ form, setForm, token, onClose, onSave, onDelete, canD
 												placeholder="Name"
 												value={form.name}
 												onChange={(event) => setForm((current) => ({ ...current, name: event.target.value, slug: slugify(event.target.value) }))}
-												className="admin-artists-page-input"
+												className="admin-field-input"
 											/>
 										</div>
 									</div>
@@ -112,7 +112,7 @@ function TalentFormModal({ form, setForm, token, onClose, onSave, onDelete, canD
 										placeholder="Bio"
 										value={form.bio}
 										onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))}
-										className="admin-artists-page-input admin-modal-textarea"
+										className="admin-field-input admin-modal-textarea"
 										rows={5}
 									/>
 								</div>
@@ -123,18 +123,18 @@ function TalentFormModal({ form, setForm, token, onClose, onSave, onDelete, canD
 											id="admin-fashion-talent-role"
 											value={form.role}
 											onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))}
-											className="admin-artists-page-input"
+											className="admin-field-input"
 										>
 											{ROLE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
 										</select>
 									</div>
 									<div className="admin-modal-field">
 										<label htmlFor="admin-fashion-talent-agency-name" className="admin-modal-label">Agency Name</label>
-										<input id="admin-fashion-talent-agency-name" type="text" placeholder="Agency name (if signed)" value={form.agencyName} onChange={(event) => setForm((current) => ({ ...current, agencyName: event.target.value }))} className="admin-artists-page-input" />
+										<input id="admin-fashion-talent-agency-name" type="text" placeholder="Agency name (if signed)" value={form.agencyName} onChange={(event) => setForm((current) => ({ ...current, agencyName: event.target.value }))} className="admin-field-input" />
 									</div>
 									<div className="admin-modal-field">
 										<label htmlFor="admin-fashion-talent-agency-contact" className="admin-modal-label">Agency Contact</label>
-										<input id="admin-fashion-talent-agency-contact" type="text" placeholder="Agency email or phone" value={form.agencyContact} onChange={(event) => setForm((current) => ({ ...current, agencyContact: event.target.value }))} className="admin-artists-page-input" />
+										<input id="admin-fashion-talent-agency-contact" type="text" placeholder="Agency email or phone" value={form.agencyContact} onChange={(event) => setForm((current) => ({ ...current, agencyContact: event.target.value }))} className="admin-field-input" />
 									</div>
 								</div>
 							</div>
@@ -158,7 +158,7 @@ function TalentFormModal({ form, setForm, token, onClose, onSave, onDelete, canD
 							<ConfirmActionButton
 								message="Delete this person? They will be removed from any Look credits."
 								onConfirm={onDelete}
-								buttonClassName="admin-artists-page-danger-btn"
+								buttonClassName="admin-button-danger"
 								buttonAriaLabel="Delete talent"
 								buttonTitle="Delete"
 							>
@@ -166,8 +166,8 @@ function TalentFormModal({ form, setForm, token, onClose, onSave, onDelete, canD
 							</ConfirmActionButton>
 						)}
 					</div>
-					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
-					<button type="button" onClick={onSave} className="admin-artists-page-primary-btn">Save</button>
+					<button type="button" onClick={onClose} className="admin-button-secondary">Cancel</button>
+					<button type="button" onClick={onSave} className="admin-button-primary">Save</button>
 				</div>
 			</div>
 		</div>
@@ -319,10 +319,10 @@ export default function AdminFashionTalentPage() {
 
 	return (
 		<div>
-			<div className="admin-artists-page-sticky-top">
-				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Fashion — Talent</h1>
-					{isSuperAdmin && <button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Talent</button>}
+			<div className="admin-sticky-top">
+				<div className="admin-page-header">
+					<h1 className="admin-page-title">Fashion — Talent</h1>
+					{isSuperAdmin && <button type="button" onClick={openCreate} className="admin-button-primary">New Talent</button>}
 				</div>
 			</div>
 

@@ -105,7 +105,7 @@ export default function AdminLayout() {
 			{ to: '/admin/fashion/talent', label: 'Talent', icon: <FaUsers aria-hidden="true" /> },
 		] : []),
 		...(hasAdminPageAccess(session, ADMIN_PAGE_KEYS.FASHION_OUTSIDE_TALENT) ? [
-			{ to: '/admin/fashion/outside_talent', label: 'Outside Talent', icon: <FaUserFriends aria-hidden="true" /> },
+			{ to: '/admin/fashion/outside-talent', label: 'Outside Talent', icon: <FaUserFriends aria-hidden="true" /> },
 		] : []),
 		...(hasAdminPageAccess(session, ADMIN_PAGE_KEYS.FASHION_COLLECTIONS) ? [
 			{ to: '/admin/fashion/collections', label: 'Collections', icon: <FaCompactDisc aria-hidden="true" /> },

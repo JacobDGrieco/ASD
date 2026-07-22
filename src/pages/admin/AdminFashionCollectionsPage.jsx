@@ -35,11 +35,11 @@ const empty = {
 };
 
 const columns = [
-	{ key: 'coverImage', label: 'Cover', kind: 'image', className: 'admin-artists-page-col-image' },
-	{ key: 'title', label: 'Title', className: 'admin-artists-page-col-lg' },
-	{ key: 'season', label: 'Season', className: 'admin-artists-page-col-sm admin-fashion-collections-season-col' },
-	{ key: 'releaseDate', label: 'Release Date', kind: 'date', className: 'admin-artists-page-col-sm' },
-	{ key: 'lookCount', label: 'Looks', kind: 'lookCount', className: 'admin-artists-page-col-sm' },
+	{ key: 'coverImage', label: 'Cover', kind: 'image', className: 'admin-table-col-image' },
+	{ key: 'title', label: 'Title', className: 'admin-table-col-lg' },
+	{ key: 'season', label: 'Season', className: 'admin-table-col-sm admin-fashion-collections-season-col' },
+	{ key: 'releaseDate', label: 'Release Date', kind: 'date', className: 'admin-table-col-sm' },
+	{ key: 'lookCount', label: 'Looks', kind: 'lookCount', className: 'admin-table-col-sm' },
 ];
 
 function validateCollectionForm(form) {
@@ -104,30 +104,30 @@ function isCollectionHidden(collection) {
 function renderDisplayValue(collection, column) {
 	if (column.kind === 'image') {
 		const image = collection.coverImage;
-		if (!image) return <span className="admin-artists-page-empty-value">-</span>;
+		if (!image) return <span className="admin-empty-value">-</span>;
 		return (
-			<div className="admin-artists-page-image-summary">
-				<div className={`admin-artists-page-thumb-frame ${isCollectionHidden(collection) ? 'admin-artists-page-thumb-frame-hidden' : ''}`.trim()}>
-					<img src={image.previewUrl || image.url} alt={collection.title} className="admin-artists-page-thumb" />
+			<div className="admin-image-summary">
+				<div className={`admin-thumb-frame ${isCollectionHidden(collection) ? 'admin-thumb-frame-hidden' : ''}`.trim()}>
+					<img src={image.previewUrl || image.url} alt={collection.title} className="admin-thumb" />
 				</div>
-				<span className="admin-artists-page-image-count">cover</span>
+				<span className="admin-image-count">cover</span>
 			</div>
 		);
 	}
 
 	if (column.kind === 'lookCount') {
 		const count = collection.lookCount ?? 0;
-		return <span className="admin-artists-page-cell-value">{count} look{count === 1 ? '' : 's'}</span>;
+		return <span className="admin-table-cell-value">{count} look{count === 1 ? '' : 's'}</span>;
 	}
 
 	if (column.kind === 'date') {
 		const value = collectionReleaseDateValue(collection);
-		return value ? <span className="admin-artists-page-cell-value" title={value}>{value}</span> : <span className="admin-artists-page-empty-value">-</span>;
+		return value ? <span className="admin-table-cell-value" title={value}>{value}</span> : <span className="admin-empty-value">-</span>;
 	}
 
 	const value = collection[column.key];
-	if (value === null || value === undefined || value === '') return <span className="admin-artists-page-empty-value">-</span>;
-	return <span className="admin-artists-page-cell-value" title={String(value)}>{String(value)}</span>;
+	if (value === null || value === undefined || value === '') return <span className="admin-empty-value">-</span>;
+	return <span className="admin-table-cell-value" title={String(value)}>{String(value)}</span>;
 }
 
 function CollectionsTable({
@@ -136,28 +136,28 @@ function CollectionsTable({
 	onEdit,
 }) {
 	return (
-		<div className="admin-artists-page-table-wrap">
-			<table className="admin-artists-page-table">
+		<div className="admin-table-wrap">
+			<table className="admin-table">
 				<thead>
 					<tr>
 						{columns.map((column) => <th key={column.key} className={column.className}>{column.label}</th>)}
-						<th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
+						<th className="admin-table-actions-col admin-table-sticky-right-0"></th>
 					</tr>
 				</thead>
 				<tbody>
 					{collections.map((collection) => (
 						<tr
 							key={collection.id}
-							className={isCollectionHidden(collection) ? 'admin-artists-page-hidden-row' : ''}
+							className={isCollectionHidden(collection) ? 'admin-table-hidden-row' : ''}
 						>
 							{columns.map((column) => (
 								<td key={column.key} className={column.className ?? ''}>
 									{renderDisplayValue(collection, column)}
 								</td>
 							))}
-							<td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
-								<div className="admin-artists-page-actions">
-									<button type="button" onClick={() => void onEdit(collection)} disabled={loadingEditId === collection.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit collection" title="Edit">
+							<td className="admin-table-action-cell admin-table-actions-col admin-table-sticky-right-0">
+								<div className="admin-table-actions">
+									<button type="button" onClick={() => void onEdit(collection)} disabled={loadingEditId === collection.id} className="admin-button-secondary admin-button-icon" aria-label="Edit collection" title="Edit">
 										<FaPencilAlt aria-hidden="true" />
 									</button>
 								</div>
@@ -172,7 +172,7 @@ function CollectionsTable({
 
 function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions, onClose, onSave, onDelete }) {
 	return (
-		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+		<div className="admin-modal-overlay" role="presentation">
 			<div className="admin-modal">
 				<div className="admin-modal-header">
 					<h2 className="admin-modal-title">{form.id ? 'Edit Collection' : 'New Collection'}</h2>
@@ -183,17 +183,17 @@ function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions,
 						<TabPanel header="Collection">
 							<div className="admin-modal-grid">
 								<div className="admin-modal-field admin-modal-field-full">
-									<div className="admin-artists-page-name-field">
+									<div className="admin-artist-name-field">
 										<button
 											type="button"
 											onClick={() => setForm((current) => ({ ...current, isVisible: !current.isVisible }))}
-											className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
+											className={`admin-visibility-toggle ${form.isVisible ? '' : 'admin-visibility-toggle-hidden'}`.trim()}
 											aria-label={form.isVisible ? 'Collection is visible to the public. Click to hide.' : 'Collection is hidden from the public. Click to show.'}
 											title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
 										>
 											{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
 										</button>
-										<div className="admin-artists-page-name-field-main">
+										<div className="admin-artist-name-field-main">
 											<label htmlFor="admin-fashion-collection-title" className="admin-modal-label">Title</label>
 											<input
 												id="admin-fashion-collection-title"
@@ -201,7 +201,7 @@ function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions,
 												placeholder="Collection title"
 												value={form.title}
 												onChange={(event) => setForm((current) => ({ ...current, title: event.target.value, slug: slugify(event.target.value) }))}
-												className="admin-artists-page-input"
+												className="admin-field-input"
 											/>
 										</div>
 									</div>
@@ -225,7 +225,7 @@ function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions,
 											id="admin-fashion-collection-type"
 											value={form.type}
 											onChange={(event) => setForm((current) => ({ ...current, type: event.target.value }))}
-											className="admin-artists-page-input"
+											className="admin-field-input"
 										>
 											<option value="COLLECTION">Collection</option>
 											<option value="LOOSE_LOOK">Loose Look</option>
@@ -233,14 +233,14 @@ function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions,
 									</div>
 									<div className="admin-modal-field">
 										<label htmlFor="admin-fashion-collection-location" className="admin-modal-label">Location</label>
-										<input id="admin-fashion-collection-location" type="text" placeholder="Paris Fashion Week" value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} className="admin-artists-page-input" />
+										<input id="admin-fashion-collection-location" type="text" placeholder="Paris Fashion Week" value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} className="admin-field-input" />
 									</div>
 								</div>
 
 								<div className="admin-modal-field admin-modal-field-full admin-fashion-collection-season-date-row">
 									<div className="admin-modal-field">
 										<label htmlFor="admin-fashion-collection-season" className="admin-modal-label">Season</label>
-										<input id="admin-fashion-collection-season" type="text" placeholder="SS25" value={form.season} onChange={(event) => setForm((current) => ({ ...current, season: event.target.value }))} className="admin-artists-page-input" />
+										<input id="admin-fashion-collection-season" type="text" placeholder="SS25" value={form.season} onChange={(event) => setForm((current) => ({ ...current, season: event.target.value }))} className="admin-field-input" />
 									</div>
 									<div className="admin-modal-field">
 										<label htmlFor="admin-fashion-collection-release-date" className="admin-modal-label">Release Date</label>
@@ -249,7 +249,7 @@ function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions,
 											ariaLabel="Collection release date"
 											value={form.releaseDate}
 											onChange={(value) => setForm((current) => ({ ...current, releaseDate: value }))}
-											className="admin-artists-page-input"
+											className="admin-field-input"
 										/>
 									</div>
 								</div>
@@ -261,7 +261,7 @@ function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions,
 										placeholder="Short subtitle for the catalogue..."
 										value={form.description}
 										onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-										className="admin-artists-page-input admin-modal-textarea"
+										className="admin-field-input admin-modal-textarea"
 										rows={4}
 									/>
 								</div>
@@ -273,7 +273,7 @@ function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions,
 										placeholder="Long-form collection notes..."
 										value={form.about}
 										onChange={(event) => setForm((current) => ({ ...current, about: event.target.value }))}
-										className="admin-artists-page-input admin-modal-textarea"
+										className="admin-field-input admin-modal-textarea"
 										rows={7}
 									/>
 								</div>
@@ -302,7 +302,7 @@ function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions,
 							<ConfirmActionButton
 								message="Delete this collection? Assigned looks will become loose looks."
 								onConfirm={onDelete}
-								buttonClassName="admin-artists-page-danger-btn"
+								buttonClassName="admin-button-danger"
 								buttonAriaLabel="Delete collection"
 								buttonTitle="Delete"
 							>
@@ -310,8 +310,8 @@ function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions,
 							</ConfirmActionButton>
 						)}
 					</div>
-					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
-					<button type="button" onClick={onSave} className="admin-artists-page-primary-btn">Save</button>
+					<button type="button" onClick={onClose} className="admin-button-secondary">Cancel</button>
+					<button type="button" onClick={onSave} className="admin-button-primary">Save</button>
 				</div>
 			</div>
 		</div>
@@ -446,10 +446,10 @@ export default function AdminFashionCollectionsPage() {
 
 	return (
 		<div>
-			<div className="admin-artists-page-sticky-top">
-				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Fashion - Collections</h1>
-					<button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Collection</button>
+			<div className="admin-sticky-top">
+				<div className="admin-page-header">
+					<h1 className="admin-page-title">Fashion - Collections</h1>
+					<button type="button" onClick={openCreate} className="admin-button-primary">New Collection</button>
 				</div>
 			</div>
 

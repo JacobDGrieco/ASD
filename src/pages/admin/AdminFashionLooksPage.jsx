@@ -35,12 +35,12 @@ const empty = {
 };
 
 const columns = [
-	{ key: 'images', label: 'Cover', kind: 'images', className: 'admin-artists-page-col-image' },
-	{ key: 'placementOrder', label: '#', kind: 'placementOrder', className: 'admin-songs-col-track admin-artists-page-center-cell' },
-	{ key: 'title', label: 'Title', className: 'admin-artists-page-col-lg' },
-	{ key: 'collections', label: 'Collections', kind: 'collections', className: 'admin-artists-page-col-sm' },
-	{ key: 'effectiveReleaseDate', label: 'Release Date', kind: 'date', className: 'admin-artists-page-col-sm' },
-	{ key: 'pieceCount', label: 'Pieces', kind: 'pieceCount', className: 'admin-artists-page-col-sm' },
+	{ key: 'images', label: 'Cover', kind: 'images', className: 'admin-table-col-image' },
+	{ key: 'placementOrder', label: '#', kind: 'placementOrder', className: 'admin-songs-col-track admin-table-center-cell' },
+	{ key: 'title', label: 'Title', className: 'admin-table-col-lg' },
+	{ key: 'collections', label: 'Collections', kind: 'collections', className: 'admin-table-col-sm' },
+	{ key: 'effectiveReleaseDate', label: 'Release Date', kind: 'date', className: 'admin-table-col-sm' },
+	{ key: 'pieceCount', label: 'Pieces', kind: 'pieceCount', className: 'admin-table-col-sm' },
 ];
 
 function primaryImage(images) {
@@ -65,47 +65,47 @@ function hasCreditValue(credit) {
 function renderDisplayValue(look, column) {
 	if (column.kind === 'images') {
 		const image = primaryImage(look.images);
-		if (!image) return <span className="admin-artists-page-empty-value">-</span>;
+		if (!image) return <span className="admin-empty-value">-</span>;
 		return (
-			<div className="admin-artists-page-image-summary">
-				<div className={`admin-artists-page-thumb-frame ${isLookHidden(look) ? 'admin-artists-page-thumb-frame-hidden' : ''}`.trim()}>
-					<img src={image.previewUrl || image.url} alt={look.title} className="admin-artists-page-thumb" />
+			<div className="admin-image-summary">
+				<div className={`admin-thumb-frame ${isLookHidden(look) ? 'admin-thumb-frame-hidden' : ''}`.trim()}>
+					<img src={image.previewUrl || image.url} alt={look.title} className="admin-thumb" />
 				</div>
-				<span className="admin-artists-page-image-count">{look.imageCount ?? look.images?.length ?? 1} image{(look.imageCount ?? look.images?.length ?? 1) === 1 ? '' : 's'}</span>
+				<span className="admin-image-count">{look.imageCount ?? look.images?.length ?? 1} image{(look.imageCount ?? look.images?.length ?? 1) === 1 ? '' : 's'}</span>
 			</div>
 		);
 	}
 
 	if (column.kind === 'pieceCount') {
 		const count = look.pieceCount ?? look.pieces?.length ?? 0;
-		return <span className="admin-artists-page-cell-value">{count} piece{count === 1 ? '' : 's'}</span>;
+		return <span className="admin-table-cell-value">{count} piece{count === 1 ? '' : 's'}</span>;
 	}
 
 	if (column.kind === 'collections') {
 		const labels = (look.collectionPlacements ?? [])
 			.flatMap((placement) => (placement.collection?.title ? [placement.collection.title] : []));
-		if (!labels.length) return <span className="admin-artists-page-empty-value">Loose look</span>;
+		if (!labels.length) return <span className="admin-empty-value">Loose look</span>;
 		const value = labels.join(', ');
-		return <span className="admin-artists-page-cell-value" title={value}>{value}</span>;
+		return <span className="admin-table-cell-value" title={value}>{value}</span>;
 	}
 
 	if (column.kind === 'date') {
 		const value = look.effectiveReleaseDate ? String(look.effectiveReleaseDate).slice(0, 10) : '';
-		return value ? <span className="admin-artists-page-cell-value" title={value}>{value}</span> : <span className="admin-artists-page-empty-value">-</span>;
+		return value ? <span className="admin-table-cell-value" title={value}>{value}</span> : <span className="admin-empty-value">-</span>;
 	}
 
 	if (column.kind === 'placementOrder') {
 		const placements = Array.isArray(look.collectionPlacements) ? look.collectionPlacements : [];
-		if (!placements.length) return <span className="admin-artists-page-cell-value">{look.order ?? 0}</span>;
+		if (!placements.length) return <span className="admin-table-cell-value">{look.order ?? 0}</span>;
 		const value = placements
 			.map((placement) => placement.sortOrder ?? 0)
 			.join(', ');
-		return <span className="admin-artists-page-cell-value" title={value}>{value}</span>;
+		return <span className="admin-table-cell-value" title={value}>{value}</span>;
 	}
 
 	const value = look[column.key];
-	if (value === null || value === undefined || value === '') return <span className="admin-artists-page-empty-value">-</span>;
-	return <span className="admin-artists-page-cell-value" title={String(value)}>{String(value)}</span>;
+	if (value === null || value === undefined || value === '') return <span className="admin-empty-value">-</span>;
+	return <span className="admin-table-cell-value" title={String(value)}>{String(value)}</span>;
 }
 
 // Older credits may still have a linked person. Keep that id while making the
@@ -235,28 +235,28 @@ function toCrewOption(person) {
 
 function LooksTable({ looks, loadingEditId, onEdit }) {
 	return (
-		<div className="admin-artists-page-table-wrap">
-			<table className="admin-artists-page-table">
+		<div className="admin-table-wrap">
+			<table className="admin-table">
 				<thead>
 					<tr>
 						{columns.map((column) => <th key={column.key} className={column.className}>{column.label}</th>)}
-						<th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
+						<th className="admin-table-actions-col admin-table-sticky-right-0"></th>
 					</tr>
 				</thead>
 				<tbody>
 					{looks.map((look) => (
 						<tr
 							key={look.id}
-							className={isLookHidden(look) ? 'admin-artists-page-hidden-row' : ''}
+							className={isLookHidden(look) ? 'admin-table-hidden-row' : ''}
 						>
 							{columns.map((column) => (
 								<td key={column.key} className={column.className ?? ''}>
 									{renderDisplayValue(look, column)}
 								</td>
 							))}
-							<td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
-								<div className="admin-artists-page-actions">
-									<button type="button" onClick={() => void onEdit(look)} disabled={loadingEditId === look.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit look" title="Edit">
+							<td className="admin-table-action-cell admin-table-actions-col admin-table-sticky-right-0">
+								<div className="admin-table-actions">
+									<button type="button" onClick={() => void onEdit(look)} disabled={loadingEditId === look.id} className="admin-button-secondary admin-button-icon" aria-label="Edit look" title="Edit">
 										<FaPencilAlt aria-hidden="true" />
 									</button>
 								</div>
@@ -271,7 +271,7 @@ function LooksTable({ looks, loadingEditId, onEdit }) {
 
 function LookFormModal({ form, setForm, token, collections, talentOptions, crewOptions, onClose, onSave, onDelete }) {
 	return (
-		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+		<div className="admin-modal-overlay" role="presentation">
 			<div className="admin-modal">
 				<div className="admin-modal-header">
 					<h2 className="admin-modal-title">{form.id ? 'Edit Look' : 'New Look'}</h2>
@@ -282,17 +282,17 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 						<TabPanel header="Look">
 							<div className="admin-modal-grid">
 								<div className="admin-modal-field admin-modal-field-full">
-									<div className="admin-artists-page-name-field">
+									<div className="admin-artist-name-field">
 										<button
 											type="button"
 											onClick={() => setForm((current) => ({ ...current, isVisible: !current.isVisible }))}
-											className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
+											className={`admin-visibility-toggle ${form.isVisible ? '' : 'admin-visibility-toggle-hidden'}`.trim()}
 											aria-label={form.isVisible ? 'Look is visible to the public. Click to hide.' : 'Look is hidden from the public. Click to show.'}
 											title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
 										>
 											{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
 										</button>
-										<div className="admin-artists-page-name-field-main">
+										<div className="admin-artist-name-field-main">
 											<label htmlFor="admin-fashion-look-title" className="admin-modal-label">Title</label>
 											<input
 												id="admin-fashion-look-title"
@@ -300,7 +300,7 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 												placeholder="Look title"
 												value={form.title}
 												onChange={(event) => setForm((current) => ({ ...current, title: event.target.value, slug: slugify(event.target.value) }))}
-												className="admin-artists-page-input"
+												className="admin-field-input"
 											/>
 										</div>
 									</div>
@@ -324,7 +324,7 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 										ariaLabel="Look release date"
 										value={form.releaseDate}
 										onChange={(value) => setForm((current) => ({ ...current, releaseDate: value }))}
-										className="admin-artists-page-input"
+										className="admin-field-input"
 									/>
 								</div>
 
@@ -335,7 +335,7 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 										placeholder="Describe the fashion and the ideas behind this look..."
 										value={form.description}
 										onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-										className="admin-artists-page-input admin-modal-textarea"
+										className="admin-field-input admin-modal-textarea"
 										rows={6}
 									/>
 								</div>
@@ -357,7 +357,7 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 															itemIndex === index ? { ...item, collectionId: event.target.value } : item
 														)),
 													}))}
-													className="admin-artists-page-input admin-fashion-look-placement-collection"
+													className="admin-field-input admin-fashion-look-placement-collection"
 													aria-label={`Collection ${index + 1}`}
 												>
 													<option value="">Select collection</option>
@@ -382,7 +382,7 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 															itemIndex === index ? { ...item, sortOrder: Number(event.target.value) || 0 } : item
 														)),
 													}))}
-													className="admin-artists-page-input admin-fashion-look-placement-order"
+													className="admin-field-input admin-fashion-look-placement-order"
 													aria-label={`Order in collection ${index + 1}`}
 												/>
 												<button
@@ -391,7 +391,7 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 														...current,
 														collectionPlacements: current.collectionPlacements.filter((_, itemIndex) => itemIndex !== index),
 													}))}
-													className="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+													className="admin-button-danger admin-button-icon"
 													aria-label="Remove collection placement"
 													title="Remove"
 												>
@@ -408,7 +408,7 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 													{ _key: crypto.randomUUID(), collectionId: '', sortOrder: current.collectionPlacements.length },
 												],
 											}))}
-											className="admin-artists-page-ghost-btn"
+											className="admin-button-secondary"
 										>
 											Add Collection
 										</button>
@@ -455,7 +455,7 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 							<ConfirmActionButton
 								message="Delete this Look and all its pieces and credits?"
 								onConfirm={onDelete}
-								buttonClassName="admin-artists-page-danger-btn"
+								buttonClassName="admin-button-danger"
 								buttonAriaLabel="Delete look"
 								buttonTitle="Delete"
 							>
@@ -463,8 +463,8 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 							</ConfirmActionButton>
 						)}
 					</div>
-					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
-					<button type="button" onClick={onSave} className="admin-artists-page-primary-btn">Save</button>
+					<button type="button" onClick={onClose} className="admin-button-secondary">Cancel</button>
+					<button type="button" onClick={onSave} className="admin-button-primary">Save</button>
 				</div>
 			</div>
 		</div>
@@ -614,10 +614,10 @@ export default function AdminFashionLooksPage() {
 
 	return (
 		<div>
-			<div className="admin-artists-page-sticky-top">
-				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Fashion — Looks</h1>
-					<button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Look</button>
+			<div className="admin-sticky-top">
+				<div className="admin-page-header">
+					<h1 className="admin-page-title">Fashion — Looks</h1>
+					<button type="button" onClick={openCreate} className="admin-button-primary">New Look</button>
 				</div>
 			</div>
 

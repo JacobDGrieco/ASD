@@ -41,12 +41,12 @@ function formatDate(value) {
 
 function renderMemberImage(member) {
 	const image = primaryImage(member);
-	if (!image) return <span className="admin-artists-page-empty-value">-</span>;
+	if (!image) return <span className="admin-empty-value">-</span>;
 
 	return (
-		<div className="admin-artists-page-image-summary">
-			<div className={`admin-artists-page-thumb-frame ${member.isVisible ? '' : 'admin-artists-page-thumb-frame-hidden'}`.trim()}>
-				<img src={image.previewUrl || image.url} alt={member.name} className="admin-artists-page-thumb" />
+		<div className="admin-image-summary">
+			<div className={`admin-thumb-frame ${member.isVisible ? '' : 'admin-thumb-frame-hidden'}`.trim()}>
+				<img src={image.previewUrl || image.url} alt={member.name} className="admin-thumb" />
 			</div>
 		</div>
 	);
@@ -79,7 +79,7 @@ function AboutHeroCopyPanel({ titleDraft, bioDraft, setTitleDraft, setBioDraft, 
 				id="admin-about-hero-title"
 				value={titleDraft}
 				onChange={(event) => setTitleDraft(normalizeHeroTitle(event.target.value))}
-				className="admin-artists-page-input admin-modal-textarea admin-about-title-input"
+				className="admin-field-input admin-modal-textarea admin-about-title-input"
 				rows={2}
 				required
 			/>
@@ -90,15 +90,15 @@ function AboutHeroCopyPanel({ titleDraft, bioDraft, setTitleDraft, setBioDraft, 
 				id="admin-about-hero-bio"
 				value={bioDraft}
 				onChange={(event) => setBioDraft(event.target.value)}
-				className="admin-artists-page-input admin-modal-textarea admin-about-bio-input"
+				className="admin-field-input admin-modal-textarea admin-about-bio-input"
 				rows={4}
 				required
 			/>
 			<div className="admin-about-profile-actions">
-				<button type="button" onClick={onReset} className="admin-artists-page-ghost-btn">
+				<button type="button" onClick={onReset} className="admin-button-secondary">
 					Reset
 				</button>
-				<button type="button" onClick={() => void onSave()} className="admin-artists-page-primary-btn" disabled={saving}>
+				<button type="button" onClick={() => void onSave()} className="admin-button-primary" disabled={saving}>
 					{saving ? 'Saving...' : 'Save Copy'}
 				</button>
 			</div>
@@ -108,46 +108,46 @@ function AboutHeroCopyPanel({ titleDraft, bioDraft, setTitleDraft, setBioDraft, 
 
 function AboutMembersTable({ members, loading, onEdit }) {
 	return (
-		<div className="admin-artists-page-table-wrap">
-			<table className="admin-artists-page-table">
+		<div className="admin-table-wrap">
+			<table className="admin-table">
 				<thead>
 					<tr>
-						<th className="admin-artists-page-col-image">Image</th>
-						<th className="admin-artists-page-col-lg">Name</th>
-						<th className="admin-artists-page-col-lg">Role</th>
+						<th className="admin-table-col-image">Image</th>
+						<th className="admin-table-col-lg">Name</th>
+						<th className="admin-table-col-lg">Role</th>
 						<th className="admin-about-bio-col">Bio</th>
-						<th className="admin-artists-page-col-sm">Visible</th>
-						<th className="admin-artists-page-col-sm">Order</th>
-						<th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
+						<th className="admin-table-col-sm">Visible</th>
+						<th className="admin-table-col-sm">Order</th>
+						<th className="admin-table-actions-col admin-table-sticky-right-0"></th>
 					</tr>
 				</thead>
 				<tbody>
 					{members.map((member) => (
-						<tr key={member.id} className={member.isVisible ? '' : 'admin-artists-page-hidden-row'}>
-							<td className="admin-artists-page-col-image">{renderMemberImage(member)}</td>
-							<td className="admin-artists-page-col-lg">
-								<span className="admin-artists-page-cell-value" title={member.name}>{member.name}</span>
+						<tr key={member.id} className={member.isVisible ? '' : 'admin-table-hidden-row'}>
+							<td className="admin-table-col-image">{renderMemberImage(member)}</td>
+							<td className="admin-table-col-lg">
+								<span className="admin-table-cell-value" title={member.name}>{member.name}</span>
 							</td>
-							<td className="admin-artists-page-col-lg">
-								<span className="admin-artists-page-cell-value" title={member.role}>{member.role}</span>
+							<td className="admin-table-col-lg">
+								<span className="admin-table-cell-value" title={member.role}>{member.role}</span>
 							</td>
 							<td className="admin-about-bio-col">
-								<span className="admin-artists-page-wrap-value" title={member.bio}>{member.bio}</span>
+								<span className="admin-table-wrap-value" title={member.bio}>{member.bio}</span>
 							</td>
-							<td className="admin-artists-page-col-sm admin-artists-page-center-cell">
+							<td className="admin-table-col-sm admin-table-center-cell">
 								<span className="admin-about-visibility-icon" title={member.isVisible ? 'Visible' : 'Hidden'}>
 									{member.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
 								</span>
 							</td>
-							<td className="admin-artists-page-col-sm">
-								<span className="admin-artists-page-cell-value">{member.sortOrder ?? 0}</span>
+							<td className="admin-table-col-sm">
+								<span className="admin-table-cell-value">{member.sortOrder ?? 0}</span>
 							</td>
-							<td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
-								<div className="admin-artists-page-actions">
+							<td className="admin-table-action-cell admin-table-actions-col admin-table-sticky-right-0">
+								<div className="admin-table-actions">
 									<button
 										type="button"
 										onClick={() => onEdit(member)}
-										className="admin-artists-page-ghost-btn admin-artists-page-icon-btn"
+										className="admin-button-secondary admin-button-icon"
 										aria-label={`Edit ${member.name}`}
 										title="Edit"
 									>
@@ -174,7 +174,7 @@ function AboutMemberFormModal({ form, setForm, token, onClose, onSave, onDelete 
 	if (!form) return null;
 
 	return (
-		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+		<div className="admin-modal-overlay" role="presentation">
 			<div className="admin-modal">
 				<div className="admin-modal-header">
 					<h2 className="admin-modal-title">{form.id ? 'Edit Member' : 'New Member'}</h2>
@@ -183,24 +183,24 @@ function AboutMemberFormModal({ form, setForm, token, onClose, onSave, onDelete 
 				<div className="admin-modal-body">
 					<div className="admin-modal-grid">
 						<div className="admin-modal-field admin-modal-field-full">
-							<div className="admin-artists-page-name-field">
+							<div className="admin-artist-name-field">
 								<button
 									type="button"
 									onClick={() => setForm((current) => ({ ...current, isVisible: !current.isVisible }))}
-									className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
+									className={`admin-visibility-toggle ${form.isVisible ? '' : 'admin-visibility-toggle-hidden'}`.trim()}
 									aria-label={form.isVisible ? 'Member is visible to the public. Click to hide.' : 'Member is hidden from the public. Click to show.'}
 									title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
 								>
 									{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
 								</button>
-								<div className="admin-artists-page-name-field-main">
+								<div className="admin-artist-name-field-main">
 									<label htmlFor="admin-about-member-name" className="admin-modal-label">Name <span className="admin-modal-label-required">*</span></label>
 									<input
 										id="admin-about-member-name"
 										type="text"
 										value={form.name}
 										onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-										className="admin-artists-page-input"
+										className="admin-field-input"
 										placeholder="Full name"
 									/>
 								</div>
@@ -231,7 +231,7 @@ function AboutMemberFormModal({ form, setForm, token, onClose, onSave, onDelete 
 								type="text"
 								value={form.role}
 								onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))}
-								className="admin-artists-page-input"
+								className="admin-field-input"
 								placeholder="Founder / Creative Director"
 							/>
 						</div>
@@ -242,7 +242,7 @@ function AboutMemberFormModal({ form, setForm, token, onClose, onSave, onDelete 
 								type="number"
 								value={form.sortOrder}
 								onChange={(event) => setForm((current) => ({ ...current, sortOrder: event.target.value }))}
-								className="admin-artists-page-input"
+								className="admin-field-input"
 								min="0"
 							/>
 						</div>
@@ -252,7 +252,7 @@ function AboutMemberFormModal({ form, setForm, token, onClose, onSave, onDelete 
 								id="admin-about-member-bio"
 								value={form.bio}
 								onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))}
-								className="admin-artists-page-input admin-modal-textarea"
+								className="admin-field-input admin-modal-textarea"
 								rows={5}
 								placeholder="Short public bio"
 							/>
@@ -265,7 +265,7 @@ function AboutMemberFormModal({ form, setForm, token, onClose, onSave, onDelete 
 							<ConfirmActionButton
 								message={`Delete ${form.name}?`}
 								onConfirm={onDelete}
-								buttonClassName="admin-artists-page-danger-btn"
+								buttonClassName="admin-button-danger"
 								buttonAriaLabel={`Delete ${form.name}`}
 								buttonTitle="Delete"
 							>
@@ -273,8 +273,8 @@ function AboutMemberFormModal({ form, setForm, token, onClose, onSave, onDelete 
 							</ConfirmActionButton>
 						)}
 					</div>
-					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
-					<button type="button" onClick={() => void onSave()} className="admin-artists-page-primary-btn">Save</button>
+					<button type="button" onClick={onClose} className="admin-button-secondary">Cancel</button>
+					<button type="button" onClick={() => void onSave()} className="admin-button-primary">Save</button>
 				</div>
 			</div>
 		</div>
@@ -435,10 +435,10 @@ export default function AdminAboutPage() {
 
 	return (
 		<div>
-			<div className="admin-artists-page-sticky-top">
-				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Admin - About Us</h1>
-					<button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Member</button>
+			<div className="admin-sticky-top">
+				<div className="admin-page-header">
+					<h1 className="admin-page-title">Admin - About Us</h1>
+					<button type="button" onClick={openCreate} className="admin-button-primary">New Member</button>
 				</div>
 			</div>
 

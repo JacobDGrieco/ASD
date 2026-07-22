@@ -173,7 +173,7 @@ export default function MusicRolePersonPickerField({
 			<div className="crew-picker-input-row">
 				<input
 					type="text"
-					className="admin-artists-page-input crew-picker-input"
+					className="admin-field-input crew-picker-input"
 					placeholder="Search artists or outside artists..."
 					value={open ? filter : (name || '')}
 					onChange={handleInputChange}

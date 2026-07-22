@@ -105,7 +105,7 @@ export default function CreditsField({ value, onChange, talentOptions = EMPTY_OP
 									id={index === 0 ? selectId : undefined}
 									value={credit.roleLabel ?? ''}
 									onChange={(event) => updateCredit(index, { roleLabel: event.target.value })}
-									className="admin-artists-page-input admin-credits-role-select"
+									className="admin-field-input admin-credits-role-select"
 									aria-label="Credit role"
 								>
 									<option value="">- Role -</option>
@@ -116,7 +116,7 @@ export default function CreditsField({ value, onChange, talentOptions = EMPTY_OP
 								<button
 									type="button"
 									onClick={() => removeCredit(index)}
-									className="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+									className="admin-button-danger admin-button-icon"
 									aria-label="Remove credit"
 									title="Remove credit"
 								>
@@ -130,7 +130,7 @@ export default function CreditsField({ value, onChange, talentOptions = EMPTY_OP
 			<button
 				type="button"
 				onClick={addCredit}
-				className="admin-artists-page-ghost-btn admin-full-width-icon-btn"
+				className="admin-button-secondary admin-full-width-icon-btn"
 				aria-label={placeholder}
 				title={placeholder}
 			>

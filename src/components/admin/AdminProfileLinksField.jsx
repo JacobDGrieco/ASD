@@ -52,7 +52,7 @@ export default function AdminProfileLinksField({ value, onChange, showTypeField 
 							<select
 								value={link.platform}
 								onChange={(event) => updateLink(link.id, { platform: event.target.value })}
-								className="admin-artists-page-input admin-profile-link-platform"
+								className="admin-field-input admin-profile-link-platform"
 								aria-label="Platform"
 							>
 								{PROFILE_LINK_PLATFORM_OPTIONS.map((option) => (
@@ -63,7 +63,7 @@ export default function AdminProfileLinksField({ value, onChange, showTypeField 
 								<select
 									value={link.type}
 									onChange={(event) => updateLink(link.id, { type: event.target.value })}
-									className="admin-artists-page-input admin-profile-link-type"
+									className="admin-field-input admin-profile-link-type"
 									aria-label="Link type"
 								>
 									{PROFILE_LINK_TYPES.map((option) => (
@@ -76,13 +76,13 @@ export default function AdminProfileLinksField({ value, onChange, showTypeField 
 								placeholder={link.platform === 'email' ? 'name@example.com' : 'https://'}
 								value={link.url}
 								onChange={(event) => updateLink(link.id, { url: event.target.value })}
-								className="admin-artists-page-input admin-profile-link-url"
+								className="admin-field-input admin-profile-link-url"
 								aria-label={`${platformLabel} link`}
 							/>
 							<button
 								type="button"
 								onClick={() => deleteLink(link.id)}
-								className="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+								className="admin-button-danger admin-button-icon"
 								aria-label={`Delete ${platformLabel} link`}
 								title="Delete link"
 							>
@@ -96,7 +96,7 @@ export default function AdminProfileLinksField({ value, onChange, showTypeField 
 				<p className="admin-profile-links-empty">No links yet.</p>
 			)}
 			<div className="admin-profile-links-actions">
-				<button type="button" onClick={addLink} className="admin-artists-page-ghost-btn admin-profile-links-add">
+				<button type="button" onClick={addLink} className="admin-button-secondary admin-profile-links-add">
 					<FaPlus aria-hidden="true" />
 					<span>Add link</span>
 				</button>

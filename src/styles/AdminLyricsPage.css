@@ -520,8 +520,8 @@
 	gap: 8px;
 }
 
-.admin-artists-page-ghost-btn,
-.admin-artists-page-danger-btn {
+.admin-button-secondary,
+.admin-button-danger {
 	padding: 6px 12px;
 	border: 1px solid var(--border);
 	background: none;
@@ -530,17 +530,17 @@
 	cursor: pointer;
 }
 
-.admin-artists-page-ghost-btn:hover {
+.admin-button-secondary:hover {
 	color: var(--text);
 	border-color: var(--text-muted);
 }
 
-.admin-artists-page-danger-btn {
+.admin-button-danger {
 	border-color: rgba(224, 96, 96, 0.3);
 	color: #e06060;
 }
 
-.admin-artists-page-danger-btn:hover {
+.admin-button-danger:hover {
 	background: rgba(224, 96, 96, 0.1);
 }
 

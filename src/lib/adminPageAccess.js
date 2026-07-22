@@ -71,7 +71,7 @@ export const ADMIN_PAGE_PATHS = {
 	[ADMIN_PAGE_KEYS.MUSIC_RECORD_PLAYER]: '/admin/record-player',
 	[ADMIN_PAGE_KEYS.MUSIC_CROSSHAIR]: '/admin/crosshair',
 	[ADMIN_PAGE_KEYS.FASHION_TALENT]: '/admin/fashion/talent',
-	[ADMIN_PAGE_KEYS.FASHION_OUTSIDE_TALENT]: '/admin/fashion/outside_talent',
+	[ADMIN_PAGE_KEYS.FASHION_OUTSIDE_TALENT]: '/admin/fashion/outside-talent',
 	[ADMIN_PAGE_KEYS.FASHION_COLLECTIONS]: '/admin/fashion/collections',
 	[ADMIN_PAGE_KEYS.FASHION_LOOKS]: '/admin/fashion/looks',
 };

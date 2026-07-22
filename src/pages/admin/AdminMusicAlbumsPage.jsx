@@ -50,12 +50,12 @@ const empty = {
 };
 
 const columns = [
-	{ key: 'images', label: 'Images', kind: 'images', className: 'admin-artists-page-col-image' },
-	{ key: 'title', label: 'Title', placeholder: 'Title', className: 'admin-artists-page-col-wide' },
-	{ key: 'artistId', label: 'Artist', kind: 'artist', className: 'admin-artists-page-col-sm' },
-	{ key: 'type', label: 'Type', kind: 'select', className: 'admin-artists-page-col-sm' },
-	{ key: 'releaseDate', label: 'Release Date', type: 'date', placeholder: 'Release Date', className: 'admin-artists-page-col-sm' },
-	{ key: 'links', label: 'Links', kind: 'links', className: 'admin-artists-page-col-xl admin-links-col-centered' },
+	{ key: 'images', label: 'Images', kind: 'images', className: 'admin-table-col-image' },
+	{ key: 'title', label: 'Title', placeholder: 'Title', className: 'admin-table-col-wide' },
+	{ key: 'artistId', label: 'Artist', kind: 'artist', className: 'admin-table-col-sm' },
+	{ key: 'type', label: 'Type', kind: 'select', className: 'admin-table-col-sm' },
+	{ key: 'releaseDate', label: 'Release Date', type: 'date', placeholder: 'Release Date', className: 'admin-table-col-sm' },
+	{ key: 'links', label: 'Links', kind: 'links', className: 'admin-table-col-xl admin-links-col-centered' },
 ];
 
 function primaryImage(images) {
@@ -178,12 +178,12 @@ function renderValue(album, column) {
 		const artistLabel = isOtherArtist(album.artist)
 			? album.otherArtistName || OTHER_ARTIST_NAME
 			: album.artist?.name;
-		return artistLabel ? <span className="admin-artists-page-cell-value" title={artistLabel}>{artistLabel}</span> : <span className="admin-artists-page-empty-value">-</span>;
+		return artistLabel ? <span className="admin-table-cell-value" title={artistLabel}>{artistLabel}</span> : <span className="admin-empty-value">-</span>;
 	}
 
 	if (column.key === 'releaseDate') {
 		const value = album.releaseDate ? album.releaseDate.slice(0, 10) : '';
-		return value ? <span className="admin-artists-page-cell-value" title={value}>{value}</span> : <span className="admin-artists-page-empty-value">-</span>;
+		return value ? <span className="admin-table-cell-value" title={value}>{value}</span> : <span className="admin-empty-value">-</span>;
 	}
 
 	if (column.kind === 'links') {
@@ -192,20 +192,20 @@ function renderValue(album, column) {
 
 	if (column.kind === 'images') {
 		const image = primaryImage(album.images);
-		if (!image) return <span className="admin-artists-page-empty-value">-</span>;
+		if (!image) return <span className="admin-empty-value">-</span>;
 		return (
-			<div className="admin-artists-page-image-summary">
-				<div className={`admin-artists-page-thumb-frame ${isAlbumHidden(album) ? 'admin-artists-page-thumb-frame-hidden' : ''}`.trim()}>
-					<img src={image.previewUrl || image.url} alt={album.title} className="admin-artists-page-thumb" />
+			<div className="admin-image-summary">
+				<div className={`admin-thumb-frame ${isAlbumHidden(album) ? 'admin-thumb-frame-hidden' : ''}`.trim()}>
+					<img src={image.previewUrl || image.url} alt={album.title} className="admin-thumb" />
 				</div>
-				<span className="admin-artists-page-image-count">{album.imageCount ?? album.images?.length ?? 1} image{(album.imageCount ?? album.images?.length ?? 1) === 1 ? '' : 's'}</span>
+				<span className="admin-image-count">{album.imageCount ?? album.images?.length ?? 1} image{(album.imageCount ?? album.images?.length ?? 1) === 1 ? '' : 's'}</span>
 			</div>
 		);
 	}
 
 	const value = album[column.key];
-	if (value === null || value === undefined || value === '') return <span className="admin-artists-page-empty-value">-</span>;
-	return <span className={column.valueClassName ?? 'admin-artists-page-cell-value'} title={String(value)}>{String(value)}</span>;
+	if (value === null || value === undefined || value === '') return <span className="admin-empty-value">-</span>;
+	return <span className={column.valueClassName ?? 'admin-table-cell-value'} title={String(value)}>{String(value)}</span>;
 }
 
 function renderHeader(column) {
@@ -214,26 +214,26 @@ function renderHeader(column) {
 
 function AlbumsTable({ albums, isViewer, loadingEditId, onEdit }) {
 	return (
-		<div className="admin-artists-page-table-wrap">
-			<table className="admin-artists-page-table">
+		<div className="admin-table-wrap">
+			<table className="admin-table">
 				<thead>
 					<tr>
 						{columns.map((column) => <th key={column.key} className={column.className}>{renderHeader(column)}</th>)}
-						<th className="admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
+						<th className="admin-table-actions-col admin-table-sticky-right-0"></th>
 					</tr>
 				</thead>
 				<tbody>
 					{albums.map((album) => (
-						<tr key={album.id} className={isAlbumHidden(album) ? 'admin-artists-page-hidden-row' : ''}>
+						<tr key={album.id} className={isAlbumHidden(album) ? 'admin-table-hidden-row' : ''}>
 							{columns.map((column) => (
-								<td key={column.key} className={`${column.className ?? ''} ${column.key === 'type' ? 'admin-artists-page-muted' : ''}`.trim()}>
+								<td key={column.key} className={`${column.className ?? ''} ${column.key === 'type' ? 'admin-muted' : ''}`.trim()}>
 									{renderValue(album, column)}
 								</td>
 							))}
-							<td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
-								<div className="admin-artists-page-actions">
+							<td className="admin-table-action-cell admin-table-actions-col admin-table-sticky-right-0">
+								<div className="admin-table-actions">
 									{!isViewer && (
-										<button type="button" onClick={() => void onEdit(album)} disabled={loadingEditId === album.id} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit album" title="Edit">
+										<button type="button" onClick={() => void onEdit(album)} disabled={loadingEditId === album.id} className="admin-button-secondary admin-button-icon" aria-label="Edit album" title="Edit">
 											<FaPencilAlt aria-hidden="true" />
 										</button>
 									)}
@@ -306,10 +306,10 @@ function AlbumRolesTab({ form, artistOptions, outsideArtistOptions, addRole, rem
 										onChange={(patch) => updateRole(index, patch)}
 									/>
 								</div>
-								<select value={entry.role} onChange={(event) => updateRole(index, 'role', event.target.value)} className="admin-artists-page-input admin-song-role-select" aria-label={`Role type ${index + 1}`}>
+								<select value={entry.role} onChange={(event) => updateRole(index, 'role', event.target.value)} className="admin-field-input admin-song-role-select" aria-label={`Role type ${index + 1}`}>
 									{SONG_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
 								</select>
-								<button type="button" onClick={() => removeRole(index)} className="admin-artists-page-danger-btn admin-artists-page-icon-btn" aria-label="Remove role" title="Remove role">
+								<button type="button" onClick={() => removeRole(index)} className="admin-button-danger admin-button-icon" aria-label="Remove role" title="Remove role">
 									<FaTrash aria-hidden="true" />
 								</button>
 							</div>
@@ -321,7 +321,7 @@ function AlbumRolesTab({ form, artistOptions, outsideArtistOptions, addRole, rem
 				<button
 					type="button"
 					onClick={addRole}
-					className="admin-artists-page-ghost-btn admin-song-add-role-btn"
+					className="admin-button-secondary admin-song-add-role-btn"
 					aria-label="Add role"
 					title="Add role"
 				>
@@ -355,7 +355,7 @@ function AlbumFormModal({
 	canDelete,
 }) {
 	return (
-		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+		<div className="admin-modal-overlay" role="presentation">
 			<div className="admin-modal">
 				<div className="admin-modal-header">
 					<h2 className="admin-modal-title">{form.id ? 'Edit Album' : 'New Album'}</h2>
@@ -366,7 +366,7 @@ function AlbumFormModal({
 						<TabPanel header="Album">
 							<div className="admin-modal-grid">
 								<div className="admin-modal-field admin-modal-field-full">
-									<div className="admin-artists-page-name-field">
+									<div className="admin-artist-name-field">
 										<button
 											type="button"
 											onClick={() => {
@@ -377,13 +377,13 @@ function AlbumFormModal({
 													autoShowOnRelease: false,
 												}));
 											}}
-											className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
+											className={`admin-visibility-toggle ${form.isVisible ? '' : 'admin-visibility-toggle-hidden'}`.trim()}
 											aria-label={form.isVisible ? 'Album is visible to the public. Click to hide.' : 'Album is hidden from the public. Click to show.'}
 											title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
 										>
 											{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
 										</button>
-										<div className="admin-artists-page-name-field-main">
+										<div className="admin-artist-name-field-main">
 											<label htmlFor="admin-music-album-title" className="admin-modal-label">Title <span className="admin-modal-label-required">*</span></label>
 											<input id="admin-music-album-title" type="text" placeholder="Title" value={form.title} onChange={set('title')} className={fieldClassName('title')} aria-invalid={Boolean(validationErrors.title)} />
 										</div>
@@ -407,7 +407,7 @@ function AlbumFormModal({
 												id="admin-music-album-artist"
 												type="text"
 												value={artistOptions.find((artist) => artist.id === scopedArtistId)?.name ?? ''}
-												className="admin-artists-page-input"
+												className="admin-field-input"
 												readOnly
 											/>
 										) : (
@@ -439,7 +439,7 @@ function AlbumFormModal({
 								)}
 								<div className="admin-modal-field admin-modal-field-full">
 									<label htmlFor="admin-music-album-about" className="admin-modal-label">About</label>
-									<textarea id="admin-music-album-about" placeholder="About this album..." value={form.aboutText} onChange={set('aboutText')} className="admin-artists-page-input admin-modal-textarea" rows={5} />
+									<textarea id="admin-music-album-about" placeholder="About this album..." value={form.aboutText} onChange={set('aboutText')} className="admin-field-input admin-modal-textarea" rows={5} />
 								</div>
 							</div>
 						</TabPanel>
@@ -473,7 +473,7 @@ function AlbumFormModal({
 							<ConfirmActionButton
 								message="Delete this album and all its songs?"
 								onConfirm={onDelete}
-								buttonClassName="admin-artists-page-danger-btn"
+								buttonClassName="admin-button-danger"
 								buttonAriaLabel="Delete album"
 								buttonTitle="Delete"
 							>
@@ -481,8 +481,8 @@ function AlbumFormModal({
 							</ConfirmActionButton>
 						)}
 					</div>
-					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
-					<button type="button" onClick={onSave} className="admin-artists-page-primary-btn">Save</button>
+					<button type="button" onClick={onClose} className="admin-button-secondary">Cancel</button>
+					<button type="button" onClick={onSave} className="admin-button-primary">Save</button>
 				</div>
 			</div>
 		</div>
@@ -753,7 +753,7 @@ export default function AdminMusicAlbumsPage() {
 	};
 
 	const fieldClassName = (fieldName) => (
-		`admin-artists-page-input${validationErrors[fieldName] ? ' admin-artists-page-input-invalid' : ''}`
+		`admin-field-input${validationErrors[fieldName] ? ' admin-field-input-invalid' : ''}`
 	);
 
 	const setReleaseDate = (value) => {
@@ -775,10 +775,10 @@ export default function AdminMusicAlbumsPage() {
 
 	return (
 		<div>
-			<div className="admin-artists-page-sticky-top">
-				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Music — Albums</h1>
-					{!isViewer && <button type="button" onClick={openCreate} className="admin-artists-page-primary-btn">New Album</button>}
+			<div className="admin-sticky-top">
+				<div className="admin-page-header">
+					<h1 className="admin-page-title">Music — Albums</h1>
+					{!isViewer && <button type="button" onClick={openCreate} className="admin-button-primary">New Album</button>}
 				</div>
 
 				<div className="admin-filter-bar">

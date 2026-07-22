@@ -78,38 +78,38 @@ function buildPayload(form) {
 
 function CrosshairVideosTable({ videos, onEdit }) {
 	return (
-		<div className="admin-artists-page-table-wrap">
-			<table className="admin-artists-page-table admin-crosshair-page-table">
+		<div className="admin-table-wrap">
+			<table className="admin-table admin-crosshair-page-table">
 				<thead>
 					<tr>
-						<th className="admin-artists-page-col-image">Thumb</th>
-						<th className="admin-artists-page-col-xxl">Title</th>
-						<th className="admin-artists-page-col-lg">Publish</th>
-						<th className="admin-artists-page-col-md">Type</th>
-						<th className="admin-artists-page-col-action admin-artists-page-center-cell">Video</th>
-						<th className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0"></th>
+						<th className="admin-table-col-image">Thumb</th>
+						<th className="admin-table-col-xxl">Title</th>
+						<th className="admin-table-col-lg">Publish</th>
+						<th className="admin-table-col-md">Type</th>
+						<th className="admin-table-col-action admin-table-center-cell">Video</th>
+						<th className="admin-table-action-cell admin-table-actions-col admin-table-sticky-right-0"></th>
 					</tr>
 				</thead>
 				<tbody>
 					{videos.map((video) => (
 						<tr key={video.id} className={video.isVisible ? '' : 'admin-crosshair-page-hidden-row'}>
-							<td className="admin-artists-page-center-cell">
-								{video.thumbnailUrl ? <img src={video.thumbnailUrl} alt="" className="admin-artists-page-thumb" /> : <span className="admin-artists-page-empty-value">-</span>}
+							<td className="admin-table-center-cell">
+								{video.thumbnailUrl ? <img src={video.thumbnailUrl} alt="" className="admin-thumb" /> : <span className="admin-empty-value">-</span>}
 							</td>
 							<td>
-								<span className="admin-artists-page-cell-value">{video.title}</span>
+								<span className="admin-table-cell-value">{video.title}</span>
 								{video.description && <span className="admin-crosshair-page-description">{video.description}</span>}
 							</td>
-							<td><span className="admin-artists-page-cell-value">{formatDate(video.publishedAt)}</span></td>
-							<td><span className="admin-artists-page-cell-value">{video.typeLabel}</span></td>
-							<td className="admin-artists-page-center-cell">
-								<a href={video.youtubeUrl} target="_blank" rel="noreferrer" className="admin-artists-page-link-btn" aria-label="Open YouTube video" title="Open YouTube video">
+							<td><span className="admin-table-cell-value">{formatDate(video.publishedAt)}</span></td>
+							<td><span className="admin-table-cell-value">{video.typeLabel}</span></td>
+							<td className="admin-table-center-cell">
+								<a href={video.youtubeUrl} target="_blank" rel="noreferrer" className="admin-button-link" aria-label="Open YouTube video" title="Open YouTube video">
 									<FaExternalLinkAlt aria-hidden="true" />
 								</a>
 							</td>
-							<td className="admin-artists-page-action-cell admin-artists-page-actions-col admin-artists-page-sticky-right-0">
-								<div className="admin-artists-page-actions">
-									<button type="button" onClick={() => onEdit(video)} className="admin-artists-page-ghost-btn admin-artists-page-icon-btn" aria-label="Edit video" title="Edit">
+							<td className="admin-table-action-cell admin-table-actions-col admin-table-sticky-right-0">
+								<div className="admin-table-actions">
+									<button type="button" onClick={() => onEdit(video)} className="admin-button-secondary admin-button-icon" aria-label="Edit video" title="Edit">
 										<FaPencilAlt aria-hidden="true" />
 									</button>
 								</div>
@@ -129,7 +129,7 @@ function CrosshairVideosTable({ videos, onEdit }) {
 
 function CrosshairVideoModal({ form, setForm, token, editing, message, saving, onClose, onSave, onDelete }) {
 	return (
-		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+		<div className="admin-modal-overlay" role="presentation">
 			<div className="admin-modal admin-crosshair-page-modal">
 				<div className="admin-modal-header">
 					<h2 className="admin-modal-title">{editing ? 'Edit Crosshair Video' : 'New Crosshair Video'}</h2>
@@ -139,19 +139,19 @@ function CrosshairVideoModal({ form, setForm, token, editing, message, saving, o
 					{message && <p className="admin-crosshair-page-message" role="alert">{message}</p>}
 					<div className="admin-crosshair-page-form-grid">
 						<div className="admin-modal-field admin-modal-field-full admin-crosshair-page-title-row">
-							<div className="admin-artists-page-name-field">
+							<div className="admin-artist-name-field">
 								<button
 									type="button"
 									onClick={() => setForm((current) => ({ ...current, isVisible: !current.isVisible }))}
-									className={`admin-artists-page-visibility-toggle ${form.isVisible ? '' : 'admin-artists-page-visibility-toggle-hidden'}`.trim()}
+									className={`admin-visibility-toggle ${form.isVisible ? '' : 'admin-visibility-toggle-hidden'}`.trim()}
 									aria-label={form.isVisible ? 'Crosshair video is visible to the public. Click to hide.' : 'Crosshair video is hidden from the public. Click to show.'}
 									title={form.isVisible ? 'Visible on public site' : 'Hidden from public site'}
 								>
 									{form.isVisible ? <FaEye aria-hidden="true" /> : <FaEyeSlash aria-hidden="true" />}
 								</button>
-								<div className="admin-artists-page-name-field-main">
+								<div className="admin-artist-name-field-main">
 									<label htmlFor="admin-crosshair-title" className="admin-modal-label">Title *</label>
-									<input id="admin-crosshair-title" type="text" value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} className="admin-artists-page-input" />
+									<input id="admin-crosshair-title" type="text" value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} className="admin-field-input" />
 								</div>
 							</div>
 						</div>
@@ -167,7 +167,7 @@ function CrosshairVideoModal({ form, setForm, token, editing, message, saving, o
 						</div>
 						<div className="admin-modal-field admin-crosshair-page-half-field">
 							<label htmlFor="admin-crosshair-type" className="admin-modal-label">Type</label>
-							<select id="admin-crosshair-type" value={form.type} onChange={(event) => setForm((current) => ({ ...current, type: event.target.value }))} className="admin-artists-page-input">
+							<select id="admin-crosshair-type" value={form.type} onChange={(event) => setForm((current) => ({ ...current, type: event.target.value }))} className="admin-field-input">
 								{CROSSHAIR_VIDEO_TYPE_OPTIONS.map((option) => (
 									<option key={option.value} value={option.value}>{option.label}</option>
 								))}
@@ -175,15 +175,15 @@ function CrosshairVideoModal({ form, setForm, token, editing, message, saving, o
 						</div>
 						<div className="admin-modal-field admin-crosshair-page-half-field">
 							<label htmlFor="admin-crosshair-publish-date" className="admin-modal-label">Publish Date</label>
-							<input id="admin-crosshair-publish-date" type="date" value={form.publishedAt} onChange={(event) => setForm((current) => ({ ...current, publishedAt: event.target.value }))} className="admin-artists-page-input" />
+							<input id="admin-crosshair-publish-date" type="date" value={form.publishedAt} onChange={(event) => setForm((current) => ({ ...current, publishedAt: event.target.value }))} className="admin-field-input" />
 						</div>
 						<div className="admin-modal-field admin-modal-field-full">
 							<label htmlFor="admin-crosshair-description" className="admin-modal-label">Description</label>
-							<textarea id="admin-crosshair-description" value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} className="admin-artists-page-input admin-modal-textarea admin-crosshair-page-description-input" rows={5} />
+							<textarea id="admin-crosshair-description" value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} className="admin-field-input admin-modal-textarea admin-crosshair-page-description-input" rows={5} />
 						</div>
 						<div className="admin-modal-field admin-modal-field-full">
 							<label htmlFor="admin-crosshair-youtube-url" className="admin-modal-label">YouTube URL *</label>
-							<input id="admin-crosshair-youtube-url" type="url" value={form.youtubeUrl} onChange={(event) => setForm((current) => ({ ...current, youtubeUrl: event.target.value }))} className="admin-artists-page-input" placeholder="https://www.youtube.com/watch?v=..." />
+							<input id="admin-crosshair-youtube-url" type="url" value={form.youtubeUrl} onChange={(event) => setForm((current) => ({ ...current, youtubeUrl: event.target.value }))} className="admin-field-input" placeholder="https://www.youtube.com/watch?v=..." />
 						</div>
 					</div>
 				</div>
@@ -192,7 +192,7 @@ function CrosshairVideoModal({ form, setForm, token, editing, message, saving, o
 						{editing && (
 							<ConfirmActionButton
 								message="Delete this Crosshair video?"
-								buttonClassName="admin-artists-page-danger-btn"
+								buttonClassName="admin-button-danger"
 								buttonTitle="Delete"
 								buttonAriaLabel="Delete video"
 								onConfirm={onDelete}
@@ -201,8 +201,8 @@ function CrosshairVideoModal({ form, setForm, token, editing, message, saving, o
 							</ConfirmActionButton>
 						)}
 					</div>
-					<button type="button" onClick={onClose} className="admin-artists-page-ghost-btn">Cancel</button>
-					<button type="button" onClick={onSave} className="admin-artists-page-primary-btn" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
+					<button type="button" onClick={onClose} className="admin-button-secondary">Cancel</button>
+					<button type="button" onClick={onSave} className="admin-button-primary" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
 				</div>
 			</div>
 		</div>
@@ -373,7 +373,7 @@ export default function AdminMusicCrosshairPage() {
 	if (!isSuperAdmin) {
 		return (
 			<div className="admin-crosshair-page">
-				<h1 className="admin-artists-page-title">Music — Crosshair</h1>
+				<h1 className="admin-page-title">Music — Crosshair</h1>
 				<p className="admin-crosshair-page-note">Only super admins can manage Crosshair videos.</p>
 			</div>
 		);
@@ -381,19 +381,19 @@ export default function AdminMusicCrosshairPage() {
 
 	return (
 		<div className="admin-crosshair-page">
-			<div className="admin-artists-page-sticky-top">
-				<div className="admin-artists-page-header">
-					<h1 className="admin-artists-page-title">Music — The Crosshair</h1>
+			<div className="admin-sticky-top">
+				<div className="admin-page-header">
+					<h1 className="admin-page-title">Music — The Crosshair</h1>
 					<div className="admin-crosshair-page-header-actions">
 						<button
 							type="button"
-							className="admin-artists-page-ghost-btn admin-crosshair-page-new-btn"
+							className="admin-button-secondary admin-crosshair-page-new-btn"
 							onClick={syncYouTube}
 							disabled={syncing || !syncConfig || (!syncConfig.publicApiConfigured && !syncConfig.oauthConfigured)}
 						>
 							<FaSyncAlt aria-hidden="true" /> {syncing ? 'Syncing...' : 'Sync YouTube'}
 						</button>
-						<button type="button" className="admin-artists-page-primary-btn admin-crosshair-page-new-btn" onClick={openCreate}>
+						<button type="button" className="admin-button-primary admin-crosshair-page-new-btn" onClick={openCreate}>
 							New Video
 						</button>
 					</div>

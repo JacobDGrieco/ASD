@@ -2,7 +2,7 @@
  * Public card for a fashion collection or loose-look grouping.
  */
 import { Link } from 'react-router-dom';
-import '../../styles/AlbumCard.css';
+import '../../styles/ContentCard.css';
 
 export default function CollectionCard({ collection, isOpen, onClick, to, metaOverride }) {
 	const coverImg = collection.coverImage;
@@ -17,28 +17,28 @@ export default function CollectionCard({ collection, isOpen, onClick, to, metaOv
 
 	const content = (
 		<>
-			<div className="album-card-cover-wrap">
+			<div className="content-card-cover-wrap">
 				{coverImg ? (
 					<img
 						src={coverImg.previewUrl || coverImg.url}
 						alt={collection.title}
-						className="album-card-cover"
+						className="content-card-cover"
 					/>
 				) : (
-					<div className="album-card-cover-blank" />
+					<div className="content-card-cover-blank" />
 				)}
 			</div>
-			<div className="album-card-info">
-				<span className="album-card-title">{collection.title}</span>
-				<span className="album-card-meta">{meta}</span>
+			<div className="content-card-info">
+				<span className="content-card-title">{collection.title}</span>
+				<span className="content-card-meta">{meta}</span>
 			</div>
 		</>
 	);
 
 	if (to) {
 		return (
-			<Link to={to} className={`album-card-card${isOpen ? ' album-card-open' : ''}${isHidden ? ' album-card-hidden' : ''}`}>
-				<div className="album-card-primary-action">
+			<Link to={to} className={`content-card-card${isOpen ? ' content-card-open' : ''}${isHidden ? ' content-card-hidden' : ''}`}>
+				<div className="content-card-primary-action">
 					{content}
 				</div>
 			</Link>
@@ -46,8 +46,8 @@ export default function CollectionCard({ collection, isOpen, onClick, to, metaOv
 	}
 
 	return (
-		<div className={`album-card-card${isOpen ? ' album-card-open' : ''}${isHidden ? ' album-card-hidden' : ''}`}>
-			<button type="button" className="album-card-primary-action" onClick={onClick}>
+		<div className={`content-card-card${isOpen ? ' content-card-open' : ''}${isHidden ? ' content-card-hidden' : ''}`}>
+			<button type="button" className="content-card-primary-action" onClick={onClick}>
 				{content}
 			</button>
 		</div>

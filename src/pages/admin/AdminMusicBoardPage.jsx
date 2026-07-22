@@ -146,7 +146,7 @@ function BoardPostModal({
 	const ArchiveIcon = editing?.archivedAt ? FaUndo : FaArchive;
 
 	return (
-		<div className="admin-modal-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+		<div className="admin-modal-overlay" role="presentation">
 			<div className="admin-modal">
 				<div className="admin-modal-header">
 					<h2 className="admin-modal-title">{editing ? 'Edit Post' : 'New Post'}</h2>
@@ -327,7 +327,7 @@ function BoardPostModal({
 						{canArchive && (
 							<button
 								type="button"
-								className="admin-artists-page-ghost-btn"
+								className="admin-button-secondary"
 								onClick={() => onArchive(editing, !editing.archivedAt)}
 								disabled={saving}
 							>
@@ -338,7 +338,7 @@ function BoardPostModal({
 						{canDelete && (
 							<ConfirmActionButton
 								message="Delete this board post?"
-								buttonClassName="admin-artists-page-danger-btn"
+								buttonClassName="admin-button-danger"
 								buttonTitle="Delete"
 								buttonAriaLabel="Delete post"
 								onConfirm={() => onDelete(editing)}
@@ -349,8 +349,8 @@ function BoardPostModal({
 						)}
 					</div>
 					<div className="admin-board-page-modal-save-actions">
-						<button type="button" className="admin-artists-page-ghost-btn" onClick={onClose}>Cancel</button>
-						<button type="button" className="admin-artists-page-primary-btn" onClick={onSave} disabled={saving}>
+						<button type="button" className="admin-button-secondary" onClick={onClose}>Cancel</button>
+						<button type="button" className="admin-button-primary" onClick={onSave} disabled={saving}>
 							{saving
 								? 'Saving...'
 								: form.publishMode === 'draft'
@@ -685,10 +685,10 @@ export default function AdminMusicBoardPage() {
 
 	return (
 		<div className="admin-board-page">
-			<div className="admin-artists-page-header">
-				<h1 className="admin-artists-page-title">The Board</h1>
+			<div className="admin-page-header">
+				<h1 className="admin-page-title">The Board</h1>
 				{(isArtist || isSuperAdmin) && (
-					<button type="button" className="admin-artists-page-primary-btn" onClick={openCreate}>
+					<button type="button" className="admin-button-primary" onClick={openCreate}>
 						New Post
 					</button>
 				)}

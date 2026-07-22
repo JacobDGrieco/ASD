@@ -7,7 +7,7 @@
 	align-items: end;
 }
 
-.admin-albums-modal-meta-row .admin-artists-page-input,
+.admin-albums-modal-meta-row .admin-field-input,
 .admin-albums-modal-meta-row select,
 .admin-albums-modal-meta-row input[type='date'] {
 	height: 44px;

@@ -174,8 +174,8 @@
 }
 
 .admin-board-page-modal-actions .admin-inline-confirm,
-.admin-board-page-modal-actions .admin-artists-page-danger-btn,
-.admin-board-page-modal-actions .admin-artists-page-ghost-btn {
+.admin-board-page-modal-actions .admin-button-danger,
+.admin-board-page-modal-actions .admin-button-secondary {
 	display: inline-flex;
 	align-items: center;
 	gap: 7px;
@@ -596,10 +596,10 @@
 	.admin-board-page-modal-actions,
 	.admin-board-page-modal-save-actions,
 	.admin-board-page-modal-actions .admin-inline-confirm,
-	.admin-board-page-modal-actions .admin-artists-page-danger-btn,
-	.admin-board-page-modal-actions .admin-artists-page-ghost-btn,
-	.admin-board-page-modal-save-actions .admin-artists-page-ghost-btn,
-	.admin-board-page-modal-save-actions .admin-artists-page-primary-btn {
+	.admin-board-page-modal-actions .admin-button-danger,
+	.admin-board-page-modal-actions .admin-button-secondary,
+	.admin-board-page-modal-save-actions .admin-button-secondary,
+	.admin-board-page-modal-save-actions .admin-button-primary {
 		width: 100%;
 	}
 }

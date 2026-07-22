@@ -52,7 +52,7 @@ export default function FashionPiecesField({ value, onChange, token, lookTitle, 
 							<button
 								type="button"
 								onClick={() => movePiece(index, -1)}
-								className="admin-artists-page-ghost-btn admin-artists-page-icon-btn admin-fashion-piece-order-btn"
+								className="admin-button-secondary admin-button-icon admin-fashion-piece-order-btn"
 								aria-label={`Move piece ${index + 1} up`}
 								title="Move piece up"
 								disabled={index === 0}
@@ -62,7 +62,7 @@ export default function FashionPiecesField({ value, onChange, token, lookTitle, 
 							<button
 								type="button"
 								onClick={() => movePiece(index, 1)}
-								className="admin-artists-page-ghost-btn admin-artists-page-icon-btn admin-fashion-piece-order-btn"
+								className="admin-button-secondary admin-button-icon admin-fashion-piece-order-btn"
 								aria-label={`Move piece ${index + 1} down`}
 								title="Move piece down"
 								disabled={index === pieces.length - 1}
@@ -73,7 +73,7 @@ export default function FashionPiecesField({ value, onChange, token, lookTitle, 
 						<button
 							type="button"
 							onClick={() => removePiece(index)}
-							className="admin-artists-page-danger-btn admin-artists-page-icon-btn"
+							className="admin-button-danger admin-button-icon"
 							aria-label={`Remove piece ${index + 1}`}
 							title="Remove piece"
 						>
@@ -90,7 +90,7 @@ export default function FashionPiecesField({ value, onChange, token, lookTitle, 
 								placeholder="e.g. Oversized Wool Coat"
 								value={piece.name ?? ''}
 								onChange={(event) => updatePiece(index, { name: event.target.value })}
-								className="admin-artists-page-input"
+								className="admin-field-input"
 							/>
 						</div>
 						<div>
@@ -101,7 +101,7 @@ export default function FashionPiecesField({ value, onChange, token, lookTitle, 
 								placeholder="External link to purchase"
 								value={piece.buyUrl ?? ''}
 								onChange={(event) => updatePiece(index, { buyUrl: event.target.value })}
-								className="admin-artists-page-input"
+								className="admin-field-input"
 							/>
 						</div>
 					</div>
@@ -133,7 +133,7 @@ export default function FashionPiecesField({ value, onChange, token, lookTitle, 
 			<button
 				type="button"
 				onClick={addPiece}
-				className="admin-artists-page-primary-btn admin-full-width-icon-btn"
+				className="admin-button-primary admin-full-width-icon-btn"
 				aria-label="Add piece"
 				title="Add piece"
 			>
