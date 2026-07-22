@@ -42,16 +42,18 @@ model Artist {
 }
 
 model MusicOutsideArtist {
-  id          String   @id @default(cuid())
-  name        String
-  role        String   @default("")
-  externalUrl String   @default("")
-  imageUrl    String   @default("")
-  pathname    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  normalizedName String?
+  role           String   @default("")
+  externalUrl    String   @default("")
+  imageUrl       String   @default("")
+  pathname       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([name])
+  @@index([normalizedName])
 }
 
 model ArtistVideo {
@@ -131,6 +133,7 @@ model Album {
   updatedAt         DateTime     @updatedAt
 
   @@index([artistId])
+  @@index([artistId, releaseDate])
 }
 
 model ArtistImage {
@@ -183,25 +186,27 @@ enum CrosshairVideoType {
 }
 
 model Song {
-  id                String              @id @default(cuid())
-  title             String
-  slug              String              @unique
-  isVisible         Boolean             @default(true)
-  autoShowOnRelease Boolean             @default(false)
-  duration          String              @default("")
-  artwork           String              @default("")
-  soundcloudUrl         String?
-  privateSoundcloudUrl  String?
-  spotifyUrl            String?
-  appleMusicUrl         String?
-  youtubeUrl            String?
-  links             Json                 @default(dbgenerated("'[]'::jsonb"))
-  placements        SongAlbum[]
-  images            SongImage[]
-  meta              SongMeta?
-  lyricBlocks       LyricBlock[]
-  lyric             SongLyric?
-  recordSlots       RecordPlayerTrack[]
+  id                   String              @id @default(cuid())
+  title                String
+  slug                 String              @unique
+  isVisible            Boolean             @default(true)
+  autoShowOnRelease    Boolean             @default(false)
+  duration             String              @default("")
+  artwork              String              @default("")
+  soundcloudUrl        String?
+  privateSoundcloudUrl String?
+  spotifyUrl           String?
+  appleMusicUrl        String?
+  youtubeUrl           String?
+  links                Json                @default(dbgenerated("'[]'::jsonb"))
+  placements           SongAlbum[]
+  images               SongImage[]
+  meta                 SongMeta?
+  lyricBlocks          LyricBlock[]
+  lyric                SongLyric?
+  recordSlots          RecordPlayerTrack[]
+  createdAt            DateTime?
+  updatedAt            DateTime?
 }
 
 model SongAlbum {
@@ -245,6 +250,8 @@ model SongMeta {
   key         String    @default("")
   releaseDate DateTime?
   roles       Json      @default(dbgenerated("'[]'::jsonb"))
+
+  @@index([releaseDate])
 }
 
 model LyricBlock {
@@ -311,6 +318,7 @@ model RecordPlayerTrack {
 
   @@unique([position])
   @@index([songId])
+  @@index([active, position])
 }
 
 model BoardPost {
@@ -334,6 +342,7 @@ model BoardPost {
 
   @@index([artistId])
   @@index([publishedAt])
+  @@index([artistId, archivedAt, publishedAt])
 }
 
 model CompanyProfile {
@@ -360,32 +369,32 @@ model CompanyMember {
 }
 
 model FashionTalent {
-  id               String               @id @default(cuid())
-  name             String
-  slug             String               @unique
-  role             FashionTalentRole
-  bio              String               @default("")
-  isVisible        Boolean              @default(true)
-  order            Int                  @default(0)
-  instagramProfile String?
-  tiktokProfile    String?
-  twitterProfile   String?
-  youtubeProfile   String?
-  facebookProfile  String?
-  email            String?
-  website          String?
-  links            Json                  @default(dbgenerated("'[]'::jsonb"))
-  agencyName       String?
-  agencyContact    String?
-  images           FashionTalentImage[]
-  lookCredits      FashionLookCredit[]
-  pieceCredits     FashionPieceCredit[]
-  collectionCredits FashionCollectionCredit[]
-  createdCollections FashionCollection[] @relation("FashionCollectionCreator")
-  createdLooks      FashionLook[]        @relation("FashionLookCreator")
-  adminAccess      FashionTalentAdminAccess?
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
+  id                 String                    @id @default(cuid())
+  name               String
+  slug               String                    @unique
+  role               FashionTalentRole
+  bio                String                    @default("")
+  isVisible          Boolean                   @default(true)
+  order              Int                       @default(0)
+  instagramProfile   String?
+  tiktokProfile      String?
+  twitterProfile     String?
+  youtubeProfile     String?
+  facebookProfile    String?
+  email              String?
+  website            String?
+  links              Json                      @default(dbgenerated("'[]'::jsonb"))
+  agencyName         String?
+  agencyContact      String?
+  images             FashionTalentImage[]
+  lookCredits        FashionLookCredit[]
+  pieceCredits       FashionPieceCredit[]
+  collectionCredits  FashionCollectionCredit[]
+  createdCollections FashionCollection[]       @relation("FashionCollectionCreator")
+  createdLooks       FashionLook[]             @relation("FashionLookCreator")
+  adminAccess        FashionTalentAdminAccess?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
 
   @@index([isVisible, order])
 }
@@ -419,25 +428,25 @@ model FashionTalentImage {
 }
 
 model FashionCollection {
-  id            String                    @id @default(cuid())
-  title         String
-  slug          String                    @unique
-  type          FashionCollectionType     @default(COLLECTION)
-  description   String                    @default("")
-  about         String                    @default("")
-  season        String                    @default("")
-  releaseDate   DateTime?
-  location      String                    @default("")
-  coverImage    String                    @default("")
-  coverPathname String?
-  isVisible     Boolean                   @default(true)
-  order         Int                       @default(0)
+  id              String                    @id @default(cuid())
+  title           String
+  slug            String                    @unique
+  type            FashionCollectionType     @default(COLLECTION)
+  description     String                    @default("")
+  about           String                    @default("")
+  season          String                    @default("")
+  releaseDate     DateTime?
+  location        String                    @default("")
+  coverImage      String                    @default("")
+  coverPathname   String?
+  isVisible       Boolean                   @default(true)
+  order           Int                       @default(0)
   creatorTalentId String?
-  creatorTalent FashionTalent?            @relation("FashionCollectionCreator", fields: [creatorTalentId], references: [id], onDelete: SetNull)
-  lookPlacements FashionLookCollection[]
-  credits       FashionCollectionCredit[]
-  createdAt     DateTime                  @default(now())
-  updatedAt     DateTime                  @updatedAt
+  creatorTalent   FashionTalent?            @relation("FashionCollectionCreator", fields: [creatorTalentId], references: [id], onDelete: SetNull)
+  lookPlacements  FashionLookCollection[]
+  credits         FashionCollectionCredit[]
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
 
   @@index([isVisible, releaseDate])
   @@index([isVisible, order])
@@ -480,21 +489,21 @@ model FashionCollectionCredit {
 }
 
 model FashionLook {
-  id           String              @id @default(cuid())
-  title        String
-  slug         String              @unique
-  description  String              @default("")
-  isVisible    Boolean             @default(true)
-  releaseDate  DateTime?
-  order        Int                 @default(0)
-  creatorTalentId String?
-  creatorTalent FashionTalent?     @relation("FashionLookCreator", fields: [creatorTalentId], references: [id], onDelete: SetNull)
+  id                   String                  @id @default(cuid())
+  title                String
+  slug                 String                  @unique
+  description          String                  @default("")
+  isVisible            Boolean                 @default(true)
+  releaseDate          DateTime?
+  order                Int                     @default(0)
+  creatorTalentId      String?
+  creatorTalent        FashionTalent?          @relation("FashionLookCreator", fields: [creatorTalentId], references: [id], onDelete: SetNull)
   collectionPlacements FashionLookCollection[]
-  images       FashionLookImage[]
-  pieces       FashionPiece[]
-  credits      FashionLookCredit[]
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
+  images               FashionLookImage[]
+  pieces               FashionPiece[]
+  credits              FashionLookCredit[]
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
 
   @@index([isVisible, order])
   @@index([isVisible, releaseDate])
@@ -570,17 +579,20 @@ model FashionPieceCredit {
 }
 
 model FashionCrew {
-  id           String               @id @default(cuid())
-  name         String
-  role         String               @default("")
-  externalUrl  String               @default("")
-  imageUrl     String               @default("")
-  pathname     String?
-  lookCredits  FashionLookCredit[]  @relation("LookCreditCrew")
-  pieceCredits FashionPieceCredit[] @relation("PieceCreditCrew")
+  id                String                    @id @default(cuid())
+  name              String
+  normalizedName    String?
+  role              String                    @default("")
+  externalUrl       String                    @default("")
+  imageUrl          String                    @default("")
+  pathname          String?
+  lookCredits       FashionLookCredit[]       @relation("LookCreditCrew")
+  pieceCredits      FashionPieceCredit[]      @relation("PieceCreditCrew")
   collectionCredits FashionCollectionCredit[] @relation("CollectionCreditCrew")
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+
+  @@index([normalizedName])
 }
 
 enum FashionTalentRole {

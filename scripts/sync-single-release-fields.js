@@ -244,6 +244,7 @@ async function main() {
 						data: {
 							links: sharedLinks,
 							...legacyFieldsFromProfileLinks(sharedLinks, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
+							updatedAt: new Date(),
 						},
 					});
 				}

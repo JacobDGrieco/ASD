@@ -15,6 +15,7 @@ import { canAccessAdminPage, isSuperAdmin, isTalentAdmin, requireAdmin } from '.
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js';
 import { collectBlobPathnames, deleteRemovedBlobPathnames, deleteUnusedBlobPathnames } from '../../src/lib/blobCleanup.js';
 import { clientImages, normalizeImageInput, primaryImageReference } from '../../src/lib/images.js';
+import { normalizedPersonName } from '../../src/lib/normalizedNames.js';
 import { slugify } from '../../src/lib/slugify.js';
 
 function selectCollectionList() {
@@ -66,7 +67,7 @@ function creditsCreateManyData(credits) {
 }
 
 function normalizedCreditName(value) {
-	return String(value ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+	return normalizedPersonName(value);
 }
 
 function collectUnlinkedCreditNames(credits, namesByKey) {
@@ -107,6 +108,7 @@ async function resolveTypedOutsideTalentCredits(tx, credits) {
 		tx.fashionCrew.create({
 			data: {
 				name: entry.name,
+				normalizedName: normalizedCreditName(entry.name),
 				role: entry.role,
 				externalUrl: '',
 				imageUrl: '',

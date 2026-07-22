@@ -28,6 +28,8 @@ imgs
 *.sw?
 
 /src/generated/prisma
+/backups/database/
+FUTURE_FIXES.md
 
 # Worktrees and planning
 .worktrees

@@ -12,6 +12,7 @@ import { canAccessAdminPage, isViewer, requireAdmin } from '../../src/lib/auth.j
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js';
 import { collectBlobPathnames, deleteRemovedBlobPathnames, deleteUnusedBlobPathnames } from '../../src/lib/blobCleanup.js';
 import { clientImages, normalizeImageInput, primaryImageReference } from '../../src/lib/images.js';
+import { normalizedPersonName } from '../../src/lib/normalizedNames.js';
 
 function normalizeString(value) {
 	return typeof value === 'string' ? value.trim() : '';
@@ -33,6 +34,7 @@ function selectOutsideArtist() {
 	return {
 		id: true,
 		name: true,
+		normalizedName: true,
 		role: true,
 		externalUrl: true,
 		imageUrl: true,
@@ -65,6 +67,7 @@ function validateOutsideArtist(body) {
 
 	return {
 		name,
+		normalizedName: normalizedPersonName(name),
 		role: normalizeString(body?.role),
 		externalUrl: normalizeExternalUrl(body?.externalUrl),
 		imageUrl: primaryImageReference(normalizedImage),

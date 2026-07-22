@@ -17,6 +17,7 @@ import { prisma } from '../src/lib/prisma.js';
 import { isEffectivelyVisible } from '../src/lib/contentVisibility.js';
 import { clientImage, clientImages, mergeLegacyImages } from '../src/lib/images.js';
 import { songPlacementsAllowOwnLinks } from '../src/lib/musicReleaseLinks.js';
+import { normalizedPersonName } from '../src/lib/normalizedNames.js';
 import { ARTIST_LEGACY_LINK_FIELDS, FASHION_TALENT_LEGACY_LINK_FIELDS, MUSIC_RELEASE_LEGACY_LINK_FIELDS, profileLinksForSource } from '../src/lib/profileLinks.js';
 import { formatCrosshairVideo } from '../src/lib/crosshairVideos.js';
 import { hasPublicBoardSource, isOtherArtist, isReservedHiddenArtist, OTHER_ARTIST_SLUG } from '../src/lib/publicVisibility.js';
@@ -274,17 +275,19 @@ async function resolveOutsideArtistRoleLinks(roles) {
 	)))];
 
 	if (!names.length && !outsideArtistIds.length) return { outsideByName: {}, outsideById: {} };
+	const nameKeys = names.map(normalizedPersonName);
 
 	const matched = await prisma.musicOutsideArtist.findMany({
 		where: {
 			OR: [
 				...(outsideArtistIds.length ? [{ id: { in: outsideArtistIds } }] : []),
+				...(nameKeys.length ? [{ normalizedName: { in: nameKeys } }] : []),
 				...names.map((name) => ({
 					name: { equals: name, mode: 'insensitive' },
 				})),
 			],
 		},
-		select: { id: true, name: true, externalUrl: true, imageUrl: true, pathname: true },
+		select: { id: true, name: true, normalizedName: true, externalUrl: true, imageUrl: true, pathname: true },
 	});
 
 	return matched.reduce((links, artist) => {

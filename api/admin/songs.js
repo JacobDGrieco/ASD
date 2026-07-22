@@ -36,6 +36,7 @@ import {
 import { albumTypeSharesSongReleaseFields } from '../../src/lib/musicReleaseLinks.js';
 import { MUSIC_RELEASE_LEGACY_LINK_FIELDS, legacyFieldsFromProfileLinks, normalizeProfileLinks, profileLinksForSource } from '../../src/lib/profileLinks.js';
 import { isOtherArtist, OTHER_ARTIST_NAME } from '../../src/lib/publicVisibility.js';
+import { normalizedPersonName } from '../../src/lib/normalizedNames.js';
 import { normalizeSongDuration } from '../../src/lib/songDuration.js';
 import { SONG_ROLES, sortMusicRoleEntries } from '../../src/lib/songRoles.js';
 
@@ -106,7 +107,7 @@ function validatePlacements(placements) {
 }
 
 function normalizedRoleName(value) {
-	return String(value ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+	return normalizedPersonName(value);
 }
 
 function normalizeExternalUrl(value) {
@@ -155,6 +156,7 @@ async function normalizeLinkedRoleInput(roles) {
 	const artistIds = [...new Set(inputRoles.flatMap((entry) => (entry.artistId ? [entry.artistId] : [])))];
 	const outsideArtistIds = [...new Set(inputRoles.flatMap((entry) => (entry.outsideArtistId ? [entry.outsideArtistId] : [])))];
 	const names = [...new Set(inputRoles.map((entry) => entry.name))];
+	const nameKeys = names.map(normalizedRoleName);
 
 	const [artists, outsideArtists] = await Promise.all([
 		prisma.artist.findMany({
@@ -170,10 +172,11 @@ async function normalizeLinkedRoleInput(roles) {
 			where: {
 				OR: [
 					...(outsideArtistIds.length ? [{ id: { in: outsideArtistIds } }] : []),
+					...(nameKeys.length ? [{ normalizedName: { in: nameKeys } }] : []),
 					...names.map((name) => ({ name: { equals: name, mode: 'insensitive' } })),
 				],
 			},
-			select: { id: true, name: true, role: true, externalUrl: true },
+			select: { id: true, name: true, normalizedName: true, role: true, externalUrl: true },
 		}),
 	]);
 
@@ -196,7 +199,12 @@ async function normalizeLinkedRoleInput(roles) {
 	const createdArtists = await Promise.all(
 		[...toCreateByKey.values()].map((entry) =>
 			prisma.musicOutsideArtist.create({
-				data: { name: entry.name, role: entry.role, externalUrl: entry.externalUrl },
+				data: {
+					name: entry.name,
+					normalizedName: normalizedRoleName(entry.name),
+					role: entry.role,
+					externalUrl: entry.externalUrl,
+				},
 				select: { id: true, name: true, externalUrl: true },
 			})
 		)
@@ -528,6 +536,7 @@ async function syncSongReleaseVisibility() {
 		data: {
 			isVisible: true,
 			autoShowOnRelease: false,
+			updatedAt: new Date(),
 		},
 	});
 }
@@ -687,6 +696,7 @@ export default async function handler(req, res) {
 					youtubeUrl,
 					links: normalizedLinks,
 					...legacyLinkFields,
+					updatedAt: new Date(),
 					images: {
 						deleteMany: {},
 						createMany: {
@@ -827,6 +837,8 @@ export default async function handler(req, res) {
 				youtubeUrl,
 				links: normalizedLinks,
 				...legacyLinkFields,
+				createdAt: new Date(),
+				updatedAt: new Date(),
 				images: normalizedImages.length
 					? {
 						createMany: {

@@ -107,6 +107,8 @@ async function main() {
 				slug: `${artist.slug}-track-one`,
 				duration: '3:42',
 				artwork: debutCoverUrl,
+				createdAt: new Date(),
+				updatedAt: new Date(),
 				images: {
 					create: {
 						url: debutCoverUrl,
@@ -131,8 +133,10 @@ async function main() {
 			data: {
 				songId: song.id,
 				aboutText: 'The opening track sets the tone for the whole project.',
-				producers: 'Placeholder Producer',
-				writers: artist.name,
+				roles: [
+					{ role: 'Producer', name: 'Placeholder Producer' },
+					{ role: 'Writer', name: artist.name, artistId: artist.id },
+				],
 				tags: ['intro', 'featured'],
 			},
 		});

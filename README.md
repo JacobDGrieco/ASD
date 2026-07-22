@@ -90,6 +90,9 @@ Prisma also has a seed command configured as `node prisma/seed.js`, but there is
 - `docs/development.md`
 - `docs/deployment.md`
 - `docs/data-model.md`
+- `docs/database/current-state.md`
+- `docs/database/validation.sql`
+- `docs/database/rollback-safe-additive.sql`
 - `docs/api.md`
 - `docs/authentication-and-permissions.md`
 - `docs/external-integrations.md`
@@ -101,7 +104,7 @@ The initial audit is in `DOCUMENTATION_AUDIT.md`.
 ## Known Limitations
 
 - No automated test suite is present in this checkout.
-- `prisma/migrations/` is not present, so the production database migration workflow needs explicit operator confirmation before schema changes.
+- `prisma/migrations/` now contains a baseline and a safe additive migration, but production deployment still needs explicit operator confirmation and a verified backup/copy.
 - `api/admin/login.js` has no application-level rate limiting.
 - `api/blob.js` serves private blobs without auth when the pathname is known so public pages can render uploaded images; hardening this is tracked in `FUTURE_FIXES.md`.
 - Several client calls still build inert `Authorization: Bearer cookie` headers while real auth comes from the HttpOnly cookie.

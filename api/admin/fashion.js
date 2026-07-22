@@ -24,6 +24,7 @@ import { canAccessAdminPage, isSuperAdmin, isTalentAdmin, requireAdmin } from '.
 import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js';
 import { collectBlobPathnames, deleteRemovedBlobPathnames, deleteUnusedBlobPathnames } from '../../src/lib/blobCleanup.js';
 import { clientImages, normalizeImageInput, primaryImageReference, toImageCreateManyData } from '../../src/lib/images.js';
+import { normalizePersonName, normalizedPersonName } from '../../src/lib/normalizedNames.js';
 import { FASHION_TALENT_LEGACY_LINK_FIELDS, legacyFieldsFromProfileLinks, normalizeProfileLinks, profileLinksForSource } from '../../src/lib/profileLinks.js';
 import { slugify } from '../../src/lib/slugify.js';
 
@@ -212,6 +213,7 @@ function selectCrewList() {
 	return {
 		id: true,
 		name: true,
+		normalizedName: true,
 		role: true,
 		externalUrl: true,
 		imageUrl: true,
@@ -263,12 +265,20 @@ async function handleCrew(req, res) {
 
 		if (req.method === 'PUT') {
 			const { name, role, externalUrl, image } = req.body;
+			const normalizedName = normalizePersonName(name);
 			const normalizedImage = normalizeImageInput(image ? [image] : [], 'portrait');
 			const imageUrl = primaryImageReference(normalizedImage);
 			const pathname = normalizedImage[0]?.pathname ?? null;
 			const crew = await prisma.fashionCrew.update({
 				where: { id },
-				data: { name, role: role ?? '', externalUrl: normalizeExternalUrl(externalUrl), imageUrl, pathname: pathname || null },
+				data: {
+					name: normalizedName,
+					normalizedName: normalizedPersonName(normalizedName),
+					role: role ?? '',
+					externalUrl: normalizeExternalUrl(externalUrl),
+					imageUrl,
+					pathname: pathname || null,
+				},
 				select: selectCrewList(),
 			});
 			await deleteRemovedBlobPathnames(
@@ -300,12 +310,20 @@ async function handleCrew(req, res) {
 
 	if (req.method === 'POST') {
 		const { name, role, externalUrl, image } = req.body;
-		if (!name) return res.status(400).json({ error: 'Name is required.' });
+		const normalizedName = normalizePersonName(name);
+		if (!normalizedName) return res.status(400).json({ error: 'Name is required.' });
 		const normalizedImage = normalizeImageInput(image ? [image] : [], 'portrait');
 		const imageUrl = primaryImageReference(normalizedImage);
 		const pathname = normalizedImage[0]?.pathname ?? null;
 		const crew = await prisma.fashionCrew.create({
-			data: { name, role: role ?? '', externalUrl: normalizeExternalUrl(externalUrl), imageUrl, pathname: pathname || null },
+			data: {
+				name: normalizedName,
+				normalizedName: normalizedPersonName(normalizedName),
+				role: role ?? '',
+				externalUrl: normalizeExternalUrl(externalUrl),
+				imageUrl,
+				pathname: pathname || null,
+			},
 			select: selectCrewList(),
 		});
 		return res.status(201).json(withCrewImage(crew));
@@ -536,7 +554,7 @@ function creditsCreateManyData(credits) {
 }
 
 function normalizedCreditName(value) {
-	return String(value ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+	return normalizedPersonName(value);
 }
 
 function collectUnlinkedCreditNames(credits, namesByKey) {
@@ -582,6 +600,7 @@ async function resolveTypedOutsideTalentCredits(tx, credits, pieces) {
 		tx.fashionCrew.create({
 			data: {
 				name: entry.name,
+				normalizedName: normalizedCreditName(entry.name),
 				role: entry.role,
 				externalUrl: '',
 				imageUrl: '',
