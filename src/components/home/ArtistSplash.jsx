@@ -197,7 +197,7 @@ function ArtistCard({
 		cycleRunIdRef.current += 1;
 		currentImageRef.current = defaultImage;
 		dispatchVisualState({ type: 'reset', image: defaultImage, isActive: forcedActive });
-	}, [defaultImage, forcedActive]);
+	}, [clearTimers, defaultImage, forcedActive]);
 
 	useEffect(() => {
 		if (!defaultImage) return undefined;
@@ -346,17 +346,16 @@ function ArtistSplashRail({ artists }) {
 	const scrollRef = useRef(null);
 	const { canScroll, atStart, atEnd } = useOverflowControls(scrollRef, true);
 	const priorityCount = 3;
-	const rowCount = artists.length >= 5 ? 2 : 1;
-	const columnCount = Math.max(1, Math.ceil(artists.length / rowCount));
-	const cardMaxWidth = rowCount === 2 ? 280 : 320;
-	const cardHeightLimit = rowCount === 2 ? '27dvh' : '48dvh';
+	const columnCount = Math.max(1, artists.length);
+	const cardMaxWidth = 260;
+	const cardHeightLimit = '34dvh';
 	const totalGap = Math.max(0, columnCount - 1) * 20;
 	const wideColumnCount = Math.max(1, artists.length);
 	const wideTotalGap = Math.max(0, wideColumnCount - 1) * 24;
 	const gridStyle = {
 		'--artist-splash-grid-columns': columnCount,
 		'--artist-splash-grid-max': `${columnCount * cardMaxWidth + totalGap}px`,
-		'--artist-splash-card-basis': `min(${cardMaxWidth}px, ${cardHeightLimit}, calc((100% - ${totalGap}px) / ${columnCount}))`,
+		'--artist-splash-card-basis': `max(112px, min(${cardMaxWidth}px, ${cardHeightLimit}, calc((100vw - ${totalGap + 160}px) / ${columnCount})))`,
 		'--artist-splash-wide-grid-max': `${wideColumnCount * 340 + wideTotalGap}px`,
 		'--artist-splash-wide-card-basis': `min(340px, 43dvh, calc((100% - ${wideTotalGap}px) / ${wideColumnCount}))`,
 	};

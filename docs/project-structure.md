@@ -15,7 +15,7 @@
 Vercel Function handlers. Only deployable runtime handlers should live here.
 
 - `api/public.js`: public resource multiplexer for music, board, about, player, Crosshair, and fashion data.
-- `api/blob.js`: private Vercel Blob read proxy by pathname.
+- `api/blob.js`: private Vercel Blob read proxy with admin-session and public-reference access checks.
 - `api/admin/*.js`: admin CMS endpoints. Each handler authenticates with `src/lib/auth.js` and applies its own role/page checks.
 
 ## `src/`
@@ -39,6 +39,8 @@ Important modules:
 - `auth.js`: server-side admin JWT/cookie auth, role helpers, scoped Prisma filters.
 - `adminAuth.jsx`: client-side admin session context.
 - `adminPageAccess.js`: admin page keys, route destinations, and page-access defaults.
+- `blobAccess.js`: metadata-backed private blob read policy for `api/blob.js`.
+- `loginRateLimit.js`: in-process failed-login throttling for `api/admin/login.js`.
 - `adminResourceCache.js`: client-side admin GET cache with 401 redirect behavior.
 - `apiCache.js`: client-side public GET cache and in-flight request dedupe.
 - `contentVisibility.js` and `releaseSchedule.js`: release visibility business rules.
@@ -75,6 +77,7 @@ There is no `prisma/migrations/` directory in this checkout. Confirm the intende
 ## `scripts/`
 
 - `vercel-api-entrypoints.js`: statically imports Vercel API handlers for route-graph visibility and code-health tooling.
+- `release-operations-check.js`: read-only release hygiene report for private SoundCloud URLs and future visibility rollover.
 - `sync-single-release-fields.js`: manual data synchronization/repair script for single-release links and roles. Run with `--dry-run` first.
 
 ## `public/`

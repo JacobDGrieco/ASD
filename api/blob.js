@@ -5,24 +5,27 @@
  * the app is built as `/api/blob?pathname=...` (see `buildBlobProxyUrl` in
  * `images.js`) and proxied through here.
  *
- * Deliberately has no auth check, unlike every write path for these blobs — a
- * pathname is effectively treated as an unguessable capability token. This is an
- * intentional asymmetry worth confirming against your threat model rather than a
- * settled design decision.
+ * Reads are authorized by `src/lib/blobAccess.js`: admin sessions may read managed
+ * blob pathnames, while anonymous public reads are limited to blobs referenced by
+ * public, visible records.
  *
  * Server-only (Vercel Function).
  */
 import { Readable } from 'node:stream';
 import { get } from '@vercel/blob';
+import { canReadBlobPathname } from '../src/lib/blobAccess.js';
 
 export default async function handler(request, response) {
 	if (request.method !== 'GET') return response.status(405).json({ error: 'Method not allowed' });
 
-	const pathname = typeof request.query.pathname === 'string' ? request.query.pathname : '';
+	const requestedPathname = typeof request.query.pathname === 'string' ? request.query.pathname : '';
 	const shouldRedirect = request.query.redirect === '1';
-	if (!pathname) {
+	if (!requestedPathname) {
 		return response.status(400).json({ error: 'Missing pathname' });
 	}
+
+	const { canRead, pathname } = await canReadBlobPathname(request, requestedPathname);
+	if (!canRead) return response.status(404).send('Not found');
 
 	const result = await get(pathname, {
 		access: 'private',

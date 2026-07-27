@@ -67,7 +67,7 @@ Public reads compute effective visibility at request time. `api/admin/albums.js`
 
 ## Storage Model
 
-Uploads go through `api/admin/uploads.js`, which validates image type, file size, and folder. Private blob reads go through `api/blob.js`, which currently allows reads when the caller knows the pathname. This is intentional for the initial launch so normal public pages can display uploaded assets, but the future policy should explore admin-only storage access paired with public-safe delivery URLs or signed/proxied reads.
+Uploads go through `api/admin/uploads.js`, which validates image type, file size, folder, and admin page access. Private blob reads go through `api/blob.js`; admin sessions can read managed blobs, while anonymous reads are allowed only for blob pathnames referenced by public, visible content.
 
 `src/lib/blobCleanup.js` performs best-effort cleanup after updates/deletes. It checks known database references before deleting Vercel Blob pathnames, logs failures, and does not fail the admin request if cleanup fails.
 
@@ -83,7 +83,6 @@ Uploads go through `api/admin/uploads.js`, which validates image type, file size
 ## Tradeoffs and Operational Decisions
 
 - Public APIs send `Cache-Control: no-store`, while the browser caches responses in memory through `useApi`.
-- Login has no application-level rate limiting yet and needs one before broader use.
-- Private blob access relies on pathname secrecy for now; hardening this without breaking public image display is tracked in `FUTURE_FIXES.md`.
-- Runtime admin-account schema capability checks supported a one-time migration; remove them if code search confirms no current callers need backward compatibility.
+- Login has in-process application-level rate limiting. A distributed store would be needed if stricter cross-instance throttling becomes necessary.
+- Private blob access is metadata-backed for public reads; unreferenced or hidden-content pathnames are rejected.
 - `vercel.json` uses the `[deploy]` commit-message convention so ordinary commits can avoid official Vercel rebuilds and the operator can move branches without immediately changing the public build.

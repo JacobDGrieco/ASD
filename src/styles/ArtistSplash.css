@@ -508,6 +508,54 @@
 	filter: grayscale(0%) brightness(0.96);
 }
 
+@media (min-width: 901px) {
+	.artist-splash-rail-window {
+		--artist-splash-rail-top-pad: clamp(116px, 16dvh, 172px);
+		--artist-splash-rail-bottom-pad: clamp(72px, 9dvh, 112px);
+	}
+
+	.artist-splash-grid {
+		flex-wrap: nowrap;
+		align-items: center;
+		width: min(100%, var(--artist-splash-grid-max));
+	}
+
+	.artist-splash-card {
+		flex-basis: var(--artist-splash-card-basis);
+		width: var(--artist-splash-card-basis);
+	}
+
+	.artist-splash-card:nth-child(6n + 1) {
+		translate: 0 -5dvh;
+		rotate: -3deg;
+	}
+
+	.artist-splash-card:nth-child(6n + 2) {
+		translate: 0 4dvh;
+		rotate: 2deg;
+	}
+
+	.artist-splash-card:nth-child(6n + 3) {
+		translate: 0 -2dvh;
+		rotate: -1deg;
+	}
+
+	.artist-splash-card:nth-child(6n + 4) {
+		translate: 0 5dvh;
+		rotate: 3deg;
+	}
+
+	.artist-splash-card:nth-child(6n + 5) {
+		translate: 0 -4dvh;
+		rotate: -2deg;
+	}
+
+	.artist-splash-card:nth-child(6n + 6) {
+		translate: 0 3dvh;
+		rotate: 2deg;
+	}
+}
+
 @media (min-width: 1800px) {
 	.artist-splash-rail-window {
 		--artist-splash-rail-x-pad: clamp(72px, 5vw, 112px);

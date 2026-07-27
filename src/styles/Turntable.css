@@ -196,6 +196,16 @@
 	clip-path: inset(50%);
 }
 
+@media (prefers-reduced-motion: reduce) {
+	.turntable-platter {
+		animation: none;
+	}
+
+	.turntable-tonearm {
+		transition: none;
+	}
+}
+
 @media (max-width: 900px) {
 	.turntable-scene {
 		width: min(100vw - 40px, 420px);

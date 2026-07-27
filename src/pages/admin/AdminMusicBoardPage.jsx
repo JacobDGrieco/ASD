@@ -562,7 +562,7 @@ export default function AdminMusicBoardPage() {
 
 		void fetch('/api/admin/uploads', {
 			method: 'DELETE',
-			headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ pathnames: unusedPathnames }),
 		});
 	}
@@ -616,7 +616,7 @@ export default function AdminMusicBoardPage() {
 			if (editing) {
 				res = await fetch(`/api/admin/board?id=${editing.id}`, {
 					method: 'PUT',
-					headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify(payload),
 				});
 				updated = await res.json();
@@ -625,7 +625,7 @@ export default function AdminMusicBoardPage() {
 			} else {
 				res = await fetch('/api/admin/board', {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify(payload),
 				});
 				updated = await res.json();
@@ -645,7 +645,6 @@ export default function AdminMusicBoardPage() {
 	async function deletePost(post) {
 		const res = await fetch(`/api/admin/board?id=${post.id}`, {
 			method: 'DELETE',
-			headers: { Authorization: `Bearer ${token}` },
 		});
 		if (res.ok) {
 			setPosts((prev) => prev.filter((p) => p.id !== post.id));
@@ -658,7 +657,7 @@ export default function AdminMusicBoardPage() {
 	async function toggleArchive(post, archive) {
 		const res = await fetch(`/api/admin/board?id=${post.id}&action=archive`, {
 			method: 'PATCH',
-			headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ archive }),
 		});
 		if (res.ok) {
@@ -673,7 +672,7 @@ export default function AdminMusicBoardPage() {
 	async function releasePosition(post) {
 		const res = await fetch(`/api/admin/board?id=${post.id}&action=position`, {
 			method: 'PATCH',
-			headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ posX: null, posY: null, rotation: null, positionPinnedUntil: null }),
 		});
 		if (res.ok) {

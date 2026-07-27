@@ -20,7 +20,7 @@ A 401 from an admin GET clears the admin resource cache and navigates to `/admin
 
 ## Admin Login Always Fails
 
-Relevant files: `api/admin/login.js`, `src/lib/passwords.js`, `src/lib/adminAccountSchema.js`.
+Relevant files: `api/admin/login.js`, `src/lib/passwords.js`, `src/lib/adminAccounts.js`.
 
 Check:
 
@@ -28,8 +28,7 @@ Check:
 - `JWT_SECRET` is set.
 - DB-backed account rows are active.
 - The connected database has the expected account tables/columns.
-
-There is no application-level rate limiting; repeated attempts are not throttled by this code.
+- The caller has not exceeded the in-process login rate limit. Wait for the retry window or restart the local dev function process.
 
 ## Uploads Fail
 
@@ -79,9 +78,9 @@ npm run db:generate
 
 ## Database Schema Mismatch
 
-Relevant files: `prisma/schema.prisma`, `src/lib/adminAccountSchema.js`.
+Relevant files: `prisma/schema.prisma`, `docs/database/proposal.md`.
 
-Some account-related schema drift is tolerated at runtime because of a one-time migration window. Do not run production schema changes without a confirmed workflow, migration history decision, and backup.
+Do not run production schema changes without a confirmed workflow, migration history decision, and backup. The repository now assumes the current account schema is present.
 
 ## SoundCloud Player Fails
 

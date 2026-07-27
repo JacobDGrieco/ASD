@@ -27,7 +27,6 @@ function validateForm(form) {
 
 export default function AdminMusicOutsideArtistsPage() {
 	const { token } = useAdminAuth();
-	const auth = { Authorization: `Bearer ${token}` };
 	const [outsideArtists, setOutsideArtists] = useState([]);
 	const [form, setForm] = useState(null);
 	const [loadingEditId, setLoadingEditId] = useState(null);
@@ -50,7 +49,7 @@ export default function AdminMusicOutsideArtistsPage() {
 	const openEdit = async (person) => {
 		setLoadingEditId(person.id);
 		try {
-			const detail = await fetch(`/api/admin/outside-artists?id=${person.id}`, { headers: auth }).then((response) => response.json());
+			const detail = await fetch(`/api/admin/outside-artists?id=${person.id}`).then((response) => response.json());
 			setForm({ ...empty, ...detail });
 		} finally {
 			setLoadingEditId(null);
@@ -70,7 +69,7 @@ export default function AdminMusicOutsideArtistsPage() {
 		const url = isEdit ? `/api/admin/outside-artists?id=${form.id}` : '/api/admin/outside-artists';
 		const res = await fetch(url, {
 			method: isEdit ? 'PUT' : 'POST',
-			headers: { ...auth, 'Content-Type': 'application/json' },
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ name: form.name, role: form.role, externalUrl: form.externalUrl, image: form.image }),
 		});
 		if (!res.ok) {
@@ -89,7 +88,7 @@ export default function AdminMusicOutsideArtistsPage() {
 	};
 
 	const handleDelete = async (id) => {
-		await fetch(`/api/admin/outside-artists?id=${id}`, { method: 'DELETE', headers: auth });
+		await fetch(`/api/admin/outside-artists?id=${id}`, { method: 'DELETE' });
 		const nextOutsideArtists = outsideArtists.filter((person) => person.id !== id);
 		setOutsideArtists(nextOutsideArtists);
 		primeAdminResource('music-outside-artists-list', token, nextOutsideArtists);

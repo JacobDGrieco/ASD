@@ -103,7 +103,6 @@ export default function ImageCollectionField({ value, onChange, token, folder, e
 					access: 'public',
 					handleUploadUrl: '/api/admin/uploads',
 					clientPayload: JSON.stringify({ folder }),
-					headers: { Authorization: `Bearer ${token}` },
 				});
 
 				const uploadedImage = {
@@ -143,7 +142,6 @@ export default function ImageCollectionField({ value, onChange, token, folder, e
 			const response = await fetch('/api/admin/uploads', {
 				method: 'POST',
 				headers: {
-					Authorization: `Bearer ${token}`,
 					'Content-Type': 'application/json',
 				},
 				body: JSON.stringify({

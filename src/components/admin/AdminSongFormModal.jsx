@@ -1284,7 +1284,7 @@ export default function AdminSongFormModal({
 
 		const response = await fetch(url, {
 			method: isEdit ? 'PUT' : 'POST',
-			headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload),
 		});
 

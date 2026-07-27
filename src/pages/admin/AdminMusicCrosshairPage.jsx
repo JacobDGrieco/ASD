@@ -211,7 +211,6 @@ function CrosshairVideoModal({ form, setForm, token, editing, message, saving, o
 
 export default function AdminMusicCrosshairPage() {
 	const { token, session } = useAdminAuth();
-	const auth = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
 	const isSuperAdmin = session?.role === 'SUPER_ADMIN';
 	const [videos, setVideos] = useState([]);
 	const [loading, setLoading] = useState(true);
@@ -252,7 +251,7 @@ export default function AdminMusicCrosshairPage() {
 	useEffect(() => {
 		if (!token || !isSuperAdmin) return;
 		let ignore = false;
-		fetch('/api/admin/crosshair?action=config', { headers: auth })
+		fetch('/api/admin/crosshair?action=config')
 			.then((response) => response.ok ? response.json() : null)
 			.then((data) => {
 				if (!ignore) setSyncConfig(data);
@@ -264,7 +263,7 @@ export default function AdminMusicCrosshairPage() {
 		return () => {
 			ignore = true;
 		};
-	}, [auth, isSuperAdmin, token]);
+	}, [isSuperAdmin, token]);
 
 	function openCreate() {
 		setForm(emptyForm);
@@ -305,7 +304,7 @@ export default function AdminMusicCrosshairPage() {
 			const url = editing ? `/api/admin/crosshair?id=${encodeURIComponent(editing.id)}` : '/api/admin/crosshair';
 			const response = await fetch(url, {
 				method: editing ? 'PUT' : 'POST',
-				headers: { ...auth, 'Content-Type': 'application/json' },
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload),
 			});
 			const result = await response.json().catch(() => null);
@@ -325,7 +324,7 @@ export default function AdminMusicCrosshairPage() {
 	}
 
 	async function refreshVideos() {
-		const response = await fetch('/api/admin/crosshair', { headers: auth });
+		const response = await fetch('/api/admin/crosshair');
 		const data = await response.json();
 		if (!response.ok) throw new Error(data?.error ?? 'Failed to refresh Crosshair videos.');
 		setVideos(data ?? []);
@@ -339,7 +338,7 @@ export default function AdminMusicCrosshairPage() {
 		try {
 			const response = await fetch('/api/admin/crosshair?action=sync', {
 				method: 'POST',
-				headers: { ...auth, 'Content-Type': 'application/json' },
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ mode: 'auto' }),
 			});
 			const result = await response.json().catch(() => null);
@@ -358,7 +357,6 @@ export default function AdminMusicCrosshairPage() {
 	async function deleteVideo(video) {
 		const response = await fetch(`/api/admin/crosshair?id=${encodeURIComponent(video.id)}`, {
 			method: 'DELETE',
-			headers: auth,
 		});
 		if (!response.ok) {
 			setMessage('Failed to delete Crosshair video.');

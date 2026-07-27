@@ -18,6 +18,7 @@
 		"db:generate": "prisma generate",
 		"db:migrate": "prisma migrate dev",
 		"db:push": "prisma db push",
+		"release:check": "node scripts/release-operations-check.js",
 		"doctor": "npx react-doctor@latest"
 	},
 	"dependencies": {

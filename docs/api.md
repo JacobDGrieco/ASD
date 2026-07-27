@@ -35,7 +35,7 @@ If a valid admin cookie is present, `api/public.js` can include hidden/unrelease
 - `pathname`: required managed/private blob pathname.
 - `redirect=1`: optional redirect to the resolved blob URL.
 
-The route has no admin auth check. This is intentional for the initial launch so uploaded images can render for normal public users, but pathnames currently function like bearer capabilities. Future hardening should preserve public image display while preventing arbitrary private-blob reads, for example with signed public derivatives, metadata-backed access checks, or a dedicated public asset delivery policy.
+The route reads private blobs only when the pathname is authorized. A valid admin cookie can read managed blobs, and anonymous public reads are allowed only for blob pathnames still referenced by public, visible content. Unreferenced or hidden-content pathnames return 404.
 
 ## Admin API
 

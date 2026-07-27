@@ -495,7 +495,6 @@ export default function AdminMusicAlbumsPage() {
 	const isArtistScoped = session?.role === 'ARTIST';
 	const isViewer = session?.role === 'VIEWER';
 	const scopedArtistId = session?.artistId ?? '';
-	const auth = { Authorization: `Bearer ${token}` };
 	const initialFilterState = (() => {
 		if (typeof window === 'undefined') return { filterArtist: '', filterType: '', filterTitle: '', page: 1 };
 		try {
@@ -596,7 +595,7 @@ export default function AdminMusicAlbumsPage() {
 	const openEdit = async (album) => {
 		setLoadingEditId(album.id);
 		try {
-			const detail = await fetch(`/api/admin/albums?id=${album.id}`, { headers: auth }).then((r) => r.json());
+			const detail = await fetch(`/api/admin/albums?id=${album.id}`).then((r) => r.json());
 			visibilityTouchedRef.current = hasManualAlbumVisibilityChoice(detail);
 			setForm({
 				...empty,
@@ -650,7 +649,7 @@ export default function AdminMusicAlbumsPage() {
 		};
 		const res = await fetch(url, {
 			method: isEdit ? 'PUT' : 'POST',
-			headers: { ...auth, 'Content-Type': 'application/json' },
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload),
 		});
 		if (!res.ok) {
@@ -665,7 +664,7 @@ export default function AdminMusicAlbumsPage() {
 		setAlbums(nextAlbums);
 		primeAdminResource('albums-list', token, nextAlbums);
 		clearAdminResource('songs-list', token);
-		fetch('/api/admin/outside-artists', { headers: auth })
+		fetch('/api/admin/outside-artists')
 			.then((response) => (response.ok ? response.json() : null))
 			.then((outsideArtistList) => {
 				if (!outsideArtistList) return;
@@ -695,7 +694,7 @@ export default function AdminMusicAlbumsPage() {
 	};
 
 	const handleDelete = async (id) => {
-		await fetch(`/api/admin/albums?id=${id}`, { method: 'DELETE', headers: auth });
+		await fetch(`/api/admin/albums?id=${id}`, { method: 'DELETE' });
 		const nextAlbums = albums.filter((album) => album.id !== id);
 		setAlbums(nextAlbums);
 		primeAdminResource('albums-list', token, nextAlbums);

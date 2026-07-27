@@ -295,7 +295,6 @@ function SongsPagination({ currentPage, totalPages, onPageChange }) {
 export default function AdminMusicSongsPage() {
 	const { token, session } = useAdminAuth();
 	const isViewer = session?.role === 'VIEWER';
-	const auth = { Authorization: `Bearer ${token}` };
 	const initialFilterState = (() => {
 		if (typeof window === 'undefined') return { filterArtist: '', filterAlbum: '', filterTitle: '', page: 1 };
 		try {
@@ -435,7 +434,7 @@ export default function AdminMusicSongsPage() {
 	};
 
 	const handleDelete = async (id) => {
-		await fetch(`/api/admin/songs?id=${id}`, { method: 'DELETE', headers: auth });
+		await fetch(`/api/admin/songs?id=${id}`, { method: 'DELETE' });
 		const nextSongs = songs.filter((song) => song.id !== id);
 		setSongs(nextSongs);
 		primeAdminResource('songs-list', token, nextSongs);

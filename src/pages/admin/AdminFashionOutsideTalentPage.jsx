@@ -53,7 +53,6 @@ function validateCrewForm(form) {
 
 export default function AdminFashionOutsideTalentPage() {
 	const { token } = useAdminAuth();
-	const auth = { Authorization: `Bearer ${token}` };
 	const [crew, setCrew] = useState([]);
 	const [form, setForm] = useState(null);
 	const [loadingEditId, setLoadingEditId] = useState(null);
@@ -76,7 +75,7 @@ export default function AdminFashionOutsideTalentPage() {
 	const openEdit = async (person) => {
 		setLoadingEditId(person.id);
 		try {
-			const detail = await fetch(`/api/admin/fashion?resource=crew&id=${person.id}`, { headers: auth }).then((response) => response.json());
+			const detail = await fetch(`/api/admin/fashion?resource=crew&id=${person.id}`).then((response) => response.json());
 			setForm({ ...empty, ...detail });
 		} finally {
 			setLoadingEditId(null);
@@ -96,7 +95,7 @@ export default function AdminFashionOutsideTalentPage() {
 		const url = isEdit ? `/api/admin/fashion?resource=crew&id=${form.id}` : '/api/admin/fashion?resource=crew';
 		const res = await fetch(url, {
 			method: isEdit ? 'PUT' : 'POST',
-			headers: { ...auth, 'Content-Type': 'application/json' },
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ name: form.name, role: form.role, externalUrl: form.externalUrl, image: form.image }),
 		});
 		if (!res.ok) {
@@ -113,7 +112,7 @@ export default function AdminFashionOutsideTalentPage() {
 	};
 
 	const handleDelete = async (id) => {
-		await fetch(`/api/admin/fashion?resource=crew&id=${id}`, { method: 'DELETE', headers: auth });
+		await fetch(`/api/admin/fashion?resource=crew&id=${id}`, { method: 'DELETE' });
 		const nextCrew = crew.filter((person) => person.id !== id);
 		setCrew(nextCrew);
 		primeAdminResource('fashion-crew-list', token, nextCrew);

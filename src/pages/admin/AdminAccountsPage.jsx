@@ -53,7 +53,6 @@ function formatAccess(row) {
 
 export default function AdminAccountsPage() {
 	const { token, session } = useAdminAuth();
-	const auth = { Authorization: `Bearer ${token}` };
 	const [rows, setRows] = useState([]);
 	const [form, setForm] = useState(null);
 
@@ -130,7 +129,7 @@ export default function AdminAccountsPage() {
 
 		const response = await fetch(isEdit ? `/api/admin/accounts?id=${form.id}` : '/api/admin/accounts', {
 			method: isEdit ? 'PUT' : 'POST',
-			headers: { ...auth, 'Content-Type': 'application/json' },
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
 				accountType: form.accountType,
 				subjectId: form.subjectId,
@@ -166,7 +165,6 @@ export default function AdminAccountsPage() {
 
 		const response = await fetch(`/api/admin/accounts?id=${accountForm.id}`, {
 			method: 'DELETE',
-			headers: auth,
 		});
 
 		if (!response.ok) {

@@ -339,7 +339,6 @@ function CollectionFormModal({ form, setForm, token, talentOptions, crewOptions,
 export default function AdminFashionCollectionsPage() {
 	const { token } = useAdminAuth();
 	const navigate = useNavigate();
-	const auth = { Authorization: `Bearer ${token}` };
 	const [collections, setCollections] = useState([]);
 	const [talentOptions, setTalentOptions] = useState([]);
 	const [crewOptions, setCrewOptions] = useState([]);
@@ -381,7 +380,7 @@ export default function AdminFashionCollectionsPage() {
 	const openEdit = async (collection) => {
 		setLoadingEditId(collection.id);
 		try {
-			const detail = await fetch(`/api/admin/fashion/collections/${collection.id}`, { headers: auth }).then((response) => response.json());
+			const detail = await fetch(`/api/admin/fashion/collections/${collection.id}`).then((response) => response.json());
 			setForm({
 				...empty,
 				...detail,
@@ -427,7 +426,7 @@ export default function AdminFashionCollectionsPage() {
 		};
 		const res = await fetch(url, {
 			method: isEdit ? 'PUT' : 'POST',
-			headers: { ...auth, 'Content-Type': 'application/json' },
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload),
 		});
 		if (!res.ok) {
@@ -442,7 +441,7 @@ export default function AdminFashionCollectionsPage() {
 		const sortedCollections = sortCollectionsByReleaseDate(nextCollections);
 		setCollections(sortedCollections);
 		primeAdminResource('fashion-collections-list', token, sortedCollections);
-		fetch('/api/admin/fashion?resource=crew', { headers: auth })
+		fetch('/api/admin/fashion?resource=crew')
 			.then((response) => (response.ok ? response.json() : null))
 			.then((crew) => {
 				if (!crew) return;
@@ -463,7 +462,7 @@ export default function AdminFashionCollectionsPage() {
 	};
 
 	const handleDelete = async (id) => {
-		await fetch(`/api/admin/fashion/collections/${id}`, { method: 'DELETE', headers: auth });
+		await fetch(`/api/admin/fashion/collections/${id}`, { method: 'DELETE' });
 		const nextCollections = collections.filter((collection) => collection.id !== id);
 		setCollections(nextCollections);
 		primeAdminResource('fashion-collections-list', token, nextCollections);

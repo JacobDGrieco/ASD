@@ -14,12 +14,26 @@
 import { Buffer } from 'node:buffer';
 import { del, put } from '@vercel/blob';
 import { handleUpload } from '@vercel/blob/client';
-import { isViewer, requireAdmin } from '../../src/lib/auth.js';
+import { canAccessAdminPage, isSuperAdmin, isViewer, requireAdmin } from '../../src/lib/auth.js';
+import { ADMIN_PAGE_KEYS } from '../../src/lib/adminPageAccess.js';
 import { blobPathnameFromReference } from '../../src/lib/blobCleanup.js';
 
 const ALLOWED_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
-const ALLOWED_FOLDERS = new Set(['artists', 'albums', 'songs', 'board', 'about-members', 'music-outside-artists', 'fashion-talent', 'fashion-looks', 'fashion-pieces', 'fashion-crew', 'fashion-collections']);
+const ALLOWED_FOLDERS = new Set(['artists', 'albums', 'songs', 'board', 'about-members', 'music-outside-artists', 'crosshair', 'fashion-talent', 'fashion-looks', 'fashion-pieces', 'fashion-crew', 'fashion-collections']);
+const FOLDER_PAGE_ACCESS = {
+	artists: [ADMIN_PAGE_KEYS.MUSIC_ARTISTS],
+	albums: [ADMIN_PAGE_KEYS.MUSIC_ALBUMS],
+	songs: [ADMIN_PAGE_KEYS.MUSIC_SONGS],
+	board: [ADMIN_PAGE_KEYS.BOARD],
+	'music-outside-artists': [ADMIN_PAGE_KEYS.MUSIC_OUTSIDE_ARTISTS],
+	crosshair: [ADMIN_PAGE_KEYS.MUSIC_CROSSHAIR],
+	'fashion-talent': [ADMIN_PAGE_KEYS.FASHION_TALENT],
+	'fashion-looks': [ADMIN_PAGE_KEYS.FASHION_LOOKS],
+	'fashion-pieces': [ADMIN_PAGE_KEYS.FASHION_LOOKS],
+	'fashion-crew': [ADMIN_PAGE_KEYS.FASHION_OUTSIDE_TALENT],
+	'fashion-collections': [ADMIN_PAGE_KEYS.FASHION_COLLECTIONS],
+};
 const CONTENT_TYPE_EXTENSIONS = {
 	'image/jpeg': 'jpg',
 	'image/png': 'png',
@@ -52,6 +66,18 @@ function normalizeFolder(value) {
 	return ALLOWED_FOLDERS.has(value) ? value : 'artists';
 }
 
+function folderFromPathname(pathname) {
+	return String(pathname ?? '').split('/')[0] ?? '';
+}
+
+function canUseUploadFolder(session, folder) {
+	if (isSuperAdmin(session)) return true;
+	if (folder === 'about-members') return false;
+
+	const pageKeys = FOLDER_PAGE_ACCESS[folder] ?? [];
+	return pageKeys.some((pageKey) => canAccessAdminPage(session, pageKey));
+}
+
 function extensionFromUrl(url) {
 	const pathname = new URL(url).pathname;
 	const rawName = pathname.split('/').pop() ?? '';
@@ -68,11 +94,15 @@ function buildRemotePathname(folder, sourceUrl, contentType) {
 // Downloads a remote image server-side and re-hosts it in Vercel Blob, so an admin
 // can "import" an external image URL without needing to save-and-reupload it
 // manually. Validates protocol, content-type, and size before accepting the bytes.
-async function importImageFromUrl(body) {
+async function importImageFromUrl(body, session) {
 	const remoteUrl = typeof body?.url === 'string' ? body.url.trim() : '';
 	const requestedFolder = typeof body?.folder === 'string' ? body.folder : 'artists';
 	const folder = normalizeFolder(requestedFolder);
 	const altText = typeof body?.entityLabel === 'string' ? body.entityLabel.trim() : '';
+
+	if (!canUseUploadFolder(session, folder)) {
+		throw new Error('You do not have access to upload images for that page.');
+	}
 
 	if (!remoteUrl) {
 		throw new Error('Image URL is required');
@@ -149,7 +179,7 @@ export default async function handler(req, res) {
 		if (!uploadSession) return;
 		if (isViewer(uploadSession)) return res.status(403).json({ error: 'Forbidden' });
 
-		if (req.method === 'DELETE') {
+	if (req.method === 'DELETE') {
 			const requestedPathnames = Array.isArray(body?.pathnames) ? body.pathnames : [body?.pathname];
 			const pathnames = [...new Set(requestedPathnames.flatMap((pathname) => {
 				const normalized = blobPathnameFromReference(pathname);
@@ -160,12 +190,16 @@ export default async function handler(req, res) {
 				return res.status(400).json({ error: 'Valid blob pathname is required' });
 			}
 
+			if (pathnames.some((pathname) => !canUseUploadFolder(uploadSession, folderFromPathname(pathname)))) {
+				return res.status(403).json({ error: 'Forbidden' });
+			}
+
 			await del(pathnames);
 			return res.status(200).json({ deleted: pathnames });
 		}
 
 		if (body?.type === 'image.import-from-url') {
-			const image = await importImageFromUrl(body);
+			const image = await importImageFromUrl(body, uploadSession);
 			return res.status(200).json({ image });
 		}
 
@@ -176,6 +210,10 @@ export default async function handler(req, res) {
 				const payload = clientPayload ? JSON.parse(clientPayload) : {};
 				const requestedFolder = typeof payload?.folder === 'string' ? payload.folder : 'artists';
 				const folder = normalizeFolder(requestedFolder);
+
+				if (!canUseUploadFolder(uploadSession, folder)) {
+					throw new Error('You do not have access to upload images for that page.');
+				}
 
 				if (!String(pathname).startsWith(`${folder}/`)) {
 					throw new Error('Invalid upload path');

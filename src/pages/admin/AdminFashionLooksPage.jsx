@@ -586,7 +586,6 @@ export default function AdminFashionLooksPage() {
 	const { token } = useAdminAuth();
 	const location = useLocation();
 	const navigate = useNavigate();
-	const auth = { Authorization: `Bearer ${token}` };
 	const [looks, setLooks] = useState([]);
 	const [talentOptions, setTalentOptions] = useState([]);
 	const [crewOptions, setCrewOptions] = useState([]);
@@ -641,7 +640,7 @@ export default function AdminFashionLooksPage() {
 	const openEdit = async (look) => {
 		setLoadingEditId(look.id);
 		try {
-			const detail = await fetch(`/api/admin/fashion/looks?id=${look.id}`, { headers: auth }).then((r) => r.json());
+			const detail = await fetch(`/api/admin/fashion/looks?id=${look.id}`).then((r) => r.json());
 			setForm({
 				...empty,
 				...detail,
@@ -698,7 +697,7 @@ export default function AdminFashionLooksPage() {
 		};
 		const res = await fetch(url, {
 			method: isEdit ? 'PUT' : 'POST',
-			headers: { ...auth, 'Content-Type': 'application/json' },
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload),
 		});
 		if (!res.ok) {
@@ -711,7 +710,7 @@ export default function AdminFashionLooksPage() {
 		const sortedLooks = sortLooksByReleaseDate(nextLooks);
 		setLooks(sortedLooks);
 		primeAdminResource('fashion-looks-list', token, sortedLooks);
-		fetch('/api/admin/fashion?resource=crew', { headers: auth })
+		fetch('/api/admin/fashion?resource=crew')
 			.then((response) => (response.ok ? response.json() : null))
 			.then((crew) => {
 				if (!crew) return;
@@ -724,7 +723,7 @@ export default function AdminFashionLooksPage() {
 	};
 
 	const handleDelete = async (id) => {
-		await fetch(`/api/admin/fashion/looks?id=${id}`, { method: 'DELETE', headers: auth });
+		await fetch(`/api/admin/fashion/looks?id=${id}`, { method: 'DELETE' });
 		const nextLooks = looks.filter((look) => look.id !== id);
 		setLooks(nextLooks);
 		primeAdminResource('fashion-looks-list', token, nextLooks);

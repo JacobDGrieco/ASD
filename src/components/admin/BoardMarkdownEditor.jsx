@@ -146,7 +146,6 @@ export default function BoardMarkdownEditor({
 				access: 'public',
 				handleUploadUrl: '/api/admin/uploads',
 				clientPayload: JSON.stringify({ folder: 'board' }),
-				headers: { Authorization: `Bearer ${token}` },
 			});
 
 			const uploadedPathname = blob.pathname ?? pathname;

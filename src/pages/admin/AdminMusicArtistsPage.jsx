@@ -160,7 +160,6 @@ export default function AdminMusicArtistsPage() {
 	const { token, session } = useAdminAuth();
 	const isSuperAdmin = session?.role === 'SUPER_ADMIN';
 	const isViewer = session?.role === 'VIEWER';
-	const auth = { Authorization: `Bearer ${token}` };
 	const [artists, setArtists] = useState([]);
 	const [form, setForm] = useState(null);
 	const draggedArtistIdRef = useRef(null);
@@ -184,7 +183,7 @@ export default function AdminMusicArtistsPage() {
 	const openEdit = async (artist) => {
 		setLoadingEditId(artist.id);
 		try {
-			const detail = await fetch(`/api/admin/artists?id=${artist.id}`, { headers: auth }).then((r) => r.json());
+			const detail = await fetch(`/api/admin/artists?id=${artist.id}`).then((r) => r.json());
 			setForm({ ...empty, ...detail, images: detail.images ?? [], links: profileLinksForSource(detail, ARTIST_LEGACY_LINK_FIELDS) });
 		} finally {
 			setLoadingEditId(null);
@@ -210,7 +209,7 @@ export default function AdminMusicArtistsPage() {
 		};
 		const res = await fetch(url, {
 			method: isEdit ? 'PUT' : 'POST',
-			headers: { ...auth, 'Content-Type': 'application/json' },
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload),
 		});
 		if (!res.ok) {
@@ -226,7 +225,7 @@ export default function AdminMusicArtistsPage() {
 	};
 
 	const handleDelete = async (id) => {
-		await fetch(`/api/admin/artists?id=${id}`, { method: 'DELETE', headers: auth });
+		await fetch(`/api/admin/artists?id=${id}`, { method: 'DELETE' });
 		const nextArtists = artists.filter((artist) => artist.id !== id);
 		setArtists(nextArtists);
 		primeAdminResource('artists-list', token, nextArtists);
@@ -242,7 +241,7 @@ export default function AdminMusicArtistsPage() {
 				const nextOrderValue = nextArtists.findIndex((candidate) => candidate.id === artist.id);
 				return fetch(`/api/admin/artists?id=${artist.id}`, {
 					method: 'PUT',
-					headers: { ...auth, 'Content-Type': 'application/json' },
+					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ order: nextOrderValue }),
 				}).then((res) => res.json());
 			})

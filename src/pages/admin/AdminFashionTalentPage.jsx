@@ -177,7 +177,6 @@ function TalentFormModal({ form, setForm, token, onClose, onSave, onDelete, canD
 export default function AdminFashionTalentPage() {
 	const { token, session } = useAdminAuth();
 	const isSuperAdmin = session?.role === 'SUPER_ADMIN';
-	const auth = { Authorization: `Bearer ${token}` };
 	const [talent, setTalent] = useState([]);
 	const [form, setForm] = useState(null);
 	const draggedIdRef = useRef(null);
@@ -201,7 +200,7 @@ export default function AdminFashionTalentPage() {
 	const openEdit = async (person) => {
 		setLoadingEditId(person.id);
 		try {
-			const detail = await fetch(`/api/admin/fashion/talent?id=${person.id}`, { headers: auth }).then((r) => r.json());
+			const detail = await fetch(`/api/admin/fashion/talent?id=${person.id}`).then((r) => r.json());
 			setForm({ ...empty, ...detail, images: detail.images ?? [], links: profileLinksForSource(detail, FASHION_TALENT_LEGACY_LINK_FIELDS) });
 		} finally {
 			setLoadingEditId(null);
@@ -227,7 +226,7 @@ export default function AdminFashionTalentPage() {
 		};
 		const res = await fetch(url, {
 			method: isEdit ? 'PUT' : 'POST',
-			headers: { ...auth, 'Content-Type': 'application/json' },
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload),
 		});
 		if (!res.ok) {
@@ -243,7 +242,7 @@ export default function AdminFashionTalentPage() {
 	};
 
 	const handleDelete = async (id) => {
-		await fetch(`/api/admin/fashion/talent?id=${id}`, { method: 'DELETE', headers: auth });
+		await fetch(`/api/admin/fashion/talent?id=${id}`, { method: 'DELETE' });
 		const nextTalent = talent.filter((person) => person.id !== id);
 		setTalent(nextTalent);
 		primeAdminResource('fashion-talent-list', token, nextTalent);
@@ -259,7 +258,7 @@ export default function AdminFashionTalentPage() {
 				const nextOrderValue = nextTalent.findIndex((candidate) => candidate.id === person.id);
 				return fetch(`/api/admin/fashion/talent?id=${person.id}`, {
 					method: 'PUT',
-					headers: { ...auth, 'Content-Type': 'application/json' },
+					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ order: nextOrderValue }),
 				}).then((res) => res.json());
 			})

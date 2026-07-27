@@ -166,7 +166,6 @@ async function saveLyricsAndAnnotations({
 	isSaving,
 	annotations,
 	songId,
-	auth,
 	lyricText,
 	syncedLines,
 	lyricIdRef,
@@ -187,7 +186,7 @@ async function saveLyricsAndAnnotations({
 	try {
 		const lyricRes = await fetch(`/api/admin/lyrics?songId=${songId}`, {
 			method: 'PUT',
-			headers: { ...auth, 'Content-Type': 'application/json' },
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ text: lyricText, syncedLines }),
 		});
 		if (!lyricRes.ok) throw new Error('Failed to save lyrics.');
@@ -208,7 +207,7 @@ async function saveLyricsAndAnnotations({
 				if (annotation.id === null) {
 					const res = await fetch('/api/admin/annotations', {
 						method: 'POST',
-						headers: { ...auth, 'Content-Type': 'application/json' },
+						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({ songLyricId: savedLyricId, ...body }),
 					});
 					if (!res.ok) throw new Error('Failed to create annotation.');
@@ -227,7 +226,7 @@ async function saveLyricsAndAnnotations({
 
 				const res = await fetch(`/api/admin/annotations?id=${annotation.id}`, {
 					method: 'PUT',
-					headers: { ...auth, 'Content-Type': 'application/json' },
+					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify(body),
 				});
 				if (!res.ok) throw new Error('Failed to update annotation.');
@@ -885,7 +884,6 @@ export default function AdminMusicLyricsPage() {
 	const { token, session } = useAdminAuth();
 	const isViewer = session?.role === 'VIEWER';
 	const songTitle = state?.songTitle ?? 'Song';
-	const auth = { Authorization: `Bearer ${token}` };
 
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSaving, setIsSaving] = useState(false);
@@ -921,7 +919,7 @@ export default function AdminMusicLyricsPage() {
 		let ignore = false;
 		setIsLoading(true);
 
-		fetch(`/api/admin/lyrics?songId=${songId}`, { headers: auth })
+		fetch(`/api/admin/lyrics?songId=${songId}`)
 			.then((res) => res.json())
 			.then((data) => {
 				if (ignore) return;
@@ -949,7 +947,7 @@ export default function AdminMusicLyricsPage() {
 		return () => {
 			ignore = true;
 		};
-	}, [songId, token]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [songId, token]);
 
 	useLayoutEffect(() => {
 		if (isLoading) return;
@@ -1088,7 +1086,6 @@ export default function AdminMusicLyricsPage() {
 		if (annotation.id !== null) {
 			const res = await fetch(`/api/admin/annotations?id=${annotation.id}`, {
 				method: 'DELETE',
-				headers: auth,
 			});
 			if (!res.ok) {
 				alert('Failed to delete annotation.');
@@ -1106,7 +1103,6 @@ export default function AdminMusicLyricsPage() {
 			isSaving,
 			annotations,
 			songId,
-			auth,
 			lyricText,
 			syncedLines,
 			lyricIdRef,

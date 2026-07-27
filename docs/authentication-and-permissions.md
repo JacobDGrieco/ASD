@@ -14,7 +14,7 @@ Admin sessions are JWTs stored in the HttpOnly cookie `asd_admin_token`. Server 
 
 ## Client State
 
-`src/lib/adminAuth.jsx` stores session metadata and a sentinel token value of `cookie`. The real JWT is never stored in JavaScript-readable state. Some older client requests still build `Authorization: Bearer cookie`; `src/lib/auth.js` rejects that value and authenticates from the cookie. That Authorization-header path is legacy and can be removed after auditing callers.
+`src/lib/adminAuth.jsx` stores session metadata and a sentinel token value of `cookie`. The real JWT is never stored in JavaScript-readable state. Admin API requests authenticate through the HttpOnly cookie.
 
 ## Roles
 
@@ -27,7 +27,35 @@ Admin sessions are JWTs stored in the HttpOnly cookie `asd_admin_token`. Server 
 
 `src/lib/adminPageAccess.js` defines admin page keys, paths, defaults, and `pageAccess` filtering.
 
-`pageAccess` controls navigation and route visibility, and several APIs also check it. It is not the only security boundary. The intended direction is a documented authorization policy where every admin API enforces session, role, ownership, and page-access rules consistently.
+`pageAccess` controls navigation and route visibility, and admin APIs enforce it server-side for each protected resource. It is not the only security boundary; role and ownership checks still apply.
+
+## API Authorization Policy
+
+Every `api/admin/*` handler must enforce these rules in this order:
+
+1. Require a valid admin session with `requireAdmin` or `requireSuperAdmin`.
+2. Deny `VIEWER` for every write path.
+3. Check the relevant `pageAccess` key before reading or writing a page-owned resource.
+4. Apply ownership scoping for non-super-admin accounts.
+5. Return 403 for authenticated callers who lack access; return 404 when revealing existence would leak another account's private resource.
+
+Resource policy:
+
+| Resource | Required access | Ownership rule |
+| --- | --- | --- |
+| Accounts and About | `SUPER_ADMIN` | Super admin only. |
+| Artists | `music_artists`; Board reads may also use `board` for picker data | `ARTIST` can access only its own artist. |
+| Albums | `music_albums` for writes; selected music pages may read album picker data | `ARTIST` rows are scoped by `artistScopedAlbumWhere`. |
+| Songs, lyrics, annotations | `music_songs` | `ARTIST` rows are scoped by `artistScopedSongWhere`. |
+| Outside artists | `music_outside_artists` for writes | Shared read access only where music picker pages require it. |
+| Board | `board` | `ARTIST` can manage only its own posts; `SUPER_ADMIN` can archive/reposition label-level posts. |
+| Crosshair | `music_crosshair` | No scoped ownership; viewers denied. |
+| Record player | `music_record_player` | Viewers may read public-visible song options; writes require non-viewer access. |
+| Fashion talent | `fashion_talent` | `TALENT` can access only its own talent profile. |
+| Fashion crew/outside talent | `fashion_outside_talent` | Shared read access only where fashion picker pages require it. |
+| Fashion looks | `fashion_looks` | `TALENT` can manage only looks with matching `creatorTalentId`. |
+| Fashion collections | `fashion_collections` | `TALENT` can manage only collections with matching `creatorTalentId`. |
+| Uploads | Folder-specific page access | Upload and delete requests are limited to folders mapped to pages the session can access; `about-members` requires `SUPER_ADMIN`. |
 
 ## Ownership Rules
 
@@ -58,8 +86,6 @@ Viewer visibility for albums/songs is not a direct `isVisible` check. `viewerAlb
 
 `src/lib/adminAccounts.js` requires account passwords to be unique across artist and fashion talent admin accounts and to differ from `ADMIN_PASSWORD`.
 
-## Security Gaps and Follow-Up Work
+## Login Rate Limiting
 
-- `api/admin/login.js` needs application-level rate limiting.
-- `api/blob.js` currently serves private blobs by known pathname so public pages can render uploaded images. Future work should investigate admin-only blob protection with public-safe delivery.
-- A written authorization policy should define required checks for every admin API, including `SUPER_ADMIN`, scoped `ARTIST`, scoped `TALENT`, and `VIEWER` behavior.
+`api/admin/login.js` rate-limits failed `POST` attempts per client address in a 15-minute application-level window. This is intentionally dependency-free and per runtime instance; deployment-level edge throttling can still be added later for distributed attack resistance.

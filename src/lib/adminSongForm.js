@@ -124,8 +124,8 @@ export function albumRoleAppliesToSongs(role) {
 }
 
 /** Fetches full song detail for the editor, throwing with the server's error message (or a generic one) on failure. */
-export async function loadAdminSongDetail(songId, token) {
-	const response = await fetch(`/api/admin/songs?id=${songId}`, { headers: { Authorization: `Bearer ${token}` } });
+export async function loadAdminSongDetail(songId) {
+	const response = await fetch(`/api/admin/songs?id=${songId}`);
 	const contentType = response.headers.get('content-type') ?? '';
 	const payload = contentType.includes('application/json')
 		? await response.json().catch(() => null)

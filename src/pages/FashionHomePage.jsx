@@ -291,7 +291,6 @@ export default function FashionHomePage() {
 			const response = await fetch(`/api/admin/fashion/looks?id=${featuredLook.id}`, {
 				method: 'PUT',
 				headers: {
-					Authorization: `Bearer ${token}`,
 					'Content-Type': 'application/json',
 				},
 				body: JSON.stringify(buildLookPayloadWithImageUsage(featuredLook, featuredImageKey, nextUsage)),

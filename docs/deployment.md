@@ -42,7 +42,7 @@ Production requires the server-only variables documented in `docs/environment-va
 
 No migration directory is present in this checkout because the current database already represents the desired schema. If the project needs Prisma migration history for future production deploys, restore or recreate migrations from the current schema before relying on `prisma migrate deploy`.
 
-Runtime capability checks in `src/lib/adminAccountSchema.js` were mainly for a single migration window. Remove them if code search confirms they are no longer needed by active application paths.
+See `docs/database/proposal.md` for the migration-history reconciliation and other database cleanup work that should be reviewed before schema-changing production deploys.
 
 ## Deploy Gating
 

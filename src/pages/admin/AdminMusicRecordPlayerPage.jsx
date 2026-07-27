@@ -47,7 +47,6 @@ function makeSlots(tracks) {
 export default function AdminMusicRecordPlayerPage() {
 	const { token, session } = useAdminAuth();
 	const isViewer = session?.role === 'VIEWER';
-	const authHeaders = { Authorization: `Bearer ${token}` };
 
 	const [slots, setSlots] = useState(() => makeSlots([]));
 	const [saved, setSaved] = useState(false);
@@ -154,7 +153,6 @@ export default function AdminMusicRecordPlayerPage() {
 		const response = await fetch('/api/admin/record-player', {
 			method: 'PUT',
 			headers: {
-				...authHeaders,
 				'Content-Type': 'application/json',
 			},
 			body: JSON.stringify({ tracks: filledSlots }),

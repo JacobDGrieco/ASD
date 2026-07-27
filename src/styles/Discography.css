@@ -84,6 +84,12 @@
 	}
 }
 
+@media (prefers-reduced-motion: reduce) {
+	.discography-expand {
+		animation: none;
+	}
+}
+
 @media (max-width: 720px) {
 	.discography-section {
 		padding: 44px 20px;

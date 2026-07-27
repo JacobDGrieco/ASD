@@ -61,6 +61,7 @@ npm run dev:vercel
 - `npm run preview`: preview the built Vite app.
 - `npm run lint`: ESLint.
 - `npm run check:api-entrypoints`: static import check for Vercel API handlers.
+- `npm run release:check`: read-only release hygiene report for private SoundCloud URLs and future visibility rollover.
 - `npm run db:generate`: generate Prisma client.
 - `npm run db:migrate`: run Prisma migrate dev.
 - `npm run db:push`: push Prisma schema to the database.
@@ -91,11 +92,15 @@ Prisma also has a seed command configured as `node prisma/seed.js`, but there is
 - `docs/deployment.md`
 - `docs/data-model.md`
 - `docs/database/current-state.md`
+- `docs/database/proposal.md`
 - `docs/database/validation.sql`
 - `docs/database/rollback-safe-additive.sql`
 - `docs/api.md`
 - `docs/authentication-and-permissions.md`
 - `docs/external-integrations.md`
+- `docs/editorial-operations.md`
+- `docs/motion-review.md`
+- `docs/static-assets-and-legal.md`
 - `docs/troubleshooting.md`
 - `FUTURE_FIXES.md`
 
@@ -105,6 +110,4 @@ The initial audit is in `DOCUMENTATION_AUDIT.md`.
 
 - No automated test suite is present in this checkout.
 - `prisma/migrations/` now contains a baseline and a safe additive migration, but production deployment still needs explicit operator confirmation and a verified backup/copy.
-- `api/admin/login.js` has no application-level rate limiting.
-- `api/blob.js` serves private blobs without auth when the pathname is known so public pages can render uploaded images; hardening this is tracked in `FUTURE_FIXES.md`.
-- Several client calls still build inert `Authorization: Bearer cookie` headers while real auth comes from the HttpOnly cookie.
+- Production schema cleanup items still need explicit data review before migration.

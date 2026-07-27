@@ -616,6 +616,28 @@
 	}
 }
 
+@media (prefers-reduced-motion: reduce) {
+	.home-shell::after,
+	.home-ipod-flight-crossfade .player-widget-screen> :not(.home-ipod-flight-screen-next),
+	.home-ipod-flight-screen-next {
+		animation: none;
+		transform: none;
+	}
+
+	.home-ipod-player,
+	.home-ipod-instruction,
+	.home-about-link,
+	.home-crosshair-link,
+	.home-crosshair-card {
+		transition: none;
+	}
+
+	.home-crosshair-card:hover,
+	.home-crosshair-card:focus-visible {
+		transform: none;
+	}
+}
+
 @media (max-width: 920px) {
 	.home-shell-hero {
 		padding: 20px;

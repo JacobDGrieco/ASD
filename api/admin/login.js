@@ -14,7 +14,7 @@
 import { timingSafeEqual } from 'crypto';
 import { prisma } from '../../src/lib/prisma.js';
 import { ADMIN_ROLE_ARTIST, ADMIN_ROLE_SUPER, ADMIN_ROLE_TALENT, requireAdmin, serializeAdminAuthCookie, serializeClearAdminAuthCookie, signToken } from '../../src/lib/auth.js';
-import { getAdminAccountSchemaCapabilities } from '../../src/lib/adminAccountSchema.js';
+import { checkLoginRateLimit, clearFailedLoginAttempts, recordFailedLoginAttempt } from '../../src/lib/loginRateLimit.js';
 import { normalizeAdminPageAccess } from '../../src/lib/adminPageAccess.js';
 import { verifyPassword } from '../../src/lib/passwords.js';
 import { isAsdRecordsArtist } from '../../src/lib/publicVisibility.js';
@@ -76,6 +76,11 @@ function sendLogin(res, session) {
 	return res.status(200).json({ session });
 }
 
+function sendInvalidLogin(req, res) {
+	recordFailedLoginAttempt(req);
+	return res.status(401).json({ error: 'Invalid password' });
+}
+
 export default async function handler(req, res) {
 	if (req.method === 'GET') {
 		const session = requireAdmin(req, res);
@@ -90,23 +95,29 @@ export default async function handler(req, res) {
 
 	if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+	const rateLimit = checkLoginRateLimit(req);
+	if (rateLimit.isLimited) {
+		res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
+		return res.status(429).json({ error: 'Too many login attempts. Try again later.' });
+	}
+
 	const { password } = req.body ?? {};
-	if (!password) return res.status(401).json({ error: 'Invalid password' });
+	if (!password) return sendInvalidLogin(req, res);
 
 	if (process.env.ADMIN_PASSWORD && timingSafeStringEqual(password, process.env.ADMIN_PASSWORD)) {
 		const session = createSuperAdminSession();
+		clearFailedLoginAttempts(req);
 		return sendLogin(res, session);
 	}
 
-	const capabilities = await getAdminAccountSchemaCapabilities(prisma);
 	const artistAccessList = await prisma.artistAdminAccess.findMany({
 		where: { active: true },
 		select: {
 			id: true,
 			passwordHash: true,
 			active: true,
-			...(capabilities.hasArtistAccountName ? { name: true } : {}),
-			...(capabilities.hasArtistAccountPageAccess ? { pageAccess: true } : {}),
+			name: true,
+			pageAccess: true,
 			artist: {
 				select: {
 					id: true,
@@ -120,14 +131,12 @@ export default async function handler(req, res) {
 	const match = artistAccessList.find((access) => verifyPassword(password, access.passwordHash));
 	if (match) {
 		if (isAsdRecordsArtist(match.artist)) {
+			clearFailedLoginAttempts(req);
 			return sendLogin(res, createSuperAdminSession(match.name || match.artist.name));
 		}
 
+		clearFailedLoginAttempts(req);
 		return sendLogin(res, createArtistSession(match));
-	}
-
-	if (!capabilities.hasFashionTalentAdminAccess) {
-		return res.status(401).json({ error: 'Invalid password' });
 	}
 
 	const talentAccessList = await prisma.fashionTalentAdminAccess.findMany({
@@ -144,7 +153,10 @@ export default async function handler(req, res) {
 	});
 
 	const talentMatch = talentAccessList.find((access) => verifyPassword(password, access.passwordHash));
-	if (talentMatch) return sendLogin(res, createTalentSession(talentMatch));
+	if (talentMatch) {
+		clearFailedLoginAttempts(req);
+		return sendLogin(res, createTalentSession(talentMatch));
+	}
 
-	return res.status(401).json({ error: 'Invalid password' });
+	return sendInvalidLogin(req, res);
 }

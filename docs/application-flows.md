@@ -18,7 +18,7 @@
 5. The route sets the HttpOnly `asd_admin_token` cookie and returns session metadata.
 6. `AdminProvider` stores the session and a local marker, then admin routes can render.
 
-No application-level login rate limiting is implemented.
+Repeated failed login attempts are throttled by an in-process rate limiter in `src/lib/loginRateLimit.js`.
 
 ## Admin Route Access
 
@@ -70,10 +70,11 @@ No application-level login rate limiting is implemented.
 ## Image Upload and Cleanup
 
 1. Admin image fields request direct upload tokens or import remote images through `api/admin/uploads.js`.
-2. Uploads are restricted by folder, content type, and size.
+2. Uploads are restricted by folder, content type, size, and the caller's admin page access.
 3. Admin endpoints store image URL/pathname fields in Prisma.
 4. When images are replaced or owning records deleted, endpoints call `deleteRemovedBlobPathnames` or `deleteUnusedBlobPathnames`.
 5. `src/lib/blobCleanup.js` rechecks known database references before deleting from Vercel Blob.
+6. Public blob reads through `api/blob.js` are allowed only for pathnames referenced by public, visible content unless the caller has a valid admin session.
 
 ## Crosshair YouTube Sync
 

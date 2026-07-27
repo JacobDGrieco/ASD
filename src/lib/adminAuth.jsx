@@ -14,18 +14,8 @@ import { clearAdminResourceCache } from './adminResourceCache.js';
 
 const AdminContext = createContext(null);
 const ADMIN_SESSION_MARKER_KEY = 'asd_admin_session_seen';
-// Real auth is the HttpOnly session cookie (see src/lib/auth.js); this sentinel only
-// signals "a session exists" to consumers. Many admin pages still build an
-// `Authorization: Bearer ${token}` header from it out of habit — the server discards
-// that header (see isUsableBearerToken in src/lib/auth.js) and falls back to the
-// cookie, so those headers are inert. TODO: sweep the remaining admin pages/components
-// (AdminSongFormModal, AdminMusicLyricsPage, AdminMusicBoardPage, AdminMusicCrosshairPage,
-// AdminAboutPage, AdminAccountsPage, AdminMusicAlbumsPage, AdminMusicArtistsPage,
-// AdminFashionTalentPage, AdminFashionLooksPage, AdminFashionCollectionsPage,
-// AdminFashionOutsideTalentPage, AdminMusicOutsideArtistsPage, AdminMusicSongsPage,
-// AdminMusicRecordPlayerPage, FashionHomePage, BoardPage, ImageCollectionField,
-// BoardMarkdownEditor) to drop this dead header construction. Left in place for now —
-// flagged for a dedicated follow-up pass rather than a blind mechanical rewrite.
+// Real auth is the HttpOnly session cookie (see src/lib/auth.js). This sentinel only
+// signals "a session exists" to consumers and namespaces admin caches.
 const COOKIE_AUTH_SENTINEL = 'cookie';
 
 function hasAdminSessionMarker() {

@@ -19,11 +19,9 @@
  * `api/admin/songs.js` use `artistScopedAlbumWhere`/`artistScopedSongWhere` to filter
  * list queries to what the caller is allowed to see.
  *
- * Security note: session state lives entirely in an HttpOnly cookie. Admin UI code
- * also sends an `Authorization: Bearer` header on most requests, but `isUsableBearerToken`
- * deliberately rejects the sentinel value the client always sends (see
- * `COOKIE_AUTH_SENTINEL` in `src/lib/adminAuth.jsx`), so the cookie is what actually
- * authenticates every request.
+ * Security note: session state lives entirely in an HttpOnly cookie. Browser code
+ * only keeps a local sentinel so the UI can distinguish "maybe logged in" from
+ * "definitely logged out"; that sentinel is never accepted as a request token.
  */
 import jwt from 'jsonwebtoken';
 import { releaseVisibilityUpperBound } from './releaseSchedule.js';
@@ -39,9 +37,8 @@ function secret() {
 	return process.env.JWT_SECRET;
 }
 
-// The admin client always sends 'cookie' as the bearer value (it never holds the
-// real JWT in JS-reachable state) — treat that sentinel, plus the string forms of
-// missing values, as "no usable bearer token" so we fall back to the session cookie.
+// Treat the client-side cookie sentinel, plus string forms of missing values, as
+// "no usable bearer token" so accidental legacy headers fall back to the cookie.
 function isUsableBearerToken(value) {
 	return Boolean(value && value !== 'null' && value !== 'undefined' && value !== 'cookie');
 }
@@ -71,9 +68,8 @@ export function serializeClearAdminAuthCookie() {
  * Extracts the admin session token from an incoming request.
  *
  * Prefers a usable `Authorization: Bearer` header, falling back to the
- * `asd_admin_token` HttpOnly cookie. In practice the bearer path is never taken
- * (see `isUsableBearerToken`) — this always resolves to the cookie value in the
- * current client.
+ * `asd_admin_token` HttpOnly cookie. The current browser client only relies on the
+ * cookie path.
  *
  * @param {import('http').IncomingMessage} req - Vercel request object.
  * @returns {string|null} Raw JWT string, or null if no session token is present.

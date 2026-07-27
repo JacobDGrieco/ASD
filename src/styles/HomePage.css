@@ -198,6 +198,13 @@
 	}
 }
 
+@media (prefers-reduced-motion: reduce) {
+	.home-shell::after {
+		animation: none;
+		transform: none;
+	}
+}
+
 @media (max-width: 920px) {
 	.home-shell-hero {
 		padding: 88px 20px 0;

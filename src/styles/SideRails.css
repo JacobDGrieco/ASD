@@ -143,3 +143,12 @@
 		transform: translateY(72px);
 	}
 }
+
+@media (prefers-reduced-motion: reduce) {
+	.side-rails,
+	.side-rails-column-right-enter,
+	.side-rails-column-right-exit {
+		animation: none;
+		transition: none;
+	}
+}

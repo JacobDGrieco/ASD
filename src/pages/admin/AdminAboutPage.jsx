@@ -283,7 +283,6 @@ function AboutMemberFormModal({ form, setForm, token, onClose, onSave, onDelete 
 
 export default function AdminAboutPage() {
 	const { token, session } = useAdminAuth();
-	const auth = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
 	const profileRef = useRef({ id: 'main', title: '', bio: '' });
 	const [titleDraft, setTitleDraft] = useState('');
 	const [bioDraft, setBioDraft] = useState('');
@@ -365,7 +364,7 @@ export default function AdminAboutPage() {
 		try {
 			const response = await fetch('/api/admin/about', {
 				method: 'PUT',
-				headers: { ...auth, 'Content-Type': 'application/json' },
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ title, bio }),
 			});
 
@@ -394,7 +393,7 @@ export default function AdminAboutPage() {
 		const isEdit = Boolean(form.id);
 		const response = await fetch(isEdit ? `/api/admin/about?id=${form.id}` : '/api/admin/about', {
 			method: isEdit ? 'PUT' : 'POST',
-			headers: { ...auth, 'Content-Type': 'application/json' },
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
 				name: form.name,
 				role: form.role,
@@ -425,7 +424,6 @@ export default function AdminAboutPage() {
 	const handleDeleteMember = async (member) => {
 		await fetch(`/api/admin/about?id=${member.id}`, {
 			method: 'DELETE',
-			headers: auth,
 		});
 
 		const nextMembers = members.filter((candidate) => candidate.id !== member.id);

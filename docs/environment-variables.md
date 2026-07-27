@@ -40,4 +40,4 @@ YOUTUBE_REFRESH_TOKEN="optional-refresh-token"
 
 - `JWT_SECRET`, database URLs, `ADMIN_PASSWORD`, Blob tokens, and YouTube OAuth credentials are server-only secrets.
 - Vite only exposes variables prefixed with `VITE_` to browser code by convention. `VITE_API_PROXY_TARGET` is local-dev configuration, not a secret.
-- `api/blob.js` can serve a private blob when a caller knows the pathname. Treat blob pathnames as sensitive until the intended access model is confirmed.
+- `api/blob.js` serves private blobs only to valid admin sessions or anonymous callers requesting blob pathnames referenced by public, visible content.

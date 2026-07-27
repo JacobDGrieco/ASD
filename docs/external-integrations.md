@@ -14,7 +14,7 @@ Write paths:
 
 Read path:
 
-- `api/blob.js` resolves private blobs by pathname and streams or redirects them.
+- `api/blob.js` resolves private blobs by pathname and streams or redirects them after checking for an admin session or a public visible database reference.
 
 Supported upload content types are JPEG, PNG, WebP, GIF, and AVIF. Maximum upload/import size is 10 MB.
 

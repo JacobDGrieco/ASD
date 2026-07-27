@@ -13,7 +13,6 @@
  */
 import { prisma } from '../../src/lib/prisma.js';
 import { requireSuperAdmin } from '../../src/lib/auth.js';
-import { getAdminAccountSchemaCapabilities } from '../../src/lib/adminAccountSchema.js';
 import { hashPassword } from '../../src/lib/passwords.js';
 import { validateUniqueAccountPassword } from '../../src/lib/adminAccounts.js';
 import {
@@ -46,38 +45,36 @@ function formatAccount(account, accountType) {
 	};
 }
 
-// The `name`/`pageAccess` columns on ArtistAdminAccess were added in a later
-// migration than the model itself — only select/write them when the connected
-// database actually has them (see adminAccountSchema.js), so this endpoint keeps
-// working against a DB that hasn't been migrated yet.
-function artistAdminAccessSelect(capabilities) {
+// Selects the account fields used by the admin UI; the app now assumes the
+// current account schema is present.
+function artistAdminAccessSelect() {
 	return {
 		id: true,
 		artistId: true,
+		name: true,
 		active: true,
+		pageAccess: true,
 		createdAt: true,
 		updatedAt: true,
-		...(capabilities.hasArtistAccountName ? { name: true } : {}),
-		...(capabilities.hasArtistAccountPageAccess ? { pageAccess: true } : {}),
 	};
 }
 
-function artistAdminAccessData(data, capabilities) {
+function artistAdminAccessData(data) {
 	return {
 		artistId: data.artistId,
+		name: data.name,
 		passwordHash: data.passwordHash,
 		active: data.active,
-		...(capabilities.hasArtistAccountName ? { name: data.name } : {}),
-		...(capabilities.hasArtistAccountPageAccess ? { pageAccess: data.pageAccess } : {}),
+		pageAccess: data.pageAccess,
 	};
 }
 
-function artistAdminAccessUpdateData(data, capabilities) {
+function artistAdminAccessUpdateData(data) {
 	return {
+		name: data.name,
 		passwordHash: data.passwordHash,
 		active: data.active,
-		...(capabilities.hasArtistAccountName ? { name: data.name } : {}),
-		...(capabilities.hasArtistAccountPageAccess ? { pageAccess: data.pageAccess } : {}),
+		pageAccess: data.pageAccess,
 	};
 }
 
@@ -102,11 +99,11 @@ function normalizedAccessForSave(value, accountType) {
 	return access.length > 0 ? access : getDefaultAdminPageAccess(accountType);
 }
 
-async function findAccountById(id, capabilities) {
+async function findAccountById(id) {
 	const artistAccess = await prisma.artistAdminAccess.findUnique({
 		where: { id },
 		select: {
-			...artistAdminAccessSelect(capabilities),
+			...artistAdminAccessSelect(),
 			artist: {
 				select: {
 					id: true,
@@ -125,8 +122,6 @@ async function findAccountById(id, capabilities) {
 			currentPasswordScope: { artistId: artistAccess.artistId },
 		};
 	}
-
-	if (!capabilities.hasFashionTalentAdminAccess) return null;
 
 	const talentAccess = await prisma.fashionTalentAdminAccess.findUnique({
 		where: { id },
@@ -158,8 +153,6 @@ export default async function handler(req, res) {
 	if (!session) return;
 
 	const { id } = req.query;
-	const capabilities = await getAdminAccountSchemaCapabilities(prisma);
-
 	if (req.method === 'GET') {
 		const [artists, talent] = await Promise.all([
 			prisma.artist.findMany({
@@ -169,7 +162,7 @@ export default async function handler(req, res) {
 					name: true,
 					slug: true,
 					adminAccess: {
-						select: artistAdminAccessSelect(capabilities),
+						select: artistAdminAccessSelect(),
 					},
 				},
 			}),
@@ -179,11 +172,17 @@ export default async function handler(req, res) {
 					id: true,
 					name: true,
 					slug: true,
-					...(capabilities.hasFashionTalentAdminAccess
-						? {
-							adminAccess: true,
-						}
-						: {}),
+					adminAccess: {
+						select: {
+							id: true,
+							talentId: true,
+							name: true,
+							active: true,
+							pageAccess: true,
+							createdAt: true,
+							updatedAt: true,
+						},
+					},
 				}
 			}),
 		]);
@@ -216,10 +215,6 @@ export default async function handler(req, res) {
 		if (!password) return res.status(400).json({ error: 'Password is required.' });
 
 		if (accountType === ADMIN_ACCOUNT_TYPES.FASHION_TALENT) {
-			if (!capabilities.hasFashionTalentAdminAccess) {
-				return res.status(409).json({ error: 'Run the latest database migration before creating fashion talent accounts.' });
-			}
-
 			const existingAccount = await prisma.fashionTalentAdminAccess.findUnique({ where: { talentId: subjectId } });
 			if (existingAccount) return res.status(400).json({ error: 'That fashion talent already has an account.' });
 
@@ -264,9 +259,9 @@ export default async function handler(req, res) {
 				passwordHash: hashPassword(password),
 				active: active ?? true,
 				pageAccess: normalizedAccessForSave(pageAccess, accountType),
-			}, capabilities),
+			}),
 			select: {
-				...artistAdminAccessSelect(capabilities),
+				...artistAdminAccessSelect(),
 				artist: {
 					select: {
 						id: true,
@@ -286,7 +281,7 @@ export default async function handler(req, res) {
 
 	if (!id) return res.status(400).json({ error: 'Account id is required.' });
 
-	const existing = await findAccountById(id, capabilities);
+	const existing = await findAccountById(id);
 	if (!existing) return res.status(404).json({ error: 'Account not found.' });
 
 	if (req.method === 'PUT') {
@@ -333,9 +328,9 @@ export default async function handler(req, res) {
 
 		const account = await prisma.artistAdminAccess.update({
 			where: { id },
-			data: artistAdminAccessUpdateData(data, capabilities),
+			data: artistAdminAccessUpdateData(data),
 			select: {
-				...artistAdminAccessSelect(capabilities),
+				...artistAdminAccessSelect(),
 				artist: {
 					select: {
 						id: true,

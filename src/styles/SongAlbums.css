@@ -69,6 +69,12 @@
 	}
 }
 
+@media (prefers-reduced-motion: reduce) {
+	.song-albums-expand {
+		animation: none;
+	}
+}
+
 @media (max-width: 800px) {
 	.song-albums-grid {
 		--song-albums-columns: 3;
