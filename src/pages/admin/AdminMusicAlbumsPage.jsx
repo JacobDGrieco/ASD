@@ -28,7 +28,7 @@ import { SONG_ROLES, sortMusicRoleEntries } from '../../lib/songRoles.js';
 import '../../styles/AdminArtistsPage.css';
 import '../../styles/AdminAlbumsPage.css';
 
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 15;
 
 const empty = {
 	title: '',

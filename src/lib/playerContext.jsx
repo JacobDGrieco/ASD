@@ -158,6 +158,27 @@ export function PlayerProvider({ children }) {
 		return true;
 	}, [isAdminPath]);
 
+	const extendPool = useCallback((nextPool) => {
+		if (!Array.isArray(nextPool) || nextPool.length === 0) return;
+
+		setPool((currentPool) => {
+			if (!currentPool.length) return currentPool;
+			const currentIds = new Set(currentPool.map((song) => song.id));
+			const additions = nextPool.filter((song) => song?.id && !currentIds.has(song.id));
+			if (!additions.length) return currentPool;
+
+			const additionIndexes = additions.map((_, index) => currentPool.length + index);
+			setPlayOrder((currentOrder) => {
+				const baseOrder = currentOrder.length ? currentOrder : identityOrder(currentPool);
+				return isShuffled
+					? [...baseOrder, ...shuffled(additionIndexes)]
+					: [...baseOrder, ...additionIndexes];
+			});
+
+			return [...currentPool, ...additions];
+		});
+	}, [isShuffled]);
+
 	const seekTo = useCallback((seconds) => {
 		const nextSeconds = Math.max(0, Number(seconds) || 0);
 		soundCloudRef.current?.seekTo(nextSeconds);
@@ -347,6 +368,7 @@ export function PlayerProvider({ children }) {
 		playPause,
 		next,
 		prev,
+		extendPool,
 		seekTo,
 		toggleShuffle,
 		toggleLoopMode,
@@ -377,6 +399,7 @@ export function PlayerProvider({ children }) {
 		poolSourceLabel,
 		position,
 		prev,
+		extendPool,
 		seekTo,
 		toggleLoopMode,
 		toggleShuffle,

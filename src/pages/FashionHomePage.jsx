@@ -16,7 +16,7 @@ import CollectionCard from '../components/fashion/CollectionCard.jsx';
 import LookCard from '../components/fashion/LookCard.jsx';
 import TalentCard from '../components/fashion/TalentCard.jsx';
 import { useAdminAuth } from '../lib/adminAuth.jsx';
-import runwayBackdrop from '../assets/fashion-runway-backdrop.png';
+import runwayBackdrop from '../assets/fashion-runway-backdrop.webp';
 import '../styles/FashionPages.css';
 
 const CAMERA_FLASHES = [

@@ -4,7 +4,7 @@
  * Manages look images, pieces, credits, collection placement, and talent-scoped
  * ownership rules.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash, FaPencilAlt, FaTrash } from 'react-icons/fa';
 import { TabPanel } from 'primereact/tabview';
@@ -33,6 +33,8 @@ const empty = {
 	credits: [],
 	pieces: [],
 };
+
+const PAGE_SIZE = 15;
 
 const columns = [
 	{ key: 'images', label: 'Cover', kind: 'images', className: 'admin-table-col-image' },
@@ -269,6 +271,22 @@ function LooksTable({ looks, loadingEditId, onEdit }) {
 	);
 }
 
+function LooksPagination({ currentPage, totalPages, onPageChange }) {
+	if (totalPages <= 1) return null;
+
+	return (
+		<div className="admin-pagination">
+			<button type="button" className="admin-pagination-btn" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}>
+				Prev
+			</button>
+			<span className="admin-pagination-info">Page {currentPage} of {totalPages}</span>
+			<button type="button" className="admin-pagination-btn" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages}>
+				Next
+			</button>
+		</div>
+	);
+}
+
 function LookFormModal({ form, setForm, token, collections, talentOptions, crewOptions, onClose, onSave, onDelete }) {
 	return (
 		<div className="admin-modal-overlay" role="presentation">
@@ -483,6 +501,7 @@ export default function AdminFashionLooksPage() {
 	const [form, setForm] = useState(null);
 	const returnToAfterSaveRef = useRef(null);
 	const [loadingEditId, setLoadingEditId] = useState(null);
+	const [page, setPage] = useState(1);
 
 	useEffect(() => {
 		let ignore = false;
@@ -548,6 +567,12 @@ export default function AdminFashionLooksPage() {
 		returnToAfterSaveRef.current = null;
 	};
 	const nextOrder = looks.reduce((maxOrder, look) => Math.max(maxOrder, look.order ?? 0), -1) + 1;
+	const totalPages = useMemo(() => Math.max(1, Math.ceil(looks.length / PAGE_SIZE)), [looks.length]);
+	const currentPage = Math.min(page, totalPages);
+	const pagedLooks = useMemo(
+		() => looks.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+		[looks, currentPage]
+	);
 
 	const handleSave = async () => {
 		const validationError = validateLookForm(form);
@@ -622,10 +647,12 @@ export default function AdminFashionLooksPage() {
 			</div>
 
 			<LooksTable
-				looks={looks}
+				looks={pagedLooks}
 				loadingEditId={loadingEditId}
 				onEdit={openEdit}
 			/>
+
+			<LooksPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setPage} />
 
 			{form && (
 				<LookFormModal

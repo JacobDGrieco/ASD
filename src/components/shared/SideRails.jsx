@@ -99,9 +99,9 @@ export default function SideRails() {
 		};
 	}, [section]);
 
-	// Prefetch both sections simultaneously so data is in cache before any transition swap
-	const { data: musicRailRows } = useApi(section !== null ? '/api/artists' : null);
-	const { data: fashionRailRows } = useApi(section !== null ? '/api/fashion/talent' : null);
+	// Use tiny name-only resources; decorative rails should not pull full catalogue payloads.
+	const { data: musicRailRows } = useApi(section !== null ? '/api/public?resource=railNames&section=music' : null);
+	const { data: fashionRailRows } = useApi(section !== null ? '/api/public?resource=railNames&section=fashion' : null);
 
 	// All content derives from displaySection so section-to-section changes only swap mid-transition.
 	const activeDisplaySection = displaySection ?? section;

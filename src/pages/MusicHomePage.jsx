@@ -22,7 +22,7 @@ import { buildAlbumPath, buildSongPath } from '../lib/publicVisibility.js';
 import { isAdminPreviewSession } from '../lib/publicPreview.js';
 import '../styles/MusicHomePage.css';
 
-void prefetchApi('/api/artists');
+void prefetchApi('/api/public?resource=musicHome');
 void prefetchApi('/api/record-player');
 void prefetchApi('/api/crosshair');
 
@@ -206,7 +206,7 @@ async function animateIpodFlight(sourceElement, targetRect, { onArrive = null, n
 }
 
 function HomeShuffleIpod() {
-	const { currentSong, isPlaying, isWidgetVisible, playPause, playPool } = usePlayer();
+	const { currentSong, isPlaying, isWidgetVisible, playPause, playPool, extendPool } = usePlayer();
 	const wrapRef = useRef(null);
 	const [isLaunching, setIsLaunching] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
@@ -216,7 +216,7 @@ function HomeShuffleIpod() {
 	useEffect(() => {
 		const idleId = scheduleIdleWork(() => {
 			void preloadSoundCloudWidgetApi();
-			void prefetchPlayerPool('/api/player-pool?type=sitewide', { maxAge: 30 * 1000, artworkLimit: 8 }).catch(() => { });
+			void prefetchPlayerPool('/api/player-pool?type=sitewide&limit=30', { maxAge: 30 * 1000, artworkLimit: 8 }).catch(() => { });
 		}, { timeout: 1800 });
 
 		return () => cancelIdleWork(idleId);
@@ -259,7 +259,7 @@ function HomeShuffleIpod() {
 
 		try {
 			void preloadSoundCloudWidgetApi();
-			const data = await prefetchPlayerPool('/api/player-pool?type=sitewide', { maxAge: 30 * 1000, artworkLimit: 8 });
+			const data = await prefetchPlayerPool('/api/player-pool?type=sitewide&limit=30', { maxAge: 30 * 1000, artworkLimit: 8 });
 			const pool = Array.isArray(data?.pool) ? data.pool : [];
 			if (!pool.length) {
 				setError('No streamable songs are available.');
@@ -287,6 +287,14 @@ function HomeShuffleIpod() {
 					source: data?.sourceLabel || 'Playing from A.S.D.',
 					shuffle: true,
 				});
+			}
+
+			if (data?.hasMore && Number.isFinite(Number(data.nextOffset))) {
+				prefetchPlayerPool(`/api/player-pool?type=sitewide&limit=1000&offset=${data.nextOffset}`, { maxAge: 30 * 1000, artworkLimit: 0 })
+					.then((nextData) => {
+						if (Array.isArray(nextData?.pool)) extendPool(nextData.pool);
+					})
+					.catch(() => { });
 			}
 		} catch {
 			setError('Shuffle unavailable.');
@@ -324,14 +332,14 @@ export default function MusicHomePage() {
 	const location = useLocation();
 	const { session, token } = useAdminAuth();
 	const adminPreview = isAdminPreviewSession(session, token);
-	const artistApiUrl = '/api/artists';
+	const musicHomeApiUrl = '/api/public?resource=musicHome';
 	const recordApiUrl = '/api/record-player';
 	const crosshairApiUrl = '/api/crosshair';
 	const {
-		data: artists,
-		loading: artistsLoading,
-		error: artistsError,
-	} = useApi(artistApiUrl, {
+		data: musicHome,
+		loading: musicHomeLoading,
+		error: musicHomeError,
+	} = useApi(musicHomeApiUrl, {
 		refreshAtUtcMidnight: true,
 	});
 	const {
@@ -351,23 +359,14 @@ export default function MusicHomePage() {
 	const apiMessage = getHomePageApiMessage(import.meta.env.DEV);
 	const skipHeroEntranceAnimation = location.state?.fromPortal === 'music';
 
-	const latestReleases = useMemo(() => {
-		return (artists ?? [])
-			.flatMap((artist) =>
-				(artist.albums ?? []).map((album) => ({
-					...album,
-					artist,
-				}))
-			)
-			.sort((left, right) => new Date(right.releaseDate).getTime() - new Date(left.releaseDate).getTime())
-			.slice(0, HOME_LATEST_LIMIT);
-	}, [artists]);
+	const artists = musicHome?.artists ?? [];
+	const latestReleases = (musicHome?.latestReleases ?? []).slice(0, HOME_LATEST_LIMIT);
 
 	const featuredCrosshairVideos = useMemo(() => (
 		(Array.isArray(crosshairVideos) ? crosshairVideos : []).slice(0, HOME_CROSSHAIR_LIMIT)
 	), [crosshairVideos]);
 
-	if ((artistsError || tracksError) && !artists && !tracks) {
+	if ((musicHomeError || tracksError) && !musicHome && !tracks) {
 		return (
 			<div className="page aurora-page">
 				<AuroraBackground />
@@ -377,7 +376,7 @@ export default function MusicHomePage() {
 						<h1>Local API requests failed.</h1>
 						<p>{apiMessage}</p>
 						<p className="home-status__detail">
-							Artists request: {artistsError ?? 'ok'}
+							Music home request: {musicHomeError ?? 'ok'}
 							<br />
 							Record player request: {tracksError ?? 'ok'}
 						</p>
@@ -394,7 +393,7 @@ export default function MusicHomePage() {
 				<div className="home-stage">
 					{artists?.length ? (
 						<ArtistSplash artists={artists} skipEntranceAnimation={skipHeroEntranceAnimation} />
-					) : artistsLoading ? <HomeHeroPlaceholder /> : null}
+					) : musicHomeLoading ? <HomeHeroPlaceholder /> : null}
 					{tracksLoading ? (
 						<HomeRecordPlayerPlaceholder />
 					) : (
@@ -437,7 +436,7 @@ export default function MusicHomePage() {
 									);
 								})}
 							</div>
-						) : artistsLoading ? (
+						) : musicHomeLoading ? (
 							<div className="home-latest-row home-latest-row-loading" aria-hidden="true">
 								{Array.from({ length: HOME_LATEST_LIMIT }, (_, index) => (
 									<div key={index} className="home-latest-card-placeholder" />

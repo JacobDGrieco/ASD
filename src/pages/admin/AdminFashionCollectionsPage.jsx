@@ -4,7 +4,7 @@
  * Manages collection metadata, ordered look placement, credits, and loose-look
  * grouping collections.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash, FaPencilAlt } from 'react-icons/fa';
 import { TabPanel } from 'primereact/tabview';
@@ -33,6 +33,8 @@ const empty = {
 	order: 0,
 	credits: [],
 };
+
+const PAGE_SIZE = 15;
 
 const columns = [
 	{ key: 'coverImage', label: 'Cover', kind: 'image', className: 'admin-table-col-image' },
@@ -166,6 +168,22 @@ function CollectionsTable({
 					))}
 				</tbody>
 			</table>
+		</div>
+	);
+}
+
+function CollectionsPagination({ currentPage, totalPages, onPageChange }) {
+	if (totalPages <= 1) return null;
+
+	return (
+		<div className="admin-pagination">
+			<button type="button" className="admin-pagination-btn" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}>
+				Prev
+			</button>
+			<span className="admin-pagination-info">Page {currentPage} of {totalPages}</span>
+			<button type="button" className="admin-pagination-btn" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages}>
+				Next
+			</button>
 		</div>
 	);
 }
@@ -327,6 +345,7 @@ export default function AdminFashionCollectionsPage() {
 	const [crewOptions, setCrewOptions] = useState([]);
 	const [form, setForm] = useState(null);
 	const [loadingEditId, setLoadingEditId] = useState(null);
+	const [page, setPage] = useState(1);
 
 	useEffect(() => {
 		let ignore = false;
@@ -376,6 +395,12 @@ export default function AdminFashionCollectionsPage() {
 	};
 	const closeForm = () => setForm(null);
 	const nextOrder = collections.reduce((maxOrder, collection) => Math.max(maxOrder, collection.order ?? 0), -1) + 1;
+	const totalPages = useMemo(() => Math.max(1, Math.ceil(collections.length / PAGE_SIZE)), [collections.length]);
+	const currentPage = Math.min(page, totalPages);
+	const pagedCollections = useMemo(
+		() => collections.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+		[collections, currentPage]
+	);
 
 	const handleSave = async () => {
 		const validationError = validateCollectionForm(form);
@@ -454,10 +479,12 @@ export default function AdminFashionCollectionsPage() {
 			</div>
 
 			<CollectionsTable
-				collections={collections}
+				collections={pagedCollections}
 				loadingEditId={loadingEditId}
 				onEdit={openEdit}
 			/>
+
+			<CollectionsPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setPage} />
 
 			{form && (
 				<CollectionFormModal

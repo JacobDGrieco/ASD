@@ -8,23 +8,6 @@ import { Suspense, lazy, useEffect, useRef } from 'react';
 import { Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom';
 import Nav from './components/shared/Nav.jsx';
 import PageTitle from './components/shared/PageTitle.jsx';
-import HomePage from './pages/HomePage.jsx';
-import MusicHomePage from './pages/MusicHomePage.jsx';
-import ArtistPage from './pages/ArtistPage.jsx';
-import ShelfPage from './pages/ShelfPage.jsx';
-import CrosshairPage from './pages/CrosshairPage.jsx';
-import SongPage from './pages/SongPage.jsx';
-import AlbumPage from './pages/AlbumPage.jsx';
-import BoardPage from './pages/BoardPage.jsx';
-import AboutPage from './pages/AboutPage.jsx';
-import LegalPage from './pages/LegalPage.jsx';
-import NotFoundPage from './pages/NotFoundPage.jsx';
-import FashionHomePage from './pages/FashionHomePage.jsx';
-import FashionTalentPage from './pages/FashionTalentPage.jsx';
-import FashionTalentProfilePage from './pages/FashionTalentProfilePage.jsx';
-import FashionCataloguePage from './pages/FashionCataloguePage.jsx';
-import FashionLookPage from './pages/FashionLookPage.jsx';
-import FashionCollectionPage from './pages/FashionCollectionPage.jsx';
 import AdminLayout from './components/admin/AdminLayout.jsx';
 import AdminRoute from './components/admin/AdminRoute.jsx';
 import SideRails from './components/shared/SideRails.jsx';
@@ -37,6 +20,23 @@ import { ADMIN_PAGE_KEYS, firstAccessibleAdminPath, hasAdminPageAccess } from '.
 import './styles/PublicAdminPreview.css';
 import './styles/ViewTransitions.css';
 
+const HomePage = lazy(() => import('./pages/HomePage.jsx'));
+const MusicHomePage = lazy(() => import('./pages/MusicHomePage.jsx'));
+const ArtistPage = lazy(() => import('./pages/ArtistPage.jsx'));
+const ShelfPage = lazy(() => import('./pages/ShelfPage.jsx'));
+const CrosshairPage = lazy(() => import('./pages/CrosshairPage.jsx'));
+const SongPage = lazy(() => import('./pages/SongPage.jsx'));
+const AlbumPage = lazy(() => import('./pages/AlbumPage.jsx'));
+const BoardPage = lazy(() => import('./pages/BoardPage.jsx'));
+const AboutPage = lazy(() => import('./pages/AboutPage.jsx'));
+const LegalPage = lazy(() => import('./pages/LegalPage.jsx'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage.jsx'));
+const FashionHomePage = lazy(() => import('./pages/FashionHomePage.jsx'));
+const FashionTalentPage = lazy(() => import('./pages/FashionTalentPage.jsx'));
+const FashionTalentProfilePage = lazy(() => import('./pages/FashionTalentProfilePage.jsx'));
+const FashionCataloguePage = lazy(() => import('./pages/FashionCataloguePage.jsx'));
+const FashionLookPage = lazy(() => import('./pages/FashionLookPage.jsx'));
+const FashionCollectionPage = lazy(() => import('./pages/FashionCollectionPage.jsx'));
 const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage.jsx'));
 const AdminAccountsPage = lazy(() => import('./pages/admin/AdminAccountsPage.jsx'));
 const AdminAboutPage = lazy(() => import('./pages/admin/AdminAboutPage.jsx'));
@@ -120,7 +120,7 @@ function PublicLayout() {
 		<>
 			<ScrollToTop />
 			<Nav />
-			<Outlet />
+			<Outlet key={location.pathname} />
 			<PublicLegalFooter variant={legalFooterVariant} />
 			{adminPreview && (
 				<>

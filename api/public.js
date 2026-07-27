@@ -7,11 +7,11 @@
  * legacy image/link normalization, music role linking, player-pool assembly, and
  * fashion catalogue shaping before returning client-facing JSON.
  *
- * Public responses deliberately use `Cache-Control: no-store`; browser-side
- * in-memory caching happens in `src/hooks/useApi.js`. If a valid admin cookie is
- * present, `publicRequestContext` enables preview access to hidden/unreleased
- * content, so do not expose fields here unless they are safe for an authenticated
- * admin preview session.
+ * Anonymous public responses use short browser caching plus a longer shared cache
+ * window. If a valid admin cookie is present, `publicRequestContext` enables
+ * preview access to hidden/unreleased content and responses remain private/no-store,
+ * so do not expose fields here unless they are safe for an authenticated admin
+ * preview session.
  */
 import { prisma } from '../src/lib/prisma.js';
 import { isEffectivelyVisible } from '../src/lib/contentVisibility.js';
@@ -28,6 +28,9 @@ import { readAdminTokenFromRequest, verifyToken } from '../src/lib/auth.js';
 
 const DEFAULT_COMPANY_TITLE = COMPANY_SUMMARY.title;
 const DEFAULT_COMPANY_BIO = COMPANY_SUMMARY.description;
+const PUBLIC_CACHE_SECONDS = 300;
+const PUBLIC_STALE_WHILE_REVALIDATE_SECONDS = 600;
+const SITEWIDE_PLAYER_POOL_LIMIT = 30;
 
 function formatArtistImages(artist) {
 	return clientImages(
@@ -64,13 +67,28 @@ function normalizeSlug(value) {
 	return typeof value === 'string' && value ? value : null;
 }
 
-function setPublicCache(res) {
-	res.setHeader('Cache-Control', 'no-store');
+function setPublicCache(res, context) {
+	res.setHeader('Vary', 'Cookie');
+
+	if (context?.includeHidden) {
+		res.setHeader('Cache-Control', 'private, no-store');
+		return;
+	}
+
+	res.setHeader(
+		'Cache-Control',
+		`public, max-age=60, s-maxage=${PUBLIC_CACHE_SECONDS}, stale-while-revalidate=${PUBLIC_STALE_WHILE_REVALIDATE_SECONDS}`
+	);
 }
 
 function publicRequestContext(req) {
 	const token = readAdminTokenFromRequest(req);
 	return { includeHidden: Boolean(token && verifyToken(token)) };
+}
+
+function positiveInteger(value, fallback) {
+	const parsed = Number.parseInt(String(value ?? ''), 10);
+	return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function formatCompanyMember(member) {
@@ -127,7 +145,7 @@ function fallbackCompanyAbout() {
 }
 
 async function getCompanyAbout(res, context) {
-	setPublicCache(res);
+	setPublicCache(res, context);
 	let profile;
 	let members;
 
@@ -624,8 +642,151 @@ function earliestPlacementAlbumReleaseDate(placements) {
 	return releaseDates[0] ?? null;
 }
 
+function formatMusicHomeAlbum(album, artist, now, context) {
+	const albumImages = formatAlbumImages(album);
+	const artistImages = formatArtistImages(artist);
+	const artistVisible = isPublicArtistVisible(artist);
+	return {
+		id: album.id,
+		title: album.title,
+		slug: album.slug,
+		isVisible: album.isVisible,
+		autoShowOnRelease: album.autoShowOnRelease,
+		type: album.type,
+		releaseDate: album.releaseDate,
+		coverArt: albumImages[0]?.previewUrl ?? album.coverArt,
+		images: albumImages,
+		links: profileLinksForSource(album, MUSIC_RELEASE_LEGACY_LINK_FIELDS),
+		isPubliclyVisible: isPublicAlbumReleased(album, now) && artistVisible,
+		artist: {
+			id: artist.id,
+			name: artist.name,
+			slug: artist.slug,
+			isVisible: artist.isVisible,
+			isPubliclyVisible: artistVisible,
+			portrait: artistImages[0]?.previewUrl ?? artist.portrait,
+			images: artistImages,
+			image: artistImages[0] ?? null,
+		},
+		songs: visiblePlacementSongs(album.songPlacements, album.releaseDate, now, artistVisible, context),
+	};
+}
+
+async function getMusicHome(res, context) {
+	setPublicCache(res, context);
+	const now = new Date();
+	const [artists, latestAlbumCandidates] = await Promise.all([
+		prisma.artist.findMany({
+			orderBy: { order: 'asc' },
+			select: {
+				id: true,
+				name: true,
+				slug: true,
+				isVisible: true,
+				portrait: true,
+				images: {
+					take: 4,
+					orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+					select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+				},
+			},
+		}),
+		prisma.album.findMany({
+			orderBy: { releaseDate: 'desc' },
+			take: 32,
+			select: {
+				id: true,
+				title: true,
+				slug: true,
+				isVisible: true,
+				autoShowOnRelease: true,
+				type: true,
+				releaseDate: true,
+				coverArt: true,
+				soundcloudUrl: true,
+				spotifyUrl: true,
+				appleMusicUrl: true,
+				youtubeUrl: true,
+				links: true,
+				images: {
+					take: 1,
+					orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+					select: { id: true, url: true, pathname: true, usage: true, altText: true, sortOrder: true, isPrimary: true },
+				},
+				artist: { select: publicArtistSelect() },
+				songPlacements: {
+					include: {
+						song: {
+							select: {
+								id: true,
+								title: true,
+								slug: true,
+								isVisible: true,
+								autoShowOnRelease: true,
+								duration: true,
+								meta: { select: { releaseDate: true } },
+							},
+						},
+					},
+					orderBy: [{ discNumber: 'asc' }, { trackNumber: 'asc' }, { placementOrder: 'asc' }],
+				},
+			},
+		}),
+	]);
+
+	const publicArtists = [];
+	const latestReleases = [];
+
+	for (const artist of artists) {
+		if (!isPreviewArtistVisible(artist, context)) continue;
+		const images = formatArtistImages(artist);
+		const artistSummary = {
+			id: artist.id,
+			name: artist.name,
+			slug: artist.slug,
+			isVisible: artist.isVisible,
+			isPubliclyVisible: isPublicArtistVisible(artist),
+			portrait: images[0]?.previewUrl ?? artist.portrait,
+			images,
+		};
+		publicArtists.push(artistSummary);
+
+	}
+
+	for (const album of latestAlbumCandidates) {
+		if (!isPreviewArtistVisible(album.artist, context)) continue;
+		if (!isPreviewAlbumVisible(album, now, context)) continue;
+		latestReleases.push(formatMusicHomeAlbum(album, album.artist, now, context));
+		if (latestReleases.length >= 8) break;
+	}
+
+	return res.status(200).json({
+		artists: publicArtists,
+		latestReleases: latestReleases.slice(0, 8),
+	});
+}
+
+async function getRailNames(res, section, context) {
+	setPublicCache(res, context);
+
+	if (section === 'fashion') {
+		const talent = await prisma.fashionTalent.findMany({
+			where: context.includeHidden ? {} : { isVisible: true },
+			orderBy: { order: 'asc' },
+			select: { id: true, name: true, isVisible: true },
+		});
+		return res.status(200).json(talent);
+	}
+
+	const artists = await prisma.artist.findMany({
+		orderBy: { order: 'asc' },
+		select: { id: true, name: true, slug: true, isVisible: true },
+	});
+	return res.status(200).json(artists.filter((artist) => isPreviewArtistVisible(artist, context)));
+}
+
 async function getArtists(res, context) {
-	setPublicCache(res);
+	setPublicCache(res, context);
 	const now = new Date();
 	const artists = await prisma.artist.findMany({
 		orderBy: { order: 'asc' },
@@ -723,7 +884,7 @@ async function getArtists(res, context) {
 }
 
 async function getArtist(res, slug, context) {
-	setPublicCache(res);
+	setPublicCache(res, context);
 	const now = new Date();
 	const artist = await prisma.artist.findUnique({
 		where: { slug },
@@ -881,7 +1042,7 @@ async function getArtist(res, slug, context) {
 }
 
 async function getCrosshairVideos(res, context) {
-	setPublicCache(res);
+	setPublicCache(res, context);
 	const now = new Date();
 	const videos = await prisma.crosshairVideo.findMany({
 		where: context.includeHidden
@@ -910,7 +1071,7 @@ async function getCrosshairVideos(res, context) {
 }
 
 async function getAlbum(res, id, context) {
-	setPublicCache(res);
+	setPublicCache(res, context);
 	const now = new Date();
 	const album = await prisma.album.findUnique({
 		where: { id },
@@ -966,7 +1127,7 @@ async function getAlbum(res, id, context) {
 }
 
 async function getSong(res, id, context) {
-	setPublicCache(res);
+	setPublicCache(res, context);
 	const now = new Date();
 	const song = await prisma.song.findUnique({
 		where: { id },
@@ -1130,6 +1291,20 @@ function publicPlayerPoolResponse(pool, sourceLabel, startIndex = 0) {
 	};
 }
 
+function publicPagedPlayerPoolResponse(pool, sourceLabel, { offset = 0, limit = SITEWIDE_PLAYER_POOL_LIMIT, startIndex = 0 } = {}) {
+	const safeOffset = Math.max(0, offset);
+	const safeLimit = Math.max(1, limit);
+	const page = pool.slice(safeOffset, safeOffset + safeLimit);
+	return {
+		...publicPlayerPoolResponse(page, sourceLabel, startIndex),
+		total: pool.length,
+		offset: safeOffset,
+		limit: safeLimit,
+		hasMore: safeOffset + page.length < pool.length,
+		nextOffset: safeOffset + page.length,
+	};
+}
+
 async function getSitewidePlayerPool(context) {
 	const now = new Date();
 	const songs = await prisma.song.findMany({
@@ -1172,13 +1347,13 @@ async function getSitewidePlayerPool(context) {
 		.sort(comparePlayerPoolItems);
 }
 
-async function getPlayerPool(res, { type, id, slug }, context) {
-	setPublicCache(res);
+async function getPlayerPool(res, { type, id, slug, limit, offset }, context) {
+	setPublicCache(res, context);
 	const now = new Date();
 
 	if (type === 'sitewide') {
 		const pool = await getSitewidePlayerPool(context);
-		return res.status(200).json(publicPlayerPoolResponse(pool, 'Playing from A.S.D.'));
+		return res.status(200).json(publicPagedPlayerPoolResponse(pool, 'Playing from A.S.D.', { limit, offset }));
 	}
 
 	if (type === 'song' && id) {
@@ -1318,7 +1493,7 @@ async function getPlayerPool(res, { type, id, slug }, context) {
 
 async function getRecordPlayer(res, context) {
 	try {
-		setPublicCache(res);
+		setPublicCache(res, context);
 		const now = new Date();
 		const tracks = await prisma.recordPlayerTrack.findMany({
 			where: { active: true },
@@ -1532,7 +1707,7 @@ function formatFashionLook(look) {
 }
 
 async function getFashionTalentList(res, context) {
-	setPublicCache(res);
+	setPublicCache(res, context);
 	const talent = await prisma.fashionTalent.findMany({
 		where: context.includeHidden ? {} : { isVisible: true },
 		orderBy: { order: 'asc' },
@@ -1542,7 +1717,7 @@ async function getFashionTalentList(res, context) {
 }
 
 async function getFashionTalent(res, slug, context) {
-	setPublicCache(res);
+	setPublicCache(res, context);
 	const talent = await prisma.fashionTalent.findUnique({
 		where: { slug },
 		select: {
@@ -1684,7 +1859,7 @@ function includePublicCollectionCredits() {
 }
 
 async function getFashionCatalogue(res, context) {
-	setPublicCache(res);
+	setPublicCache(res, context);
 
 	const collections = await prisma.fashionCollection.findMany({
 		where: context.includeHidden ? {} : { isVisible: true },
@@ -1764,7 +1939,7 @@ function compareFashionCatalogueItems(left, right) {
 }
 
 async function getFashionCollection(res, slug, context) {
-	setPublicCache(res);
+	setPublicCache(res, context);
 
 	const collection = await prisma.fashionCollection.findUnique({
 		where: { slug },
@@ -1835,7 +2010,7 @@ async function getFashionCollection(res, slug, context) {
 }
 
 async function getFashionLooksList(res, context) {
-	setPublicCache(res);
+	setPublicCache(res, context);
 	const looks = await prisma.fashionLook.findMany({
 		where: context.includeHidden ? {} : { isVisible: true },
 		orderBy: [
@@ -1848,7 +2023,7 @@ async function getFashionLooksList(res, context) {
 }
 
 async function getFashionLook(res, slug, context) {
-	setPublicCache(res);
+	setPublicCache(res, context);
 	const look = await prisma.fashionLook.findUnique({
 		where: { slug },
 		include: includePublicLook(),
@@ -1861,7 +2036,7 @@ async function getFashionLook(res, slug, context) {
 }
 
 async function getBoardPosts(res, context) {
-	setPublicCache(res);
+	setPublicCache(res, context);
 	const now = new Date();
 	const ageCap = new Date();
 	ageCap.setDate(ageCap.getDate() - 90);
@@ -1912,12 +2087,17 @@ export default async function handler(req, res) {
 	const slug = normalizeSlug(req.query.slug);
 	const id = typeof req.query.id === 'string' ? req.query.id.trim() : null;
 	const type = typeof req.query.type === 'string' ? req.query.type.trim() : '';
+	const section = typeof req.query.section === 'string' ? req.query.section.trim() : '';
+	const limit = positiveInteger(req.query.limit, SITEWIDE_PLAYER_POOL_LIMIT);
+	const offset = Math.max(0, positiveInteger(req.query.offset, 0));
 
+	if (resource === 'musicHome') return getMusicHome(res, context);
+	if (resource === 'railNames') return getRailNames(res, section, context);
 	if (resource === 'artists') return getArtists(res, context);
 	if (resource === 'artist' && slug) return getArtist(res, slug, context);
 	if (resource === 'album' && id) return getAlbum(res, id, context);
 	if (resource === 'song' && id) return getSong(res, id, context);
-	if (resource === 'playerPool') return getPlayerPool(res, { type, id, slug }, context);
+	if (resource === 'playerPool') return getPlayerPool(res, { type, id, slug, limit, offset }, context);
 	if (resource === 'crosshair') return getCrosshairVideos(res, context);
 	if (resource === 'recordPlayer') return getRecordPlayer(res, context);
 	if (resource === 'boardPosts') return getBoardPosts(res, context);

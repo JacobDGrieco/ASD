@@ -5,7 +5,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useApi } from '../../hooks/useApi.js';
-import runwayBackdrop from '../../assets/fashion-runway-backdrop.png';
+import runwayBackdrop from '../../assets/fashion-runway-backdrop.webp';
 import '../../styles/FashionPages.css';
 import '../../styles/HomePortal.css';
 

@@ -1,54 +1,64 @@
 /**
- * Defines "release day" for the auto-show-on-release visibility feature
- * (see `contentVisibility.js`).
+ * Defines "release day" for the auto-show-on-release visibility feature.
  *
- * Business rule: a release goes live at midnight **America/New_York** time on its
- * release date, not UTC midnight and not the server's local time. All the date math
- * here exists to translate between a UTC `releaseDate` timestamp and that NY-local
- * day boundary without relying on the host's timezone (Vercel Functions run in UTC).
- *
- * Runs server-side (visibility checks in `api/public.js`/`api/admin/*.js`) and
- * client-side (`useApi`'s midnight-refresh scheduling) — pure date math, no I/O.
+ * A release goes live at midnight in the configured release visibility time
+ * zone, not UTC midnight and not the server's local time. The default remains
+ * America/New_York to preserve existing behavior. Override it with
+ * `RELEASE_VISIBILITY_TIME_ZONE` on the server and
+ * `VITE_RELEASE_VISIBILITY_TIME_ZONE` in the client build when needed.
  */
-export const RELEASE_VISIBILITY_TIME_ZONE = 'America/New_York';
+function configuredReleaseVisibilityTimeZone() {
+	const viteTimeZone = import.meta.env?.VITE_RELEASE_VISIBILITY_TIME_ZONE;
+	if (typeof viteTimeZone === 'string' && viteTimeZone.trim()) return viteTimeZone.trim();
 
-const DEFAULT_DAY_FORMATTER = new Intl.DateTimeFormat('en-CA', {
-	timeZone: RELEASE_VISIBILITY_TIME_ZONE,
-	year: 'numeric',
-	month: '2-digit',
-	day: '2-digit',
-});
-const DEFAULT_OFFSET_FORMATTER = new Intl.DateTimeFormat('en-US', {
-	timeZone: RELEASE_VISIBILITY_TIME_ZONE,
-	year: 'numeric',
-	month: '2-digit',
-	day: '2-digit',
-	hour: '2-digit',
-	minute: '2-digit',
-	second: '2-digit',
-	hour12: false,
-});
+	const processTimeZone = globalThis.process?.env?.RELEASE_VISIBILITY_TIME_ZONE;
+	if (typeof processTimeZone === 'string' && processTimeZone.trim()) return processTimeZone.trim();
 
-// The offset math below is hardcoded for one time zone (via Intl.DateTimeFormat
-// instances built for RELEASE_VISIBILITY_TIME_ZONE at module load). The timeZone
-// parameter exists for readability/testability at call sites, not to support
-// arbitrary zones — reject anything else rather than silently using the wrong offset.
-function assertReleaseVisibilityTimeZone(timeZone) {
-	if (timeZone !== RELEASE_VISIBILITY_TIME_ZONE) {
-		throw new Error(`Unsupported release visibility time zone: ${timeZone}`);
+	return 'America/New_York';
+}
+
+export const RELEASE_VISIBILITY_TIME_ZONE = configuredReleaseVisibilityTimeZone();
+
+const dayFormatters = new Map();
+const offsetFormatters = new Map();
+
+function dayFormatter(timeZone) {
+	if (!dayFormatters.has(timeZone)) {
+		dayFormatters.set(timeZone, new Intl.DateTimeFormat('en-CA', {
+			timeZone,
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+		}));
 	}
+
+	return dayFormatters.get(timeZone);
+}
+
+function offsetFormatter(timeZone) {
+	if (!offsetFormatters.has(timeZone)) {
+		offsetFormatters.set(timeZone, new Intl.DateTimeFormat('en-US', {
+			timeZone,
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit',
+			hour12: false,
+		}));
+	}
+
+	return offsetFormatters.get(timeZone);
 }
 
 function dayPartsInTimeZone(date, timeZone = RELEASE_VISIBILITY_TIME_ZONE) {
-	assertReleaseVisibilityTimeZone(timeZone);
-	return DEFAULT_DAY_FORMATTER.format(date).split('-').map(Number);
+	return dayFormatter(timeZone).format(date).split('-').map(Number);
 }
 
 /**
- * The UTC instant at which "today" (in `timeZone`) ends — i.e. midnight at the
- * start of tomorrow, NY-local. A `releaseDate` strictly before this instant counts
- * as released. Note this is a day-granularity boundary derived from `now`'s
- * calendar date in NY, not `now`'s exact NY wall-clock time.
+ * The UTC instant at which "today" in `timeZone` ends. A `releaseDate` strictly
+ * before this instant counts as released.
  */
 export function releaseVisibilityUpperBound(now = new Date(), timeZone = RELEASE_VISIBILITY_TIME_ZONE) {
 	const [year, month, day] = dayPartsInTimeZone(now, timeZone);
@@ -56,9 +66,8 @@ export function releaseVisibilityUpperBound(now = new Date(), timeZone = RELEASE
 }
 
 /**
- * Whether `releaseDate` has released as of `now`, per the NY-midnight boundary. A
- * missing/invalid `releaseDate` is treated as "always released" (e.g. catalog items
- * without a release date shouldn't be hidden by this rule).
+ * Whether `releaseDate` has released as of `now`. Missing or invalid release
+ * dates are treated as already released.
  */
 export function isReleasedOnUtcDay(releaseDate, now = new Date(), timeZone = RELEASE_VISIBILITY_TIME_ZONE) {
 	if (!releaseDate) return true;
@@ -70,8 +79,7 @@ export function isReleasedOnUtcDay(releaseDate, now = new Date(), timeZone = REL
 }
 
 function getTimeZoneOffsetMilliseconds(date, timeZone = RELEASE_VISIBILITY_TIME_ZONE) {
-	assertReleaseVisibilityTimeZone(timeZone);
-	const parts = DEFAULT_OFFSET_FORMATTER.formatToParts(date).reduce((dateParts, part) => {
+	const parts = offsetFormatter(timeZone).formatToParts(date).reduce((dateParts, part) => {
 		if (part.type !== 'literal') dateParts[part.type] = Number(part.value);
 		return dateParts;
 	}, {});
@@ -98,10 +106,8 @@ function timeZoneMidnightToUtc(year, month, day, timeZone = RELEASE_VISIBILITY_T
 }
 
 /**
- * Milliseconds from `now` until the next NY-local midnight — used by `useApi`'s
- * `refreshAtUtcMidnight` option to re-fetch public data right as new releases
- * become visible, despite the misleading "Utc" in the name (it's actually
- * NY-midnight; see the module header).
+ * Milliseconds from `now` until the next configured local midnight. The function
+ * name is kept for compatibility with existing callers.
  */
 export function millisecondsUntilNextUtcMidnight(now = new Date(), timeZone = RELEASE_VISIBILITY_TIME_ZONE) {
 	const [year, month, day] = dayPartsInTimeZone(now, timeZone);

@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { preloadImage, preloadImages, prefetchArtistPage, prefetchArtistPagesInIdle } from '../../lib/publicPrefetch.js';
-import musicStageBackdrop from '../../assets/music-tour-stage-backdrop.png';
+import musicStageBackdrop from '../../assets/music-tour-stage-backdrop.webp';
 import '../../styles/ArtistSplash.css';
 
 const AUTO_SWAP_INTERVAL_MS = 1400;

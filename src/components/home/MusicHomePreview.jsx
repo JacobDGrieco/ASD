@@ -4,7 +4,7 @@
  * Fetches lightweight public music data shown before entering `/music`.
  */
 import { useApi } from '../../hooks/useApi.js';
-import musicStageBackdrop from '../../assets/music-tour-stage-backdrop.png';
+import musicStageBackdrop from '../../assets/music-tour-stage-backdrop.webp';
 import '../../styles/ArtistSplash.css';
 import '../../styles/HomePortal.css';
 
@@ -49,8 +49,8 @@ function buildMobileSpotlightArtists(artists) {
 }
 
 export default function MusicHomePreview() {
-	const { data: artists } = useApi('/api/artists');
-	const previewArtists = (artists ?? []).slice(0, 8);
+	const { data: musicHome } = useApi('/api/public?resource=musicHome');
+	const previewArtists = (musicHome?.artists ?? []).slice(0, 8);
 	const { artists: mobilePreviewArtists, activeIndex: activeMobileIndex } = buildMobileSpotlightArtists(previewArtists);
 	const rowCount = previewArtists.length >= 5 ? 2 : 1;
 	const columnCount = Math.max(1, Math.ceil(previewArtists.length / rowCount));

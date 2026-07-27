@@ -14,7 +14,7 @@ const LEGAL_POLICIES = [
 
 export default function PublicLegalFooter({ variant = 'default' }) {
 	return (
-		<footer className={`public-legal public-legal--${variant}`} aria-label="Site legal">
+		<footer className={`public-legal public-legal--${variant}`} aria-label="Site legal" hidden>
 			<nav className="public-legal-links" aria-label="Legal links">
 				<a href="#" className="public-legal-link termly-display-preferences">Consent Preferences</a>
 				{LEGAL_POLICIES.map((policy) => (

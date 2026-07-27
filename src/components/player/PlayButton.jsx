@@ -13,7 +13,16 @@ function playerPoolUrl({ type, id, slug }) {
 	const params = new URLSearchParams({ type });
 	if (id) params.set('id', id);
 	if (slug) params.set('slug', slug);
+	if (type === 'sitewide') params.set('limit', '30');
 	return `/api/player-pool?${params.toString()}`;
+}
+
+function nextPlayerPoolUrl(url, nextOffset) {
+	const [pathname, search = ''] = url.split('?');
+	const params = new URLSearchParams(search);
+	params.set('offset', String(nextOffset));
+	params.set('limit', '1000');
+	return `${pathname}?${params.toString()}`;
 }
 
 export default function PlayButton({
@@ -28,7 +37,7 @@ export default function PlayButton({
 	iconOnly = false,
 	disabled = false,
 }) {
-	const { playPool } = usePlayer();
+	const { playPool, extendPool } = usePlayer();
 	const [loading, setLoading] = useState(false);
 	const [empty, setEmpty] = useState(false);
 	const [error, setError] = useState('');
@@ -72,6 +81,14 @@ export default function PlayButton({
 			}
 
 			playPool(pool, playOptions);
+
+			if (data?.hasMore && Number.isFinite(Number(data.nextOffset))) {
+				prefetchPlayerPool(nextPlayerPoolUrl(url, data.nextOffset), { maxAge: 30 * 1000, artworkLimit: 0 })
+					.then((nextData) => {
+						if (Array.isArray(nextData?.pool)) extendPool(nextData.pool);
+					})
+					.catch(() => { });
+			}
 		} catch {
 			setError('Player unavailable');
 			window.setTimeout(() => setError(''), 2200);

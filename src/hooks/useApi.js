@@ -20,7 +20,7 @@ function apiStateReducer(state, action) {
 		case 'cached':
 			return { data: action.data, loading: false, error: null };
 		case 'loading':
-			return { ...state, loading: true, error: null };
+			return { data: null, loading: true, error: null };
 		case 'success':
 			return { data: action.data, loading: false, error: null };
 		case 'refreshSuccess':

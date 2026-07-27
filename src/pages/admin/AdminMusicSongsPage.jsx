@@ -24,7 +24,7 @@ import {
 import '../../styles/AdminArtistsPage.css';
 import '../../styles/AdminSongsPage.css';
 
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 15;
 
 function primaryImage(images) {
 	if (!Array.isArray(images) || images.length === 0) return null;
