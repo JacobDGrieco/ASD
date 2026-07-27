@@ -6,7 +6,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FaEye, FaEyeSlash, FaPencilAlt, FaTrash } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaGripVertical, FaPencilAlt, FaTrash } from 'react-icons/fa';
 import { TabPanel } from 'primereact/tabview';
 import ConfirmActionButton from '../../components/admin/ConfirmActionButton.jsx';
 import AdminDateInput from '../../components/admin/AdminDateInput.jsx';
@@ -288,6 +288,67 @@ function LooksPagination({ currentPage, totalPages, onPageChange }) {
 }
 
 function LookFormModal({ form, setForm, token, collections, talentOptions, crewOptions, onClose, onSave, onDelete }) {
+	const [draggedPlacementIndex, setDraggedPlacementIndex] = useState(null);
+
+	const updatePlacement = (index, patch) => {
+		setForm((current) => ({
+			...current,
+			collectionPlacements: current.collectionPlacements.map((item, itemIndex) => (
+				itemIndex === index ? { ...item, ...patch } : item
+			)),
+		}));
+	};
+
+	const removePlacement = (index) => {
+		setForm((current) => ({
+			...current,
+			collectionPlacements: current.collectionPlacements.filter((_, itemIndex) => itemIndex !== index),
+		}));
+	};
+
+	const movePlacement = (index, direction) => {
+		const toIndex = direction === 'up' ? index - 1 : index + 1;
+		setForm((current) => {
+			if (toIndex < 0 || toIndex >= current.collectionPlacements.length) return current;
+			const nextPlacements = [...current.collectionPlacements];
+			[nextPlacements[index], nextPlacements[toIndex]] = [nextPlacements[toIndex], nextPlacements[index]];
+			return { ...current, collectionPlacements: nextPlacements };
+		});
+	};
+
+	const reorderPlacement = (fromIndex, toIndex) => {
+		setForm((current) => {
+			if (
+				!Number.isInteger(fromIndex) ||
+				!Number.isInteger(toIndex) ||
+				fromIndex === toIndex ||
+				fromIndex < 0 ||
+				toIndex < 0 ||
+				fromIndex >= current.collectionPlacements.length ||
+				toIndex >= current.collectionPlacements.length
+			) return current;
+
+			const nextPlacements = [...current.collectionPlacements];
+			const [movedPlacement] = nextPlacements.splice(fromIndex, 1);
+			nextPlacements.splice(toIndex, 0, movedPlacement);
+			return { ...current, collectionPlacements: nextPlacements };
+		});
+	};
+
+	const startPlacementDrag = (event, index) => {
+		setDraggedPlacementIndex(index);
+		event.dataTransfer.effectAllowed = 'move';
+		event.dataTransfer.setData('text/plain', String(index));
+	};
+
+	const dropPlacement = (event, index) => {
+		event.preventDefault();
+		const dataTransferIndex = Number(event.dataTransfer.getData('text/plain'));
+		const fromIndex = Number.isInteger(draggedPlacementIndex) ? draggedPlacementIndex : dataTransferIndex;
+		reorderPlacement(fromIndex, index);
+		setDraggedPlacementIndex(null);
+	};
+
 	return (
 		<div className="admin-modal-overlay" role="presentation">
 			<div className="admin-modal">
@@ -366,49 +427,81 @@ function LookFormModal({ form, setForm, token, collections, talentOptions, crewO
 									<div className="admin-modal-label">Collections</div>
 									<div className="admin-fashion-look-placements">
 										{form.collectionPlacements.map((placement, index) => (
-											<div key={placement._key} className="admin-fashion-look-placement-row">
-												<select
-													value={placement.collectionId}
-													onChange={(event) => setForm((current) => ({
-														...current,
-														collectionPlacements: current.collectionPlacements.map((item, itemIndex) => (
-															itemIndex === index ? { ...item, collectionId: event.target.value } : item
-														)),
-													}))}
-													className="admin-field-input admin-fashion-look-placement-collection"
-													aria-label={`Collection ${index + 1}`}
-												>
-													<option value="">Select collection</option>
-													{collections.map((collection) => (
-														<option
-															key={collection.id}
-															value={collection.id}
-															disabled={form.collectionPlacements.some((item, itemIndex) => itemIndex !== index && item.collectionId === collection.id)}
-														>
-															{collection.title}{collection.season ? ` (${collection.season})` : ''}
-														</option>
-													))}
-												</select>
-												<input
-													type="number"
-													min="0"
-													step="1"
-													value={placement.sortOrder}
-													onChange={(event) => setForm((current) => ({
-														...current,
-														collectionPlacements: current.collectionPlacements.map((item, itemIndex) => (
-															itemIndex === index ? { ...item, sortOrder: Number(event.target.value) || 0 } : item
-														)),
-													}))}
-													className="admin-field-input admin-fashion-look-placement-order"
-													aria-label={`Order in collection ${index + 1}`}
-												/>
+											<div
+												key={placement._key}
+												className={`admin-fashion-look-placement-row ${draggedPlacementIndex === index ? 'admin-fashion-look-placement-row-dragging' : ''} ${draggedPlacementIndex !== null && draggedPlacementIndex !== index ? 'admin-fashion-look-placement-row-drop-target' : ''}`.trim()}
+												onDragOver={(event) => {
+													event.preventDefault();
+													event.dataTransfer.dropEffect = 'move';
+												}}
+												onDrop={(event) => dropPlacement(event, index)}
+												onDragEnd={() => setDraggedPlacementIndex(null)}
+											>
+												<div className="admin-fashion-look-placement-reorder">
+													<button
+														type="button"
+														className="admin-fashion-look-placement-drag-handle"
+														draggable={form.collectionPlacements.length > 1}
+														onDragStart={(event) => startPlacementDrag(event, index)}
+														onKeyDown={(event) => {
+															if (event.key === 'ArrowUp') {
+																event.preventDefault();
+																movePlacement(index, 'up');
+															}
+															if (event.key === 'ArrowDown') {
+																event.preventDefault();
+																movePlacement(index, 'down');
+															}
+														}}
+														disabled={form.collectionPlacements.length <= 1}
+														aria-label={`Drag to reorder collection placement ${index + 1}. Use arrow keys to move.`}
+														title="Drag to reorder"
+													>
+														<FaGripVertical aria-hidden="true" />
+													</button>
+												</div>
+												<div className="admin-fashion-look-placement-main">
+													<label htmlFor={`admin-fashion-look-placement-${placement._key}`} className="admin-modal-label admin-fashion-look-placement-label">
+														Collection {index + 1}
+													</label>
+													<select
+														id={`admin-fashion-look-placement-${placement._key}`}
+														value={placement.collectionId}
+														onChange={(event) => updatePlacement(index, { collectionId: event.target.value })}
+														className="admin-field-input admin-fashion-look-placement-collection"
+														aria-label={`Collection ${index + 1}`}
+													>
+														<option value="">Select collection</option>
+														{collections.map((collection) => (
+															<option
+																key={collection.id}
+																value={collection.id}
+																disabled={form.collectionPlacements.some((item, itemIndex) => itemIndex !== index && item.collectionId === collection.id)}
+															>
+																{collection.title}{collection.season ? ` (${collection.season})` : ''}
+															</option>
+														))}
+													</select>
+												</div>
+												<div className="admin-fashion-look-placement-order-wrap">
+													<label htmlFor={`admin-fashion-look-placement-${placement._key}-order`} className="admin-modal-label admin-fashion-look-placement-label">
+														Order
+													</label>
+													<input
+														id={`admin-fashion-look-placement-${placement._key}-order`}
+														type="text"
+														inputMode="numeric"
+														pattern="[0-9]*"
+														maxLength={2}
+														value={placement.sortOrder}
+														onChange={(event) => updatePlacement(index, { sortOrder: Number(String(event.target.value).replace(/\D/g, '').slice(0, 2)) || 0 })}
+														className="admin-field-input admin-fashion-look-placement-order"
+														aria-label={`Order in collection ${index + 1}`}
+													/>
+												</div>
 												<button
 													type="button"
-													onClick={() => setForm((current) => ({
-														...current,
-														collectionPlacements: current.collectionPlacements.filter((_, itemIndex) => itemIndex !== index),
-													}))}
+													onClick={() => removePlacement(index)}
 													className="admin-button-danger admin-button-icon"
 													aria-label="Remove collection placement"
 													title="Remove"

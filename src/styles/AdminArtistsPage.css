@@ -1027,26 +1027,105 @@
 }
 
 .admin-fashion-look-placements {
-	display: grid;
+	display: flex;
+	flex-direction: column;
 	gap: 10px;
 }
 
 .admin-fashion-look-placement-row {
+	--admin-fashion-look-placement-label-space: 23px;
+	--admin-fashion-look-placement-control-height: 40px;
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) 96px 40px;
+	grid-template-columns: 40px minmax(0, 1fr) 64px 40px;
 	gap: 10px;
 	align-items: end;
 }
 
-.admin-fashion-look-placement-row .admin-field-input {
-	height: 40px;
+.admin-fashion-look-placement-row-dragging {
+	opacity: 0.62;
+}
+
+.admin-fashion-look-placement-row-drop-target {
+	outline: 1px dashed rgba(255, 255, 255, 0.26);
+	outline-offset: 4px;
+}
+
+.admin-fashion-look-placement-reorder {
+	padding-top: var(--admin-fashion-look-placement-label-space);
+}
+
+.admin-fashion-look-placement-drag-handle {
+	width: 40px;
+	height: var(--admin-fashion-look-placement-control-height);
+	padding: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--border);
+	border-radius: 0;
+	background: var(--bg-surface);
+	color: var(--text-muted);
+	cursor: grab;
+}
+
+.admin-fashion-look-placement-drag-handle:active {
+	cursor: grabbing;
+}
+
+.admin-fashion-look-placement-drag-handle:disabled {
+	opacity: 0.45;
+	cursor: default;
+	pointer-events: none;
+}
+
+.admin-fashion-look-placement-main,
+.admin-fashion-look-placement-order-wrap {
+	min-width: 0;
+}
+
+.admin-fashion-look-placement-label {
+	display: block;
+	min-height: var(--admin-fashion-look-placement-label-space);
+	margin-bottom: 0;
+}
+
+.admin-fashion-look-placement-collection,
+.admin-fashion-look-placement-order {
+	height: var(--admin-fashion-look-placement-control-height);
+}
+
+.admin-fashion-look-placement-order {
+	text-align: center;
 }
 
 .admin-fashion-look-placement-row .admin-button-icon {
 	width: 40px;
-	height: 40px;
+	height: var(--admin-fashion-look-placement-control-height);
 	padding: 0;
 	align-self: end;
+}
+
+@media (max-width: 720px) {
+	.admin-fashion-look-placement-row {
+		grid-template-columns: 40px minmax(0, 1fr) 58px 40px;
+		gap: 8px;
+	}
+
+	.admin-fashion-look-placement-label {
+		font-size: 0.72rem;
+	}
+}
+
+@media (max-width: 520px) {
+	.admin-fashion-look-placement-row {
+		grid-template-columns: 36px minmax(0, 1fr) 52px 36px;
+		gap: 6px;
+	}
+
+	.admin-fashion-look-placement-drag-handle,
+	.admin-fashion-look-placement-row .admin-button-icon {
+		width: 36px;
+	}
 }
 
 .admin-modal-grid {
@@ -1250,32 +1329,8 @@ fieldset.admin-modal-field {
 
 	.admin-fashion-talent-meta-row,
 	.admin-fashion-collection-type-location-row,
-	.admin-fashion-collection-season-date-row,
-	.admin-fashion-look-placement-row {
+	.admin-fashion-collection-season-date-row {
 		grid-template-columns: 1fr;
-	}
-
-	.admin-fashion-look-placement-row {
-		grid-template-columns: 40px minmax(0, 1fr) 58px;
-		grid-template-areas: "delete collection order";
-		gap: 8px;
-		align-items: end;
-	}
-
-	.admin-fashion-look-placement-collection {
-		grid-area: collection;
-	}
-
-	.admin-fashion-look-placement-order {
-		grid-area: order;
-		min-width: 0;
-		padding-left: 8px;
-		padding-right: 6px;
-		text-align: center;
-	}
-
-	.admin-fashion-look-placement-row .admin-button-icon {
-		grid-area: delete;
 	}
 
 	.admin-profile-link-row {
@@ -1495,17 +1550,49 @@ fieldset.admin-modal-field {
 	text-transform: none;
 }
 
-.admin-fashion-piece-order-controls {
+.admin-fashion-piece-card-title-row {
 	display: flex;
 	align-items: center;
-	justify-content: center;
-	gap: 6px;
+	gap: 8px;
+	min-width: 0;
 }
 
-.admin-fashion-piece-order-btn:disabled {
-	opacity: 0.35;
+.admin-fashion-piece-drag-handle {
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--border);
+	border-radius: 0;
+	background: var(--bg-surface);
+	color: var(--text-muted);
+	cursor: grab;
+}
+
+.admin-fashion-piece-drag-handle:active {
+	cursor: grabbing;
+}
+
+.admin-fashion-piece-drag-handle:disabled {
+	opacity: 0.45;
 	cursor: default;
 	pointer-events: none;
+}
+
+.admin-fashion-piece-card-dragging {
+	opacity: 0.62;
+}
+
+.admin-fashion-piece-card-drop-target {
+	border-color: rgba(255, 255, 255, 0.28);
+}
+
+.admin-fashion-piece-card-header .admin-button-icon {
+	width: 40px;
+	height: 40px;
+	padding: 0;
 }
 
 .admin-fashion-piece-card-row {

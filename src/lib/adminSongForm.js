@@ -23,7 +23,7 @@ export function createAlbumPlacement() {
 	return { clientKey: createClientKey('placement'), albumId: '', trackNumber: '', discNumber: 1 };
 }
 
-export function createRoleEntry(role = 'Featured Artist', name = '', extra = {}) {
+export function createRoleEntry(role = '', name = '', extra = {}) {
 	return {
 		clientKey: createClientKey('role'),
 		role,

@@ -7,7 +7,6 @@ import {
 	PROFILE_LINK_PLATFORM_OPTIONS,
 	PROFILE_LINK_TYPES,
 	normalizeProfileLinks,
-	sortProfileLinks,
 } from '../../lib/profileLinks.js';
 import ProfileLinkIcon from '../shared/ProfileLinkIcon.jsx';
 
@@ -15,7 +14,7 @@ function createLinkRow() {
 	const id = globalThis.crypto?.randomUUID?.() ?? `link-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 	return {
 		id,
-		platform: 'spotify',
+		platform: '',
 		type: 'professional',
 		url: '',
 	};
@@ -23,7 +22,6 @@ function createLinkRow() {
 
 export default function AdminProfileLinksField({ value, onChange, showTypeField = true }) {
 	const links = Array.isArray(value) ? value : [];
-	const sortedLinks = sortProfileLinks(links);
 
 	const updateLink = (id, patch) => {
 		onChange(links.map((link) => (link.id === id ? { ...link, ...patch } : link)));
@@ -42,7 +40,7 @@ export default function AdminProfileLinksField({ value, onChange, showTypeField 
 	return (
 		<div className="admin-profile-links-field">
 			<div className="admin-profile-links-list">
-				{sortedLinks.map((link) => {
+				{links.map((link) => {
 					const platformLabel = PROFILE_LINK_PLATFORM_LABELS[link.platform] ?? 'Link';
 					return (
 						<div key={link.id} className={`admin-profile-link-row ${showTypeField ? '' : 'admin-profile-link-row-no-type'}`.trim()}>
@@ -55,6 +53,7 @@ export default function AdminProfileLinksField({ value, onChange, showTypeField 
 								className="admin-field-input admin-profile-link-platform"
 								aria-label="Platform"
 							>
+								<option value="">- Link -</option>
 								{PROFILE_LINK_PLATFORM_OPTIONS.map((option) => (
 									<option key={option.value} value={option.value}>{option.label}</option>
 								))}
@@ -101,7 +100,7 @@ export default function AdminProfileLinksField({ value, onChange, showTypeField 
 					<span>Add link</span>
 				</button>
 				{usedLinks.length !== links.length && links.length > 0 && (
-					<span className="admin-profile-links-note">Blank rows are ignored when saved.</span>
+					<span className="admin-profile-links-note">Blank or incomplete rows are ignored when saved.</span>
 				)}
 			</div>
 		</div>

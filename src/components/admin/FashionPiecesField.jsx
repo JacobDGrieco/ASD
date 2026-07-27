@@ -1,7 +1,8 @@
 /**
  * Admin editor for the ordered pieces that make up a fashion look.
  */
-import { FaArrowDown, FaArrowUp, FaTrash } from 'react-icons/fa';
+import { useState } from 'react';
+import { FaGripVertical, FaTrash } from 'react-icons/fa';
 import ImageCollectionField from './ImageCollectionField.jsx';
 import CreditsField from './CreditsField.jsx';
 
@@ -20,6 +21,7 @@ function pieceKey(piece) {
 // value: [{ id?, name, buyUrl, image, credits }]
 export default function FashionPiecesField({ value, onChange, token, lookTitle, talentOptions = EMPTY_OPTIONS, crewOptions = EMPTY_OPTIONS }) {
 	const pieces = Array.isArray(value) ? value : [];
+	const [draggedIndex, setDraggedIndex] = useState(null);
 
 	const addPiece = () => {
 		onChange([...pieces, { clientKey: createClientKey(), name: '', buyUrl: '', image: null, credits: [] }]);
@@ -42,33 +44,74 @@ export default function FashionPiecesField({ value, onChange, token, lookTitle, 
 		onChange(nextPieces);
 	};
 
+	const reorderPiece = (fromIndex, toIndex) => {
+		if (
+			!Number.isInteger(fromIndex) ||
+			!Number.isInteger(toIndex) ||
+			fromIndex === toIndex ||
+			fromIndex < 0 ||
+			toIndex < 0 ||
+			fromIndex >= pieces.length ||
+			toIndex >= pieces.length
+		) return;
+
+		const nextPieces = [...pieces];
+		const [movedPiece] = nextPieces.splice(fromIndex, 1);
+		nextPieces.splice(toIndex, 0, movedPiece);
+		onChange(nextPieces);
+	};
+
+	const startDrag = (event, index) => {
+		setDraggedIndex(index);
+		event.dataTransfer.effectAllowed = 'move';
+		event.dataTransfer.setData('text/plain', String(index));
+	};
+
+	const dropPiece = (event, index) => {
+		event.preventDefault();
+		const dataTransferIndex = Number(event.dataTransfer.getData('text/plain'));
+		const fromIndex = Number.isInteger(draggedIndex) ? draggedIndex : dataTransferIndex;
+		reorderPiece(fromIndex, index);
+		setDraggedIndex(null);
+	};
+
 	return (
 		<div className="admin-fashion-pieces-field">
 			{pieces.map((piece, index) => (
-				<div key={pieceKey(piece)} className="admin-fashion-piece-card">
+				<div
+					key={pieceKey(piece)}
+					className={`admin-fashion-piece-card ${draggedIndex === index ? 'admin-fashion-piece-card-dragging' : ''} ${draggedIndex !== null && draggedIndex !== index ? 'admin-fashion-piece-card-drop-target' : ''}`.trim()}
+					onDragOver={(event) => {
+						event.preventDefault();
+						event.dataTransfer.dropEffect = 'move';
+					}}
+					onDrop={(event) => dropPiece(event, index)}
+					onDragEnd={() => setDraggedIndex(null)}
+				>
 					<div className="admin-fashion-piece-card-header">
-						<span className="admin-fashion-piece-card-title">Piece {index + 1}</span>
-						<div className="admin-fashion-piece-order-controls" aria-label={`Reorder piece ${index + 1}`}>
+						<div className="admin-fashion-piece-card-title-row">
 							<button
 								type="button"
-								onClick={() => movePiece(index, -1)}
-								className="admin-button-secondary admin-button-icon admin-fashion-piece-order-btn"
-								aria-label={`Move piece ${index + 1} up`}
-								title="Move piece up"
-								disabled={index === 0}
+								className="admin-fashion-piece-drag-handle"
+								draggable={pieces.length > 1}
+								onDragStart={(event) => startDrag(event, index)}
+								onKeyDown={(event) => {
+									if (event.key === 'ArrowUp') {
+										event.preventDefault();
+										movePiece(index, -1);
+									}
+									if (event.key === 'ArrowDown') {
+										event.preventDefault();
+										movePiece(index, 1);
+									}
+								}}
+								disabled={pieces.length <= 1}
+								aria-label={`Drag to reorder piece ${index + 1}. Use arrow keys to move.`}
+								title="Drag to reorder"
 							>
-								<FaArrowUp aria-hidden="true" />
+								<FaGripVertical aria-hidden="true" />
 							</button>
-							<button
-								type="button"
-								onClick={() => movePiece(index, 1)}
-								className="admin-button-secondary admin-button-icon admin-fashion-piece-order-btn"
-								aria-label={`Move piece ${index + 1} down`}
-								title="Move piece down"
-								disabled={index === pieces.length - 1}
-							>
-								<FaArrowDown aria-hidden="true" />
-							</button>
+							<span className="admin-fashion-piece-card-title">Piece {index + 1}</span>
 						</div>
 						<button
 							type="button"

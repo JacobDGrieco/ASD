@@ -104,11 +104,12 @@ export function sortProfileLinks(value) {
 	});
 }
 
-/** Sanitizes a raw `links` array: unknown platforms fall back to `'website'`, unknown types to `'personal'`, entries without a URL are dropped, and result is sorted via `sortProfileLinks`. */
+/** Sanitizes a raw `links` array: placeholder platforms and entries without a URL are dropped, unknown saved platforms fall back to `'website'`, unknown types to `'personal'`, and the result is sorted via `sortProfileLinks`. */
 export function normalizeProfileLinks(value) {
 	if (!Array.isArray(value)) return [];
 
 	const links = value.reduce((normalizedLinks, item, index) => {
+		if (item?.platform === '') return normalizedLinks;
 		const platform = PLATFORM_VALUES.has(item?.platform) ? item.platform : 'website';
 		const type = LINK_TYPE_VALUES.has(item?.type) ? item.type : 'personal';
 		const url = typeof item?.url === 'string' ? item.url.trim() : '';

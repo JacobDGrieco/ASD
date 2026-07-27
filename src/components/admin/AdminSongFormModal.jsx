@@ -9,7 +9,7 @@
 import { useEffect, useId, useMemo, useReducer, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { TabPanel } from 'primereact/tabview';
-import { FaEye, FaEyeSlash, FaPlus, FaTimes, FaTrash } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaGripVertical, FaPlus, FaTimes, FaTrash } from 'react-icons/fa';
 import AdminDateInput from './AdminDateInput.jsx';
 import AdminProfileLinksField from './AdminProfileLinksField.jsx';
 import { isValidDateInput } from '../../lib/dateInput.js';
@@ -120,6 +120,15 @@ function shouldShowPrivateSoundcloudField(form, albumById) {
 	return Boolean(releaseDate) && !isReleasedOnUtcDay(releaseDate);
 }
 
+function normalizePlacementNumberInput(value) {
+	const digits = String(value ?? '').replace(/\D/g, '').slice(0, 2);
+	return digits ? Number(digits) : '';
+}
+
+function hasRoleValue(role) {
+	return Boolean(role?.name?.trim() && role?.role);
+}
+
 // Album pickers are ordered by release recency first because admins most often add
 // songs to current releases; title/artist/id only break same-date ties.
 function compareAlbumOptions(left, right) {
@@ -182,7 +191,7 @@ function copyAlbumRolesToSongForm(form, album) {
 	}
 
 	return copiedRoles.length
-		? { ...form, roles: sortMusicRoleEntries([...(form.roles ?? []), ...copiedRoles]) }
+		? { ...form, roles: [...(form.roles ?? []), ...copiedRoles] }
 		: form;
 }
 
@@ -303,6 +312,67 @@ function songModalReducer(state, action) {
 						albumPlacementsRoot: '',
 						albumPlacements: (state.validationErrors.albumPlacements ?? []).filter((_, i) => i !== action.index),
 					}
+					: state.validationErrors,
+			};
+		}
+		case 'move-album-placement': {
+			const fromIndex = action.index;
+			const toIndex = action.direction === 'up' ? fromIndex - 1 : fromIndex + 1;
+			if (toIndex < 0 || toIndex >= state.form.albumPlacements.length) return state;
+
+			const nextPlacements = [...state.form.albumPlacements];
+			[nextPlacements[fromIndex], nextPlacements[toIndex]] = [nextPlacements[toIndex], nextPlacements[fromIndex]];
+			const nextPlacementErrors = Array.isArray(state.validationErrors?.albumPlacements)
+				? [...state.validationErrors.albumPlacements]
+				: null;
+			if (nextPlacementErrors) {
+				[nextPlacementErrors[fromIndex], nextPlacementErrors[toIndex]] = [nextPlacementErrors[toIndex], nextPlacementErrors[fromIndex]];
+			}
+
+			return {
+				...state,
+				form: {
+					...state.form,
+					albumPlacements: nextPlacements,
+				},
+				validationErrors: nextPlacementErrors
+					? { ...state.validationErrors, albumPlacements: nextPlacementErrors }
+					: state.validationErrors,
+			};
+		}
+		case 'reorder-album-placement': {
+			const fromIndex = action.fromIndex;
+			const toIndex = action.toIndex;
+			if (
+				!Number.isInteger(fromIndex) ||
+				!Number.isInteger(toIndex) ||
+				fromIndex === toIndex ||
+				fromIndex < 0 ||
+				toIndex < 0 ||
+				fromIndex >= state.form.albumPlacements.length ||
+				toIndex >= state.form.albumPlacements.length
+			) return state;
+
+			const nextPlacements = [...state.form.albumPlacements];
+			const [movedPlacement] = nextPlacements.splice(fromIndex, 1);
+			nextPlacements.splice(toIndex, 0, movedPlacement);
+
+			const nextPlacementErrors = Array.isArray(state.validationErrors?.albumPlacements)
+				? [...state.validationErrors.albumPlacements]
+				: null;
+			if (nextPlacementErrors) {
+				const [movedErrors] = nextPlacementErrors.splice(fromIndex, 1);
+				nextPlacementErrors.splice(toIndex, 0, movedErrors);
+			}
+
+			return {
+				...state,
+				form: {
+					...state.form,
+					albumPlacements: nextPlacements,
+				},
+				validationErrors: nextPlacementErrors
+					? { ...state.validationErrors, albumPlacements: nextPlacementErrors }
 					: state.validationErrors,
 			};
 		}
@@ -767,24 +837,71 @@ function SongAlbumsTab({
 	placementFieldClassName,
 	removeAlbumPlacement,
 	addAlbumPlacement,
+	moveAlbumPlacement,
+	reorderAlbumPlacement,
 }) {
+	const [draggedIndex, setDraggedIndex] = useState(null);
+
+	const startDrag = (event, index) => {
+		setDraggedIndex(index);
+		event.dataTransfer.effectAllowed = 'move';
+		event.dataTransfer.setData('text/plain', String(index));
+	};
+
+	const dropPlacement = (event, index) => {
+		event.preventDefault();
+		const dataTransferIndex = Number(event.dataTransfer.getData('text/plain'));
+		const fromIndex = Number.isInteger(draggedIndex) ? draggedIndex : dataTransferIndex;
+		reorderAlbumPlacement(fromIndex, index);
+		setDraggedIndex(null);
+	};
+
 	return (
 		<div className="admin-song-tab-layout">
 			<div className="admin-song-tab-scroll">
-				<div className="admin-song-album-cards">
-					{form.albumPlacements.map((placement, index) => (
-						<div key={placement.clientKey ?? placement.albumId} className="admin-song-album-card">
-							<div className="admin-song-album-card-header">
-								<h3 className="admin-song-album-card-title">Album {index + 1}</h3>
-								{form.albumPlacements.length > 1 && (
-									<button type="button" onClick={() => removeAlbumPlacement(index)} className="admin-button-danger">Remove</button>
-								)}
-							</div>
-							<div className="admin-modal-grid admin-song-album-grid">
-								<div className="admin-modal-field admin-modal-field-full">
-									<label htmlFor={`admin-song-${placement.clientKey}-album`} className="admin-modal-label">Album <span className="admin-modal-label-required">*</span></label>
+				<div className="admin-song-album-list">
+					{form.albumPlacements.map((placement, index) => {
+						const placementKey = placement.clientKey ?? placement.albumId;
+						return (
+							<div
+								key={placementKey}
+								className={`admin-song-album-row ${draggedIndex === index ? 'admin-song-album-row-dragging' : ''} ${draggedIndex !== null && draggedIndex !== index ? 'admin-song-album-row-drop-target' : ''}`.trim()}
+								onDragOver={(event) => {
+									event.preventDefault();
+									event.dataTransfer.dropEffect = 'move';
+								}}
+								onDrop={(event) => dropPlacement(event, index)}
+								onDragEnd={() => setDraggedIndex(null)}
+							>
+								<div className="admin-song-album-reorder" aria-label={`Album placement ${index + 1}`}>
+									<button
+										type="button"
+										className="admin-song-album-drag-handle"
+										draggable={form.albumPlacements.length > 1}
+										onDragStart={(event) => startDrag(event, index)}
+										onKeyDown={(event) => {
+											if (event.key === 'ArrowUp') {
+												event.preventDefault();
+												moveAlbumPlacement(index, 'up');
+											}
+											if (event.key === 'ArrowDown') {
+												event.preventDefault();
+												moveAlbumPlacement(index, 'down');
+											}
+										}}
+										disabled={form.albumPlacements.length <= 1}
+										aria-label={`Drag to reorder album placement ${index + 1}. Use arrow keys to move.`}
+										title="Drag to reorder"
+									>
+										<FaGripVertical aria-hidden="true" />
+									</button>
+								</div>
+								<div className="admin-song-album-row-main">
+									<label htmlFor={`admin-song-${placementKey}-album`} className="admin-modal-label admin-song-album-row-label">
+										Album {index + 1} <span className="admin-modal-label-required">*</span>
+									</label>
 									<AlbumPlacementSelect
-										id={`admin-song-${placement.clientKey}-album`}
+										id={`admin-song-${placementKey}-album`}
 										value={placement.albumId}
 										albums={sortedAlbums}
 										onChange={setAlbumPlacement(index, 'albumId')}
@@ -792,19 +909,56 @@ function SongAlbumsTab({
 										invalid={Boolean(validationErrors?.albumPlacements?.[index]?.albumId)}
 									/>
 								</div>
-								<div className="admin-song-album-number-row admin-modal-field-full">
-									<div className="admin-modal-field">
-										<label htmlFor={`admin-song-${placement.clientKey}-track-number`} className="admin-modal-label">Track # <span className="admin-modal-label-required">*</span></label>
-										<input id={`admin-song-${placement.clientKey}-track-number`} type="number" placeholder="Track #" value={placement.trackNumber} onChange={setAlbumPlacement(index, 'trackNumber')} className={placementFieldClassName(index, 'trackNumber')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.trackNumber)} />
-									</div>
-									<div className="admin-modal-field">
-										<label htmlFor={`admin-song-${placement.clientKey}-disc-number`} className="admin-modal-label">Disc # <span className="admin-modal-label-required">*</span></label>
-										<input id={`admin-song-${placement.clientKey}-disc-number`} type="number" placeholder="Disc #" value={placement.discNumber} onChange={setAlbumPlacement(index, 'discNumber')} className={placementFieldClassName(index, 'discNumber')} aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.discNumber)} />
-									</div>
+								<div className="admin-song-album-row-number">
+									<label htmlFor={`admin-song-${placementKey}-track-number`} className="admin-modal-label admin-song-album-row-label">
+										Track <span className="admin-modal-label-required">*</span>
+									</label>
+									<input
+										id={`admin-song-${placementKey}-track-number`}
+										type="text"
+										inputMode="numeric"
+										pattern="[0-9]*"
+										maxLength={2}
+										placeholder="##"
+										value={placement.trackNumber}
+										onChange={setAlbumPlacement(index, 'trackNumber')}
+										className={`${placementFieldClassName(index, 'trackNumber')} admin-song-placement-number`.trim()}
+										aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.trackNumber)}
+									/>
+								</div>
+								<div className="admin-song-album-row-number">
+									<label htmlFor={`admin-song-${placementKey}-disc-number`} className="admin-modal-label admin-song-album-row-label">
+										Disc <span className="admin-modal-label-required">*</span>
+									</label>
+									<input
+										id={`admin-song-${placementKey}-disc-number`}
+										type="text"
+										inputMode="numeric"
+										pattern="[0-9]*"
+										maxLength={2}
+										placeholder="##"
+										value={placement.discNumber}
+										onChange={setAlbumPlacement(index, 'discNumber')}
+										className={`${placementFieldClassName(index, 'discNumber')} admin-song-placement-number`.trim()}
+										aria-invalid={Boolean(validationErrors?.albumPlacements?.[index]?.discNumber)}
+									/>
+								</div>
+								<div className="admin-song-album-row-actions">
+									{form.albumPlacements.length > 1 && (
+										<button
+											type="button"
+											onClick={() => removeAlbumPlacement(index)}
+											className="admin-button-danger admin-button-icon"
+											aria-label={`Remove album placement ${index + 1}`}
+											title="Remove"
+										>
+											<FaTrash aria-hidden="true" />
+										</button>
+									)}
 								</div>
 							</div>
-						</div>
-					))}
+						);
+					})}
 				</div>
 			</div>
 			<div className="admin-song-tab-actions">
@@ -860,6 +1014,7 @@ function SongRolesTab({ form, artistOptions, outsideArtistOptions, addRole, remo
 									/>
 								</div>
 								<select value={entry.role} onChange={(e) => updateRole(index, 'role', e.target.value)} className="admin-field-input admin-song-role-select" aria-label={`Role type ${index + 1}`}>
+									<option value="">- Role -</option>
 									{SONG_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
 								</select>
 								<button type="button" onClick={() => removeRole(index)} className="admin-button-danger admin-button-icon" aria-label="Remove role" title="Remove role">
@@ -1034,7 +1189,7 @@ export default function AdminSongFormModal({
 	const addRole = () =>
 		setForm((current) => ({
 			...current,
-			roles: sortMusicRoleEntries([...current.roles, createRoleEntry()]),
+			roles: [...current.roles, createRoleEntry()],
 		}));
 
 	const removeRole = (index) =>
@@ -1046,7 +1201,7 @@ export default function AdminSongFormModal({
 	const updateRole = (index, keyOrPatch, value) =>
 		setForm((current) => ({
 			...current,
-			roles: sortMusicRoleEntries(current.roles.map((entry, i) => {
+			roles: current.roles.map((entry, i) => {
 				if (i !== index) return entry;
 
 				const patch = typeof keyOrPatch === 'string'
@@ -1056,13 +1211,13 @@ export default function AdminSongFormModal({
 				if (patch._prefillRole && (!entry.role || entry.role === 'Featured Artist')) next.role = patch._prefillRole;
 				delete next._prefillRole;
 				return next;
-			})),
+			}),
 		}));
 
 	const setAlbumPlacement = (index, key) => (event) => {
 		const nextValue = key === 'albumId'
 			? event.target.value
-			: event.target.value === '' ? '' : Number(event.target.value);
+			: normalizePlacementNumberInput(event.target.value);
 		dispatchModal({
 			type: 'set-album-placement',
 			index,
@@ -1084,6 +1239,14 @@ export default function AdminSongFormModal({
 			albumById,
 			visibilityTouched: visibilityTouchedRef.current,
 		});
+	};
+
+	const moveAlbumPlacement = (index, direction) => {
+		dispatchModal({ type: 'move-album-placement', index, direction });
+	};
+
+	const reorderAlbumPlacement = (fromIndex, toIndex) => {
+		dispatchModal({ type: 'reorder-album-placement', fromIndex, toIndex });
 	};
 
 	const handleSave = async () => {
@@ -1109,7 +1272,7 @@ export default function AdminSongFormModal({
 			albumIds: form.albumPlacements.map((p) => p.albumId),
 			discNumbers: form.albumPlacements.map((p) => Number(p.discNumber)),
 			trackNumbers: form.albumPlacements.map((p) => Number(p.trackNumber)),
-			roles: form.roles.map(({ role, name, artistId, outsideArtistId, externalUrl }) => ({
+			roles: sortMusicRoleEntries(form.roles.filter(hasRoleValue)).map(({ role, name, artistId, outsideArtistId, externalUrl }) => ({
 				role,
 				name,
 				artistId,
@@ -1176,6 +1339,8 @@ export default function AdminSongFormModal({
 							placementFieldClassName={placementFieldClassName}
 							removeAlbumPlacement={removeAlbumPlacement}
 							addAlbumPlacement={addAlbumPlacement}
+							moveAlbumPlacement={moveAlbumPlacement}
+							reorderAlbumPlacement={reorderAlbumPlacement}
 							addRole={addRole}
 							removeRole={removeRole}
 							updateRole={updateRole}

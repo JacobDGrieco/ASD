@@ -307,6 +307,7 @@ function AlbumRolesTab({ form, artistOptions, outsideArtistOptions, addRole, rem
 									/>
 								</div>
 								<select value={entry.role} onChange={(event) => updateRole(index, 'role', event.target.value)} className="admin-field-input admin-song-role-select" aria-label={`Role type ${index + 1}`}>
+									<option value="">- Role -</option>
 									{SONG_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
 								</select>
 								<button type="button" onClick={() => removeRole(index)} className="admin-button-danger admin-button-icon" aria-label="Remove role" title="Remove role">
@@ -709,7 +710,7 @@ export default function AdminMusicAlbumsPage() {
 	const addRole = () =>
 		setForm((current) => ({
 			...current,
-			roles: sortMusicRoleEntries([...current.roles, createRoleEntry('Featured Artist', '', { applyToSongs: true })]),
+			roles: [...current.roles, createRoleEntry('', '', { applyToSongs: true })],
 		}));
 
 	const removeRole = (index) =>
@@ -721,7 +722,7 @@ export default function AdminMusicAlbumsPage() {
 	const updateRole = (index, keyOrPatch, value) =>
 		setForm((current) => ({
 			...current,
-			roles: sortMusicRoleEntries(current.roles.map((entry, i) => {
+			roles: current.roles.map((entry, i) => {
 				if (i !== index) return entry;
 
 				const patch = typeof keyOrPatch === 'string'
@@ -731,7 +732,7 @@ export default function AdminMusicAlbumsPage() {
 				if (patch._prefillRole && (!entry.role || entry.role === 'Featured Artist')) next.role = patch._prefillRole;
 				delete next._prefillRole;
 				return next;
-			})),
+			}),
 		}));
 
 	const set = (key) => (event) => {
