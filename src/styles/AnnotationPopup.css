@@ -1,26 +1,61 @@
 /* Styles floating lyric annotation popups. */
 .annotation-popup-popup {
-	padding: 16px 20px;
-	background: rgba(26, 26, 26, 0.72);
-	border-left: 2px solid rgba(200, 169, 110, 0.66);
-	border-radius: 0 var(--radius) var(--radius) 0;
-	animation: slide-in 0.15s ease;
+	padding: 18px 44px 18px 20px;
+	background: rgba(20, 20, 19, 0.96);
+	border: 1px solid rgba(200, 169, 110, 0.28);
+	border-radius: 8px;
+	box-shadow: 0 22px 70px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(232, 232, 232, 0.04) inset;
+	animation: annotation-popup-enter 0.16s ease-out;
+	transform-origin: top center;
 }
 
-@keyframes slide-in {
+.annotation-popup-above {
+	transform: translateY(-100%);
+	transform-origin: bottom center;
+}
+
+.annotation-popup-close {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border: 1px solid rgba(232, 232, 232, 0.1);
+	border-radius: 999px;
+	background: rgba(232, 232, 232, 0.045);
+	color: rgba(232, 232, 232, 0.68);
+	cursor: pointer;
+	transition: color var(--transition), border-color var(--transition), background var(--transition);
+}
+
+.annotation-popup-close:hover,
+.annotation-popup-close:focus-visible {
+	background: rgba(200, 169, 110, 0.12);
+	border-color: rgba(200, 169, 110, 0.36);
+	color: rgba(232, 232, 232, 0.94);
+	outline: none;
+}
+
+@keyframes annotation-popup-enter {
 	from {
 		opacity: 0;
-		transform: translateY(-4px);
+		translate: 0 -4px;
 	}
 
 	to {
 		opacity: 1;
-		transform: translateY(0);
+		translate: 0 0;
 	}
 }
 
 .annotation-popup-text {
-	font-size: 0.9rem;
+	margin: 0;
+	max-height: min(260px, calc(100dvh - 40px));
+	overflow-y: auto;
+	font-size: 0.94rem;
 	color: var(--text-muted);
 	line-height: 1.7;
 }

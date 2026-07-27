@@ -174,3 +174,9 @@
 	background: var(--accent-dim);
 	text-decoration: none;
 }
+
+@media (max-width: 640px) {
+	.content-card-stream-link:nth-child(n + 4) {
+		display: none;
+	}
+}

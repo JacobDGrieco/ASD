@@ -33,7 +33,7 @@ export default function PlayerQueuePanel() {
 
 	useLayoutEffect(() => {
 		const upNextSection = upNextSectionRef.current;
-		const scroller = upNextSection?.closest('.player-fullscreen-right');
+		const scroller = upNextSection?.closest('.player-fullscreen-right, .player-fullscreen-mobile-page');
 		if (!upNextSection || !scroller) return;
 
 		const upNextRect = upNextSection.getBoundingClientRect();

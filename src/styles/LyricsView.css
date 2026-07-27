@@ -71,12 +71,18 @@
 	text-decoration-color: rgba(200, 169, 110, 0.78);
 }
 
+.lyrics-view-annotation-layer {
+	position: fixed;
+	inset: 0;
+	z-index: 1300;
+	pointer-events: none;
+}
+
 .lyrics-view-popup-overlay {
-	position: absolute;
-	top: 0;
-	left: calc(100% + 10px);
-	width: min(300px, 28vw);
-	z-index: 5;
+	position: fixed;
+	width: min(var(--annotation-popup-width, 340px), calc(100vw - 32px));
+	z-index: 1301;
+	pointer-events: auto;
 }
 
 @media (max-width: 900px) {
@@ -86,8 +92,6 @@
 	}
 
 	.lyrics-view-popup-overlay {
-		position: static;
-		width: auto;
-		margin-top: 8px;
+		width: min(var(--annotation-popup-width, 340px), calc(100vw - 24px));
 	}
 }

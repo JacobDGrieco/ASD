@@ -15,6 +15,24 @@
 	justify-content: center;
 }
 
+@media (min-width: 1321px) {
+	.record-player-inner {
+		display: grid;
+		grid-template-columns: minmax(280px, 320px) minmax(520px, 560px) minmax(460px, 504px);
+		column-gap: clamp(54px, 4.6vw, 84px);
+		align-items: center;
+		justify-content: center;
+	}
+
+	.record-player-inner .turntable-wrap {
+		transform: translateY(34px);
+	}
+
+	.record-player-inner .vinyl-rack-rack {
+		justify-self: start;
+	}
+}
+
 .record-player-inner-empty {
 	align-items: stretch;
 }

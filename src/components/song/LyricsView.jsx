@@ -5,22 +5,20 @@
  * interactive lyric display used by song pages and the player.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import AnnotationPopup from './AnnotationPopup.jsx';
 import '../../styles/LyricsView.css';
 
 function LyricLine({
 	lineText,
 	lineRanges,
-	lineIndex,
 	isSynced,
 	isActive,
 	lineRef,
 	hoveredAnnotationId,
 	openAnnotationId,
-	openAnnotationAnchorLineIndex,
 	setHoveredAnnotationId,
-	setOpenAnnotationId,
-	setOpenAnnotationAnchorLineIndex,
+	onToggleAnnotation,
 	allAnnotations,
 }) {
 	if (lineText.trim() === '') {
@@ -45,6 +43,7 @@ function LyricLine({
 						return <span key={`plain-${span.start}-${span.end}`} className="lyrics-view-plain">{span.text}</span>;
 					}
 					const annotation = allAnnotations.find(a => a.id === span.annotationId);
+					if (!annotation) return <span key={`plain-${span.start}-${span.end}`} className="lyrics-view-plain">{span.text}</span>;
 					const isOpen = openAnnotationId === span.annotationId;
 					const isHovered = hoveredAnnotationId === span.annotationId;
 					return (
@@ -56,22 +55,42 @@ function LyricLine({
 							onMouseLeave={() => setHoveredAnnotationId((currentId) => (currentId === span.annotationId ? null : currentId))}
 							onFocus={() => setHoveredAnnotationId(span.annotationId)}
 							onBlur={() => setHoveredAnnotationId((currentId) => (currentId === span.annotationId ? null : currentId))}
-							onClick={() => {
-								setOpenAnnotationId(isOpen && openAnnotationAnchorLineIndex === lineIndex ? null : span.annotationId);
-								setOpenAnnotationAnchorLineIndex(isOpen && openAnnotationAnchorLineIndex === lineIndex ? -1 : lineIndex);
-							}}
+							onClick={(event) => onToggleAnnotation(span.annotationId, event.currentTarget)}
+							aria-expanded={isOpen}
+							aria-controls={isOpen ? 'lyrics-annotation-popup' : undefined}
 						>
 							{span.text}
 						</button>
 					);
 				})}
 			</div>
-			{openAnnotationId && lineIndex === openAnnotationAnchorLineIndex && spans.some(s => s.annotationId === openAnnotationId) && (() => {
-				const openAnnotation = allAnnotations.find(a => a.id === openAnnotationId);
-				return openAnnotation ? <AnnotationPopup annotation={openAnnotation} className="lyrics-view-popup-overlay" /> : null;
-			})()}
 		</div>
 	);
+}
+
+function annotationPopupPosition(triggerElement) {
+	if (typeof window === 'undefined') return null;
+
+	const rect = triggerElement.getBoundingClientRect();
+	const viewportWidth = window.innerWidth;
+	const viewportHeight = window.innerHeight;
+	const gutter = 16;
+	const offset = 12;
+	const width = Math.min(340, viewportWidth - (gutter * 2));
+	const estimatedHeight = Math.min(260, viewportHeight - (gutter * 2));
+	const unclampedLeft = rect.left + (rect.width / 2) - (width / 2);
+	const left = Math.min(Math.max(unclampedLeft, gutter), Math.max(gutter, viewportWidth - width - gutter));
+	const shouldPlaceAbove = rect.bottom + offset + estimatedHeight > viewportHeight && rect.top > estimatedHeight;
+	const top = shouldPlaceAbove
+		? Math.max(gutter, rect.top - offset)
+		: Math.min(rect.bottom + offset, viewportHeight - gutter);
+
+	return {
+		left,
+		top,
+		width,
+		placement: shouldPlaceAbove ? 'above' : 'below',
+	};
 }
 
 function buildSpans(text, lineRanges) {
@@ -107,7 +126,7 @@ function isBracketedLyricCue(line) {
 
 export default function LyricsView({ lyric, currentTime = null, autoFollow = false }) {
 	const [openAnnotationId, setOpenAnnotationId] = useState(null);
-	const [openAnnotationAnchorLineIndex, setOpenAnnotationAnchorLineIndex] = useState(-1);
+	const [openAnnotationPosition, setOpenAnnotationPosition] = useState(null);
 	const [hoveredAnnotationId, setHoveredAnnotationId] = useState(null);
 	const lineRefs = useRef(new Map());
 
@@ -128,6 +147,29 @@ export default function LyricsView({ lyric, currentTime = null, autoFollow = fal
 		line?.scrollIntoView({ block: 'center', behavior: 'smooth' });
 	}, [activeLineIndex, autoFollow]);
 
+	useEffect(() => {
+		if (!openAnnotationId) return undefined;
+
+		const closeAnnotation = (event) => {
+			if (event.type === 'keydown' && event.key !== 'Escape') return;
+			const target = event.target;
+			if (target instanceof Element && (target.closest('.annotation-popup-popup') || target.closest('.lyrics-view-annotated'))) return;
+			setOpenAnnotationId(null);
+			setOpenAnnotationPosition(null);
+		};
+
+		window.addEventListener('keydown', closeAnnotation);
+		window.addEventListener('pointerdown', closeAnnotation, true);
+		window.addEventListener('resize', closeAnnotation);
+		window.addEventListener('scroll', closeAnnotation, true);
+		return () => {
+			window.removeEventListener('keydown', closeAnnotation);
+			window.removeEventListener('pointerdown', closeAnnotation, true);
+			window.removeEventListener('resize', closeAnnotation);
+			window.removeEventListener('scroll', closeAnnotation, true);
+		};
+	}, [openAnnotationId]);
+
 	if (!lyric) return null;
 
 	// flatten ranges across all annotations
@@ -137,6 +179,20 @@ export default function LyricsView({ lyric, currentTime = null, autoFollow = fal
 
 	const lines = lyric.text.split('\n');
 	let lineOffset = 0;
+	const openAnnotation = openAnnotationId
+		? (lyric.annotations ?? []).find((annotation) => annotation.id === openAnnotationId)
+		: null;
+
+	const handleToggleAnnotation = (annotationId, triggerElement) => {
+		if (openAnnotationId === annotationId) {
+			setOpenAnnotationId(null);
+			setOpenAnnotationPosition(null);
+			return;
+		}
+
+		setOpenAnnotationId(annotationId);
+		setOpenAnnotationPosition(annotationPopupPosition(triggerElement));
+	};
 
 	return (
 		<section className="lyrics-view-section">
@@ -158,7 +214,6 @@ export default function LyricsView({ lyric, currentTime = null, autoFollow = fal
 							key={`line-${lineStart}`}
 							lineText={line}
 							lineRanges={lineRanges}
-							lineIndex={i}
 							isSynced={syncedLineIndexes.has(i)}
 							isActive={activeLineIndex === i}
 							lineRef={(element) => {
@@ -167,10 +222,8 @@ export default function LyricsView({ lyric, currentTime = null, autoFollow = fal
 							}}
 							hoveredAnnotationId={hoveredAnnotationId}
 							openAnnotationId={openAnnotationId}
-							openAnnotationAnchorLineIndex={openAnnotationAnchorLineIndex}
 							setHoveredAnnotationId={setHoveredAnnotationId}
-							setOpenAnnotationId={setOpenAnnotationId}
-							setOpenAnnotationAnchorLineIndex={setOpenAnnotationAnchorLineIndex}
+							onToggleAnnotation={handleToggleAnnotation}
 							allAnnotations={lyric.annotations ?? []}
 						/>
 					);
@@ -178,6 +231,26 @@ export default function LyricsView({ lyric, currentTime = null, autoFollow = fal
 					return result;
 				})}
 			</div>
+			{openAnnotation && openAnnotationPosition && typeof document !== 'undefined' && createPortal(
+				<div className="lyrics-view-annotation-layer" aria-live="polite">
+					<AnnotationPopup
+						id="lyrics-annotation-popup"
+						annotation={openAnnotation}
+						className="lyrics-view-popup-overlay"
+						placement={openAnnotationPosition.placement}
+						onClose={() => {
+							setOpenAnnotationId(null);
+							setOpenAnnotationPosition(null);
+						}}
+						style={{
+							left: `${openAnnotationPosition.left}px`,
+							top: `${openAnnotationPosition.top}px`,
+							'--annotation-popup-width': `${openAnnotationPosition.width}px`,
+						}}
+					/>
+				</div>,
+				document.body
+			)}
 		</section>
 	);
 }
